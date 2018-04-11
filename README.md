@@ -7,6 +7,7 @@ The current classes are as described below:
 
 | Class             | Description                                              |
 |------------------:|:---------------------------------------------------------|
+| **array_nd**      | N-dimensional staticly sized array.                      |
 
 ## License ##
 
