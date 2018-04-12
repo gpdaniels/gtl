@@ -8,6 +8,7 @@ The current classes are as described below:
 | Class             | Description                                              |
 |------------------:|:---------------------------------------------------------|
 | **array_nd**      | N-dimensional staticly sized array.                      |
+| **type_id**       | Simple run-time-type-information (rtti) with -fno-rtti   |
 
 ## License ##
 
