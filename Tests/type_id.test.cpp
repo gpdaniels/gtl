@@ -1,0 +1,119 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#include <main.tests.hpp>
+#include <macro.tests.hpp>
+#include <template.tests.hpp>
+
+#include <type_id>
+
+#include <type_traits>
+
+TEST(traits, sizeof) {
+    REQUIRE(sizeof(gtl::type_id) >= 1);
+}
+
+TEST(traits, is_not_pod) {
+    REQUIRE(std::is_pod<gtl::type_id>::value == false);
+}
+
+TEST(traits, is_not_trivial) {
+    REQUIRE(std::is_trivial<gtl::type_id>::value == false);
+}
+
+TEST(traits, is_trivially_copyable) {
+    REQUIRE(std::is_trivially_copyable<gtl::type_id>::value == true);
+}
+
+TEST(traits, is_standard_layout) {
+    REQUIRE(std::is_standard_layout<gtl::type_id>::value == true);
+}
+
+TEST(constructor, type) {
+    test_template<test_types>(
+        [](auto test_type)->void {
+            using type = typename decltype(test_type)::type;
+            gtl::type_id type_id(type{});
+            UNOPTIMISED(type_id);
+        }
+    );
+}
+
+TEST(function, id) {
+    test_template<test_types>(
+        [](auto test_type)->void {
+            using type = typename decltype(test_type)::type;
+            gtl::type_id type_id(type{});
+            unsigned long long int id = type_id.id();
+            UNOPTIMISED(id);
+        }
+    );
+}
+
+TEST(operator, unsigned_long_long_int) {
+    test_template<test_types>(
+        [](auto test_type)->void {
+            using type = typename decltype(test_type)::type;
+            gtl::type_id type_id(type{});
+            unsigned long long int id = type_id;
+            UNOPTIMISED(id);
+        }
+    );
+}
+
+TEST(operator, equality) {
+    test_template<test_types>(
+        [](auto test_type1)->void {
+            using type1 = typename decltype(test_type1)::type;
+            bool match_found = false;
+            test_template<test_types>(
+                [&match_found](auto test_type2)->void {
+                    using type2 = typename decltype(test_type2)::type;
+                    if (gtl::type_id(type1{}) == gtl::type_id(type2{})) {
+                        REQUIRE(match_found == false);
+                        match_found = true;
+                    }
+                }
+            );
+            REQUIRE(match_found == true);
+        }
+    );
+}
+
+TEST(operator, inequality) {
+    test_template<test_types>(
+        [](auto test_type1)->void {
+            using type1 = typename decltype(test_type1)::type;
+            bool match_found = false;
+            test_template<test_types>(
+                [&match_found](auto test_type2)->void {
+                    using type2 = typename decltype(test_type2)::type;
+                    if (gtl::type_id(type1{}) != gtl::type_id(type2{})) {
+                    }
+                    else {
+                        REQUIRE(match_found == false);
+                        match_found = true;
+                    }
+                }
+            );
+            REQUIRE(match_found == true);
+        }
+    );
+}
