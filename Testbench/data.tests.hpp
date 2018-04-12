@@ -26,143 +26,47 @@ THE SOFTWARE
 template <typename template_type>
 struct test_data { };
 
+// Macro for generating test data structures.
+#define TEST_DATA_STRUCT(TYPE) \
+    template <> \
+    struct test_data<TYPE> { \
+        constexpr static const char* name = #TYPE; \
+        static const TYPE data[]; \
+        static const TYPE* begin(void); \
+        static const TYPE* end(void); \
+    }
+
 // Boolean.
-template <>
-struct test_data<bool> {
-    static const bool data[];
-    const bool* begin(void) const;
-    const bool* end(void) const;
-};
+TEST_DATA_STRUCT(bool);
 
-// Character.
-template <>
-struct test_data<unsigned char> {
-    static const unsigned char data[];
-    const unsigned char* begin(void) const;
-    const unsigned char* end(void) const;
-};
-
-template <>
-struct test_data<signed char> {
-    static const signed char data[];
-    const signed char* begin(void) const;
-    const signed char* end(void) const;
-};
-
-template <>
-struct test_data<char> {
-    static const char data[];
-    const char* begin(void) const;
-    const char* end(void) const;
-};
+// Character
+TEST_DATA_STRUCT(unsigned char);
+TEST_DATA_STRUCT(signed char);
+TEST_DATA_STRUCT(char);
 
 // Extended characters.
-template <>
-struct test_data<wchar_t> {
-    static const wchar_t data[];
-    const wchar_t* begin(void) const;
-    const wchar_t* end(void) const;
-};
-
-template <>
-struct test_data<char16_t> {
-    static const char16_t data[];
-    const char16_t* begin(void) const;
-    const char16_t* end(void) const;
-};
-
-template <>
-struct test_data<char32_t> {
-    static const char32_t data[];
-    const char32_t* begin(void) const;
-    const char32_t* end(void) const;
-};
+TEST_DATA_STRUCT(wchar_t);
+TEST_DATA_STRUCT(char16_t);
+TEST_DATA_STRUCT(char32_t);
 
 // Fixed point.
-template <>
-struct test_data<unsigned short int> {
-    static const unsigned short int data[];
-    const unsigned short int* begin(void) const;
-    const unsigned short int* end(void) const;
-};
-
-template <>
-struct test_data<signed short int> {
-    static const signed short int data[];
-    const signed short int* begin(void) const;
-    const signed short int* end(void) const;
-};
-
-template <>
-struct test_data<unsigned int> {
-    static const unsigned int data[];
-    const unsigned int* begin(void) const;
-    const unsigned int* end(void) const;
-};
-
-template <>
-struct test_data<signed int> {
-    static const signed int data[];
-    const signed int* begin(void) const;
-    const signed int* end(void) const;
-};
-
-template <>
-struct test_data<unsigned long int> {
-    static const unsigned long int data[];
-    const unsigned long int* begin(void) const;
-    const unsigned long int* end(void) const;
-};
-
-template <>
-struct test_data<signed long int> {
-    static const signed long int data[];
-    const signed long int* begin(void) const;
-    const signed long int* end(void) const;
-};
-
-template <>
-struct test_data<unsigned long long int> {
-    static const unsigned long long int data[];
-    const unsigned long long int* begin(void) const;
-    const unsigned long long int* end(void) const;
-};
-
-template <>
-struct test_data<signed long long int> {
-    static const signed long long int data[];
-    const signed long long int* begin(void) const;
-    const signed long long int* end(void) const;
-};
+TEST_DATA_STRUCT(unsigned short int);
+TEST_DATA_STRUCT(signed short int);
+TEST_DATA_STRUCT(unsigned int);
+TEST_DATA_STRUCT(signed int);
+TEST_DATA_STRUCT(unsigned long int);
+TEST_DATA_STRUCT(signed long int);
+TEST_DATA_STRUCT(unsigned long long int);
+TEST_DATA_STRUCT(signed long long int);
 
 // Floating point.
-template <>
-struct test_data<float> {
-    static const float data[];
-    const float* begin(void) const;
-    const float* end(void) const;
-};
-
-template <>
-struct test_data<double> {
-    static const double data[];
-    const double* begin(void) const;
-    const double* end(void) const;
-};
-
-template <>
-struct test_data<long double> {
-    static const long double data[];
-    const long double* begin(void) const;
-    const long double* end(void) const;
-};
+TEST_DATA_STRUCT(float);
+TEST_DATA_STRUCT(double);
+TEST_DATA_STRUCT(long double);
 
 // Pointer type.
-template <>
-struct test_data<decltype(nullptr)> {
-    static const decltype(nullptr) data[];
-    const decltype(nullptr)* begin(void) const;
-    const decltype(nullptr)* end(void) const;
-};
+TEST_DATA_STRUCT(decltype(nullptr));
+
+#undef TEST_DATA_STRUCT
 
 #endif // DATA_TESTS_HPP
