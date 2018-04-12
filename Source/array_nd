@@ -194,15 +194,15 @@ namespace gtl {
         }
     };
 
-    /// @brief  array1d is a helper type for creating a one dimensional array.
+    /// @brief  array_1d is a helper type for creating a one dimensional array.
     template <typename type, unsigned long long width>
     using array_1d = array_nd<type, width>;
 
-    /// @brief  array2d is a helper type for creating a two dimensional array.
+    /// @brief  array_2d is a helper type for creating a two dimensional array.
     template <typename type, unsigned long long width, unsigned long long height>
     using array_2d = array_nd<type, width, height>;
 
-    /// @brief  array3d is a helper type for creating a three dimensional array.
+    /// @brief  array_3d is a helper type for creating a three dimensional array.
     template <typename type, unsigned long long width, unsigned long long height, unsigned long long depth>
     using array_3d = array_nd<type, width, height, depth>;
 }
