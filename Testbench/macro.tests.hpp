@@ -23,7 +23,7 @@ THE SOFTWARE
 #define MACRO_TESTS_HPP
 
 /// @brief  A helper macro to prevent compiler warnings about unused variables.
-#define UNUSED(VARIABLE) static_cast<void>(VARIABLE)
+#define UNUSED(VARIABLE) (static_cast<void>(VARIABLE))
 
 /// @brief  A helper macro to prevent variables being optimised away in tests.
 #define UNOPTIMISED(VARIABLE) __asm__ __volatile__("" :: "m" (VARIABLE))
