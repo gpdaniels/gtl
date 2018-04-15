@@ -30,7 +30,7 @@ struct test_data { };
 #define TEST_DATA_STRUCT(TYPE) \
     template <> \
     struct test_data<TYPE> { \
-        constexpr static const char* name = #TYPE; \
+        static const char* name; \
         static const TYPE data[]; \
         static const TYPE* begin(void); \
         static const TYPE* end(void); \
