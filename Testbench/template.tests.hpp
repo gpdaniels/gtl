@@ -25,27 +25,27 @@ THE SOFTWARE
 // For testing templates a method of storing types and looping over them is required.
 // Below is an implementation of a foreach type loop.
 
-// Define a template class that holds a type, enables easier use of voids.
+// Define a template struct that holds a type, enables easier use of voids.
 template <typename contained_type>
 struct type_container {
     using type = contained_type;
 };
 
-// Define a template class that holds a value.
+// Define a template struct that holds a value.
 template <unsigned long long contained_value>
 struct value_container {
     constexpr static const unsigned long long value = contained_value;
 };
 
-// Define a template class to hold a collection of types.
+// Define a template struct to hold a collection of types.
 template <typename... types>
 struct type_collection { };
 
-// Define a template class to hold a collection of values.
+// Define a template struct to hold a collection of values.
 template <unsigned long long... values>
 struct value_collection { };
 
-// Define a template class to hold a function to call for each collection of types.
+// Define a template struct to hold a function to call for each collection of types.
 template <typename function_type, typename type>
 struct type_function_container {
 public:
@@ -61,7 +61,7 @@ public:
     }
 };
 
-// Define a template class to hold a function to call for each collection of values.
+// Define a template struct to hold a function to call for each collection of values.
 template <typename function_type, unsigned long long value>
 struct value_function_container {
 public:
