@@ -1,0 +1,585 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_COROUTINE_HPP
+#define GTL_COROUTINE_HPP
+
+#ifdef _DEBUG
+/// @brief A simple assert macro to break the program is the coroutine is missued.
+#   define GTL_COROUTINE_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+//  @brief At release time the assert macro is implemented as a nop.
+#   define GTL_COROUTINE_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+// Store the value of the _FORTIFY_SOURCE macro so it can be reset later.
+#pragma push_macro("_FORTIFY_SOURCE")
+
+// Prevent release builds on linux from crashing.
+#undef _FORTIFY_SOURCE
+
+#include <csetjmp>
+
+// Restore the value of the _FORTIFY_SOURCE macro.
+#pragma pop_macro("_FORTIFY_SOURCE")
+
+#include <csignal>
+#include <mutex>
+#include <thread>
+
+namespace gtl {
+
+    /// @brief  Early declaration of the coroutine class to allow the creation of global coroutine variables that are used within the coroutine class.
+    class coroutine;
+
+    namespace {
+        /// @brief  Each process can only have one signal handler, therefore only one thread can create a coroutine at a time, enforce this with a mutex.
+        static std::mutex signal_handler_mutex;
+
+        /// @brief  Store a pointer to the currently executing coroutine as a global thread_local variable.
+        static thread_local coroutine* current_coroutine = nullptr;
+    }
+
+    // The process to create a coroutine follows the proces described in the below paper:
+    // R.Engleschall's Portable Multithreading: "The Signal Stack Trick for User-Space Thread Creation" in Proceedings of the USENIX Annual Technical Conference, 2000
+
+    /// @brief  The coroutine class creates and stores a stack and an execution context to enable non-pre-emptive threading of functions.
+    class coroutine {
+    public:
+        /// @brief  The amount of memory to allocate for the stack of the coroutine.
+        constexpr static const unsigned long long stack_size = SIGSTKSZ;
+
+        /// @brief  The id of the signal raised to trigger a signal handler.
+        constexpr static const int signal_identifier = SIGUSR1;
+
+    public:
+        /// @brief  The this_coroutine class is made a friend to allow it to access the private yield function.
+        friend class this_coroutine;
+
+    public:
+        /// @brief  An identifier type used to uniquely identify coroutines.
+        class id {
+        private:
+            /// @brief  The identifier value.
+            unsigned long long int identifier;
+
+        public:
+            /// @brief  .
+            /// @param  identifier - .
+            explicit id(unsigned long long int identifier = 0)
+                : identifier(identifier) {
+            }
+
+            /// @brief  The less than operator is the only one defined using the identifier value, all other operators are defined using this one.
+            /// @param  rhs - The right hand side of the comparison.
+            constexpr bool operator < (const id& rhs) const {
+                return (this->identifier < rhs.identifier);
+            }
+
+            /// @brief  The greater than operator defined using the less than operator with the sides of the comparison reversed.
+            /// @param  rhs - The right hand side of the comparison.
+            constexpr bool operator > (const id& rhs) const {
+                return rhs < *this;
+            }
+
+            /// @brief  The less than or equal to operator defined using the greater than operator and inverted.
+            /// @param  rhs - The right hand side of the comparison.
+            constexpr bool operator <=(const id& rhs) const {
+                return !(*this > rhs);
+            }
+
+            /// @brief  The greater than or equal to operator defined using the less than operator and inverted.
+            /// @param  rhs - The right hand side of the comparison.
+            constexpr bool operator >=(const id& rhs) const {
+                return !(*this < rhs);
+            }
+
+            /// @brief  The inequality operator defined using the less than and greater than operators.
+            /// @param  rhs - The right hand side of the comparison.
+            constexpr bool operator !=(const id& rhs) const {
+                return (*this < rhs) || (*this > rhs);
+            }
+
+            /// @brief  The equality operator defined using the inequality operator and inverted.
+            /// @param  rhs - The right hand side of the comparison.
+            constexpr bool operator ==(const id& rhs) const {
+                return !(*this != rhs);
+            }
+        };
+
+        /// @brief  Simple lambda class for containing a void(void) lambda.
+        class lambda {
+            // This version of the lamda class is simplified as it only ever needs to hold a "void(void)" function.
+
+        private:
+            /// @brief  A pointer to a heap allocated copy of the function.
+            void* function;
+
+            /// @brief  A lambda function to copy the function.
+            void* (*copier)(void*);
+
+            /// @brief  A lambda function to delete the function.
+            void (*deleter)(void*);
+
+            /// @brief  A lambda function to execute the function.
+            void (*executor)(void*);
+
+        public:
+            /// @brief  The destructor calls the deleter function if it exists to cleanup the lambda function.
+            ~lambda(void) {
+                if (this->deleter != nullptr) {
+                    this->deleter(this->function);
+                }
+            }
+
+            /// @brief  The default constructor sets all internal variables to nullptrs.
+            lambda(void)
+                : function(nullptr)
+                , copier(nullptr)
+                , deleter(nullptr)
+                , executor(nullptr) {
+            }
+
+            /// @brief  The copy constructor copies variables from another object, if there is a copier function it is used to copy the function.
+            /// @param  other - The lambda to copy.
+            lambda(const lambda& other)
+                : function(other.copier ? other.copier(other.function) : nullptr)
+                , copier(other.copier)
+                , deleter(other.deleter)
+                , executor(other.executor) {
+            }
+
+            /// @brief  The copy assignment operator copies variables from another object, if there is a copier function it is used to copy the function.
+            /// @param  other - The lambda to copy.
+            lambda& operator=(const lambda& other) {
+                this->function = other.copier ? other.copier(other.function) : nullptr;
+                this->executor = other.executor;
+                this->deleter = other.deleter;
+                this->copier = other.copier;
+                return *this;
+            }
+
+            /// @brief  Constructor from a function type copies a provided function to a heap allocated internal function,.
+            /// @param  function - The function to wrap.
+            template <typename function_type>
+            lambda(const function_type& function)
+                : function(new function_type(function))
+                , copier([](void* function) -> void* {
+                    if (function) {
+                        return new function_type(*reinterpret_cast<function_type*>(function));
+                    }
+                    return nullptr;
+                })
+                , deleter([](void* function) -> void {
+                    delete reinterpret_cast<function_type*>(function);
+                })
+                , executor([](void* function) -> void {
+                    return reinterpret_cast<function_type*>(function)->operator()();
+                }) {
+            }
+
+            /// @brief  Copy assignement operator from a function type copies a provided function to a heap allocated internal function,.
+            /// @param  function - The function to wrap.
+            template <typename function_type>
+            lambda& operator=(const function_type& function) {
+                if (this->function != nullptr) {
+                    this->deleter(this->function);
+                }
+                this->function = new function_type(function);
+                this->copier = [](void* function) -> void* {
+                    if (function) {
+                        return new function_type(*reinterpret_cast<function_type*>(function));
+                    }
+                    return nullptr;
+                };
+                this->deleter = [](void* function) -> void {
+                    delete reinterpret_cast<function_type*>(function);
+                };
+                this->executor = [](void* function) -> void {
+                    return reinterpret_cast<function_type*>(function)->operator()();
+                };
+                return *this;
+            }
+
+        public:
+            /// @brief  The function call operator is overloaded to call the internal function.
+            void operator()(void) {
+                this->executor(this->function);
+            }
+        };
+
+    private:
+        /// @brief  Atomic flag that is set by the signal handler and checked by the constructor to ensure creation stages procede in order.
+        volatile sig_atomic_t signal_raised;
+
+        /// @brief  Coroutine stack allocated on the heap stack using new.
+        unsigned char* stack;
+
+        /// @brief  Coroutine id, derived from stack pointer.
+        id identifier;
+
+        /// @brief  Jump buffer to used to enter the coroutine.
+        sigjmp_buf coroutine_context;
+
+        /// @brief  Jump buffer used to exit the coroutine.
+        sigjmp_buf parent_context;
+
+        /// @brief  The signal set of the program at coroutine creation saved as a member variable so it can be restored in the coroutine context.
+        sigset_t parent_signal_set;
+
+        /// @brief  Function to call from the coroutine context.
+        lambda function;
+
+    public:
+        /// @brief Destructor ensures the coroutine is finished.
+        ~coroutine(void) {
+            // Cleanup stack.
+            if (this->stack) {
+                delete[] this->stack;
+            }
+            // Ensure joined or throw.
+            if (this->joinable()) {
+                std::terminate();
+            }
+        }
+
+        /// @brief  Default constructor does nothing.
+        coroutine(void)
+            : signal_raised(0)
+            , stack(nullptr)
+            , identifier(reinterpret_cast<unsigned long long int>(this->stack)) {
+        }
+
+        /// @brief  Copy constructor is explicitly deleted.
+        coroutine(const coroutine&) = delete;
+
+        /// @brief  Move constructor cannot be default as the default leaves other in an invalid state.
+        coroutine(coroutine&& other)
+            : signal_raised(0)
+            , stack(nullptr)
+            , identifier(reinterpret_cast<unsigned long long int>(this->stack)) {
+            *this = std::move(other);
+        }
+
+        /// @brief  Copy assignment operator is explicitly deleted.
+        coroutine& operator=(const coroutine&) = delete;
+
+        /// @brief  Move assignment operator cannot be default as the default leaves other in an invalid state.
+        coroutine& operator=(coroutine&& other) {
+            // Ensure we're not moving on top of ourself.
+            if (this == &other) {
+                return *this;
+            }
+
+            // Swap all the member variables with those from other.
+            std::swap(this->signal_raised,      other.signal_raised);
+            std::swap(this->stack,              other.stack);
+            std::swap(this->identifier,         other.identifier);
+            std::swap(this->coroutine_context,  other.coroutine_context);
+            std::swap(this->parent_context,     other.parent_context);
+            std::swap(this->parent_signal_set,  other.parent_signal_set);
+            std::swap(this->function,           other.function);
+
+            // Return this, other will be destructed and cleanup after itself.
+            return *this;
+        }
+
+        /// @brief  Constructor creates a coroutine context, taking a function as an argument to call from the coroutine context.
+        /// @param  function - Function to call from the coroutine context.
+        /// @param  arguments - Function arguments to provide to the function at call time.
+        template <typename function_type, typename... argument_types>
+        coroutine(function_type&& function, argument_types&&... arguments)
+            : signal_raised(0)
+            , stack(new unsigned char[coroutine::stack_size])
+            , identifier(reinterpret_cast<unsigned long long int>(this->stack)) {
+
+            // Use a lock guard so the mutex is unlocked automatically when we return from the construtor.
+            std::lock_guard<std::mutex> signal_handler_lock(signal_handler_mutex);
+            // Cast the lock guard to void to prevent unused variable warnings.
+            static_cast<void>(signal_handler_lock);
+
+            // Step 1:
+            // Preserve the current signal mask and block an arbitrary worker signal.
+            // coroutine::signal_identifier is used here, but any signal can be used for this (even an already used one).
+            // This worker signal is later temporarily required for the trampoline step.
+            sigset_t coroutine_signal_set = {};
+            if (sigemptyset(&coroutine_signal_set) != 0) {
+                std::terminate();
+            }
+            if (sigaddset(&coroutine_signal_set, coroutine::signal_identifier) != 0) {
+                std::terminate();
+            }
+
+            sigset_t parent_signal_set = {};
+            if (sigprocmask(SIG_BLOCK, &coroutine_signal_set, &parent_signal_set) != 0) {
+                std::terminate();
+            }
+
+            // Step 2:
+            // Preserve a possibly existing signal action for the worker signal and configure a trampoline function as the new temporary signal action.
+            // The signal delivery is configured to occur on an alternate signal stack (see next step).
+            struct sigaction coroutine_signal_action = {};
+            coroutine_signal_action.sa_handler = signal_handler_trampolene;
+            coroutine_signal_action.sa_flags = SA_ONSTACK;
+            if (sigemptyset(&coroutine_signal_action.sa_mask) != 0) {
+                std::terminate();
+            }
+
+            struct sigaction parent_signal_action = {};
+            if (sigaction(coroutine::signal_identifier, &coroutine_signal_action, &parent_signal_action) != 0) {
+                std::terminate();
+            }
+
+            // Step 3:
+            // Preserve a possibly active alternate signal stack and configure the memory chunk starting at this->stack as the new temporary alternate signal stack of length size.
+            stack_t stack = {};
+            stack.ss_sp = this->stack;
+            stack.ss_size = coroutine::stack_size;
+            stack.ss_flags = 0;
+            stack_t parent_stack;
+            if (sigaltstack(&stack, &parent_stack) != 0) {
+                std::terminate();
+            }
+
+            // Step 4:
+            // Save parameters for the trampoline step in member variables.
+            // Send the current process the worker signal, temporarily unblock it and this way allow it to be delivered on the signal stack.
+            // This transfers execution control to the trampoline function.
+            this->function = [function, arguments...](){ function(arguments...); };
+            this->parent_signal_set = parent_signal_set;
+            this->signal_raised = 0;
+
+            // Store the currently executing coroutine in previous.
+            coroutine *parent_coroutine = current_coroutine;
+            // Save the new coroutine in current.
+            gtl::current_coroutine = this;
+
+            // Raise the signal.
+            if (raise(coroutine::signal_identifier) != 0) {
+                std::terminate();
+            }
+
+            // Unblock and wait for the signal by suspending the current thread.
+            sigfillset(&coroutine_signal_set);
+            sigdelset(&coroutine_signal_set, coroutine::signal_identifier);
+            while(!this->signal_raised) {
+                if (sigsuspend(&coroutine_signal_set) != -1) {
+                    std::terminate();
+                }
+            }
+
+            // Step 6:
+            // Restore the preserved alternate signal stack, preserved signal action and preserved signal mask for worker signal.
+            // This way an existing application configuration for the worker signal is restored.
+            if (sigaltstack(nullptr, &stack) != 0) {
+                std::terminate();
+            }
+            stack.ss_flags = SS_DISABLE;
+            if (sigaltstack(&stack, nullptr) != 0) {
+                std::terminate();
+            }
+            if (sigaltstack(nullptr, &stack) != 0) {
+                std::terminate();
+            }
+            if (!(parent_stack.ss_flags & SS_DISABLE)) {
+                if (sigaltstack(&parent_stack, nullptr) != 0) {
+                    std::terminate();
+                }
+            }
+
+            if (sigaction(coroutine::signal_identifier, &parent_signal_action, nullptr) != 0) {
+                std::terminate();
+            }
+            if (sigprocmask(SIG_SETMASK, &parent_signal_set, nullptr) != 0) {
+                std::terminate();
+            }
+
+            // Step 7:
+            // Save the current machine context of the Create function.
+            // This allows us to return to this point after the next trampoline step.
+            if (sigsetjmp(this->parent_context, 0) == 0) {
+                // Step 8:
+                // Restore the previously saved machine context of the trampoline function to again transfer execution control onto the alternate stack.
+                // This time without(!) signal handler scope.
+                siglongjmp(this->coroutine_context, 1);
+            }
+
+            // Restore the currently running coroutine.
+            gtl::current_coroutine = parent_coroutine;
+
+            // Step 14:
+            // Return to the calling application.
+        }
+
+    private:
+        /// @brief  Signal handler, called by the os with a new stack when this class calls raise.
+        /// @param  signal_identifier - The identifying code of the raised signal.
+        static void signal_handler_trampolene(int signal_identifier) {
+            // Don't need to validate which signal it is as this routine only handles one.
+            static_cast<void>(signal_identifier);
+
+            // Step 5:
+            // After the trampoline function asynchronously entered, save its machine context in the structure.
+            // Then immediately return from it to terminate the signal handler scope.
+            if (sigsetjmp(gtl::current_coroutine->coroutine_context, 0) == 0) {
+                gtl::current_coroutine->signal_raised = 1;
+                return;
+            }
+
+            // Step 9:
+            // After reaching the trampoline function again, immediately bootstrap into a clean stack frame by calling a second function.
+            gtl::current_coroutine->bootstrap();
+        }
+
+        /// @brief  Container function jumped to and from when joining and yielding from a coroutine.
+        static void bootstrap(void) {
+            // Beware this function cannot be a member function, because the coroutine could have been moved while we were away.
+            // Moving the coroutine changes the "this" pointer, therefore the code "this->function()" would be invalid.
+
+            // Step 10:
+            // Set the new signal mask to be the same as the original signal mask which was active when the coroutine was created.
+            // This is required because in the first trampoline step we usually had at least the worker signal blocked.
+            if (sigprocmask(SIG_SETMASK, &gtl::current_coroutine->parent_signal_set, nullptr) != 0) {
+                std::terminate();
+            }
+
+            // Step 11:
+            // Load the passed startup information (the function) from the constructor into local (stack based) variables.
+            // This is not required as the coroutine is an raii class.
+            //lambda function = gtl::current_coroutine->function;
+
+            // Step 12:
+            // Save the current machine context for later restoring by the calling application.
+            if (sigsetjmp(gtl::current_coroutine->coroutine_context, 0) == 0) {
+                // Step 13:
+                // Restore the previously saved machine context of the coroutine to transfer execution control back to it.
+                siglongjmp(gtl::current_coroutine->parent_context, 1);
+            }
+
+            // The thread function call.
+            gtl::current_coroutine->function();
+
+            // Clear the signal raised flag to indicate the coroutine is finished.
+            gtl::current_coroutine->signal_raised = 0;
+
+            // Exit by jumping to the creator location.
+            siglongjmp(gtl::current_coroutine->parent_context, 1);
+
+            // NEVER REACHED.
+            std::terminate();
+        }
+
+    public:
+        /// @brief  Get the unique identifier of the coroutine.
+        /// @return The unique identider.
+        const id& get_id(void) const {
+            return this->identifier;
+        }
+
+        /// @brief  Checks whether the coroutine is joinable, i.e. unfinished.
+        /// @return True if the coroutine is unfinished, false otherwise.
+        bool joinable(void)  {
+            return this->signal_raised;
+        }
+
+        /// @brief  Switches to the coroutine's execution context and continues execution, i.e. runs the coroutine.
+        void join(void) {
+            GTL_COROUTINE_ASSERT(this->joinable(), "Coroutine must be joinable to be joined.");
+            // Store the currently running coroutine.
+            coroutine* parent_coroutine = gtl::current_coroutine;
+            // Set the now running coroutine.
+            gtl::current_coroutine = this;
+            // Switch execution contexts.
+            if (sigsetjmp(gtl::current_coroutine->parent_context, 0) == 0) {
+                siglongjmp(gtl::current_coroutine->coroutine_context, 1);
+            }
+            // Upon return reset the currently running coroutine.
+            gtl::current_coroutine = parent_coroutine;
+        }
+
+    private:
+        /// @brief  Yield from the coroutine, i.e. force a return to the parent execution context.
+        void yield(void) {
+            GTL_COROUTINE_ASSERT(gtl::current_coroutine != nullptr, "A coroutine must be running to yield.");
+            if (sigsetjmp(gtl::current_coroutine->coroutine_context, 0) == 0) {
+                siglongjmp(gtl::current_coroutine->parent_context, 1);
+            }
+        }
+    };
+}
+
+namespace gtl {
+    /// @brief  The this_coroutine class cannot be instantiated and provides static functions to operate on the current coroutine.
+    class this_coroutine {
+        // This class could be a namespace to match that of std::thread.
+        // However, to control access to "gtl::current_coroutine->yield();" this needs to be a friend class of coroutine.
+
+    private:
+        /// @brief  Deleted destructor.
+        ~this_coroutine(void) = delete;
+        /// @brief  Deleted constructor.
+        this_coroutine(void) = delete;
+        /// @brief  Deleted copy constructor.
+        this_coroutine(const this_coroutine&) = delete;
+        /// @brief  Deleted move constructor.
+        this_coroutine(this_coroutine&&) = delete;
+        /// @brief  Deleted copy assignement operator.
+        this_coroutine& operator=(const this_coroutine&) = delete;
+        /// @brief  Deleted move assignement operator.
+        this_coroutine& operator=(this_coroutine&&) = delete;
+
+    public:
+        /// @brief  Get the unique identifier of the currently running coroutine if there is one.
+        /// @return The unique identider of the currently running coroutine or a null id if there isn't one.
+        static coroutine::id get_id(void) {
+            if (gtl::current_coroutine == nullptr) {
+                return coroutine::id();
+            }
+            return gtl::current_coroutine->get_id();
+        }
+
+        /// @brief  Yield from the currently running coroutine, i.e. force a return to the parent execution context.
+        static void yield(void) {
+            GTL_COROUTINE_ASSERT(gtl::current_coroutine != nullptr, "A coroutine must be running to yield.");
+            gtl::current_coroutine->yield();
+        }
+
+        /// @brief  Sleep a coroutine for an amount of time, provided to match the std::thread api.
+        /// @param  duration - Length of time to sleep for.
+        template<typename number_of_ticks_type, typename period_type>
+        static void sleep_for(const std::chrono::duration<number_of_ticks_type, period_type>& duration) {
+            GTL_COROUTINE_ASSERT(gtl::current_coroutine != nullptr, "A coroutine must be running to sleep.");
+            std::this_thread::sleep_for(duration);
+        }
+
+        /// @brief  Sleep a coroutine until a specific time, provided to match the std::thread api.
+        /// @param  time_point - Time to sleep until.
+        template<typename clock_type, typename duration_type>
+        static void sleep_until(const std::chrono::time_point<clock_type, duration_type>& time_point) {
+             GTL_COROUTINE_ASSERT(gtl::current_coroutine != nullptr, "A coroutine must be running to sleep.");
+            std::this_thread::sleep_until(time_point);
+        }
+    };
+}
+
+#undef GTL_COROUTINE_ASSERT
+
+#endif // GTL_COROUTINE_HPP
