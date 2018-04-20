@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_COROUTINE_HPP
 
 #ifdef _DEBUG
-/// @brief A simple assert macro to break the program is the coroutine is missued.
+/// @brief A simple assert macro to break the program if the coroutine is missued.
 #   define GTL_COROUTINE_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 //  @brief At release time the assert macro is implemented as a nop.
