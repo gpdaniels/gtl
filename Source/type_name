@@ -104,7 +104,7 @@ namespace gtl {
             /// @param  starting_index - The index of the string to start searching from.
             /// @return The index of the character if found, otherwise 0xFFFFFFFFFFFFFFFF.
             constexpr unsigned long long find(const char character, const unsigned long long starting_index = 0) const {
-                return starting_index >= length ? 0xFFFFFFFFFFFFFFFF : this->string[starting_index] == character ? starting_index : find(character, starting_index + 1);
+                return starting_index >= length ? 0xFFFFFFFFFFFFFFFF : this->string[starting_index] == character ? starting_index : this->find(character, starting_index + 1);
             }
         };
 
