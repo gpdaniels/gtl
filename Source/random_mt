@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_RANDOM_MT_HPP
 
 #ifdef _DEBUG
-/// @brief A simple assert macro to break the program if the random_mt is missued.
+/// @brief A simple assert macro to break the program if the random_mt is missused.
 #   define GTL_RANDOM_MT_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 //  @brief At release time the assert macro is implemented as a nop.
