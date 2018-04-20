@@ -40,21 +40,21 @@ namespace gtl {
 
     private:
         /// @brief  Type selection template that takes an unsigned index and returns one of three types for indexes of zero, one, and greater-than-one repectively.
-        template <unsigned long long template_index_parameter, typename template_zero_type, typename template_one_type, typename template_more_type>
-        struct zero_one_or_more_switch {
-            using type = template_more_type;
+        template <unsigned long long index_parameter, typename zero_type, typename one_type, typename more_type>
+        struct switch_zero_one_or_more_type {
+            using type = more_type;
         };
 
         /// @brief  Type selection specialisation for an index of 1.
-        template <typename template_zero_type, typename template_one_type, typename template_more_type>
-        struct zero_one_or_more_switch<1, template_zero_type, template_one_type, template_more_type> {
-            using type = template_one_type;
+        template <typename zero_type, typename one_type, typename more_type>
+        struct switch_zero_one_or_more_type<1, zero_type, one_type, more_type> {
+            using type = one_type;
         };
 
         /// @brief  Type selection specialisation for an index of 0.
-        template <typename template_zero_type, typename template_one_type, typename template_more_type>
-        struct zero_one_or_more_switch<0, template_zero_type, template_one_type, template_more_type> {
-            using type = template_zero_type;
+        template <typename zero_type, typename one_type, typename more_type>
+        struct switch_zero_one_or_more_type<0, zero_type, one_type, more_type> {
+            using type = zero_type;
         };
 
     private:
@@ -114,10 +114,10 @@ namespace gtl {
 
     public:
         /// @brief  This is the type of the elements of the array at this dimension.
-        using slice_type = typename zero_one_or_more_switch<sizeof...(dimension_sizes), deferred_invalid<array_nd>, deferred_element<array_nd>, deferred_array<array_nd> >::type::template slice_type<dimension_sizes...>;
+        using slice_type = typename switch_zero_one_or_more_type<sizeof...(dimension_sizes), deferred_invalid<array_nd>, deferred_element<array_nd>, deferred_array<array_nd> >::type::template slice_type<dimension_sizes...>;
 
         /// @brief  This is the type of data stored at this dimension.
-        using array_type = typename zero_one_or_more_switch<sizeof...(dimension_sizes), deferred_invalid<array_nd>, deferred_element<array_nd>, deferred_array<array_nd> >::type::template array_type_validator<dimension_sizes...>::array_type;
+        using array_type = typename switch_zero_one_or_more_type<sizeof...(dimension_sizes), deferred_invalid<array_nd>, deferred_element<array_nd>, deferred_array<array_nd> >::type::template array_type_validator<dimension_sizes...>::array_type;
 
     public:
         /// @brief  The actual multi-dimensional array data.
