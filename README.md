@@ -8,6 +8,7 @@ The current classes are as described below:
 | Class             | Description                                              |
 |------------------:|:---------------------------------------------------------|
 | **array_nd**      | N-dimensional staticly sized array.                      |
+| **coroutine**     | Setjump / longjump implementation of coroutines.         |
 | **type_id**       | Simple run-time-type-information (rtti) with -fno-rtti   |
 | **type_name**     | Compile-time type name as a string with -fno-rtti.       |
 
