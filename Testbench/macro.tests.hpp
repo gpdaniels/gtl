@@ -54,11 +54,14 @@ extern "C" int printf(const char*, ...);
     N, N, N, N, N, N, N, N, N, N, N, N, N, N, N, N, \
     N, N, N, N, N, N, N, N, N, N, N, N, N, N, N, 1, 0)(__VA_ARGS__))
 
-/// @brief  Variable to hold the number of "REQUIRE" failures in tests.
+/// @brief  Variable to hold the number of "REQUIRE" calls.
+extern unsigned long long REQUIRE_COUNT;
+
+/// @brief  Variable to hold the number of "REQUIRE" failures.
 extern unsigned long long REQUIRE_FAILURE_COUNT;
 
 /// @brief  Test an assertion and print output if the test fails.
-#define REQUIRE_1(TEST) UNUSED((TEST) || ( \
+#define REQUIRE_1(TEST) UNUSED(((++REQUIRE_COUNT), (TEST)) || ( \
     PRINT("REQUIRE failure:"), \
     PRINT("  Failure #: '%lld'", ++REQUIRE_FAILURE_COUNT), \
     PRINT("  File:      '%s'", __FILE__), \

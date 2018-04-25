@@ -28,6 +28,6 @@ int main(int ArgumentCount, char* ArgumentArray[]) {
     UNUSED(ArgumentArray);
     PRINT("Starting test...");
     TEST_CALL(SUB_TEST_GROUP, SUB_TEST_NAME);
-    PRINT("Finish test, detected '%lld' errors.", REQUIRE_FAILURE_COUNT);
+    PRINT("Finish test, '%lld' assertions, detected '%lld' errors.", REQUIRE_COUNT, REQUIRE_FAILURE_COUNT);
     return REQUIRE_FAILURE_COUNT;
 }

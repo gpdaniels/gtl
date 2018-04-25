@@ -20,4 +20,5 @@ THE SOFTWARE
 
 #include "macro.tests.hpp"
 
+unsigned long long REQUIRE_COUNT = 0;
 unsigned long long REQUIRE_FAILURE_COUNT = 0;
