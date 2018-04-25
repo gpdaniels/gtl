@@ -574,7 +574,7 @@ namespace gtl {
         /// @param  time_point - Time to sleep until.
         template<typename clock_type, typename duration_type>
         static void sleep_until(const std::chrono::time_point<clock_type, duration_type>& time_point) {
-             GTL_COROUTINE_ASSERT(gtl::current_coroutine != nullptr, "A coroutine must be running to sleep.");
+            GTL_COROUTINE_ASSERT(gtl::current_coroutine != nullptr, "A coroutine must be running to sleep.");
             std::this_thread::sleep_until(time_point);
         }
     };
