@@ -10,6 +10,7 @@ The current classes are as described below:
 | **array_nd**      | N-dimensional staticly sized array.                      |
 | **barrier**       | Thread syncronisation barrier.                           |
 | **coroutine**     | Setjump/longjump implementation of stackful coroutines.  |
+| **pimpl**         | A statically sized pointer to implementation wrapper.    |
 | **random_mt**     | Mersenne twister pseudo-random number generator.         | 
 | **spin_lock**     | Spin lock implemented using an atomic flag.              | 
 | **type_id**       | Simple run-time-type-information (rtti) with -fno-rtti.  |
