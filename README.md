@@ -12,6 +12,7 @@ The current classes are as described below:
 | **coroutine**     | Setjump/longjump implementation of stackful coroutines.  |
 | **pimpl**         | A statically sized pointer to implementation wrapper.    |
 | **random_mt**     | Mersenne twister pseudo-random number generator.         | 
+| **semaphore**     | Semaphore made using a mutex and condition variable.     | 
 | **spin_lock**     | Spin lock implemented using an atomic flag.              | 
 | **type_id**       | Simple run-time-type-information (rtti) with -fno-rtti.  |
 | **type_name**     | Compile-time type name as a string with -fno-rtti.       |

@@ -1,0 +1,98 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_SEMAPHORE_HPP
+#define GTL_SEMAPHORE_HPP
+
+#ifdef _DEBUG
+/// @brief A simple assert macro to break the program if the semaphore is missused.
+#   define GTL_SEMAPHORE_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+//  @brief At release time the assert macro is implemented as a nop.
+#   define GTL_SEMAPHORE_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+/// @brief  To avoid including any extra headers in this header std::unique_lock is forward declared.
+namespace std {
+    template <typename mutex_type>
+    class unique_lock;
+}
+
+namespace gtl {
+    /// @brief  The semaphore class is a mutex structure that atomically counts notifications.
+    template <typename mutex_type, typename condition_variable_type>
+    class semaphore final {
+    private:
+        /// @brief  This is the main variable in the semaphore, it it increased by notifications and decreased after successful waits.
+        unsigned long long int count;
+
+        /// @brief  To control access to the semaphore's count a mutex is used, this keeps the structure thread safe.
+        mutex_type mutex;
+
+        /// @brief  To wait on the state of the mutex a condition_variable is used, allowing logic in the otherwise blocking mutex locking operations.
+        condition_variable_type condition_variable;
+
+
+    public:
+        /// @brief  Destructor asserts that the semaphore's count is empty.
+        ~semaphore(void) {
+            GTL_SEMAPHORE_ASSERT(this->count == 0, "Ensure that the semaphore count is empty when it is destructed.");
+        }
+
+        /// @brief  Constructor allows the semaphore's count to be initialised, but defaults to zero.
+        /// @param  count - The initial semaphore count.
+        semaphore(unsigned int count = 0)
+            : count(count) {
+        }
+
+        /// @brief  Notify the semaphore, increases the semaphore's count by one and notifys one thread of any waiting on it.
+        void notify(void) {
+            this->mutex.lock();
+            ++this->count;
+            this->mutex.unlock();
+            this->condition_variable.notify_one();
+        }
+
+        /// @brief  Wait on the semaphore, this is a blocking wait on the semaphore's count being non zero before subtracting one.
+        void wait(void) {
+            std::unique_lock<mutex_type> lock(this->mutex);
+            this->condition_variable.wait(lock, [&]{ return this->count > 0; });
+            --this->count;
+        }
+
+        /// @brief  Try waiting on the semaphore, this is a non-blocking wait on the semaphore's count being non zero before subtracting one.
+        /// @return True if the semaphore's count was non-zero, false otherwise.
+        bool try_wait(void) {
+            this->mutex.lock();
+            if (this->count > 0) {
+                --this->count;
+                this->mutex.unlock();
+                return true;
+            }
+            this->mutex.unlock();
+            return false;
+        }
+    };
+}
+
+#undef GTL_SEMAPHORE_ASSERT
+
+#endif // GTL_SEMAPHORE_HPP
