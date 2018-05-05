@@ -33,7 +33,7 @@ THE SOFTWARE
 #include <atomic>
 
 namespace gtl {
-    /// @brief  The spin_lock is a simple mutex structure that doens't put threads to sleep.
+    /// @brief  The spin_lock is a simple mutex structure that doesn't put threads to sleep.
     class spin_lock final {
         /// @brief The lock flag determines if the spin_lock is locked or not.
         std::atomic_flag flag = ATOMIC_FLAG_INIT;
@@ -66,4 +66,4 @@ namespace gtl {
 
 #undef GTL_SPIN_LOCK_ASSERT
 
-#endif // GTL_SPINLOCK_HPP
+#endif // GTL_SPIN_LOCK_HPP
