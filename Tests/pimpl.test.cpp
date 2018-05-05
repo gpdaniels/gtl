@@ -45,7 +45,7 @@ int test_pimpl::return_value(void) const {
 }
 
 TEST(traits, sizeof) {
-    REQUIRE(sizeof(test_pimpl) >= 1, "sizeof(test_pimpl) = %ld, expected >= %lld", sizeof(test_pimpl), 1ull);
+    REQUIRE(sizeof(test_pimpl) == 4, "sizeof(test_pimpl) = %ld, expected >= %lld", sizeof(test_pimpl), 1ull);
 }
 
 TEST(traits, is_not_pod) {
