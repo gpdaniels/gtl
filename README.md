@@ -10,6 +10,7 @@ The current classes are as described below:
 | **array_nd**      | N-dimensional staticly sized array.                      |
 | **barrier**       | Thread syncronisation barrier.                           |
 | **coroutine**     | Setjump/longjump implementation of stackful coroutines.  |
+| **event**         | A thread safe multi-in/multi-out event/messaging system. |
 | **pimpl**         | A statically sized pointer to implementation wrapper.    |
 | **random_mt**     | Mersenne twister pseudo-random number generator.         | 
 | **semaphore**     | Semaphore made using a mutex and condition variable.     | 

@@ -1,0 +1,254 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_EVENT_HPP
+#define GTL_EVENT_HPP
+
+#ifdef _DEBUG
+/// @brief A simple assert macro to break the program if the event_manager or event_queue is missused.
+#   define GTL_EVENT_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+//  @brief At release time the assert macro is implemented as a nop.
+#   define GTL_EVENT_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+#include <memory>
+#include <mutex>
+#include <set>
+#include <deque>
+#include <condition_variable>
+
+namespace gtl {
+    /// @brief  Forward declare the event_queue class as it is used in the event_manager.
+    template <typename event_type>
+    class event_queue;
+
+    /// @brief  .
+    template <typename event_type>
+    class event_manager final {
+    private:
+        /// @brief  To control access to the event_manager's set of event_queues a mutex is used, this keeps the structure thread safe.
+        std::mutex mutex;
+
+        /// @brief  The event_queues that are subscribed to this event_manager which uniquely manages this event_type.
+        std::set<event_queue<event_type>*> subscribers;
+
+    public:
+        /// @brief  Defaulted destructor.
+        ~event_manager(void) = default;
+
+    private:
+        /// @brief  Defaulted constructor.
+        event_manager(void) = default;
+
+    public:
+        /// @brief  Deleted copy constructor.
+        event_manager(const event_manager&) = delete;
+
+        /// @brief  Deleted move construtor.
+        event_manager(event_manager&&) = delete;
+
+        /// @brief  Deleted copy assignmane operator.
+        event_manager& operator=(const event_manager&) = delete;
+
+        /// @brief  Deleted move assignmane operator.
+        event_manager& operator=(event_manager&&) = delete;
+
+    private:
+        /// @brief  Singleton instance helper function.
+        /// @return A reference to a static instance of this class.
+        static event_manager& get_instance(void) {
+            // Construct a static instance of this class, this is guaranteed to be thread safe by the standard.
+            static event_manager<event_type> instance;
+            return instance;
+        }
+
+    public:
+        /// @brief  Add an event_queue subscriber to this event_manager.
+        /// @param  subscriber - Pointer to an event_queue to be subscribed.
+        static void subscribe(event_queue<event_type>* subscriber) {
+            // Lock the subscriber mutex.
+            std::lock_guard<std::mutex> lock(event_manager::get_instance().mutex);
+            static_cast<void>(lock);
+
+            // Validate the event_queue isn't already subscribed.
+            GTL_EVENT_ASSERT(event_manager::get_instance().subscribers.find(subscriber) == event_manager::get_instance().subscribers.end(), "The subscriber is already registered with the event manager.");
+
+            // Add the new subscriber.
+            event_manager::get_instance().subscribers.insert(subscriber);
+        }
+
+        /// @brief  Remove an event_queue subscriber from this event_manager.
+        /// @param  subscriber - Pointer to an event_queue to be unsubscribed.
+        static void unsubscribe(event_queue<event_type>* subscriber) {
+            // Lock the subscriber mutex.
+            std::lock_guard<std::mutex> lock(event_manager::get_instance().mutex);
+            static_cast<void>(lock);
+
+            // Validate the event_queue is already subscribed.
+            GTL_EVENT_ASSERT(event_manager::get_instance().subscribers.find(subscriber) != event_manager::get_instance().subscribers.end(), "The subscriber is not registered with the event manager.");
+
+            // Remove the subscriber.
+            event_manager::get_instance().subscribers.erase(subscriber);
+        }
+
+    public:
+        /// @brief  Emit an event to a particular subscriber only.
+        /// @param  event - The event to emit.
+        /// @param  subscriber - The target subscriber event_queue.
+        static void emit(std::shared_ptr<event_type>&& event, event_queue<event_type>* subscriber) {
+            // Lock the subscriber mutex.
+            std::lock_guard<std::mutex> lock(event_manager::get_instance().mutex);
+            static_cast<void>(lock);
+
+            // Queue the event.
+            subscriber->push_back(std::move(event));
+        }
+
+        /// @brief  Emit an event to a particular subscriber only.
+        /// @param  event - The event to emit.
+        /// @param  subscriber - The target subscriber event_queue.
+        static void emit(event_type&& event, event_queue<event_type>* subscriber) {
+            event_manager::emit(std::make_shared<event_type>(std::move(event)), subscriber);
+        }
+
+        /// @brief  Emit an event to all subscribers.
+        /// @param  event - The event to emit.
+        static void emit(std::shared_ptr<event_type>&& event) {
+            // Lock the subscriber mutex.
+            std::lock_guard<std::mutex> lock(event_manager::get_instance().mutex);
+            static_cast<void>(lock);
+
+            // For each subscriber, queue the event.
+            const event_manager* const instance = &event_manager::get_instance();
+            std::shared_ptr<event_type> CachedEvent = std::move(event);
+            for (event_queue<event_type>* subscriber : instance->subscribers) {
+                subscriber->push_back(std::shared_ptr<event_type>(CachedEvent));
+            }
+        }
+
+        /// @brief  Emit an event to all subscribers.
+        /// @param  event - The event to emit.
+        static void emit(event_type&& event) {
+            event_manager::emit(std::make_shared<event_type>(std::move(event)));
+        }
+    };
+
+    /// @brief  .
+    template <typename event_type>
+    class event_queue {
+    private:
+        /// @brief  Friend the event_manager class to allow it to use the private push_back function to queue events.
+        friend class event_manager<event_type>;
+
+    private:
+        /// @brief  To control access to the event_queue's deque of events a mutex is used, this keeps the structure thread safe.
+        std::mutex mutex;
+
+        /// @brief  Optional condition_variable pointer, this is set in the constuctor to allow a class to wait on multiple event queues.
+        std::condition_variable* const signal;
+
+        /// @brief  The events themselves.
+        std::deque<std::shared_ptr<event_type>> events;
+
+    public:
+        /// @brief  Virtual destructor to automatically unsubscribe this event_queue from the event_manager for this event_type.
+        virtual ~event_queue(void) {
+            event_manager<event_type>::unsubscribe(this);
+        }
+
+    protected:
+        /// @brief  Constructor automatically subscribes this event_queue to the event_manager for this event_type.
+        event_queue(void)
+            : signal(nullptr) {
+            event_manager<event_type>::subscribe(this);
+        }
+
+        /// @brief  Constructor automatically subscribes this event_queue to the event_manager for this event_type.
+        /// @param  signal - A condition_variable that will be notified when events are ready to be processed.
+        event_queue(std::condition_variable& signal)
+            : signal(&signal) {
+            event_manager<event_type>::subscribe(this);
+        }
+
+    public:
+        /// @brief  Deleted copy constructor.
+        event_queue(const event_queue&) = delete;
+
+        /// @brief  Defaulted move constructor.
+        event_queue(event_queue&&) = default;
+
+        /// @brief  Deleted copy assignment operator.
+        event_queue& operator=(const event_queue&) = delete;
+
+        /// @brief  Defaulted move assignment operator.
+        event_queue& operator=(event_queue&&) = default;
+
+    private:
+        /// @brief  Add an event to the queue and notify the signal if there is one.
+        /// @param  event - The event to add to the queue.
+        void push_back(std::shared_ptr<event_type>&& event) {
+            // Push the event
+            this->mutex.lock();
+            this->events.emplace_back(std::move(event));
+            this->mutex.unlock();
+
+            // Send a signal to all threads waiting for data
+            if (this->signal) {
+                this->signal->notify_all();
+            }
+        }
+
+    protected:
+        /// @brief  Process the events in the queue by calling callback functions for each event type.
+        void process_events(void) {
+            // Lock the event data mutex.
+            std::lock_guard<std::mutex> lock(this->mutex);
+            static_cast<void>(lock);
+
+            // Raise each event.
+            for (const std::shared_ptr<event_type>& event : this->events) {
+
+                // If the event_type is invocable then just call it.
+                if constexpr (std::is_invocable<event_type>::value) {
+                    (*event)();
+                }
+
+                // Otherwise raise the callback function.
+                else {
+                    this->on_event(*event);
+                }
+            }
+
+            // Clear the raised events.
+            this->events.clear();
+        }
+
+        /// @brief  Default callback function for the event_type.
+        virtual void on_event(event_type&) {
+            GTL_EVENT_ASSERT(false, "Uncaptured event.");
+        }
+    };
+}
+
+#undef GTL_EVENT_ASSERT
+
+#endif // GTL_EVENT_HPP
