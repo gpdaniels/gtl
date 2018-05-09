@@ -7,6 +7,7 @@ The current classes are as described below:
 
 | Class             | Description                                              |
 |------------------:|:---------------------------------------------------------|
+| **any**           | A class that can hold any variable type.                 |
 | **array_nd**      | N-dimensional staticly sized array.                      |
 | **barrier**       | Thread syncronisation barrier.                           |
 | **coroutine**     | Setjump/longjump implementation of stackful coroutines.  |
