@@ -82,8 +82,8 @@ namespace gtl {
             unsigned long long int identifier;
 
         public:
-            /// @brief  .
-            /// @param  identifier - .
+            /// @brief  Construct an identifier type from an integer.
+            /// @param  identifier - The integer used as the id value.
             explicit id(unsigned long long int identifier = 0)
                 : identifier(identifier) {
             }
