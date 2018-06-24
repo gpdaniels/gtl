@@ -69,8 +69,10 @@ TEST(function, get_tick_step) {
 
 TEST(function, get_current_tick) {
     gtl::simulation_loop<100> simulation_loop;
+    REQUIRE(simulation_loop.update() == false);
     REQUIRE(simulation_loop.get_current_tick() == 0);
     std::this_thread::sleep_for(std::chrono::milliseconds(15));
+    REQUIRE(simulation_loop.update() == true);
     REQUIRE(simulation_loop.get_current_tick() == 1);
 }
 
