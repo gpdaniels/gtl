@@ -73,16 +73,18 @@ TEST(constructor, lamda_argument) {
 }
 
 TEST(constructor, move) {
-    gtl::coroutine coroutine(std::move(gtl::coroutine([](){})));
-    // Ensure coroutine has run.
-    coroutine.join();
+    gtl::coroutine coroutine1([](){});
+    gtl::coroutine coroutine2(std::move(coroutine1));
+    // Ensure coroutine2 has run.
+    coroutine2.join();
 }
 
 TEST(operator, move_assignment) {
-    gtl::coroutine coroutine;
-    coroutine = std::move(gtl::coroutine([](){}));
-    // Ensure coroutine has run.
-    coroutine.join();
+    gtl::coroutine coroutine1([](){});
+    gtl::coroutine coroutine2;
+    coroutine2 = std::move(coroutine1);
+    // Ensure coroutine2 has run.
+    coroutine2.join();
 }
 
 TEST(function, get_id) {
@@ -114,12 +116,13 @@ TEST(function, join) {
 }
 
 TEST(function, current_get_id) {
-    gtl::coroutine coroutine1;
-    REQUIRE(coroutine1.get_id() == gtl::coroutine::id{}, "Extected get_id() to be null for an empty coroutine.");
-    gtl::coroutine coroutine2 = gtl::coroutine([](){});
-    REQUIRE(coroutine2.get_id() != gtl::coroutine::id{}, "Extected get_id() to not be null for a coroutine with an uncalled function.");
-    // Ensure coroutine2 has run.
-    coroutine2.join();
+    gtl::coroutine::id id;
+    gtl::coroutine coroutine([&id](){
+        id = gtl::this_coroutine::get_id();
+    });
+    REQUIRE(coroutine.get_id() != gtl::coroutine::id{}, "Extected get_id() to not be null for a coroutine with an uncalled function.");
+    coroutine.join();
+    REQUIRE(coroutine.get_id() == id, "Extected get_id() be the same as the global call.");
 }
 
 TEST(function, current_yield) {

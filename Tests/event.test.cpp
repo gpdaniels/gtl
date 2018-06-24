@@ -67,6 +67,9 @@ private:
         this->value = data.value;
     }
 
+    // This line is just to silence a clang warning.
+    using gtl::event_queue<std::function<void(void)>>::on_event;
+
 public:
     void process(void) {
         gtl::event_queue<test_event>::process_events();

@@ -26,8 +26,8 @@ THE SOFTWARE
 
 #include <type_traits>
 
-template<>
-class test_pimpl::implementation final {
+template <>
+class test_pimpl::pimpl::implementation final {
 public:
     int value;
 public:
@@ -49,19 +49,19 @@ TEST(traits, sizeof) {
 }
 
 TEST(traits, is_not_pod) {
-    REQUIRE(std::is_pod<test_pimpl >::value == false, "Expected std::is_pod to be false.");
+    REQUIRE(std::is_pod<test_pimpl>::value == false, "Expected std::is_pod to be false.");
 }
 
 TEST(traits, is_not_trivial) {
-    REQUIRE(std::is_trivial<test_pimpl >::value == false, "Expected std::is_trivial to be false.");
+    REQUIRE(std::is_trivial<test_pimpl>::value == false, "Expected std::is_trivial to be false.");
 }
 
 TEST(traits, is_trivially_copyable) {
-    REQUIRE(std::is_trivially_copyable<test_pimpl >::value == true, "Expected std::is_trivially_copyable to be true.");
+    REQUIRE(std::is_trivially_copyable<test_pimpl>::value == true, "Expected std::is_trivially_copyable to be true.");
 }
 
 TEST(traits, is_standard_layout) {
-    REQUIRE(std::is_standard_layout<test_pimpl >::value == true, "Expected std::is_standard_layout to be true.");
+    REQUIRE(std::is_standard_layout<test_pimpl>::value == true, "Expected std::is_standard_layout to be true.");
 }
 
 TEST(evaluation, return_value) {
