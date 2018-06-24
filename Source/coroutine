@@ -71,10 +71,6 @@ namespace gtl {
         constexpr static const int signal_identifier = SIGUSR1;
 
     public:
-        /// @brief  The this_coroutine class is made a friend to allow it to access the private yield function.
-        friend class this_coroutine;
-
-    public:
         /// @brief  An identifier type used to uniquely identify coroutines.
         class id {
         private:
@@ -515,10 +511,9 @@ namespace gtl {
             gtl::current_coroutine = parent_coroutine;
         }
 
-    private:
         /// @brief  Yield from the coroutine, i.e. force a return to the parent execution context.
         void yield(void) {
-            GTL_COROUTINE_ASSERT(gtl::current_coroutine != nullptr, "A coroutine must be running to yield.");
+            GTL_COROUTINE_ASSERT(gtl::current_coroutine == this, "This coroutine must be running to yield.");
             if (sigsetjmp(gtl::current_coroutine->coroutine_context, 0) == 0) {
                 siglongjmp(gtl::current_coroutine->parent_context, 1);
             }
@@ -528,25 +523,7 @@ namespace gtl {
 
 namespace gtl {
     /// @brief  The this_coroutine class cannot be instantiated and provides static functions to operate on the current coroutine.
-    class this_coroutine {
-        // This class could be a namespace to match that of std::thread.
-        // However, to control access to "gtl::current_coroutine->yield();" this needs to be a friend class of coroutine.
-
-    private:
-        /// @brief  Deleted destructor.
-        ~this_coroutine(void) = delete;
-        /// @brief  Deleted constructor.
-        this_coroutine(void) = delete;
-        /// @brief  Deleted copy constructor.
-        this_coroutine(const this_coroutine&) = delete;
-        /// @brief  Deleted move constructor.
-        this_coroutine(this_coroutine&&) = delete;
-        /// @brief  Deleted copy assignement operator.
-        this_coroutine& operator=(const this_coroutine&) = delete;
-        /// @brief  Deleted move assignement operator.
-        this_coroutine& operator=(this_coroutine&&) = delete;
-
-    public:
+    namespace this_coroutine {
         /// @brief  Get the unique identifier of the currently running coroutine if there is one.
         /// @return The unique identider of the currently running coroutine or a null id if there isn't one.
         static coroutine::id get_id(void) {
@@ -577,7 +554,7 @@ namespace gtl {
             GTL_COROUTINE_ASSERT(gtl::current_coroutine != nullptr, "A coroutine must be running to sleep.");
             std::this_thread::sleep_until(time_point);
         }
-    };
+    }
 }
 
 #undef GTL_COROUTINE_ASSERT
