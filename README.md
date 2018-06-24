@@ -5,19 +5,20 @@ This repository aims is a collection of useful well-commented, self-contained, s
 
 The current classes are as described below:
 
-| Class             | Description                                              |
-|------------------:|:---------------------------------------------------------|
-| **any**           | A class that can hold any variable type.                 |
-| **array_nd**      | N-dimensional staticly sized array.                      |
-| **barrier**       | Thread syncronisation barrier.                           |
-| **coroutine**     | Setjump/longjump implementation of stackful coroutines.  |
-| **event**         | A thread safe multi-in/multi-out event/messaging system. |
-| **pimpl**         | A statically sized pointer to implementation wrapper.    |
-| **random_mt**     | Mersenne twister pseudo-random number generator.         | 
-| **semaphore**     | Semaphore made using a mutex and condition variable.     | 
-| **spin_lock**     | Spin lock implemented using an atomic flag.              | 
-| **type_id**       | Simple run-time-type-information (rtti) with -fno-rtti.  |
-| **type_name**     | Compile-time type name as a string with -fno-rtti.       |
+| Class               | Description                                              |
+|--------------------:|:---------------------------------------------------------|
+| **any**             | A class that can hold any variable type.                 |
+| **array_nd**        | N-dimensional staticly sized array.                      |
+| **barrier**         | Thread syncronisation barrier.                           |
+| **coroutine**       | Setjump/longjump implementation of stackful coroutines.  |
+| **event**           | A thread safe multi-in/multi-out event/messaging system. |
+| **pimpl**           | A statically sized pointer to implementation wrapper.    |
+| **random_mt**       | Mersenne twister pseudo-random number generator.         | 
+| **semaphore**       | Semaphore made using a mutex and condition variable.     | 
+| **simulation_loop** | Fixed time step helper class for creating game loops.    | 
+| **spin_lock**       | Spin lock implemented using an atomic flag.              | 
+| **type_id**         | Simple run-time-type-information (rtti) with -fno-rtti.  |
+| **type_name**       | Compile-time type name as a string with -fno-rtti.       |
 
 ## License ##
 
