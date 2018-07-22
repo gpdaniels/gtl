@@ -1,0 +1,294 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_ACCESS_HPP
+#define GTL_ACCESS_HPP
+
+#include <functional>
+
+namespace gtl {
+namespace access {
+    /// @brief  The connection template which when explicitly specialised routes a private member pointer to the return of a public friend function.
+    template <typename member_type, member_type member, typename connection_id>
+    class connection {
+        friend member_type get_member(connection_id) {
+            return member;
+        }
+    };
+
+    /// @brief  The target template provides helper types to handle conversion between the private members and new public members.
+    template <typename class_type, typename return_type, typename... arguments>
+    struct target;
+
+    /// @brief  Specialisation of the target template for member variables.
+    template <typename class_type, typename return_type>
+    struct target<class_type, return_type> {
+        using member_type = return_type(class_type::*);
+        using connection_type = return_type&;
+    };
+
+    /// @brief  Specialisation of the target template for static member variables.
+    template <typename return_type>
+    struct target<void, return_type> {
+        using member_type = return_type(*);
+        using connection_type = return_type&;
+    };
+
+    /// @brief  Specialisation of the target template for member functions.
+    template <typename class_type, typename return_type, typename... arguments>
+    struct target<class_type, return_type(arguments...)> {
+        using member_type = return_type(class_type::*)(arguments...);
+        using connection_type = std::function<return_type(arguments...)>;
+    };
+
+    /// @brief  Specialisation of the target template for const member functions.
+    template <typename class_type, typename return_type, typename... arguments>
+    struct target<class_type, return_type(arguments...) const> {
+        using member_type = return_type(class_type::*)(arguments...) const;
+        using connection_type = std::function<return_type(arguments...)>;
+    };
+
+    /// @brief  Specialisation of the target template for volatile member functions.
+    template <typename class_type, typename return_type, typename... arguments>
+    struct target<class_type, return_type(arguments...) volatile> {
+        using member_type = return_type(class_type::*)(arguments...) volatile;
+        using connection_type = std::function<return_type(arguments...)>;
+    };
+
+    /// @brief  Specialisation of the target template for volatile const member functions.
+    template <typename class_type, typename return_type, typename... arguments>
+    struct target<class_type, return_type(arguments...) volatile const> {
+        using member_type = return_type(class_type::*)(arguments...) volatile const;
+        using connection_type = std::function<return_type(arguments...)>;
+    };
+
+    /// @brief  Specialisation of the target template for static member functions.
+    template <typename return_type, typename... arguments>
+    struct target<void, return_type(arguments...)> {
+        using member_type = return_type(*)(arguments...);
+        using connection_type = std::function<return_type(arguments...)>;
+    };
+
+    /// @brief  Expansion macros to expand arguments 1024 times.
+    #define GTL_ACCESS_EXPAND(...)  GTL_ACCESS_EXPAND4(GTL_ACCESS_EXPAND4(GTL_ACCESS_EXPAND4(GTL_ACCESS_EXPAND4(__VA_ARGS__))))
+    #define GTL_ACCESS_EXPAND4(...) GTL_ACCESS_EXPAND3(GTL_ACCESS_EXPAND3(GTL_ACCESS_EXPAND3(GTL_ACCESS_EXPAND3(__VA_ARGS__))))
+    #define GTL_ACCESS_EXPAND3(...) GTL_ACCESS_EXPAND2(GTL_ACCESS_EXPAND2(GTL_ACCESS_EXPAND2(GTL_ACCESS_EXPAND2(__VA_ARGS__))))
+    #define GTL_ACCESS_EXPAND2(...) GTL_ACCESS_EXPAND1(GTL_ACCESS_EXPAND1(GTL_ACCESS_EXPAND1(GTL_ACCESS_EXPAND1(__VA_ARGS__))))
+    #define GTL_ACCESS_EXPAND1(...) GTL_ACCESS_EXPAND0(GTL_ACCESS_EXPAND0(GTL_ACCESS_EXPAND0(GTL_ACCESS_EXPAND0(__VA_ARGS__))))
+    #define GTL_ACCESS_EXPAND0(...) __VA_ARGS__
+
+    #define GTL_ACCESS_FOR_EACH_END(...)
+    #define GTL_ACCESS_FOR_EACH_OUT
+
+    #define GTL_ACCESS_EMPTY()
+    #define GTL_ACCESS_DEFER(EXPRESSION) EXPRESSION GTL_ACCESS_EMPTY()
+
+    #define GTL_ACCESS_FOR_EACH_GET_END(...)        GTL_ACCESS_FOR_EACH_GET_END_EXPAND
+    #define GTL_ACCESS_FOR_EACH_GET_END_EXPAND(...) GTL_ACCESS_FOR_EACH_GET_END_EXPANDED
+    #define GTL_ACCESS_FOR_EACH_GET_END_EXPANDED()  0, GTL_ACCESS_FOR_EACH_END
+
+    #define GTL_ACCESS_FOR_EACH_NEXT(TEST, SEPARATOR, NEXT)         GTL_ACCESS_FOR_EACH_NEXT_EXPAND(GTL_ACCESS_FOR_EACH_GET_END TEST, SEPARATOR, NEXT)
+    #define GTL_ACCESS_FOR_EACH_NEXT_EXPAND(TEST, SEPARATOR, NEXT)  GTL_ACCESS_FOR_EACH_NEXT_EXPANDED(TEST, GTL_ACCESS_SEPARATOR_##SEPARATOR NEXT, 0)
+    #define GTL_ACCESS_FOR_EACH_NEXT_EXPANDED(TEST, NEXT, ...)      NEXT GTL_ACCESS_FOR_EACH_OUT
+
+    #define GTL_ACCESS_FOR_EACH_PONG(FUNCTION, SEPARATOR, CLASS_NAME, ACCESS_TYPE, ACCESS_STORAGE, MEMBER_TYPE, MEMBER, NEXT, ...) \
+        FUNCTION##_##ACCESS_TYPE##_##ACCESS_STORAGE(CLASS_NAME, MEMBER_TYPE, MEMBER) \
+        GTL_ACCESS_DEFER(GTL_ACCESS_FOR_EACH_NEXT(NEXT, SEPARATOR, GTL_ACCESS_FOR_EACH_PING))(FUNCTION, SEPARATOR, CLASS_NAME, NEXT, __VA_ARGS__)
+
+    #define GTL_ACCESS_FOR_EACH_PING(FUNCTION, SEPARATOR, CLASS_NAME, ACCESS_TYPE, ACCESS_STORAGE, MEMBER_TYPE, MEMBER, NEXT, ...) \
+        FUNCTION##_##ACCESS_TYPE##_##ACCESS_STORAGE(CLASS_NAME, MEMBER_TYPE, MEMBER) \
+        GTL_ACCESS_DEFER(GTL_ACCESS_FOR_EACH_NEXT(NEXT, SEPARATOR, GTL_ACCESS_FOR_EACH_PONG))(FUNCTION, SEPARATOR, CLASS_NAME, NEXT, __VA_ARGS__)
+
+    /// @brief  Macro to apply another macro to each set of parameters adding a provided separator between outputs.
+    #define GTL_ACCESS_FOR_EACH(FUNCTION, SEPARATOR, CLASS_NAME, ...) \
+        GTL_ACCESS_EXPAND(GTL_ACCESS_FOR_EACH_PING(FUNCTION, SEPARATOR, CLASS_NAME, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
+
+    // Available separator symbols.
+    #define GTL_ACCESS_SEPARATOR_GTL_ACCESS_COMMA   ,
+    #define GTL_ACCESS_SEPARATOR_GTL_ACCESS_NOTHING
+
+    // Symbols for selecting the separator. Defined to enable syntax highlighting, and protect these symbols from being defined elsewhere.
+    #define GTL_ACCESS_COMMA    GTL_ACCESS_COMMA
+    #define GTL_ACCESS_NOTHING  GTL_ACCESS_NOTHING
+
+    // Symbols for defining inputs to the GTL_ACCESS_GENERATE macro. Defined to enable syntax highlighting, and protect these symbols from being defined elsewhere.
+    #define GTL_ACCESS_TYPE     GTL_ACCESS_TYPE
+    #define GTL_ACCESS_FUNC     GTL_ACCESS_FUNCTION
+    #define GTL_ACCESS_FUNCTION GTL_ACCESS_FUNCTION
+
+    // Generation of connection_id type names using the class name, member name and line number.
+    #define GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)                GTL_ACCESS_CONNECTION_ID_EXPAND(CLASS_NAME, MEMBER_NAME, __LINE__)
+    #define GTL_ACCESS_CONNECTION_ID_EXPAND(CLASS_NAME, MEMBER_NAME, LINE)   GTL_ACCESS_CONNECTION_ID_EXPANDED(CLASS_NAME, MEMBER_NAME, LINE)
+    #define GTL_ACCESS_CONNECTION_ID_EXPANDED(CLASS_NAME, MEMBER_NAME, LINE) connection_##CLASS_NAME##_##MEMBER_NAME##LINE
+
+    // There are three stages of construction of the wrapping class which are performed for each private member.
+    // 1) CONNECT:
+    //    - Define the unique connection_id for accessing this private member.
+    //    - Declare the member accessor friend function using the unique connection_id.
+    //    - Explicitly specialise the connection template with the private member.
+    // 2) GENERATE:
+    //    - Define a public member reference that will reference the private member.
+    // 3) INITIALISE:
+    //    - Point the public member reference at the private member.
+
+    // There are three storage classes allowed for members of a class which must each be handled:
+    // The storage classes allowed in classes are: automatic, static, and mutable.
+
+    // Connecting automatic member variables.
+    #define GTL_ACCESS_CONNECT_GTL_ACCESS_TYPE_auto(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}; \
+        target<CLASS_NAME, MEMBER_TYPE>::member_type get_member(GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)); \
+        template class connection<target<CLASS_NAME, MEMBER_TYPE>::member_type, &CLASS_NAME::MEMBER_NAME, GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)>;
+
+    // Connecting static member variables.
+    #define GTL_ACCESS_CONNECT_GTL_ACCESS_TYPE_static(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}; \
+        target<void, MEMBER_TYPE>::member_type get_member(GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)); \
+        template class connection<target<void, MEMBER_TYPE>::member_type, &CLASS_NAME::MEMBER_NAME, GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)>;
+
+    // Connecting mutable member variables.
+    #define GTL_ACCESS_CONNECT_GTL_ACCESS_TYPE_mutable(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}; \
+        target<CLASS_NAME, MEMBER_TYPE>::member_type get_member(GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)); \
+        template class connection<target<CLASS_NAME, MEMBER_TYPE>::member_type, &CLASS_NAME::MEMBER_NAME, GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)>;
+
+    // Default to automatic if no storage class is given.
+    #define GTL_ACCESS_CONNECT_GTL_ACCESS_TYPE_(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        GTL_ACCESS_CONNECT_GTL_ACCESS_TYPE_auto(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME)
+
+
+    // Connecting automatic member functions.
+    #define GTL_ACCESS_CONNECT_GTL_ACCESS_FUNCTION_auto(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}; \
+        target<CLASS_NAME, MEMBER_TYPE>::member_type get_member(GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)); \
+        template class connection<target<CLASS_NAME, MEMBER_TYPE>::member_type, &CLASS_NAME::MEMBER_NAME, GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)>;
+
+    // Connecting static member functions.
+    #define GTL_ACCESS_CONNECT_GTL_ACCESS_FUNCTION_static(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}; \
+        target<void, MEMBER_TYPE>::member_type get_member(GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)); \
+        template class connection<target<void, MEMBER_TYPE>::member_type, &CLASS_NAME::MEMBER_NAME, GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)>;
+
+    // Connecting mutable member functions.
+    #define GTL_ACCESS_CONNECT_GTL_ACCESS_FUNCTION_mutable(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}; \
+        target<CLASS_NAME, MEMBER_TYPE>::member_type get_member(GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)); \
+        template class connection<target<CLASS_NAME, MEMBER_TYPE>::member_type, &CLASS_NAME::MEMBER_NAME, GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)>;
+
+    // Default to automatic if no storage class is given.
+    #define GTL_ACCESS_CONNECT_GTL_ACCESS_FUNCTION_(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        GTL_ACCESS_CONNECT_GTL_ACCESS_FUNCTION_auto(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME)
+
+
+    // Generating automatic member variables.
+    #define GTL_ACCESS_GENERATE_GTL_ACCESS_TYPE_auto(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        gtl::access::target<CLASS_NAME, MEMBER_TYPE>::connection_type MEMBER_NAME;
+
+    // Generating static member variables.
+    #define GTL_ACCESS_GENERATE_GTL_ACCESS_TYPE_static(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        gtl::access::target<void, MEMBER_TYPE>::connection_type MEMBER_NAME;
+
+    // Generating mutable member variables.
+    #define GTL_ACCESS_GENERATE_GTL_ACCESS_TYPE_mutable(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        gtl::access::target<CLASS_NAME, MEMBER_TYPE>::connection_type MEMBER_NAME;
+
+    // Default to automatic if no storage class is given.
+    #define GTL_ACCESS_GENERATE_GTL_ACCESS_TYPE_(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        GTL_ACCESS_GENERATE_GTL_ACCESS_TYPE_auto(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME)
+
+
+    // Generating automatic member functions.
+    #define GTL_ACCESS_GENERATE_GTL_ACCESS_FUNCTION_auto(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        gtl::access::target<CLASS_NAME, MEMBER_TYPE>::connection_type MEMBER_NAME;
+
+    // Generating static member functions.
+    #define GTL_ACCESS_GENERATE_GTL_ACCESS_FUNCTION_static(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        gtl::access::target<void, MEMBER_TYPE>::connection_type MEMBER_NAME;
+
+    // Generating mutable member functions.
+    #define GTL_ACCESS_GENERATE_GTL_ACCESS_FUNCTION_mutable(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        gtl::access::target<CLASS_NAME, MEMBER_TYPE>::connection_type MEMBER_NAME;
+
+    // Default to automatic if no storage class is given.
+    #define GTL_ACCESS_GENERATE_GTL_ACCESS_FUNCTION_(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        GTL_ACCESS_GENERATE_GTL_ACCESS_FUNCTION_auto(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME)
+
+
+    // Initialising automatic member variables.
+    #define GTL_ACCESS_INITIALISE_GTL_ACCESS_TYPE_auto(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        MEMBER_NAME(instance->*get_member(gtl::access::GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}))
+
+    // Initialising static member variables.
+    #define GTL_ACCESS_INITIALISE_GTL_ACCESS_TYPE_static(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        MEMBER_NAME(*get_member(gtl::access::GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}))
+
+    // Initialising mutable member variables.
+    #define GTL_ACCESS_INITIALISE_GTL_ACCESS_TYPE_mutable(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        MEMBER_NAME(instance->*get_member(gtl::access::GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}))
+
+    // Default to automatic if no storage class is given.
+    #define GTL_ACCESS_INITIALISE_GTL_ACCESS_TYPE_(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        GTL_ACCESS_INITIALISE_GTL_ACCESS_TYPE_auto(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME)
+
+
+    // Initialising automatic member functions.
+    #define GTL_ACCESS_INITIALISE_GTL_ACCESS_FUNCTION_auto(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        MEMBER_NAME([instance](auto&&... params) { \
+            return (instance->*get_member(gtl::access::GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}))(std::forward<decltype(params)>(params)...); \
+        })
+
+    // Initialising static member functions.
+    #define GTL_ACCESS_INITIALISE_GTL_ACCESS_FUNCTION_static(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        MEMBER_NAME([instance](auto&&... params) { \
+            return (*get_member(gtl::access::GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}))(std::forward<decltype(params)>(params)...); \
+        })
+
+    // Initialising mutable member functions.
+    #define GTL_ACCESS_INITIALISE_GTL_ACCESS_FUNCTION_mutable(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        MEMBER_NAME([instance](auto&&... params) { \
+            return (instance->*get_member(gtl::access::GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}))(std::forward<decltype(params)>(params)...); \
+        })
+
+    // Default to automatic if no storage class is given.
+    #define GTL_ACCESS_INITIALISE_GTL_ACCESS_FUNCTION_(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
+        GTL_ACCESS_INITIALISE_GTL_ACCESS_FUNCTION_auto(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME)
+}
+
+    // Generate an access class for a given class name and members.
+    #define GTL_ACCESS_GENERATE(ACCESS_CLASS_NAME, CLASS_NAME, ...)                                       \
+        namespace gtl {                                                                                   \
+        namespace access {                                                                                \
+            GTL_ACCESS_FOR_EACH(GTL_ACCESS_CONNECT, GTL_ACCESS_NOTHING, CLASS_NAME, __VA_ARGS__)          \
+        }}                                                                                                \
+        class ACCESS_CLASS_NAME {                                                                         \
+        public:                                                                                           \
+            GTL_ACCESS_FOR_EACH(GTL_ACCESS_GENERATE, GTL_ACCESS_NOTHING, CLASS_NAME, __VA_ARGS__)         \
+        public:                                                                                           \
+            explicit ACCESS_CLASS_NAME(CLASS_NAME& instance)                                              \
+                : ACCESS_CLASS_NAME(&instance) {                                                          \
+            }                                                                                             \
+            explicit ACCESS_CLASS_NAME(CLASS_NAME* instance)                                              \
+                : GTL_ACCESS_FOR_EACH(GTL_ACCESS_INITIALISE, GTL_ACCESS_COMMA, CLASS_NAME, __VA_ARGS__) { \
+            }                                                                                             \
+        }
+}
+
+#endif // GTL_ACCESS_HPP
