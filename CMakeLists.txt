@@ -1,5 +1,5 @@
 # Define the minimum version of CMake that is required.
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
 
 # Project name.
 SET(PROJECT_NAME "gtl")
@@ -8,12 +8,28 @@ PROJECT(${PROJECT_NAME})
 # Print status.
 MESSAGE(STATUS "Configuring ${PROJECT_NAME}...")
 
-# Build flags.
-SET(CMAKE_CXX_FLAGS                 "-std=c++17 -Wall -Wextra -Wpedantic -Wfatal-errors -fno-exceptions -fno-rtti")
-SET(CMAKE_CXX_FLAGS_DEBUG           "-O0 -g3 -D_DEBUG")
-SET(CMAKE_CXX_FLAGS_RELEASE         "-O3 -g0 -DNDEBUG")
-SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-O2 -g3 -DNDEBUG")
-SET(CMAKE_CXX_FLAGS_MINSIZEREL      "-Os -g0 -DNDEBUG")
+# Require c11
+SET(CMAKE_C_STANDARD 11)
+SET(CMAKE_C_STANDARD_REQUIRED ON)
+SET(CMAKE_C_EXTENSIONS OFF)
+
+# Require c++14
+SET(CMAKE_CXX_STANDARD 17)
+SET(CMAKE_CXX_STANDARD_REQUIRED ON)
+SET(CMAKE_CXX_EXTENSIONS OFF)
+
+# Add warnings.
+IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -Wfatal-errors -Wall -Wextra -Wpedantic -Wno-unknown-pragmas -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-newline-eof -Wno-reserved-id-macro")
+ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -Wfatal-errors -Wall -Wextra -Wpedantic -Wno-unknown-pragmas")
+ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+
+ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+
+ELSE("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    MESSAGE(WARNING "Unsupported compiler.")
+ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 
 # Add the source and test folder to the include path.
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/Source/")
@@ -70,23 +86,23 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
     SET(SUB_TEST_GROUPS "")
     SET(SUB_TEST_NAMES "")
 
-    # Read the test file
+    # Read the test file.
     FILE(READ ${TEST_FILE} TEST_CODE_FILE)
     
-    # Replace block comments
+    # Replace block comments.
     STRING(ASCII 2 BLOCK_COMMENT_BEGIN)
     STRING(ASCII 3 BLOCK_COMMENT_CLOSE)
     STRING(REGEX REPLACE "[/][*]" "${BLOCK_COMMENT_BEGIN}" TEST_CODE_NOCOMMENTS "${TEST_CODE_FILE}")
     STRING(REGEX REPLACE "[*][/]" "${BLOCK_COMMENT_CLOSE}" TEST_CODE_NOCOMMENTS "${TEST_CODE_NOCOMMENTS}")
     STRING(REGEX REPLACE "${BLOCK_COMMENT_BEGIN}[^${BLOCK_COMMENT_CLOSE}]*${BLOCK_COMMENT_CLOSE}" "" TEST_CODE_NOCOMMENTS "${TEST_CODE_NOCOMMENTS}")
 
-    # Convert lines to list
+    # Convert lines to list.
     STRING(REGEX REPLACE "[\r]*[\n]+" ";" TEST_CODE "${TEST_CODE_NOCOMMENTS}")
 
-    # Loop over each line detecting tests
+    # Loop over each line detecting tests.
     FOREACH(TEST_CODE_LINE ${TEST_CODE})
     
-        # C++ only allows letters, digits and the underscore characters in variable names => [a-zA-Z_][0-9a-zA-Z_]*
+        # C++ only allows letters, digits and the underscore characters in variable names. => [a-zA-Z_][0-9a-zA-Z_]*
         IF("${TEST_CODE_LINE}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*TEST[ \t]*[\\(][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[,][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[\\)]")
             LIST(APPEND SUB_TEST_GROUPS ${CMAKE_MATCH_1})
             LIST(APPEND SUB_TEST_NAMES ${CMAKE_MATCH_2})
@@ -157,6 +173,8 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
         MATH(EXPR SUB_TEST_INDEX "${SUB_TEST_INDEX} + 1")
         
     ENDWHILE(SUB_TEST_INDEX LESS ${SUB_TEST_COUNT})
+
+    MESSAGE(STATUS " ")
 
 ENDFOREACH(TEST_FILE ${TEST_SOURCE_FILES})
 
