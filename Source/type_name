@@ -22,18 +22,11 @@ THE SOFTWARE
 #ifndef GTL_TYPE_NAME_HPP
 #define GTL_TYPE_NAME_HPP
 
-#if defined(__clang__)
-    // clang is supported.
-#elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
-    // gcc is supported.
-#else
-    #error "No support for this compiler."
-#endif
-
 namespace gtl {
     /// @brief  The type_name class provides a name function for a given type.
     template<typename type>
     class type_name final {
+        template <typename enum_type, enum_type enum_value> friend class enum_name;
     private:
         /// @brief  Template struct that holds a sequence of integers, derived from http://stackoverflow.com/a/32223343.
         template <typename integer_type, integer_type... indexes>
@@ -70,9 +63,9 @@ namespace gtl {
         };
 
     private:
-        /// @brief  The static_string class holds a compile-time constant string and provides both substring and character finding operations.
+        /// @brief  The string_literal class holds a compile-time constant string and provides both substring and character finding operations.
         template <unsigned long long length>
-        class static_string final {
+        class string_literal final {
         private:
             /// @brief  The compile-time string is held in a constant sized array.
             const char string[length];
@@ -81,7 +74,7 @@ namespace gtl {
             /// @param  string - Input string to wrap.
             /// @param  - Template holding the indexes of the string.
             template<unsigned long long... indexes>
-            constexpr static_string(const char(&string)[sizeof...(indexes)], integer_sequence<unsigned long long, indexes...>)
+            constexpr string_literal(const char(&string)[sizeof...(indexes)], integer_sequence<unsigned long long, indexes...>)
                 : string{ string[indexes]... } {
             }
         public:
@@ -93,10 +86,10 @@ namespace gtl {
         public:
             /// @brief  Create a substring from this string by providing a template start position, length, and integer_sequence of indexes.
             /// @param  - Template holding the indexes of the new string.
-            /// @return A static_string holding the requested substring.
+            /// @return A string_literal holding the requested substring.
             template<unsigned long long substring_start, unsigned long long substring_length, unsigned long long... substring_indexes>
-            constexpr static_string<substring_length + 1> substr(integer_sequence<unsigned long long, substring_indexes...>) const {
-                return static_string<substring_length + 1>({ this->string[substring_start + substring_indexes]..., '\0' }, make_integer_sequence<unsigned long long, substring_length + 1>{});
+            constexpr string_literal<substring_length + 1> substr(integer_sequence<unsigned long long, substring_indexes...>) const {
+                return string_literal<substring_length + 1>({ this->string[substring_start + substring_indexes]..., '\0' }, make_integer_sequence<unsigned long long, substring_length + 1>{});
             }
         public:
             /// @brief  Search for a given character within this string.
@@ -104,23 +97,45 @@ namespace gtl {
             /// @param  starting_index - The index of the string to start searching from.
             /// @return The index of the character if found, otherwise 0xFFFFFFFFFFFFFFFF.
             constexpr unsigned long long find(const char character, const unsigned long long starting_index = 0) const {
-                return starting_index >= length ? 0xFFFFFFFFFFFFFFFF : this->string[starting_index] == character ? starting_index : this->find(character, starting_index + 1);
+                return ((starting_index >= length) ? 0xFFFFFFFFFFFFFFFF : ((this->string[starting_index] == character) ? starting_index : this->find(character, starting_index + 1)));
+            }
+
+            /// @brief  Search for a given character within this string in reverse order starting from the end.
+            /// @param  character - The character to find.
+            /// @param  starting_index - The index of the string to start searching from.
+            /// @return The index of the character if found, otherwise 0xFFFFFFFFFFFFFFFF.
+            constexpr unsigned long long rfind(const char character, const unsigned long long starting_index = length - 1) const {
+                return ((starting_index == 0) ? ((this->string[starting_index] == character) ? starting_index : 0xFFFFFFFFFFFFFFFF) : ((this->string[starting_index] == character) ? starting_index : this->rfind(character, starting_index - 1)));
             }
         };
 
     public:
         /// @brief  Get the name of the classes template type as a string.
         /// @return Pointer to the string representation of the classes template type.
-        static const char* name(void) {
-            // Clang compiler format:   static const char *gtl::type_name<TYPE>::name() [template_type = TYPE]
-            // GNU compiler format:     static const char *gtl::type_name<template_type>::name() [with template_type = TYPE]
-            constexpr static const unsigned long long function_name_length = sizeof(__PRETTY_FUNCTION__);
-            constexpr static const static_string<function_name_length> function_name(__PRETTY_FUNCTION__, make_integer_sequence<unsigned long long, function_name_length>{});
-            constexpr static const unsigned long long type_name_start  = function_name.find('=') + 2;
-            constexpr static const unsigned long long type_name_end    = function_name_length - 2;
-            constexpr static const unsigned long long type_name_length = type_name_end - type_name_start;
-            constexpr static const static_string<type_name_length + 1> type_name_string = function_name.template substr<type_name_start, type_name_length>(make_integer_sequence<unsigned long long, type_name_length>{});
-            return type_name_string.c_str();
+        static const char* name(void) {           
+            // Clang compiler format:   __PRETTY_FUNCTION__ = static const char *gtl::type_name<TYPE_NAME>::name() [template_type = TYPE_NAME]
+            // GNU compiler format:     __PRETTY_FUNCTION__ = static const char *gtl::type_name<template_type>::name() [with template_type = TYPE_NAME]
+            // MSVC compiler format:    __FUNCSIG__         = const char *__cdecl gtl::type_name<TYPE_NAME>::name(void)
+
+#           if defined(__PRETTY_FUNCTION__) || defined(__GNUC__) || defined(__clang__)
+                constexpr static const unsigned long long function_name_length = sizeof(__PRETTY_FUNCTION__);
+                constexpr static const string_literal<function_name_length> function_name(__PRETTY_FUNCTION__, make_integer_sequence<unsigned long long, function_name_length>{});
+                constexpr static const unsigned long long type_name_start  = function_name.rfind('=') + 2;
+                constexpr static const unsigned long long type_name_end    = function_name_length - 2;
+                constexpr static const unsigned long long type_name_length = type_name_end - type_name_start;
+                constexpr static const string_literal<type_name_length + 1> type_name_string = function_name.template substr<type_name_start, type_name_length>(make_integer_sequence<unsigned long long, type_name_length>{});
+                return type_name_string.c_str();
+#           elif defined(__FUNCSIG__) || defined(_MSC_VER)
+                constexpr static const unsigned long long function_name_length = sizeof(__FUNCSIG__);
+                constexpr static const string_literal<function_name_length> function_name(__FUNCSIG__, make_integer_sequence<unsigned long long, function_name_length>{});
+                constexpr static const unsigned long long type_name_start  = function_name.find('<') + 1;
+                constexpr static const unsigned long long type_name_end    = function_name.rfind('>');
+                constexpr static const unsigned long long type_name_length = type_name_end - type_name_start;
+                constexpr static const string_literal<type_name_length + 1> type_name_string = function_name.template substr<type_name_start, type_name_length>(make_integer_sequence<unsigned long long, type_name_length>{});
+                return type_name_string.c_str();
+#           else
+#               error "Unsupported compiler."
+#           endif
         }
     };
 }
