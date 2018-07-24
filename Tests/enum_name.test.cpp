@@ -32,23 +32,15 @@ enum class test_enum {
     third
 };
 
-TEST(traits, sizeof) {
+TEST(traits, standard) {
     REQUIRE(sizeof(gtl::enum_name<test_enum, test_enum::first>) >= 1, "sizeof(gtl::enum_name<test_enum>) = %ld, expected >= %lld", sizeof(gtl::enum_name<test_enum, test_enum::first>), 1ull);
-}
 
-TEST(traits, is_pod) {
     REQUIRE((std::is_pod<gtl::enum_name<test_enum, test_enum::first> >::value == true), "Expected std::is_pod to be true.");
-}
 
-TEST(traits, is_trivial) {
     REQUIRE((std::is_trivial<gtl::enum_name<test_enum, test_enum::first> >::value == true), "Expected std::is_trivial to be true.");
-}
 
-TEST(traits, is_trivially_copyable) {
     REQUIRE((std::is_trivially_copyable<gtl::enum_name<test_enum, test_enum::first> >::value == true), "Expected std::is_trivially_copyable to be true.");
-}
 
-TEST(traits, is_standard_layout) {
     REQUIRE((std::is_standard_layout<gtl::enum_name<test_enum, test_enum::first> >::value == true), "Expected std::is_standard_layout to be true.");
 }
 

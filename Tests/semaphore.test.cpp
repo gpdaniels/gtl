@@ -27,23 +27,15 @@ THE SOFTWARE
 #include <mutex>
 #include <type_traits>
 
-TEST(traits, sizeof) {
+TEST(traits, standard) {
     REQUIRE((sizeof(gtl::semaphore<std::mutex, std::condition_variable>) >= 1), "sizeof(gtl::semaphore) = %ld, expected >= %lld", sizeof(gtl::semaphore<std::mutex, std::condition_variable>), 1ull);
-}
 
-TEST(traits, is_not_pod) {
     REQUIRE((std::is_pod<gtl::semaphore<std::mutex, std::condition_variable>>::value == false), "Expected std::is_pod to be false.");
-}
 
-TEST(traits, is_not_trivial) {
     REQUIRE((std::is_trivial<gtl::semaphore<std::mutex, std::condition_variable>>::value == false), "Expected std::is_trivial to be false.");
-}
 
-TEST(traits, is_not_trivially_copyable) {
     REQUIRE((std::is_trivially_copyable<gtl::semaphore<std::mutex, std::condition_variable>>::value == false), "Expected std::is_trivially_copyable to be false.");
-}
 
-TEST(traits, is_standard_layout) {
     REQUIRE((std::is_standard_layout<gtl::semaphore<std::mutex, std::condition_variable>>::value == true), "Expected std::is_standard_layout to be true.");
 }
 

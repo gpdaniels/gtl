@@ -26,23 +26,15 @@ THE SOFTWARE
 #include <thread>
 #include <type_traits>
 
-TEST(traits, sizeof) {
+TEST(traits, standard) {
     REQUIRE(sizeof(gtl::barrier) >= 1, "sizeof(gtl::barrier) = %ld, expected >= %lld", sizeof(gtl::barrier), 1ull);
-}
 
-TEST(traits, is_not_pod) {
     REQUIRE(std::is_pod<gtl::barrier>::value == false, "Expected std::is_pod to be false.");
-}
 
-TEST(traits, is_not_trivial) {
     REQUIRE(std::is_trivial<gtl::barrier>::value == false, "Expected std::is_trivial to be false.");
-}
 
-TEST(traits, is_not_trivially_copyable) {
     REQUIRE(std::is_trivially_copyable<gtl::barrier>::value == false, "Expected std::is_trivially_copyable to be false.");
-}
 
-TEST(traits, is_standard_layout) {
     REQUIRE(std::is_standard_layout<gtl::barrier>::value == true, "Expected std::is_standard_layout to be true.");
 }
 

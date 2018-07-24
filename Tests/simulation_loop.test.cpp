@@ -26,23 +26,15 @@ THE SOFTWARE
 #include <thread>
 #include <type_traits>
 
-TEST(traits, sizeof) {
+TEST(traits, standard) {
     REQUIRE(sizeof(gtl::simulation_loop<100>) >= 24, "sizeof(gtl::simulation_loop) = %ld, expected >= %lld", sizeof(gtl::simulation_loop<100>), 24ull);
-}
 
-TEST(traits, is_not_pod) {
     REQUIRE((std::is_pod<gtl::simulation_loop<100>>::value == false), "Expected std::is_pod to be false.");
-}
 
-TEST(traits, is_not_trivial) {
     REQUIRE((std::is_trivial<gtl::simulation_loop<100>>::value == false), "Expected std::is_trivial to be false.");
-}
 
-TEST(traits, is_trivially_copyable) {
     REQUIRE((std::is_trivially_copyable<gtl::simulation_loop<100>>::value == true), "Expected std::is_trivially_copyable to be true.");
-}
 
-TEST(traits, is_standard_layout) {
     REQUIRE((std::is_standard_layout<gtl::simulation_loop<100>>::value == true), "Expected std::is_standard_layout to be true.");
 }
 

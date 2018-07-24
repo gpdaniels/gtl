@@ -44,23 +44,15 @@ int test_pimpl::return_value(void) const {
     return (*this)->value;
 }
 
-TEST(traits, sizeof) {
+TEST(traits, standard) {
     REQUIRE(sizeof(test_pimpl) == 4, "sizeof(test_pimpl) = %ld, expected >= %lld", sizeof(test_pimpl), 1ull);
-}
 
-TEST(traits, is_not_pod) {
     REQUIRE(std::is_pod<test_pimpl>::value == false, "Expected std::is_pod to be false.");
-}
 
-TEST(traits, is_not_trivial) {
     REQUIRE(std::is_trivial<test_pimpl>::value == false, "Expected std::is_trivial to be false.");
-}
 
-TEST(traits, is_trivially_copyable) {
     REQUIRE(std::is_trivially_copyable<test_pimpl>::value == true, "Expected std::is_trivially_copyable to be true.");
-}
 
-TEST(traits, is_standard_layout) {
     REQUIRE(std::is_standard_layout<test_pimpl>::value == true, "Expected std::is_standard_layout to be true.");
 }
 

@@ -27,7 +27,7 @@ THE SOFTWARE
 
 #include <type_traits>
 
-TEST(traits, sizeof) {
+TEST(traits, standard) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -52,9 +52,7 @@ TEST(traits, sizeof) {
             );
         }
     );
-}
 
-TEST(traits, is_pod) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -79,9 +77,7 @@ TEST(traits, is_pod) {
             );
         }
     );
-}
 
-TEST(traits, is_trivial) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -106,9 +102,7 @@ TEST(traits, is_trivial) {
             );
         }
     );
-}
 
-TEST(traits, is_trivially_copyable) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -133,9 +127,7 @@ TEST(traits, is_trivially_copyable) {
             );
         }
     );
-}
 
-TEST(traits, is_standard_layout) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;

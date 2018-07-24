@@ -27,43 +27,35 @@ THE SOFTWARE
 
 #include <type_traits>
 
-TEST(traits, sizeof) {
+TEST(traits, standard) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
             REQUIRE(sizeof(gtl::type_name<type>) >= 1, "sizeof(gtl::type_name<type>) = %ld, expected >= %lld", sizeof(gtl::type_name<type>), 1ull);
         }
     );
-}
 
-TEST(traits, is_pod) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
             REQUIRE(std::is_pod<gtl::type_name<type> >::value == true, "Expected std::is_pod to be true.");
         }
     );
-}
 
-TEST(traits, is_trivial) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
             REQUIRE(std::is_trivial<gtl::type_name<type> >::value == true, "Expected std::is_trivial to be true.");
         }
     );
-}
 
-TEST(traits, is_trivially_copyable) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
             REQUIRE(std::is_trivially_copyable<gtl::type_name<type> >::value == true, "Expected std::is_trivially_copyable to be true.");
         }
     );
-}
 
-TEST(traits, is_standard_layout) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;

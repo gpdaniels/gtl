@@ -26,23 +26,15 @@ THE SOFTWARE
 #include <mutex>
 #include <type_traits>
 
-TEST(traits, sizeof) {
+TEST(traits, standard) {
     REQUIRE(sizeof(gtl::spin_lock) >= 1, "sizeof(gtl::spin_lock) = %ld, expected >= %lld", sizeof(gtl::spin_lock), 1ull);
-}
 
-TEST(traits, is_not_pod) {
     REQUIRE(std::is_pod<gtl::spin_lock>::value == false, "Expected std::is_pod to be false.");
-}
 
-TEST(traits, is_not_trivial) {
     REQUIRE(std::is_trivial<gtl::spin_lock>::value == false, "Expected std::is_trivial to be false.");
-}
 
-TEST(traits, is_not_trivially_copyable) {
     REQUIRE(std::is_trivially_copyable<gtl::spin_lock>::value == false, "Expected std::is_trivially_copyable to be false.");
-}
 
-TEST(traits, is_standard_layout) {
     REQUIRE(std::is_standard_layout<gtl::spin_lock>::value == true, "Expected std::is_standard_layout to be true.");
 }
 

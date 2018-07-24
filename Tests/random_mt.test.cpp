@@ -26,23 +26,15 @@ THE SOFTWARE
 #include <cmath>
 #include <type_traits>
 
-TEST(traits, sizeof) {
+TEST(traits, standard) {
     REQUIRE(sizeof(gtl::random_mt) >= 5000, "sizeof(gtl::random_mt) = %ld, expected >= %lld", sizeof(gtl::random_mt), 5000ull);
-}
 
-TEST(traits, is_pod) {
     REQUIRE(std::is_pod<gtl::random_mt>::value == true, "Expected std::is_pod to be true.");
-}
 
-TEST(traits, is_trivial) {
     REQUIRE(std::is_trivial<gtl::random_mt>::value == true, "Expected std::is_trivial to be true.");
-}
 
-TEST(traits, is_trivially_copyable) {
     REQUIRE(std::is_trivially_copyable<gtl::random_mt>::value == true, "Expected std::is_trivially_copyable to be true.");
-}
 
-TEST(traits, is_standard_layout) {
     REQUIRE(std::is_standard_layout<gtl::random_mt>::value == true, "Expected std::is_standard_layout to be true.");
 }
 
