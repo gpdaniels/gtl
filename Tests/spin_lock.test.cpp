@@ -19,6 +19,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
+#include <benchmark.tests.hpp>
 #include <macro.tests.hpp>
 
 #include <spin_lock>
@@ -40,7 +41,7 @@ TEST(traits, standard) {
 
 TEST(constructor, empty) {
     gtl::spin_lock spin_lock;
-    UNOPTIMISED(spin_lock);
+    DoNotOptimiseAway(spin_lock);
 }
 
 TEST(function, lock_and_unlock) {
@@ -59,7 +60,7 @@ TEST(evaluation, lock_guard) {
     gtl::spin_lock spin_lock;
     {
         std::lock_guard<gtl::spin_lock> lock_guard(spin_lock);
-        UNOPTIMISED(lock_guard);
+        DoNotOptimiseAway(lock_guard);
         REQUIRE(spin_lock.try_lock() == false, "Expected the newly constructed lock_guard to lock the spin_lock.");
     }
     REQUIRE(spin_lock.try_lock() == true, "Expected the destructed lock_guard to unlock the spin_lock.");
@@ -70,7 +71,7 @@ TEST(evaluation, unique_lock) {
     gtl::spin_lock spin_lock;
     {
         std::unique_lock<gtl::spin_lock> unique_lock(spin_lock);
-        UNOPTIMISED(unique_lock);
+        DoNotOptimiseAway(unique_lock);
         REQUIRE(spin_lock.try_lock() == false, "Expected the newly constructed unique_lock to lock the spin_lock.");
         spin_lock.unlock();
         REQUIRE(spin_lock.try_lock() == true, "Expected the unique_lock be unlockable.");

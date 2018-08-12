@@ -19,6 +19,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
+#include <benchmark.tests.hpp>
 #include <data.tests.hpp>
 #include <macro.tests.hpp>
 #include <template.tests.hpp>
@@ -189,20 +190,20 @@ TEST(constructor, empty) {
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
             gtl::array_nd<type> array_nd_0d;
-            UNOPTIMISED(array_nd_0d);
+            DoNotOptimiseAway(array_nd_0d);
             test_template<value_collection<0, 1, 10>>(
                 [](auto value_1)->void {
                     using type_value1 = decltype(value_1);
                     constexpr static const unsigned long long value1 = type_value1::value;
                     gtl::array_nd<type, value1> array_nd_1d;
-                    UNOPTIMISED(array_nd_1d);
+                    DoNotOptimiseAway(array_nd_1d);
                     test_template<value_collection<0, 1, 10>>(
                         [](auto value_2)->void {
                             using type_value2 = decltype(value_2);
                             constexpr static const unsigned long long value1 = type_value1::value;
                             constexpr static const unsigned long long value2 = type_value2::value;
                             gtl::array_nd<type, value1, value2> array_nd_2d;
-                            UNOPTIMISED(array_nd_2d);
+                            DoNotOptimiseAway(array_nd_2d);
                             test_template<value_collection<0, 1, 10>>(
                                 [](auto value_3)->void {
                                     using type_value3 = decltype(value_3);
@@ -210,7 +211,7 @@ TEST(constructor, empty) {
                                     constexpr static const unsigned long long value2 = type_value2::value;
                                     constexpr static const unsigned long long value3 = type_value3::value;
                                     gtl::array_nd<type, value1, value2, value3> array_nd_3d;
-                                    UNOPTIMISED(array_nd_3d);
+                                    DoNotOptimiseAway(array_nd_3d);
                                 }
                             );
                         }
@@ -309,7 +310,7 @@ TEST(constructor, list_initialiser) {
             constexpr static const unsigned long long value1 = type_value1::value;
             for (const type& value : test_data<type>()) {
                 gtl::array_nd<type, value1> array_nd_1d = {{ value }};
-                UNOPTIMISED(array_nd_1d);
+                DoNotOptimiseAway(array_nd_1d);
             }
             test_template<value_collection<1, 10>>(
                 [](auto value_2)->void {
@@ -318,7 +319,7 @@ TEST(constructor, list_initialiser) {
                     constexpr static const unsigned long long value2 = type_value2::value;
                     for (const type& value : test_data<type>()) {
                         gtl::array_nd<type, value1, value2> array_nd_2d = {{{ value }}};
-                        UNOPTIMISED(array_nd_2d);
+                        DoNotOptimiseAway(array_nd_2d);
                     }
                     test_template<value_collection<1, 10>>(
                         [](auto value_3)->void {
@@ -328,7 +329,7 @@ TEST(constructor, list_initialiser) {
                             constexpr static const unsigned long long value3 = type_value3::value;
                             for (const type& value : test_data<type>()) {
                                 gtl::array_nd<type, value1, value2, value3> array_nd_3d = {{{{{ value }}}}};
-                                UNOPTIMISED(array_nd_3d);
+                                DoNotOptimiseAway(array_nd_3d);
                             }
                         }
                     );

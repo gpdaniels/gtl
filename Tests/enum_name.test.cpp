@@ -19,6 +19,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
+#include <benchmark.tests.hpp>
 #include <data.tests.hpp>
 #include <macro.tests.hpp>
 
@@ -46,7 +47,7 @@ TEST(traits, standard) {
 
 TEST(constructor, empty) {
     gtl::enum_name<test_enum, test_enum::first> enum_name;
-    UNOPTIMISED(enum_name);
+    DoNotOptimiseAway(enum_name);
 }
 
 TEST(function, name) {

@@ -19,6 +19,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
+#include <benchmark.tests.hpp>
 #include <data.tests.hpp>
 #include <macro.tests.hpp>
 #include <template.tests.hpp>
@@ -46,7 +47,7 @@ TEST(traits, standard) {
 
 TEST(constructor, empty) {
     gtl::coroutine coroutine;
-    UNOPTIMISED(coroutine);
+    DoNotOptimiseAway(coroutine);
 }
 
 

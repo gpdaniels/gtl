@@ -19,6 +19,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
+#include <benchmark.tests.hpp>
 #include <data.tests.hpp>
 #include <macro.tests.hpp>
 #include <template.tests.hpp>
@@ -41,12 +42,12 @@ TEST(traits, standard) {
 
 TEST(constructor, empty) {
     gtl::any any;
-    UNOPTIMISED(any);
+    DoNotOptimiseAway(any);
 }
 
 TEST(constructor, value) {
     gtl::any any(1);
-    UNOPTIMISED(any);
+    DoNotOptimiseAway(any);
 }
 
 TEST(evaluation, any) {

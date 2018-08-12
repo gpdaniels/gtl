@@ -27,9 +27,6 @@ THE SOFTWARE
 /// @brief  A helper macro to prevent compiler warnings about unused variables.
 #define UNUSED(VARIABLE) (static_cast<void>(VARIABLE))
 
-/// @brief  A helper macro to prevent variables being optimised away in tests.
-#define UNOPTIMISED(VARIABLE) __asm__ __volatile__("" :: "m" (VARIABLE))
-
 // Define a print macro that wraps printf, this is more complex than it needs to be as we can't use ##__VA_ARGS__ if we want to remain standards complient.
 // The common non-standards complient method that requires a gnu extension is: #define PRINT(FORMAT, ...) printf(FORMAT "\n", ##__VA_ARGS__), in c++20 __VA_OPT__ is coming which will fix this issue.
 // As a work around count the number of variadic arguments and either call a macro with just the format string, if there is none, or with the arguments.

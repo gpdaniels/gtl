@@ -19,6 +19,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
+#include <benchmark.tests.hpp>
 #include <macro.tests.hpp>
 
 #include <random_mt>
@@ -40,18 +41,18 @@ TEST(traits, standard) {
 
 TEST(constructor, empty) {
     gtl::random_mt random_mt;
-    UNOPTIMISED(random_mt);
+    DoNotOptimiseAway(random_mt);
 }
 
 TEST(constructor, seed_value) {
     gtl::random_mt random_mt(0x01234567);
-    UNOPTIMISED(random_mt);
+    DoNotOptimiseAway(random_mt);
 }
 
 TEST(constructor, seed_array) {
     unsigned int seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
     gtl::random_mt random_mt(seed_values, 5);
-    UNOPTIMISED(random_mt);
+    DoNotOptimiseAway(random_mt);
 }
 
 TEST(function, seed_value) {
@@ -65,21 +66,20 @@ TEST(function, seed_array) {
     random_mt.seed(seed_values, 5);
 }
 
-TEST(function, get_random_long) {
+TEST(function, get_random_raw) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
-    unsigned int random_long = random_mt.get_random_raw();
-    REQUIRE(random_long == 1802874368, "Pseudo-random number 1 was %ld, expected %ld", random_long, 1802874368u);
-    random_long = random_mt.get_random_raw();
-    REQUIRE(random_long == 453914126, "Pseudo-random number 2 was %ld, expected %ld", random_long, 453914126u);
-    random_long = random_mt.get_random_raw();
-    REQUIRE(random_long == 2896676756, "Pseudo-random number 3 was %ld, expected %ld", random_long, 2896676756u);
-    random_long = random_mt.get_random_raw();
-    REQUIRE(random_long == 1924626451, "Pseudo-random number 4 was %ld, expected %ld", random_long, 1924626451u);
-    random_long = random_mt.get_random_raw();
-    REQUIRE(random_long == 1073351711, "Pseudo-random number 5 was %ld, expected %ld", random_long, 1073351711u);
+    unsigned int random_raw = random_mt.get_random_raw();
+    REQUIRE(random_raw == 1802874368, "Pseudo-random number 1 was %u, expected %u", random_raw, 1802874368u);
+    random_raw = random_mt.get_random_raw();
+    REQUIRE(random_raw == 453914126, "Pseudo-random number 2 was %u, expected %u", random_raw, 453914126u);
+    random_raw = random_mt.get_random_raw();
+    REQUIRE(random_raw == 2896676756, "Pseudo-random number 3 was %u, expected %u", random_raw, 2896676756u);
+    random_raw = random_mt.get_random_raw();
+    REQUIRE(random_raw == 1924626451, "Pseudo-random number 4 was %u, expected %u", random_raw, 1924626451u);
+    random_raw = random_mt.get_random_raw();
+    REQUIRE(random_raw == 1073351711, "Pseudo-random number 5 was %u, expected %u", random_raw, 1073351711u);
 }
-
 
 TEST(function, get_random_exclusive) {
     auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
@@ -133,15 +133,15 @@ TEST(function, get_random_bounded_long) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
     unsigned int random = random_mt.get_random(0u, 1u);
-    REQUIRE(random == 0, "Pseudo-random number 1 was %ld, expected %ld", random, 0u);
+    REQUIRE(random == 0, "Pseudo-random number 1 was %u, expected %u", random, 0u);
     random = random_mt.get_random(0u, 1u);
-    REQUIRE(random == 0, "Pseudo-random number 2 was %ld, expected %ld", random, 0u);
+    REQUIRE(random == 0, "Pseudo-random number 2 was %u, expected %u", random, 0u);
     random = random_mt.get_random(0u, 1u);
-    REQUIRE(random == 0, "Pseudo-random number 3 was %ld, expected %ld", random, 0u);
+    REQUIRE(random == 0, "Pseudo-random number 3 was %u, expected %u", random, 0u);
     random = random_mt.get_random(0u, 1u);
-    REQUIRE(random == 1, "Pseudo-random number 4 was %ld, expected %ld", random, 1u);
+    REQUIRE(random == 1, "Pseudo-random number 4 was %u, expected %u", random, 1u);
     random = random_mt.get_random(0u, 1u);
-    REQUIRE(random == 1, "Pseudo-random number 5 was %ld, expected %ld", random, 1u);
+    REQUIRE(random == 1, "Pseudo-random number 5 was %u, expected %u", random, 1u);
 }
 
 TEST(function, get_random_bounded_double) {

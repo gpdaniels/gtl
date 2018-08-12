@@ -19,6 +19,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
+#include <benchmark.tests.hpp>
 #include <macro.tests.hpp>
 
 #include <barrier>
@@ -40,12 +41,12 @@ TEST(traits, standard) {
 
 TEST(constructor, empty) {
     gtl::barrier barrier;
-    UNOPTIMISED(barrier);
+    DoNotOptimiseAway(barrier);
 }
 
 TEST(constructor, value) {
     gtl::barrier barrier(1);
-    UNOPTIMISED(barrier);
+    DoNotOptimiseAway(barrier);
 }
 
 TEST(function, get_and_set_trigger_count) {

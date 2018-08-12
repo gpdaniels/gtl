@@ -19,6 +19,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
+#include <benchmark.tests.hpp>
 #include <data.tests.hpp>
 #include <macro.tests.hpp>
 #include <template.tests.hpp>
@@ -69,7 +70,7 @@ TEST(constructor, empty) {
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
             gtl::type_name<type> type_name;
-            UNOPTIMISED(type_name);
+            DoNotOptimiseAway(type_name);
         }
     );
 }
