@@ -41,18 +41,18 @@ namespace gtl {
         /// @brief  Constructor, using the provided type argument the constructor sets the internal ID value using the identifier_generator.
         /// @param  - The unnamed argument allows the constructor template argument to be deduced from the provided argument.  For construcors template parameters have to be automatically deduced.
         template<typename type>
-        type_id(type)
+        constexpr type_id(type)
             : identifier(reinterpret_cast<const unsigned long long int>(&identifier_generator<type>::identifier)) {
         }
 
     public:
         /// @brief  Get the value of the identifier.
-        unsigned long long int id(void) const {
+        constexpr unsigned long long int id(void) const {
             return this->identifier;
         }
 
         /// @brief  Return the value of the identifier when the class is cast to an unsigned long long int.
-        operator unsigned long long int(void) const {
+        constexpr operator unsigned long long int(void) const {
             return this->identifier;
         }
 

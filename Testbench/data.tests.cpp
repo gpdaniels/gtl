@@ -87,6 +87,9 @@ const char32_t* test_data<char32_t>::end()   { return data + sizeof(data) / size
 #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
     // gcc.
     const char* test_data<unsigned short int>::name = "short unsigned int";
+#elif defined(_MSC_VER)
+    // msvc.
+    const char* test_data<unsigned short int>::name = "unsigned short";
 #else
     #error "No support for this compiler."
 #endif
@@ -102,6 +105,9 @@ const unsigned short int* test_data<unsigned short int>::end()   { return data +
 #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
     // gcc.
     const char* test_data<signed short int>::name = "short int";
+#elif defined(_MSC_VER)
+    // msvc.
+    const char* test_data<signed short int>::name = "short";
 #else
     #error "No support for this compiler."
 #endif
@@ -131,6 +137,9 @@ const signed int* test_data<signed int>::end()   { return data + sizeof(data) / 
 #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
     // gcc.
     const char* test_data<unsigned long int>::name = "long unsigned int";
+#elif defined(_MSC_VER)
+    // msvc.
+    const char* test_data<unsigned long int>::name = "unsigned long";
 #else
     #error "No support for this compiler."
 #endif
@@ -146,6 +155,9 @@ const unsigned long int* test_data<unsigned long int>::end()   { return data + s
 #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
     // gcc.
     const char* test_data<signed long int>::name = "long int";
+#elif defined(_MSC_VER)
+    // msvc.
+    const char* test_data<signed long int>::name = "long";
 #else
     #error "No support for this compiler."
 #endif
@@ -161,6 +173,9 @@ const signed long int* test_data<signed long int>::end()   { return data + sizeo
 #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
     // gcc.
     const char* test_data<unsigned long long int>::name = "long long unsigned int";
+#elif defined(_MSC_VER)
+    // msvc.
+    const char* test_data<unsigned long long int>::name = "unsigned __int64";
 #else
     #error "No support for this compiler."
 #endif
@@ -176,6 +191,9 @@ const unsigned long long int* test_data<unsigned long long int>::end()   { retur
 #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
     // gcc.
     const char* test_data<signed long long int>::name = "long long int";
+#elif defined(_MSC_VER)
+    // msvc.
+    const char* test_data<signed long long int>::name = "__int64";
 #else
     #error "No support for this compiler."
 #endif
@@ -231,6 +249,9 @@ const long double* test_data<long double>::end()   { return data + sizeof(data) 
     const char* test_data<decltype(nullptr)>::name = "nullptr_t";
 #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
     // gcc.
+    const char* test_data<decltype(nullptr)>::name = "std::nullptr_t";
+#elif defined(_MSC_VER)
+    // msvc.
     const char* test_data<decltype(nullptr)>::name = "std::nullptr_t";
 #else
     #error "No support for this compiler."
