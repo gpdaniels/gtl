@@ -273,7 +273,7 @@ namespace gtl {
 #           if !defined(_WIN32)
                 // Cleanup stack.
                 if (this->stack) {
-                    delete[] this->stack;
+                    delete[] static_cast<unsigned char*>(this->stack);
                 }
 #           else
                 // Cleanup stack.
