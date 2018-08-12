@@ -28,7 +28,12 @@ THE SOFTWARE
 #include <type_traits>
 
 TEST(traits, standard) {
+
+#if defined(_MSC_VER)
+    REQUIRE(sizeof(gtl::coroutine) >= 32, "sizeof(gtl::coroutine) = %ld, expected >= %lld", sizeof(gtl::coroutine), 32ull);
+#else
     REQUIRE(sizeof(gtl::coroutine) >= 576, "sizeof(gtl::coroutine) = %ld, expected >= %lld", sizeof(gtl::coroutine), 576ull);
+#endif
 
     REQUIRE(std::is_pod<gtl::coroutine>::value == false, "Expected std::is_pod to be false.");
 
