@@ -23,6 +23,9 @@ THE SOFTWARE
 #define GTL_EVENT_HPP
 
 #ifdef _DEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
 /// @brief A simple assert macro to break the program if the event_manager or event_queue is misused.
 #   define GTL_EVENT_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
