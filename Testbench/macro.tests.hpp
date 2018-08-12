@@ -22,14 +22,13 @@ THE SOFTWARE
 #ifndef MACRO_TESTS_HPP
 #define MACRO_TESTS_HPP
 
+#include <cstdio>
+
 /// @brief  A helper macro to prevent compiler warnings about unused variables.
 #define UNUSED(VARIABLE) (static_cast<void>(VARIABLE))
 
 /// @brief  A helper macro to prevent variables being optimised away in tests.
 #define UNOPTIMISED(VARIABLE) __asm__ __volatile__("" :: "m" (VARIABLE))
-
-/// @brief  Declaring the printf function to enable output.
-extern "C" int printf(const char*, ...);
 
 // Define a print macro that wraps printf, this is more complex than it needs to be as we can't use ##__VA_ARGS__ if we want to remain standards complient.
 // The common non-standards complient method that requires a gnu extension is: #define PRINT(FORMAT, ...) printf(FORMAT "\n", ##__VA_ARGS__), in c++20 __VA_OPT__ is coming which will fix this issue.
