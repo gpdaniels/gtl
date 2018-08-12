@@ -37,7 +37,7 @@ namespace gtl {
         constexpr static const std::chrono::nanoseconds tick_step = std::chrono::nanoseconds(1000000000 / tick_rate);
 
         /// @brief  The current system time.
-        std::chrono::steady_clock::time_point current_time;
+        std::chrono::high_resolution_clock::time_point current_time;
 
         /// @brief  The current tick.
         unsigned long long int current_tick;
@@ -48,7 +48,7 @@ namespace gtl {
     public:
         /// @brief  Default constructor initialises internal state.
         simulation_loop(void)
-            : current_time(std::chrono::steady_clock::now())
+            : current_time(std::chrono::high_resolution_clock::now())
             , current_tick{0}
             , lag_duration{0} {
         }
@@ -57,7 +57,7 @@ namespace gtl {
         /// @return True if the tick time step has passed and the current tick has been incremented, false otherwise.
         bool update(void) {
             // Get the current time.
-            const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+            const std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
 
             // Add the elapsed duration since the last update to the lag duration.
             this->lag_duration += std::chrono::duration_cast<std::chrono::nanoseconds>(now - this->current_time);

@@ -70,24 +70,26 @@ TEST(function, get_current_tick) {
 
 TEST(function, get_lag_duration) {
     gtl::simulation_loop<100> simulation_loop;
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     REQUIRE(simulation_loop.get_lag_duration() == std::chrono::milliseconds(0));
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    std::this_thread::sleep_until(start + std::chrono::milliseconds(5));
     simulation_loop.update();
-    REQUIRE(std::chrono::milliseconds(4) < simulation_loop.get_lag_duration() && simulation_loop.get_lag_duration() < std::chrono::milliseconds(6));
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    REQUIRE(std::chrono::milliseconds(3) < simulation_loop.get_lag_duration() || simulation_loop.get_lag_duration() < std::chrono::milliseconds(7));
+    std::this_thread::sleep_until(start + std::chrono::milliseconds(10));
     simulation_loop.update();
-    REQUIRE(std::chrono::milliseconds(9) < simulation_loop.get_lag_duration() || simulation_loop.get_lag_duration() < std::chrono::milliseconds(1));
+    REQUIRE(std::chrono::milliseconds(8) < simulation_loop.get_lag_duration() || simulation_loop.get_lag_duration() < std::chrono::milliseconds(2));
 }
 
 TEST(function, get_alpha) {
     gtl::simulation_loop<100> simulation_loop;
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     REQUIRE(simulation_loop.get_alpha<float>() == 0.0f);
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    std::this_thread::sleep_until(start + std::chrono::milliseconds(5));
     simulation_loop.update();
-    REQUIRE(0.4 < simulation_loop.get_alpha<float>() && simulation_loop.get_alpha<float>() < 0.6);
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    REQUIRE(0.3 < simulation_loop.get_alpha<float>() || simulation_loop.get_alpha<float>() < 0.7, "Expecting alpha to be approximately 0.5, got %f.", simulation_loop.get_alpha<float>());
+    std::this_thread::sleep_until(start + std::chrono::milliseconds(10));
     simulation_loop.update();
-    REQUIRE(0.9 < simulation_loop.get_alpha<float>() || simulation_loop.get_alpha<float>() < 0.1);
+    REQUIRE(0.8 < simulation_loop.get_alpha<float>() || simulation_loop.get_alpha<float>() < 0.2, "Expecting alpha to be approximately 0.0, got %f.", simulation_loop.get_alpha<float>());
 }
 
 TEST(evaluation, game_loop) {
