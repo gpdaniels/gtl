@@ -38,17 +38,17 @@ namespace gtl {
     class random_mt final {
     public:
         /// @brief  size of the random number generator state.
-        constexpr static const unsigned long long int state_size = 624;
+        constexpr static const unsigned int state_size = 624;
 
         /// @brief  Step size size during state generation.
-        constexpr static const unsigned long long int step_size = 397;
+        constexpr static const unsigned int step_size = 397;
 
     private:
         /// @brief  Current state of the random number generator, using an array of 624 32-bit values with 31 of the bits being unused we have (624 * 32) - 31 = 19937 bits of information.
-        unsigned long int state[random_mt::state_size];
+        unsigned int state[random_mt::state_size];
 
         /// @brief  Position in the state.
-        unsigned long int position;
+        unsigned int position;
 
     public:
         /// @brief  Defaulted destructor.
@@ -71,7 +71,7 @@ namespace gtl {
 
         /// @brief  Constructor with 32 bit seed.
         /// @param  seed_value - Seed value used to initialise the state.
-        random_mt(unsigned long int seed_value)
+        random_mt(unsigned int seed_value)
             : position(0) {
             this->seed(seed_value);
         }
@@ -79,7 +79,7 @@ namespace gtl {
         /// @brief  Constructor using an array of 32 bit unsigned integers as the seed.
         /// @param  seed_values - Seed value used to initialise the state.
         /// @param  size - Number of entried in the array.
-        random_mt(const unsigned long int* seed_values, const unsigned long int size)
+        random_mt(const unsigned int* seed_values, const unsigned int size)
             : position(0) {
             this->seed(seed_values, size);
         }
@@ -88,7 +88,7 @@ namespace gtl {
         /// @brief  Bit twiddle a pair of values.
         /// @param  left - The left value.
         /// @param  right - The right value.
-        static unsigned long int twiddle(const unsigned long int& left, const unsigned long int& right) {
+        static unsigned int twiddle(const unsigned int& left, const unsigned int& right) {
             return (((left & 0x80000000UL) | (right & 0x7FFFFFFFUL)) >> 1) ^ ((right & 1UL) ? 0x9908B0DFUL : 0x0UL);
         }
 
@@ -107,7 +107,7 @@ namespace gtl {
     public:
         /// @brief  Initialise the state from a 32 bit seed.
         /// @param  seed_value - Seed value used to initialise the state.
-        void seed(const unsigned long int& seed_value) {
+        void seed(const unsigned int& seed_value) {
             // This PRNG uses a linear congruential generator (LCG) which is one of the oldest known pseudo-random number generator algorithms.
             this->state[0] = seed_value & 0xFFFFFFFFUL;
             for (unsigned int i = 1; i < random_mt::state_size; ++i) {
@@ -121,7 +121,7 @@ namespace gtl {
         /// @brief  Initialise the state from an array of 32 bit ints as seed.
         /// @param  seed_values - Seed values used to initialise the state.
         /// @param  size - Number of seed values in the input array.
-        void seed(const unsigned long int* seed_values, const unsigned long int size) {
+        void seed(const unsigned int* seed_values, const unsigned int size) {
             this->seed(19650218UL);
             unsigned int i = 1, j = 0;
             for (unsigned int k = ((random_mt::state_size > size) ? random_mt::state_size : size); k; --k) {
@@ -148,11 +148,11 @@ namespace gtl {
 
         /// @brief  Get the next random number from the generator.
         /// @return A pseudo-random number.
-        unsigned long int get_random_long(void) {
+        unsigned int get_random_raw(void) {
             if (this->position == random_mt::state_size) {
                 this->generate_state();
             }
-            unsigned long int temper = this->state[this->position++];
+            unsigned int temper = this->state[this->position++];
             temper ^= (temper >> 11);
             temper ^= (temper << 7) & 0x9D2C5680UL;
             temper ^= (temper << 15) & 0xEFC60000UL;
@@ -162,28 +162,28 @@ namespace gtl {
         /// @brief  Get a random number in the open interval 0 < value < 1.
         /// @return A pseudo-random number.
         double get_random_exclusive(void) {
-            return (static_cast<double>(this->get_random_long()) + 0.5) * (1.0 / static_cast<double>(1ull << 32));
+            return (static_cast<double>(this->get_random_raw()) + 0.5) * (1.0 / static_cast<double>(1ull << 32));
         }
 
         /// @brief  Get a random number in the half-open interval 0 <= x < 1.
         /// @return A pseudo-random number.
         double get_random_exclusive_top(void) {
-            return static_cast<double>(this->get_random_long()) * (1.0 / static_cast<double>(1ull << 32));
+            return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>(1ull << 32));
         }
 
         /// @brief  Get a random number in the closed interval 0 <= x <= 1.
         /// @return A pseudo-random number.
         double get_random_inclusive(void) {
-            return static_cast<double>(this->get_random_long()) * (1.0 / static_cast<double>((1ull << 32) - 1));
+            return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>((1ull << 32) - 1));
         }
 
         /// @brief  Get a random number between two bounds.
         /// @param  inclusive_min - Minimum number that can be returned.
         /// @param  inclusive_max - Max number than can be returned.
         /// @return A pseudo-random number.
-        unsigned long int get_random(unsigned long int inclusive_min, unsigned long int inclusive_max)  {
+        unsigned int get_random(unsigned int inclusive_min, unsigned int inclusive_max)  {
             GTL_RANDOM_MT_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");
-            return (this->get_random_long() % (1 + inclusive_max - inclusive_min)) + inclusive_min;
+            return (this->get_random_raw() % (1 + inclusive_max - inclusive_min)) + inclusive_min;
         }
 
         /// @brief  Get a random number between two bounds.

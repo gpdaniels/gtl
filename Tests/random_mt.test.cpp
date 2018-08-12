@@ -27,7 +27,7 @@ THE SOFTWARE
 #include <type_traits>
 
 TEST(traits, standard) {
-    REQUIRE(sizeof(gtl::random_mt) >= 5000, "sizeof(gtl::random_mt) = %ld, expected >= %lld", sizeof(gtl::random_mt), 5000ull);
+    REQUIRE(sizeof(gtl::random_mt) >= 2500ull, "sizeof(gtl::random_mt) = %ld, expected >= %lld", sizeof(gtl::random_mt), 2500ull);
 
     REQUIRE(std::is_pod<gtl::random_mt>::value == true, "Expected std::is_pod to be true.");
 
@@ -49,7 +49,7 @@ TEST(constructor, seed_value) {
 }
 
 TEST(constructor, seed_array) {
-    unsigned long int seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
+    unsigned int seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
     gtl::random_mt random_mt(seed_values, 5);
     UNOPTIMISED(random_mt);
 }
@@ -60,7 +60,7 @@ TEST(function, seed_value) {
 }
 
 TEST(function, seed_array) {
-    unsigned long int seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
+    unsigned int seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
     gtl::random_mt random_mt;
     random_mt.seed(seed_values, 5);
 }
@@ -68,16 +68,16 @@ TEST(function, seed_array) {
 TEST(function, get_random_long) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
-    unsigned long int random_long = random_mt.get_random_long();
-    REQUIRE(random_long == 1802874368, "Pseudo-random number 1 was %ld, expected %ld", random_long, 1802874368ul);
-    random_long = random_mt.get_random_long();
-    REQUIRE(random_long == 453914126, "Pseudo-random number 2 was %ld, expected %ld", random_long, 453914126ul);
-    random_long = random_mt.get_random_long();
-    REQUIRE(random_long == 2896676756, "Pseudo-random number 3 was %ld, expected %ld", random_long, 2896676756ul);
-    random_long = random_mt.get_random_long();
-    REQUIRE(random_long == 1924626451, "Pseudo-random number 4 was %ld, expected %ld", random_long, 1924626451ul);
-    random_long = random_mt.get_random_long();
-    REQUIRE(random_long == 1073351711, "Pseudo-random number 5 was %ld, expected %ld", random_long, 1073351711ul);
+    unsigned int random_long = random_mt.get_random_raw();
+    REQUIRE(random_long == 1802874368, "Pseudo-random number 1 was %ld, expected %ld", random_long, 1802874368u);
+    random_long = random_mt.get_random_raw();
+    REQUIRE(random_long == 453914126, "Pseudo-random number 2 was %ld, expected %ld", random_long, 453914126u);
+    random_long = random_mt.get_random_raw();
+    REQUIRE(random_long == 2896676756, "Pseudo-random number 3 was %ld, expected %ld", random_long, 2896676756u);
+    random_long = random_mt.get_random_raw();
+    REQUIRE(random_long == 1924626451, "Pseudo-random number 4 was %ld, expected %ld", random_long, 1924626451u);
+    random_long = random_mt.get_random_raw();
+    REQUIRE(random_long == 1073351711, "Pseudo-random number 5 was %ld, expected %ld", random_long, 1073351711u);
 }
 
 
@@ -132,16 +132,16 @@ TEST(function, get_random_inclusive) {
 TEST(function, get_random_bounded_long) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
-    unsigned long int random = random_mt.get_random(0ul, 1ul);
-    REQUIRE(random == 0, "Pseudo-random number 1 was %ld, expected %ld", random, 0ul);
-    random = random_mt.get_random(0ul, 1ul);
-    REQUIRE(random == 0, "Pseudo-random number 2 was %ld, expected %ld", random, 0ul);
-    random = random_mt.get_random(0ul, 1ul);
-    REQUIRE(random == 0, "Pseudo-random number 3 was %ld, expected %ld", random, 0ul);
-    random = random_mt.get_random(0ul, 1ul);
-    REQUIRE(random == 1, "Pseudo-random number 4 was %ld, expected %ld", random, 1ul);
-    random = random_mt.get_random(0ul, 1ul);
-    REQUIRE(random == 1, "Pseudo-random number 5 was %ld, expected %ld", random, 1ul);
+    unsigned int random = random_mt.get_random(0u, 1u);
+    REQUIRE(random == 0, "Pseudo-random number 1 was %ld, expected %ld", random, 0u);
+    random = random_mt.get_random(0u, 1u);
+    REQUIRE(random == 0, "Pseudo-random number 2 was %ld, expected %ld", random, 0u);
+    random = random_mt.get_random(0u, 1u);
+    REQUIRE(random == 0, "Pseudo-random number 3 was %ld, expected %ld", random, 0u);
+    random = random_mt.get_random(0u, 1u);
+    REQUIRE(random == 1, "Pseudo-random number 4 was %ld, expected %ld", random, 1u);
+    random = random_mt.get_random(0u, 1u);
+    REQUIRE(random == 1, "Pseudo-random number 5 was %ld, expected %ld", random, 1u);
 }
 
 TEST(function, get_random_bounded_double) {
@@ -165,7 +165,7 @@ TEST(evaluation, random_numbers) {
     random_mt.seed(0x01234567);
     int random_bias = 0;
     for (unsigned int iteration = 0; iteration < 1000000; ++iteration) {
-        random_bias += (random_mt.get_random(0ul, 1ul) == 0) ? +1 : -1;
+        random_bias += (random_mt.get_random(0u, 1u) == 0) ? +1 : -1;
     }
     REQUIRE(random_bias == 74, "Pseudo-random number generator bias was %d, expected %d", random_bias, 74);
 }
