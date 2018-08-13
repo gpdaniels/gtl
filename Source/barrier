@@ -29,7 +29,7 @@ THE SOFTWARE
 /// @brief A simple assert macro to break the program if the barrier is misused.
 #   define GTL_BARRIER_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
-///  @brief At release time the assert macro is implemented as a nop.
+/// @brief At release time the assert macro is implemented as a nop.
 #   define GTL_BARRIER_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
