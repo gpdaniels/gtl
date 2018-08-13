@@ -39,6 +39,7 @@ The current classes are as described below:
 |       **random_mt** | Mersenne twister pseudo-random number generator.                                               | 
 |      **random_pcg** | PCG pseudo-random number generator.                                                            | 
 | **random_splitmix** | Splitmix pseudo-random number generator.                                                       | 
+| **random_xorshift** | Xorshift pseudo-random number generator.                                                       | 
 
 ### Type Information ###
 

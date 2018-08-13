@@ -1,0 +1,129 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_RANDOM_XORSHIFT_HPP
+#define GTL_RANDOM_XORSHIFT_HPP
+
+#ifdef _DEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the random_xorshift is misused.
+#   define GTL_RANDOM_XORSHIFT_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_RANDOM_XORSHIFT_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+#include <cstdint>
+
+namespace gtl {
+    /// @brief  The random_xorshift class implements the xorshift pseudo-random-number generator.
+    class random_xorshift final {
+    private:
+        /// @brief  Current state of the random number generator.
+        std::uint64_t state;
+
+    public:
+        /// @brief  Defaulted destructor.
+        ~random_xorshift(void) = default;
+
+        /// @brief  Empty constructor.
+        random_xorshift(void)
+            : state(0xC1F651C67C62C6E0ull) {
+        }
+
+        /// @brief  Defaulted copy constructor.
+        random_xorshift(const random_xorshift&) = default;
+
+        /// @brief  Defaulted move constructor.
+        random_xorshift(random_xorshift&&) = default;
+
+        /// @brief  Defaulted copy assignment.
+        random_xorshift& operator=(const random_xorshift&) = default;
+
+        /// @brief  Defaulted move assignment.
+        random_xorshift& operator=(random_xorshift&&) = default;
+
+        /// @brief  Constructor with 64 bit seed.
+        /// @param  seed_value - Seed value used to initialise the state.
+        random_xorshift(std::uint64_t seed_value) {
+            this->seed(seed_value);
+        }
+
+        /// @brief  Initialise the state from a 64 bit seed.
+        /// @param  seed_value - Seed value used to initialise the state.
+        void seed(std::uint64_t seed_value) {
+            this->state = seed_value;
+        }
+
+        /// @brief  Get the next random number from the generator.
+        /// @return A pseudo-random number.
+        std::uint32_t get_random_raw(void) {
+            std::uint64_t result = this->state * 0xD989BCACC137DCD5ull;
+            this->state ^= this->state >> 11;
+            this->state ^= this->state << 31;
+            this->state ^= this->state >> 18;
+            return static_cast<std::uint32_t>(result >> 32ull);
+        }
+
+    public:
+        /// @brief  Get a random number in the open interval 0 < value < 1.
+        /// @return A pseudo-random number.
+        double get_random_exclusive(void) {
+            return (static_cast<double>(this->get_random_raw()) + 0.5) * (1.0 / static_cast<double>(1ull << 32));
+        }
+
+        /// @brief  Get a random number in the half-open interval 0 <= x < 1.
+        /// @return A pseudo-random number.
+        double get_random_exclusive_top(void) {
+            return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>(1ull << 32));
+        }
+
+        /// @brief  Get a random number in the closed interval 0 <= x <= 1.
+        /// @return A pseudo-random number.
+        double get_random_inclusive(void) {
+            return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>((1ull << 32) - 1));
+        }
+
+        /// @brief  Get a random number between two bounds.
+        /// @param  inclusive_min - Minimum number that can be returned.
+        /// @param  inclusive_max - Max number than can be returned.
+        /// @return A pseudo-random number.
+        std::uint32_t get_random(std::uint32_t inclusive_min, std::uint32_t inclusive_max)  {
+            GTL_RANDOM_XORSHIFT_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");
+            return (this->get_random_raw() % (1 + inclusive_max - inclusive_min)) + inclusive_min;
+        }
+
+        /// @brief  Get a random number between two bounds.
+        /// @param  inclusive_min - Minimum number that can be returned.
+        /// @param  inclusive_max - Max number than can be returned.
+        /// @return A pseudo-random number.
+        double get_random(double inclusive_min, double inclusive_max) {
+            GTL_RANDOM_XORSHIFT_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");
+            return (this->get_random_inclusive() * (inclusive_max - inclusive_min)) + inclusive_min;
+        }
+    };
+}
+
+#undef GTL_RANDOM_XORSHIFT_ASSERT
+
+#endif // GTL_RANDOM_XORSHIFT_HPP
