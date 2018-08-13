@@ -33,22 +33,24 @@ THE SOFTWARE
 #   define GTL_RANDOM_MT_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
+#include <cstdint>
+
 namespace gtl { 
     /// @brief  The random_mt class implements the mersenne-twister pseudo-random number generator algorithm (mt-19937).
     class random_mt final {
     public:
         /// @brief  size of the random number generator state.
-        constexpr static const unsigned int state_size = 624;
+        constexpr static const std::uint32_t state_size = 624;
 
         /// @brief  Step size size during state generation.
-        constexpr static const unsigned int step_size = 397;
+        constexpr static const std::uint32_t step_size = 397;
 
     private:
         /// @brief  Current state of the random number generator, using an array of 624 32-bit values with 31 of the bits being unused we have (624 * 32) - 31 = 19937 bits of information.
-        unsigned int state[random_mt::state_size];
+        std::uint32_t state[random_mt::state_size];
 
         /// @brief  Position in the state.
-        unsigned int position;
+        std::uint32_t position;
 
     public:
         /// @brief  Defaulted destructor.
@@ -71,49 +73,29 @@ namespace gtl {
 
         /// @brief  Constructor with 32 bit seed.
         /// @param  seed_value - Seed value used to initialise the state.
-        random_mt(unsigned int seed_value)
+        random_mt(std::uint32_t seed_value)
             : position(0) {
             this->seed(seed_value);
         }
 
-        /// @brief  Constructor using an array of 32 bit unsigned integers as the seed.
+        /// @brief  Constructor using an array of 32 bit std::uint32_tegers as the seed.
         /// @param  seed_values - Seed value used to initialise the state.
         /// @param  size - Number of entried in the array.
-        random_mt(const unsigned int* seed_values, const unsigned int size)
+        random_mt(const std::uint32_t* seed_values, const std::uint32_t size)
             : position(0) {
             this->seed(seed_values, size);
-        }
-
-    private:
-        /// @brief  Bit twiddle a pair of values.
-        /// @param  left - The left value.
-        /// @param  right - The right value.
-        static unsigned int twiddle(const unsigned int& left, const unsigned int& right) {
-            return (((left & 0x80000000UL) | (right & 0x7FFFFFFFUL)) >> 1) ^ ((right & 1UL) ? 0x9908B0DFUL : 0x0UL);
-        }
-
-        /// @brief  Create the state array.
-        void generate_state(void) {
-            for (unsigned int i = 0; i < (random_mt::state_size - random_mt::step_size); ++i) {
-                this->state[i] = this->state[i + random_mt::step_size] ^ random_mt::twiddle(this->state[i], this->state[i + 1]);
-            }
-            for (unsigned int i = random_mt::state_size - random_mt::step_size; i < (random_mt::state_size - 1); ++i) {
-                this->state[i] = this->state[i + random_mt::step_size - random_mt::state_size] ^ random_mt::twiddle(this->state[i], this->state[i + 1]);
-            }
-            this->state[random_mt::state_size - 1] = this->state[random_mt::step_size - 1] ^ random_mt::twiddle(this->state[random_mt::state_size - 1], this->state[0]);
-            this->position = 0;
         }
 
     public:
         /// @brief  Initialise the state from a 32 bit seed.
         /// @param  seed_value - Seed value used to initialise the state.
-        void seed(const unsigned int& seed_value) {
+        void seed(std::uint32_t seed_value) {
             // This PRNG uses a linear congruential generator (LCG) which is one of the oldest known pseudo-random number generator algorithms.
-            this->state[0] = seed_value & 0xFFFFFFFFUL;
-            for (unsigned int i = 1; i < random_mt::state_size; ++i) {
+            this->state[0] = seed_value & 0xFFFFFFFFul;
+            for (std::uint32_t i = 1; i < random_mt::state_size; ++i) {
                 // 0x06C07865 = 1812433253 is called the Borosh-Niederreiter multiplier for modulus 2^32.
-                this->state[i] = 1812433253UL * (this->state[i - 1] ^ (this->state[i - 1] >> 30)) + i;
-                this->state[i] &= 0xFFFFFFFFUL;
+                this->state[i] = 1812433253ul * (this->state[i - 1] ^ (this->state[i - 1] >> 30)) + i;
+                this->state[i] &= 0xFFFFFFFFul;
             }
             this->position = random_mt::state_size;
         }
@@ -121,12 +103,12 @@ namespace gtl {
         /// @brief  Initialise the state from an array of 32 bit ints as seed.
         /// @param  seed_values - Seed values used to initialise the state.
         /// @param  size - Number of seed values in the input array.
-        void seed(const unsigned int* seed_values, const unsigned int size) {
-            this->seed(19650218UL);
-            unsigned int i = 1, j = 0;
-            for (unsigned int k = ((random_mt::state_size > size) ? random_mt::state_size : size); k; --k) {
-                this->state[i] = (this->state[i] ^ ((this->state[i - 1] ^ (this->state[i - 1] >> 30)) * 1664525UL)) + seed_values[j] + j;
-                this->state[i] &= 0xFFFFFFFFUL;
+        void seed(const std::uint32_t* seed_values, std::uint32_t size) {
+            this->seed(19650218ul);
+            std::uint32_t i = 1, j = 0;
+            for (std::uint32_t k = ((random_mt::state_size > size) ? random_mt::state_size : size); k; --k) {
+                this->state[i] = (this->state[i] ^ ((this->state[i - 1] ^ (this->state[i - 1] >> 30)) * 1664525ul)) + seed_values[j] + j;
+                this->state[i] &= 0xFFFFFFFFul;
                 ++j;
                 j %= size;
                 if ((++i) == random_mt::state_size) {
@@ -134,31 +116,52 @@ namespace gtl {
                     i = 1;
                 }
             }
-            for (unsigned int k = random_mt::state_size - 1; k; --k) {
-                this->state[i] = (this->state[i] ^ ((this->state[i - 1] ^ (this->state[i - 1] >> 30)) * 1566083941UL)) - i;
-                this->state[i] &= 0xFFFFFFFFUL;
+            for (std::uint32_t k = random_mt::state_size - 1; k; --k) {
+                this->state[i] = (this->state[i] ^ ((this->state[i - 1] ^ (this->state[i - 1] >> 30)) * 1566083941ul)) - i;
+                this->state[i] &= 0xFFFFFFFFul;
                 if ((++i) == random_mt::state_size) {
                     this->state[0] = this->state[random_mt::state_size - 1];
                     i = 1;
                 }
             }
-            this->state[0] = 0x80000000UL;
+            this->state[0] = 0x80000000ul;
             this->position = random_mt::state_size;
         }
 
         /// @brief  Get the next random number from the generator.
         /// @return A pseudo-random number.
-        unsigned int get_random_raw(void) {
+        std::uint32_t get_random_raw(void) {
             if (this->position == random_mt::state_size) {
                 this->generate_state();
             }
-            unsigned int temper = this->state[this->position++];
+            std::uint32_t temper = this->state[this->position++];
             temper ^= (temper >> 11);
-            temper ^= (temper << 7) & 0x9D2C5680UL;
-            temper ^= (temper << 15) & 0xEFC60000UL;
+            temper ^= (temper << 7) & 0x9D2C5680ul;
+            temper ^= (temper << 15) & 0xEFC60000ul;
             return temper ^ (temper >> 18);
         }
 
+    private:
+        /// @brief  Bit twiddle a pair of values.
+        /// @param  left - The left value.
+        /// @param  right - The right value.
+        static std::uint32_t twiddle(const std::uint32_t& left, const std::uint32_t& right) {
+            return (((left & 0x80000000ul) | (right & 0x7FFFFFFFul)) >> 1) ^ ((right & 1ul) ? 0x9908B0DFul : 0x0ul);
+        }
+
+        /// @brief  Create the state array.
+        void generate_state(void) {
+            for (std::uint32_t i = 0; i < (random_mt::state_size - random_mt::step_size); ++i) {
+                this->state[i] = this->state[i + random_mt::step_size] ^ random_mt::twiddle(this->state[i], this->state[i + 1]);
+            }
+            for (std::uint32_t i = random_mt::state_size - random_mt::step_size; i < (random_mt::state_size - 1); ++i) {
+                this->state[i] = this->state[i + random_mt::step_size - random_mt::state_size] ^ random_mt::twiddle(this->state[i], this->state[i + 1]);
+            }
+            this->state[random_mt::state_size - 1] = this->state[random_mt::step_size - 1] ^ random_mt::twiddle(this->state[random_mt::state_size - 1], this->state[0]);
+            this->position = 0;
+        }
+
+    public:
         /// @brief  Get a random number in the open interval 0 < value < 1.
         /// @return A pseudo-random number.
         double get_random_exclusive(void) {
@@ -181,7 +184,7 @@ namespace gtl {
         /// @param  inclusive_min - Minimum number that can be returned.
         /// @param  inclusive_max - Max number than can be returned.
         /// @return A pseudo-random number.
-        unsigned int get_random(unsigned int inclusive_min, unsigned int inclusive_max)  {
+        std::uint32_t get_random(std::uint32_t inclusive_min, std::uint32_t inclusive_max)  {
             GTL_RANDOM_MT_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");
             return (this->get_random_raw() % (1 + inclusive_max - inclusive_min)) + inclusive_min;
         }
