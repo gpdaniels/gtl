@@ -37,6 +37,7 @@ The current classes are as described below:
 |               Class | Description                                                                                    |
 |--------------------:|:-----------------------------------------------------------------------------------------------|
 |       **random_mt** | Mersenne twister pseudo-random number generator.                                               | 
+|      **random_pcg** | PCG pseudo-random number generator.                                                            | 
 
 ### Type Information ###
 
