@@ -129,7 +129,7 @@ namespace gtl {
     public:
         /// @brief  Get the number of dimensions of this array_nd.
         /// @return The number of dimensions of this array_nd.
-        constexpr static unsigned long long dimensions(void) {
+        constexpr static unsigned long long dimensions() {
             return sizeof...(dimension_sizes);
         }
 

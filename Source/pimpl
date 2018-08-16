@@ -46,12 +46,12 @@ namespace gtl {
         }
 
         /// @brief  Member access operator to allow easy use of internal implementation members by using "(*this)->".
-        implementation* operator->(void) {
+        implementation* operator->() {
             return reinterpret_cast<implementation*>(implementation_data);
         }
 
         /// @brief  Constant member access operator to allow easy use of internal implementation members by using "(*this)->".
-        const implementation* operator->(void) const {
+        const implementation* operator->() const {
             return reinterpret_cast<const implementation*>(this->implementation_data);
         }
     };

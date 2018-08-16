@@ -56,11 +56,11 @@ namespace gtl {
 
     public:
         /// @brief  Defaulted destructor.
-        ~event_manager(void) = default;
+        ~event_manager() = default;
 
     private:
         /// @brief  Defaulted constructor.
-        event_manager(void) = default;
+        event_manager() = default;
 
     public:
         /// @brief  Deleted copy constructor.
@@ -78,7 +78,7 @@ namespace gtl {
     private:
         /// @brief  Singleton instance helper function.
         /// @return A reference to a static instance of this class.
-        static event_manager& get_instance(void) {
+        static event_manager& get_instance() {
             // Construct a static instance of this class, this is guaranteed to be thread safe by the standard.
             static event_manager<event_type> instance;
             return instance;
@@ -174,13 +174,13 @@ namespace gtl {
 
     public:
         /// @brief  Virtual destructor to automatically unsubscribe this event_queue from the event_manager for this event_type.
-        virtual ~event_queue(void) {
+        virtual ~event_queue() {
             event_manager<event_type>::unsubscribe(this);
         }
 
     protected:
         /// @brief  Constructor automatically subscribes this event_queue to the event_manager for this event_type.
-        event_queue(void)
+        event_queue()
             : signal(nullptr) {
             event_manager<event_type>::subscribe(this);
         }
@@ -222,7 +222,7 @@ namespace gtl {
 
     protected:
         /// @brief  Process the events in the queue by calling callback functions for each event type.
-        void process_events(void) {
+        void process_events() {
             // Lock the event data mutex.
             std::lock_guard<std::mutex> lock(this->mutex);
             static_cast<void>(lock);

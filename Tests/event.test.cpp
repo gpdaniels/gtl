@@ -63,7 +63,7 @@ private:
     using gtl::event_queue<std::function<void(void)>>::on_event;
 
 public:
-    void process(void) {
+    void process() {
         gtl::event_queue<test_event>::process_events();
         gtl::event_queue<std::function<void(void)>>::process_events();
     }

@@ -24,5 +24,5 @@ class test_pimpl
     : private gtl::pimpl<test_pimpl, 4> {
 public:
     test_pimpl(int value);
-    int return_value(void) const;
+    int return_value() const;
 };

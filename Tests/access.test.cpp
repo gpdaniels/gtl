@@ -45,19 +45,19 @@ private:
       constexpr static    /*volatile*/   const      int   variable_xs_ci = 1;
       constexpr static      volatile     const      int   variable_xsvci = 1;
 
-      void function_a___(void) {}
+      void function_a___() {}
       int  function_a__i(/*volatile*/ /*const*/ int) { return 1; }
       int  function_av_i(  volatile   /*const*/ int) { return 1; }
       int  function_a_ci(/*volatile*/   const   int) { return 1; }
       int  function_avci(  volatile     const   int) { return 1; }
 
-      void function_c___(void) const {}
+      void function_c___() const {}
       int  function_c__i(/*volatile*/ /*const*/ int) const { return 1; }
       int  function_cv_i(  volatile   /*const*/ int) const { return 1; }
       int  function_c_ci(/*volatile*/   const   int) const { return 1; }
       int  function_cvci(  volatile     const   int) const { return 1; }
 
-      static void function_s___(void) {}
+      static void function_s___() {}
       static int  function_s__i(/*volatile*/ /*const*/ int) { return 1; }
       static int  function_sv_i(  volatile   /*const*/ int) { return 1; }
       static int  function_s_ci(/*volatile*/   const   int) { return 1; }

@@ -44,7 +44,7 @@ namespace gtl {
 
     public:
         /// @brief  Defaulted destructor.
-        ~random_xorshift(void) = default;
+        ~random_xorshift() = default;
 
         /// @brief  Empty constructor.
         random_xorshift(void)
@@ -77,7 +77,7 @@ namespace gtl {
 
         /// @brief  Get the next random number from the generator.
         /// @return A pseudo-random number.
-        std::uint32_t get_random_raw(void) {
+        std::uint32_t get_random_raw() {
             std::uint64_t result = this->state * 0xD989BCACC137DCD5ull;
             this->state ^= this->state >> 11;
             this->state ^= this->state << 31;
@@ -88,19 +88,19 @@ namespace gtl {
     public:
         /// @brief  Get a random number in the open interval 0 < value < 1.
         /// @return A pseudo-random number.
-        double get_random_exclusive(void) {
+        double get_random_exclusive() {
             return (static_cast<double>(this->get_random_raw()) + 0.5) * (1.0 / static_cast<double>(1ull << 32));
         }
 
         /// @brief  Get a random number in the half-open interval 0 <= x < 1.
         /// @return A pseudo-random number.
-        double get_random_exclusive_top(void) {
+        double get_random_exclusive_top() {
             return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>(1ull << 32));
         }
 
         /// @brief  Get a random number in the closed interval 0 <= x <= 1.
         /// @return A pseudo-random number.
-        double get_random_inclusive(void) {
+        double get_random_inclusive() {
             return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>((1ull << 32) - 1));
         }
 

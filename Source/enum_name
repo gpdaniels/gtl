@@ -79,7 +79,7 @@ namespace gtl {
         public:
             /// @brief  Get a pointer to the string data.
             /// @return Pointer to the string data stored in this class.
-            constexpr const char* c_str(void) const {
+            constexpr const char* c_str() const {
                 return this->string;
             }
         public:
@@ -112,7 +112,7 @@ namespace gtl {
         /// @brief  Helper function that directly takes an enum_type value template parameter to get the name of the classes template enum type value as a string.
         /// @return Pointer to the string representation of the classes template enum type value.
         template <enum_type value>
-        static const char* helper(void) {
+        static const char* helper() {
             // Clang compiler format:   __PRETTY_FUNCTION__ = static const char *gtl::enum_name<ENUM_TYPE_NAME, ENUM_TYPE_NAME::ENUM_VALUE_NAME>::helper() [enum_type = ENUM_TYPE_NAME, enum_value = ENUM_TYPE_NAME::ENUM_VALUE_NAME, value = ENUM_TYPE_NAME::ENUM_VALUE_NAME]
             // GNU compiler format:     __PRETTY_FUNCTION__ = static const char* gtl::enum_name<enum_type, enum_value>::helper() [with enum_type value = (ENUM_TYPE_NAME)ENUM_VALUE; enum_type = ENUM_TYPE_NAME; enum_type enum_value = (ENUM_TYPE_NAME)ENUM_VALUE]
             // MSVC compiler format:    __FUNCSIG__         = const char *__cdecl gtl::enum_name<enum ENUM_TYPE_NAME,ENUM_VALUE>::helper<ENUM_TYPE_NAME::ENUM_VALUE_NAME>(void)
@@ -155,7 +155,7 @@ namespace gtl {
     public:
         /// @brief  Get the name of the classes template enum type value as a string.
         /// @return Pointer to the string representation of the classes template enum type value.
-        static const char* name(void) {
+        static const char* name() {
             return helper<enum_value>();
         }
     };

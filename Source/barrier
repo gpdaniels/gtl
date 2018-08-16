@@ -57,7 +57,7 @@ namespace gtl {
 
     public:
         /// @brief  Destructor asserts no threads are waiting on the barrier.
-        ~barrier(void) {
+        ~barrier() {
             GTL_BARRIER_ASSERT(this->waiting_count == 0, "Ensure that there are no waiting threads when the barrier is destructed.");
         }
 
@@ -104,19 +104,19 @@ namespace gtl {
 
         /// @brief  Get the number of sync calls required before the barrier is triggered.
         /// @return The number of sync calls required before the barrier is triggered.
-        unsigned long long int get_trigger_count(void) const {
+        unsigned long long int get_trigger_count() const {
             return this->trigger_count;
         }
 
         /// @brief  Get the number calls made to sync so far.
         /// @return The number of calls made to sync so far.
-        unsigned long long int get_waiting_count(void) const {
+        unsigned long long int get_waiting_count() const {
             return this->waiting_count;
         }
 
     public:
         /// @brief  Triggers the barrier unblocking all current blocked sync calls.
-        void trigger(void) {
+        void trigger() {
             // Lock the barrier mutex
             std::unique_lock<std::mutex> unique_lock(this->mutex);
             static_cast<void>(unique_lock);
@@ -130,7 +130,7 @@ namespace gtl {
 
     public:
         /// @brief  Blocks the caller until the barrier is triggered.
-        void sync(void) {
+        void sync() {
             // Immediately return if the the trigger_count is zero.
             if (this->trigger_count == 0) {
                 return;

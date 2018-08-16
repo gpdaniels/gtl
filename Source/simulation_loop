@@ -47,7 +47,7 @@ namespace gtl {
 
     public:
         /// @brief  Default constructor initialises internal state.
-        simulation_loop(void)
+        simulation_loop()
             : current_time(std::chrono::high_resolution_clock::now())
             , current_tick{0}
             , lag_duration{0} {
@@ -55,7 +55,7 @@ namespace gtl {
         
         /// @brief  Update returns true if the simulation should be updated.
         /// @return True if the tick time step has passed and the current tick has been incremented, false otherwise.
-        bool update(void) {
+        bool update() {
             // Get the current time.
             const std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
 
@@ -84,32 +84,32 @@ namespace gtl {
 
         /// @brief  Get the tick rate of the class.
         /// @return The tick rate.
-        constexpr static unsigned long long int get_tick_rate(void) {
+        constexpr static unsigned long long int get_tick_rate() {
             return tick_rate;
         }
 
         /// @brief  Get the duration of a tick.
         /// @return The tick step.
-        constexpr static std::chrono::nanoseconds get_tick_step(void) {
+        constexpr static std::chrono::nanoseconds get_tick_step() {
             return simulation_loop::tick_step;
         }
 
         /// @brief  Get the current tick number.
         /// @return An unsigned integer representing the current tick counting up from zero.
-        unsigned long long int get_current_tick(void) const {
+        unsigned long long int get_current_tick() const {
             return this->current_tick;
         }
 
         /// @brief  Get the current amount of remainder time between ticks.
         /// @return The number of nanoseconds not consumed by a tick yet.
-        std::chrono::nanoseconds get_lag_duration(void) const {
+        std::chrono::nanoseconds get_lag_duration() const {
             return this->lag_duration;
         }
 
         /// @brief  Get a floating representation of the amount a tick has been filled.
         /// @return A value between 0.0 (inclusive) and 1.0 (exclusive) representing the progress to the next tick.
         template <typename type>
-        type get_alpha(void) const {
+        type get_alpha() const {
             return type(this->lag_duration.count()) / type(simulation_loop::tick_step.count());
         }
     };

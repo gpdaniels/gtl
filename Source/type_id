@@ -47,12 +47,12 @@ namespace gtl {
 
     public:
         /// @brief  Get the value of the identifier.
-        constexpr unsigned long long int id(void) const {
+        constexpr unsigned long long int id() const {
             return this->identifier;
         }
 
         /// @brief  Return the value of the identifier when the class is cast to an unsigned long long int.
-        constexpr operator unsigned long long int(void) const {
+        constexpr operator unsigned long long int() const {
             return this->identifier;
         }
 

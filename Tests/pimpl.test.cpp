@@ -40,7 +40,7 @@ test_pimpl::test_pimpl(int value)
     : pimpl(value) {
 }
 
-int test_pimpl::return_value(void) const {
+int test_pimpl::return_value() const {
     return (*this)->value;
 }
 

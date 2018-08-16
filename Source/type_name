@@ -80,7 +80,7 @@ namespace gtl {
         public:
             /// @brief  Get a pointer to the string data.
             /// @return Pointer to the string data stored in this class.
-            constexpr const char* c_str(void) const {
+            constexpr const char* c_str() const {
                 return this->string;
             }
         public:
@@ -112,7 +112,7 @@ namespace gtl {
     public:
         /// @brief  Get the name of the classes template type as a string.
         /// @return Pointer to the string representation of the classes template type.
-        static const char* name(void) {           
+        static const char* name() {           
             // Clang compiler format:   __PRETTY_FUNCTION__ = static const char *gtl::type_name<TYPE_NAME>::name() [template_type = TYPE_NAME]
             // GNU compiler format:     __PRETTY_FUNCTION__ = static const char *gtl::type_name<template_type>::name() [with template_type = TYPE_NAME]
             // MSVC compiler format:    __FUNCSIG__         = const char *__cdecl gtl::type_name<TYPE_NAME>::name(void)

@@ -32,11 +32,11 @@ namespace gtl {
         class abstract_variable {
         public:
             /// @brief  Virtual destructor.
-            virtual ~abstract_variable(void) = default;
+            virtual ~abstract_variable() = default;
 
         protected:
             /// @brief Defaulted constructor.
-            abstract_variable(void) = default;
+            abstract_variable() = default;
 
         private:
             /// @brief  Deleted copy constructor.
@@ -54,7 +54,7 @@ namespace gtl {
         public:
             /// @brief  Pure virtual clone factory function to copy child class data.
             /// @return A copy of the abstract_variable.
-            virtual std::unique_ptr<abstract_variable> clone(void) const = 0;
+            virtual std::unique_ptr<abstract_variable> clone() const = 0;
         };
 
         /// @brief  This template class implements the abstract_variable class to hold a variable of template type.
@@ -68,7 +68,7 @@ namespace gtl {
 
         public:
             /// @brief  Virtual destructor will call the descrutor for abstract_variable.
-            virtual ~variable(void) = default;
+            virtual ~variable() = default;
 
             /// @brief  Explicit constructor that stores the provided value in this variable.
             /// @param  value - The value to be stored in the variable.
@@ -92,7 +92,7 @@ namespace gtl {
         public:
             /// @brief  Override of the base class clone function.
             /// @return A copy of the variable.
-            virtual std::unique_ptr<abstract_variable> clone(void) const override {
+            virtual std::unique_ptr<abstract_variable> clone() const override {
                 return std::make_unique<variable>(this->value);
             }
         };
@@ -103,10 +103,10 @@ namespace gtl {
 
     public:
         /// @brief  Defaulted destructor.
-        ~any(void) = default;
+        ~any() = default;
 
         /// @brief  Defaulted constructor.
-        any(void) = default;
+        any() = default;
 
         /// @brief  Copy constructor.
         /// @param  other - The other any to be copied.
@@ -164,7 +164,7 @@ namespace gtl {
         /// @brief  Templated conversion operator will cast any to anything.
         /// @return The value of the any as the requested type.
         template <typename type>
-        operator type(void) {
+        operator type() {
             if (!this->value) {
                 return type();
             }

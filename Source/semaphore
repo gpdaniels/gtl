@@ -56,7 +56,7 @@ namespace gtl {
 
     public:
         /// @brief  Destructor asserts that the semaphore's count is empty.
-        ~semaphore(void) {
+        ~semaphore() {
             GTL_SEMAPHORE_ASSERT(this->count == 0, "Ensure that the semaphore count is empty when it is destructed.");
         }
 
@@ -67,7 +67,7 @@ namespace gtl {
         }
 
         /// @brief  Notify the semaphore, increases the semaphore's count by one and notifys one thread of any waiting on it.
-        void notify(void) {
+        void notify() {
             this->mutex.lock();
             ++this->count;
             this->mutex.unlock();
@@ -75,7 +75,7 @@ namespace gtl {
         }
 
         /// @brief  Wait on the semaphore, this is a blocking wait on the semaphore's count being non zero before subtracting one.
-        void wait(void) {
+        void wait() {
             std::unique_lock<mutex_type> lock(this->mutex);
             this->condition_variable.wait(lock, [&]{ return this->count > 0; });
             --this->count;
@@ -83,7 +83,7 @@ namespace gtl {
 
         /// @brief  Try waiting on the semaphore, this is a non-blocking wait on the semaphore's count being non zero before subtracting one.
         /// @return True if the semaphore's count was non-zero, false otherwise.
-        bool try_wait(void) {
+        bool try_wait() {
             this->mutex.lock();
             if (this->count > 0) {
                 --this->count;

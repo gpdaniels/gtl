@@ -54,10 +54,10 @@ namespace gtl {
 
     public:
         /// @brief  Defaulted destructor.
-        ~random_mt(void) = default;
+        ~random_mt() = default;
 
         /// @brief  Defaulted constructor.
-        random_mt(void) = default;
+        random_mt() = default;
 
         /// @brief  Defaulted copy constructor.
         random_mt(const random_mt&) = default;
@@ -130,7 +130,7 @@ namespace gtl {
 
         /// @brief  Get the next random number from the generator.
         /// @return A pseudo-random number.
-        std::uint32_t get_random_raw(void) {
+        std::uint32_t get_random_raw() {
             if (this->position == random_mt::state_size) {
                 this->generate_state();
             }
@@ -150,7 +150,7 @@ namespace gtl {
         }
 
         /// @brief  Create the state array.
-        void generate_state(void) {
+        void generate_state() {
             for (std::uint32_t i = 0; i < (random_mt::state_size - random_mt::step_size); ++i) {
                 this->state[i] = this->state[i + random_mt::step_size] ^ random_mt::twiddle(this->state[i], this->state[i + 1]);
             }
@@ -164,19 +164,19 @@ namespace gtl {
     public:
         /// @brief  Get a random number in the open interval 0 < value < 1.
         /// @return A pseudo-random number.
-        double get_random_exclusive(void) {
+        double get_random_exclusive() {
             return (static_cast<double>(this->get_random_raw()) + 0.5) * (1.0 / static_cast<double>(1ull << 32));
         }
 
         /// @brief  Get a random number in the half-open interval 0 <= x < 1.
         /// @return A pseudo-random number.
-        double get_random_exclusive_top(void) {
+        double get_random_exclusive_top() {
             return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>(1ull << 32));
         }
 
         /// @brief  Get a random number in the closed interval 0 <= x <= 1.
         /// @return A pseudo-random number.
-        double get_random_inclusive(void) {
+        double get_random_inclusive() {
             return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>((1ull << 32) - 1));
         }
 

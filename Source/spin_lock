@@ -43,25 +43,25 @@ namespace gtl {
 
     public:
         /// @brief  Destructor asserts that the spin_lock is unlocked.
-        ~spin_lock(void) {
+        ~spin_lock() {
             GTL_SPIN_LOCK_ASSERT(this->try_lock(), "Ensure that the lock is lockable when it is destructed.");
         }
 
         /// @brief  Block until the current thread has the lock.
-        void lock(void) {
+        void lock() {
             while (this->flag.test_and_set(std::memory_order_acquire)) {
                 // Loop is blocked until we have the lock.
             }
         }
 
         /// @brief  Unlock the lock.
-        void unlock(void) {
+        void unlock() {
             this->flag.clear(std::memory_order_release);
         }
 
         /// @brief  Try and lock the spin_lock.
         /// @return True if the spin_lock is successfully locked, false otherwise.
-        bool try_lock(void) {
+        bool try_lock() {
             return !this->flag.test_and_set(std::memory_order_acquire);
         }
     };

@@ -140,7 +140,7 @@ namespace gtl {
             }
         };
 
-        /// @brief  Simple lambda class for containing a void(void) lambda.
+        /// @brief  Simple lambda class for containing a void() lambda.
         class lambda {
             // This version of the lamda class is simplified as it only ever needs to hold a "void(void)" function.
 
@@ -159,14 +159,14 @@ namespace gtl {
 
         public:
             /// @brief  The destructor calls the deleter function if it exists to cleanup the lambda function.
-            ~lambda(void) {
+            ~lambda() {
                 if (this->deleter != nullptr) {
                     this->deleter(this->function);
                 }
             }
 
             /// @brief  The default constructor sets all internal variables to nullptrs.
-            lambda(void)
+            lambda()
                 : function(nullptr)
                 , copier(nullptr)
                 , deleter(nullptr)
@@ -236,7 +236,7 @@ namespace gtl {
 
         public:
             /// @brief  The function call operator is overloaded to call the internal function.
-            void operator()(void) {
+            void operator()() {
                 this->executor(this->function);
             }
         };
@@ -269,7 +269,7 @@ namespace gtl {
 
     public:
         /// @brief Destructor ensures the coroutine is finished.
-        ~coroutine(void) {
+        ~coroutine() {
 #           if !defined(_WIN32)
                 // Cleanup stack.
                 if (this->stack) {
@@ -512,7 +512,7 @@ namespace gtl {
             }
 
             /// @brief  Container function jumped to and from when joining and yielding from a coroutine.
-            static void bootstrap(void) {
+            static void bootstrap() {
                 // Beware this function cannot be a member function, because the coroutine could have been moved while we were away.
                 // Moving the coroutine changes the "this" pointer, therefore the code "this->function()" would be invalid.
 
@@ -553,18 +553,18 @@ namespace gtl {
     public:
         /// @brief  Get the unique identifier of the coroutine.
         /// @return The unique identider.
-        const id& get_id(void) const {
+        const id& get_id() const {
             return this->identifier;
         }
 
         /// @brief  Checks whether the coroutine is joinable, i.e. unfinished.
         /// @return True if the coroutine is unfinished, false otherwise.
-        bool joinable(void)  {
+        bool joinable()  {
             return this->signal_raised;
         }
 
         /// @brief  Switches to the coroutine's execution context and continues execution, i.e. runs the coroutine.
-        void join(void) {
+        void join() {
             GTL_COROUTINE_ASSERT(this->joinable(), "Coroutine must be joinable to be joined.");
             // Store the currently running coroutine.
             coroutine* parent_coroutine = gtl::current_coroutine;
@@ -597,7 +597,7 @@ namespace gtl {
         }
 
         /// @brief  Yield from the coroutine, i.e. force a return to the parent execution context.
-        void yield(void) {
+        void yield() {
             GTL_COROUTINE_ASSERT(gtl::current_coroutine == this, "This coroutine must be running to yield.");
 #           if !defined(_WIN32)
                 if (sigsetjmp(gtl::current_coroutine->coroutine_context, 0) == 0) {
@@ -615,7 +615,7 @@ namespace gtl {
     namespace this_coroutine {
         /// @brief  Get the unique identifier of the currently running coroutine if there is one.
         /// @return The unique identider of the currently running coroutine or a null id if there isn't one.
-        static coroutine::id get_id(void) {
+        static coroutine::id get_id() {
             if (gtl::current_coroutine == nullptr) {
                 return coroutine::id();
             }
@@ -623,7 +623,7 @@ namespace gtl {
         }
 
         /// @brief  Yield from the currently running coroutine, i.e. force a return to the parent execution context.
-        static void yield(void) {
+        static void yield() {
             GTL_COROUTINE_ASSERT(gtl::current_coroutine != nullptr, "A coroutine must be running to yield.");
             gtl::current_coroutine->yield();
         }
