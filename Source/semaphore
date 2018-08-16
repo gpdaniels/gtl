@@ -33,11 +33,7 @@ THE SOFTWARE
 #   define GTL_SEMAPHORE_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
-/// @brief  To avoid including any extra headers in this header std::unique_lock is forward declared.
-namespace std {
-    template <typename mutex_type>
-    class unique_lock;
-}
+#include <thread>
 
 namespace gtl {
     /// @brief  The semaphore class is a mutex structure that atomically counts notifications.

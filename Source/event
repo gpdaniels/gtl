@@ -231,7 +231,8 @@ namespace gtl {
             for (const std::shared_ptr<event_type>& event : this->events) {
 
                 // If the event_type is invocable then just call it.
-                if constexpr (std::is_invocable<event_type>::value) {
+                //if constexpr (std::is_invocable<event_type>::value) { // Not supported in c++17 on mac.
+                if constexpr (std::is_constructible<std::function<void()>, std::reference_wrapper<typename std::remove_reference<event_type>::type> >::value) {
                     (*event)();
                 }
 
