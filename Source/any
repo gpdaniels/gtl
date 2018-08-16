@@ -38,7 +38,7 @@ namespace gtl {
             /// @brief Defaulted constructor.
             abstract_variable() = default;
 
-        private:
+        public:
             /// @brief  Deleted copy constructor.
             abstract_variable(const abstract_variable&) = delete;
 

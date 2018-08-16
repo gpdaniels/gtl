@@ -182,15 +182,23 @@ namespace gtl {
                 , executor(other.executor) {
             }
 
+            /// @brief  Defaulted move constructor.
+            lambda(lambda&&) noexcept = default;
+
             /// @brief  The copy assignment operator copies variables from another object, if there is a copier function it is used to copy the function.
             /// @param  other - The lambda to copy.
             lambda& operator=(const lambda& other) {
-                this->function = other.copier ? other.copier(other.function) : nullptr;
-                this->executor = other.executor;
-                this->deleter = other.deleter;
-                this->copier = other.copier;
+                if (this != &other) {
+                    this->function = other.copier ? other.copier(other.function) : nullptr;
+                    this->executor = other.executor;
+                    this->deleter = other.deleter;
+                    this->copier = other.copier;
+                }
                 return *this;
             }
+
+            /// @brief  Defaulted move assignment operator.
+            lambda& operator=(lambda&&) noexcept = default;
 
             /// @brief  Constructor from a function type copies a provided function to a heap allocated internal function,.
             /// @param  function - The function to wrap.
@@ -298,10 +306,8 @@ namespace gtl {
         coroutine(const coroutine&) = delete;
 
         /// @brief  Move constructor cannot be default as the default leaves other in an invalid state.
-        coroutine(coroutine&& other)
-            : signal_raised(0)
-            , stack(nullptr)
-            , identifier(reinterpret_cast<unsigned long long int>(this->stack)) {
+        coroutine(coroutine&& other) noexcept
+            : coroutine() {
             *this = std::move(other);
         }
 
@@ -309,7 +315,7 @@ namespace gtl {
         coroutine& operator=(const coroutine&) = delete;
 
         /// @brief  Move assignment operator cannot be default as the default leaves other in an invalid state.
-        coroutine& operator=(coroutine&& other) {
+        coroutine& operator=(coroutine&& other) noexcept {
             // Ensure we're not moving on top of ourself.
             if (this == &other) {
                 return *this;
@@ -508,7 +514,7 @@ namespace gtl {
 
                 // Step 9:
                 // After reaching the trampoline function again, immediately bootstrap into a clean stack frame by calling a second function.
-                gtl::current_coroutine->bootstrap();
+                coroutine::bootstrap();
             }
 
             /// @brief  Container function jumped to and from when joining and yielding from a coroutine.

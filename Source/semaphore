@@ -62,6 +62,18 @@ namespace gtl {
             : count(count) {
         }
 
+        /// @brief  Default copy constructor.
+        semaphore(const semaphore&) = default;
+
+        /// @brief  Default move constructor.
+        semaphore(semaphore&&) = default;
+
+        /// @brief  Default copy assignment operator.
+        semaphore& operator=(const semaphore&) = default;
+
+        /// @brief  Default move assignment operator.
+        semaphore& operator=(semaphore&&) = default;
+
         /// @brief  Notify the semaphore, increases the semaphore's count by one and notifys one thread of any waiting on it.
         void notify() {
             this->mutex.lock();

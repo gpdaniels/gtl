@@ -47,6 +47,22 @@ namespace gtl {
             GTL_SPIN_LOCK_ASSERT(this->try_lock(), "Ensure that the lock is lockable when it is destructed.");
         }
 
+        /// @brief  Default constructor.
+        spin_lock() = default;
+
+        /// @brief  Default copy constructor.
+        spin_lock(spin_lock&) = delete;
+
+        /// @brief  Default move constructor.
+        spin_lock(spin_lock&&) = delete;
+
+        /// @brief  Default copy assignment operator.
+        spin_lock& operator=(const spin_lock&) = delete;
+
+        /// @brief  Default move assignment operator.
+        spin_lock& operator=(spin_lock&&) = delete;
+
+    public:
         /// @brief  Block until the current thread has the lock.
         void lock() {
             while (this->flag.test_and_set(std::memory_order_acquire)) {
