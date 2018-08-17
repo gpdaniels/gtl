@@ -33,11 +33,12 @@ THE SOFTWARE
 #   define GTL_EVENT_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
+#include <deque>
+#include <condition_variable>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <set>
-#include <deque>
-#include <condition_variable>
 
 namespace gtl {
     /// @brief  Forward declare the event_queue class as it is used in the event_manager.
