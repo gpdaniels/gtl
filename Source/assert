@@ -1,0 +1,170 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_ASSERT_ASSERT_HPP
+#define GTL_ASSERT_ASSERT_HPP
+
+#include <cstdlib>
+#include <cstdio>
+
+namespace gtl {
+namespace assert {
+    /// @brief  Function for printing to the error stream.
+    template <typename... argument_types>
+    int print_error(const char* format_string, argument_types... arguments) {
+        const int output_length = std::fprintf(stderr, format_string, arguments...);
+        std::fflush(stderr);
+        return output_length;
+    }
+    
+    // Attempt to use a more detailed function macro if possible.
+    #if defined(__clang__)
+    //  Clang.
+    #   define GTL_ASSERT_FUNCTION __PRETTY_FUNCTION__
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+    //  GCC.
+    #   define GTL_ASSERT_FUNCTION __PRETTY_FUNCTION__
+    #elif defined(_MSC_VER)
+    //  MSVC.
+    #   define GTL_ASSERT_FUNCTION __FUNCSIG__
+    #else
+    //  Otherwise standard c.
+    #   define GTL_ASSERT_FUNCTION __func__
+    #endif
+
+    // This macro is used to concatinate two tokens into one through the use of the ## macro operator.
+    // A side effect of the ## macro operator is that it inhibits expansion of the arguments.
+    // Hence to work around this issue the ## macro operator is perfomed, indirectly, by this GTL_ASSERT_PRIMITIVE_CAT() macro.
+    // Therefore by using the GTL_ASSERT_PRIMITIVE_CAT() macro rather than the ## operator directly expansion is performed first.
+    #define GTL_ASSERT_PRIMITIVE_CAT(FIRST_ARGUMENT, ...) FIRST_ARGUMENT ## __VA_ARGS__
+
+    // This macro is used to convert an argument into a string through the use of the # macro operator.
+    // A side effect of the # macro operator is that it inhibits expansion of the argument.
+    // Hence to work around this issue the # macro operator is perfomed, indirectly, by this GTL_ASSERT_PRIMITIVE_TO_STRING() macro.
+    // A GTL_ASSERT_TO_STRING() macro is also defined to perform further expansion of the argument.
+    #define GTL_ASSERT_PRIMITIVE_TO_STRING(ARGUMENT) #ARGUMENT
+    #define GTL_ASSERT_TO_STRING(ARGUMENT) GTL_ASSERT_PRIMITIVE_TO_STRING(ARGUMENT)
+
+    // This macro is used to compliment its boolean input.
+    // The only valid inputs for the BOOLEAN_TEST argument is 0 or 1, which are complimented to 1 and 0 respectively.
+    #define GTL_ASSERT_COMPLIMENT(BOOLEAN_TEST) GTL_ASSERT_PRIMITIVE_CAT(GTL_ASSERT_COMPLIMENT_, BOOLEAN_TEST)
+    #define GTL_ASSERT_COMPLIMENT_0 1
+    #define GTL_ASSERT_COMPLIMENT_1 0
+
+    // These macros are used to extract arguments from the parameters of a varadic macros.
+    #define GTL_ASSERT_ARGUMENT_1(ARGUMENT_1, ...) ARGUMENT_1
+    #define GTL_ASSERT_ARGUMENT_2(ARGUMENT_1, ARGUMENT_2, ...) ARGUMENT_2
+    #define GTL_ASSERT_ARGUMENTS_2_N(ARGUMENT_1, ...) __VA_ARGS__
+
+    // This macro is used to further expand deferred expressions.
+    // When writing macros it can be useful to use expressions that take multiple scans by the preprocessor to fully expand.
+    // These are called deferred expressions and occur because after a macro expanded it creates a disabling contex preventing further expansion.
+    // This disabling context only exists during that one scan, therefore by re-scanning a deferred expression we can expand it again.
+    #define GTL_ASSERT_EXPAND(...) __VA_ARGS__
+
+    // This macro is used to prevent a macro from expanding during a scan.
+    // Just as it can be useful to perform further expansion it can also be useful to delay the expansion of a macro until the next scan.
+    // To achieve this the macro token must not match anything during the first scan, but then match during the next.
+    // During the first scan of the GTL_ASSERT_DEFER() macro the GTL_ASSERT_EMPTY() token block expansion of the ARGUMENT() macro.
+    // This is because the name of the ARGUMENT macro does not match without its parentheses.
+    // During the second scan just ARGUMENT is left, which will match the set of parentheses from the parent expression.
+    #define GTL_ASSERT_EMPTY()
+    #define GTL_ASSERT_DEFER(ARGUMENT) ARGUMENT GTL_ASSERT_EMPTY()
+
+    // This macro is used to detect if an argument is a certain value.
+    // To achieve this it uses the fact that vardiac arguments, __VA_ARGS__, can expand to multiple parameters.
+    // If the GTL_ASSERT_CHECK() macro is given two or more arguments, the second of these is returned.
+    // If the GTL_ASSERT_CHECK() macro is given one argument, a zero is returned.
+    // A helper GTL_ASSERT_PROBE() macro is defined that provides two aruments, the second being a one.
+    // Therefore the GTL_ASSERT_CHECK() macro can return 0 or 1 depending on the number of arguments.
+    #define GTL_ASSERT_CHECK(...) GTL_ASSERT_EXPAND(GTL_ASSERT_ARGUMENT_2(__VA_ARGS__, 0,))
+    #define GTL_ASSERT_PROBE(IGNORED) IGNORED, 1,
+
+    // This macro is used to invert and cleanup inputs, it returns 1 when given 0, and returns 0 for all other TEST inputs.
+    // By using the GTL_ASSERT_CHECK macro and providing it with a GTL_ASSERT_NOT_0 which is actually a GTL_ASSERT_PROBE() we can get a 1 output.
+    // By not defining GTL_ASSERT_NOT_1 or any other GTL_ASSERT_NOT_XXX macros these will not be expanded into multiple arguments and therefore we get a 0 output.
+    #define GTL_ASSERT_NOT(TEST) GTL_ASSERT_CHECK(GTL_ASSERT_EXPAND(GTL_ASSERT_PRIMITIVE_CAT(GTL_ASSERT_NOT_, TEST)))
+    #define GTL_ASSERT_NOT_0 GTL_ASSERT_PROBE(~)
+
+    // This macro is used to cleanup inputs into a boolean 0 or 1.
+    // First the GTL_ASSERT_NOT macro is used to cleanup and invert the TEST.
+    // Then the GTL_ASSERT_COMPLIMENT macro is used to compliment the output.
+    #define GTL_ASSERT_BOOLEAN(TEST) GTL_ASSERT_COMPLIMENT(GTL_ASSERT_NOT(TEST))
+
+    // This macro is used to select between two arguments based on a BOOLEAN_TEST, which must be exactly 0 or 1
+    // To achieve this a GTL_ASSERT_IF_X macro is selected based on the value of the BOOLEAN_TEST.
+    // The GTL_ASSERT_IF_X macros are also functions and use the parenthesis after the whole GTL_ASSERT_IF() macro.
+    // If BOOLEAN_TEST is 0 the result is the first argument of the second set of parenthesis.
+    // If BOOLEAN_TEST is 1 it returns just the first argument of the second set of parenthesis.
+    #define GTL_ASSERT_IF(BOOLEAN_TEST) GTL_ASSERT_PRIMITIVE_CAT(GTL_ASSERT_IF_, BOOLEAN_TEST)
+    #define GTL_ASSERT_IF_0(THEN, ...) __VA_ARGS__
+    #define GTL_ASSERT_IF_1(THEN, ...) THEN
+
+    // This macro is used to produce a 0 when expanded.
+    // As it is defined as a function its expansion can be deferred by separating it from its parenthesis.
+    #define GTL_ASSERT_END_FLAG() 0
+
+    // This macro is used to check the number of vardiac arguments provided, and return the result as a boolean 0 or 1.
+    // Step 1 is to wrap everything in a GTL_ASSERT_BOOLEAN() macro to convert the output to boolean.
+    // Step 2 is to use the GTL_ASSERT_EXPAND() macro to allow us to use the GTL_ASSERT_DEFER() macro to defer expansion of step 3.
+    // Step 3 is to extract the first argument of "(GTL_ASSERT_END_FLAG GTL_ASSERT_ARGUMENTS_2_N(__VA_ARGS__,),)", but this is deferred until after step 4.
+    // Step 4 is to get the second and onwards arguments of the initial input arguments.
+    // If there are 0 input arguments step 4 returns "GTL_ASSERT_END_FLAG".
+    // If there are 1 input arguments step 4 returns "GTL_ASSERT_END_FLAG".
+    // If there are 2 input arguments step 4 returns "GTL_ASSERT_END_FLAGXXX".
+    // If there are 3 input arguments step 4 returns "GTL_ASSERT_END_FLAGXXX,XXX".
+    // Rolling back to step 3, extracting the first argument returns either "GTL_ASSERT_END_FLAG" or "GTL_ASSERT_END_FLAGXXX"
+    // Using the parenthesis after this block results in GTL_ASSERT_END_FLAG() or GTL_ASSERT_END_FLAGXXX(), and remember GTL_ASSERT_END_FLAG() expands to 0.
+    // Finally the GTL_ASSERT_BOOLEAN() macro converts 0 into 0 and GTL_ASSERT_END_FLAGXXX() into 1.
+    #define GTL_ASSERT_HAS_TWO_ARGUMENTS(...) GTL_ASSERT_BOOLEAN(GTL_ASSERT_EXPAND(GTL_ASSERT_DEFER(GTL_ASSERT_ARGUMENT_1)(GTL_ASSERT_END_FLAG GTL_ASSERT_ARGUMENTS_2_N(__VA_ARGS__,),)()))
+
+    // This macro is used to check assumptions in code, upon the failure of those assumptions debug information will be printed and std::abort() called.
+    // To achieve this it uses the fact that c++ will skip evaluating remaining parameters in a boolean-or (||) chain as soon as one is true.
+    // To allow a format string and associated parameters to also be printed in the result of an assertion failure all the macros above are used.
+    // When two or more arguments are provided, the second and onwards are sent to the print_error() function for output.
+    // When only one argument is provided, this additional printing stage is skipped.
+    // The first argument of the GTL_ASSERT() macro must be the assertion test itself.
+    #define GTL_ASSERT(...)                                                                                                         \
+        GTL_ASSERT_IF(GTL_ASSERT_HAS_TWO_ARGUMENTS(__VA_ARGS__))(                                                                   \
+            static_cast<void>((GTL_ASSERT_ARGUMENT_1(__VA_ARGS__)) || (                                                             \
+                gtl::assert::print_error("Assertion failure:\n"),                                                                   \
+                gtl::assert::print_error("  Assertion:          %s\n", GTL_ASSERT_TO_STRING(GTL_ASSERT_ARGUMENT_1(__VA_ARGS__))),   \
+                gtl::assert::print_error("  File:               %s\n", __FILE__),                                                   \
+                gtl::assert::print_error("  Line:               %d\n", __LINE__),                                                   \
+                gtl::assert::print_error("  Function:           %s\n", GTL_ASSERT_FUNCTION),                                        \
+                gtl::assert::print_error("  Additional Output:  "),                                                                 \
+                gtl::assert::print_error(GTL_ASSERT_ARGUMENTS_2_N(__VA_ARGS__)),                                                    \
+                gtl::assert::print_error("\n"),                                                                                     \
+                std::abort(), 0)                                                                                                    \
+            )                                                                                                                       \
+        ,                                                                                                                           \
+            static_cast<void>((__VA_ARGS__) || (                                                                                    \
+                gtl::assert::print_error("Assertion failure:\n"),                                                                   \
+                gtl::assert::print_error("  Assertion:          %s\n", GTL_ASSERT_TO_STRING(__VA_ARGS__)),                          \
+                gtl::assert::print_error("  File:               %s\n", __FILE__),                                                   \
+                gtl::assert::print_error("  Line:               %d\n", __LINE__),                                                   \
+                gtl::assert::print_error("  Function:           %s\n", GTL_ASSERT_FUNCTION),                                        \
+                std::abort(), 0)                                                                                                    \
+            )                                                                                                                       \
+        )
+}}
+
+#endif // GTL_ASSERT_ASSERT_HPP
