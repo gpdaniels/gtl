@@ -23,9 +23,9 @@ THE SOFTWARE
 
 TEST(SUB_TEST_GROUP, SUB_TEST_NAME);
 
-int main(int ArgumentCount, char* ArgumentArray[]) {
-    UNUSED(ArgumentCount);
-    UNUSED(ArgumentArray);
+int main(int argument_count, char* arguments[]) {
+    UNUSED(argument_count);
+    UNUSED(arguments);
     PRINT("Starting test...");
     TEST_CALL(SUB_TEST_GROUP, SUB_TEST_NAME);
     PRINT("Finish test, '%lld' assertions, detected '%lld' errors.", REQUIRE_COUNT, REQUIRE_FAILURE_COUNT);

@@ -270,7 +270,6 @@ namespace access {
     // Default to automatic if no storage class is given.
     #define GTL_ACCESS_INITIALISE_GTL_ACCESS_FUNCTION_(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
         GTL_ACCESS_INITIALISE_GTL_ACCESS_FUNCTION_auto(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME)
-}
 
     // Generate an access class for a given class name and members.
     #define GTL_ACCESS_GENERATE(ACCESS_CLASS_NAME, CLASS_NAME, ...)                                       \
@@ -289,6 +288,6 @@ namespace access {
                 : GTL_ACCESS_FOR_EACH(GTL_ACCESS_INITIALISE, GTL_ACCESS_COMMA, CLASS_NAME, __VA_ARGS__) { \
             }                                                                                             \
         }
-}
+}}
 
 #endif // GTL_ACCESS_HPP

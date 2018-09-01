@@ -29,6 +29,6 @@ THE SOFTWARE
 #define TEST(GROUP_NAME, TEST_NAME)         void TEST_EXPAND(GROUP_NAME, TEST_NAME)(void)
 
 // Declare the main function.
-int main(int ArgumentCount, char* ArgumentArray[]);
+int main(int argument_count, char* arguments[]);
 
 #endif // MAIN_TESTS_HPP
