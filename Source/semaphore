@@ -57,9 +57,9 @@ namespace gtl {
         }
 
         /// @brief  Constructor allows the semaphore's count to be initialised, but defaults to zero.
-        /// @param  count - The initial semaphore count.
-        semaphore(unsigned int count = 0)
-            : count(count) {
+        /// @param  initial_count The initial semaphore count.
+        semaphore(unsigned int initial_count = 0)
+            : count(initial_count) {
         }
 
         /// @brief  Default copy constructor.

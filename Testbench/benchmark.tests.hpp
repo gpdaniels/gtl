@@ -23,6 +23,7 @@ THE SOFTWARE
 #define BENCHMARK_TESTS_HPP
 
 #include <cstdio>
+#include <cstdlib>
 #include <functional>
 #include <thread>
 #include <utility>

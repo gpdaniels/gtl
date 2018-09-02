@@ -54,24 +54,30 @@ public:
     int value;
 
 public:
-    test_class(void)
-        : value(0) {
-    }
+    test_class(void);
 
 private:
-    virtual void on_event(test_event& data) override {
-        this->value = data.value;
-    }
+    virtual void on_event(test_event& data) override;
 
     // This line is just to silence a clang warning.
     using gtl::event_queue<std::function<void(void)>>::on_event;
 
 public:
-    void process() {
-        gtl::event_queue<test_event>::process_events();
-        gtl::event_queue<std::function<void(void)>>::process_events();
-    }
+    void process();
 };
+
+test_class::test_class(void)
+    : value(0) {
+}
+
+void test_class::on_event(test_event& data) {
+    this->value = data.value;
+}
+
+void test_class::process() {
+    gtl::event_queue<test_event>::process_events();
+    gtl::event_queue<std::function<void(void)>>::process_events();
+}
 
 TEST(evaluation, emit_and_process_event) {
     test_class test;
@@ -86,7 +92,6 @@ TEST(evaluation, emit_and_process_event) {
 
     REQUIRE(test.value == 1, "Expected the value of the event to have been propadated to the test class.");
 }
-
 
 TEST(evaluation, emit_and_process_invokable_event) {
     test_class test;

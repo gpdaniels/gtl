@@ -41,14 +41,14 @@ namespace access {
     /// @brief  Specialisation of the target template for member variables.
     template <typename class_type, typename return_type>
     struct target<class_type, return_type> {
-        using member_type = return_type(class_type::*);
+        using member_type = return_type class_type::*;
         using connection_type = return_type&;
     };
 
     /// @brief  Specialisation of the target template for static member variables.
     template <typename return_type>
     struct target<void, return_type> {
-        using member_type = return_type(*);
+        using member_type = return_type*;
         using connection_type = return_type&;
     };
 
@@ -257,7 +257,7 @@ namespace access {
 
     // Initialising static member functions.
     #define GTL_ACCESS_INITIALISE_GTL_ACCESS_FUNCTION_static(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
-        MEMBER_NAME([instance](auto&&... params) { \
+        MEMBER_NAME([/*instance*/](auto&&... params) { \
             return (*get_member(gtl::access::GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}))(std::forward<decltype(params)>(params)...); \
         })
 

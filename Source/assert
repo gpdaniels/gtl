@@ -30,8 +30,24 @@ namespace assert {
     /// @brief  Function for printing to the error stream.
     template <typename... argument_types>
     int print_error(const char* format_string, argument_types... arguments) {
+        // Disable clang warning about non-string-literal format strings.
+        #if defined(__clang__)
+            #pragma clang diagnostic push
+            #pragma clang diagnostic ignored "-Wformat-security"
+            #pragma clang diagnostic ignored "-Wformat-nonliteral"
+        #endif
+        // Print the formatted error message.
         const int output_length = std::fprintf(stderr, format_string, arguments...);
+
+        // Re-enable warnings in clang.
+        #if defined(__clang__)
+            #pragma clang diagnostic pop
+        #endif
+
+        // Ensure the stream is flushed.
         std::fflush(stderr);
+
+        // Return the output length.
         return output_length;
     }
     

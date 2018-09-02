@@ -24,6 +24,11 @@ THE SOFTWARE
 
 #include <memory>
 
+#if defined(__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wweak-vtables"
+#endif
+
 namespace gtl {
     /// @brief  The any class is a variant type that can hold anything.
     class any final {
@@ -68,12 +73,12 @@ namespace gtl {
 
         public:
             /// @brief  Virtual destructor will call the descrutor for abstract_variable.
-            virtual ~variable() = default;
+            virtual ~variable() override = default;
 
             /// @brief  Explicit constructor that stores the provided value in this variable.
-            /// @param  value - The value to be stored in the variable.
-            explicit variable(type value)
-                : value(value) {
+            /// @param  any_value The value to be stored in the variable.
+            explicit variable(type any_value)
+                : value(any_value) {
             }
 
         private:
@@ -109,7 +114,7 @@ namespace gtl {
         any() = default;
 
         /// @brief  Copy constructor.
-        /// @param  other - The other any to be copied.
+        /// @param  other The other any to be copied.
         any(const any& other)
             : value(other.value ? other.value->clone() : nullptr) {
         }
@@ -118,7 +123,7 @@ namespace gtl {
         any(any&&) = default;
 
         /// @brief  Copy assignment operator.
-        /// @param  other - The other any to be copied.
+        /// @param  other The other any to be copied.
         any& operator=(const any& other) {
             // Check the we are not self assigning
             if (this != &other) {
@@ -144,21 +149,21 @@ namespace gtl {
         };
 
         /// @brief  Templated copy assignment operator.
-        /// @param  value - The value to store in the any.
+        /// @param  any_value The value to store in the any.
         template <typename type>
-        any& operator=(const type& value) {
+        any& operator=(const type& any_value) {
             // Allocate a variable to hold the value and store this in value
-            this->value = std::make_unique<variable<type > >(value);
+            this->value = std::make_unique<variable<type > >(any_value);
 
             // Return this
             return *this;
         }
 
         /// @brief  Templated constructor taking any type.
-        /// @param  value - The value to be stored in the any.
+        /// @param  any_value The value to be stored in the any.
         template <typename type>
-        any(const type& value)
-            : value(std::make_unique<variable<type> >(value)) {
+        any(const type& any_value)
+            : value(std::make_unique<variable<type> >(any_value)) {
         }
 
         /// @brief  Templated conversion operator will cast any to anything.
@@ -172,5 +177,9 @@ namespace gtl {
         }
     };
 }
+
+#if defined(__clang__)
+    #pragma clang diagnostic pop
+#endif
 
 #endif // GTL_ANY_HPP

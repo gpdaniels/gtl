@@ -68,13 +68,13 @@ namespace gtl {
         random_pcg& operator=(random_pcg&&) = default;
 
         /// @brief  Constructor with 64 bit seed.
-        /// @param  seed_value - Seed value used to initialise the state.
+        /// @param  seed_value Seed value used to initialise the state.
         random_pcg(std::uint64_t seed_value) {
             this->seed(seed_value);
         }
 
         /// @brief  Initialise the state from a 64 bit seed.
-        /// @param  seed_value - Seed value used to initialise the state.
+        /// @param  seed_value Seed value used to initialise the state.
         void seed(std::uint64_t seed_value) {
             this->state = 0;
             this->increment = (seed_value << 1) | 1;
@@ -116,8 +116,8 @@ namespace gtl {
         }
 
         /// @brief  Get a random number between two bounds.
-        /// @param  inclusive_min - Minimum number that can be returned.
-        /// @param  inclusive_max - Max number than can be returned.
+        /// @param  inclusive_min Minimum number that can be returned.
+        /// @param  inclusive_max Max number than can be returned.
         /// @return A pseudo-random number.
         std::uint32_t get_random(std::uint32_t inclusive_min, std::uint32_t inclusive_max)  {
             GTL_RANDOM_PCG_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");
@@ -125,8 +125,8 @@ namespace gtl {
         }
 
         /// @brief  Get a random number between two bounds.
-        /// @param  inclusive_min - Minimum number that can be returned.
-        /// @param  inclusive_max - Max number than can be returned.
+        /// @param  inclusive_min Minimum number that can be returned.
+        /// @param  inclusive_max Max number than can be returned.
         /// @return A pseudo-random number.
         double get_random(double inclusive_min, double inclusive_max) {
             GTL_RANDOM_PCG_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");

@@ -86,7 +86,7 @@ namespace gtl {
             constexpr static const unsigned long long stack_size = SIGSTKSZ;
 
             /// @brief  The id of the signal raised to trigger a signal handler.
-            constexpr static const int signal_identifier = SIGUSR1;
+            constexpr static const int trigger_signal_identifier = SIGUSR1;
 #       endif
 
     public:
@@ -94,47 +94,47 @@ namespace gtl {
         class id {
         private:
             /// @brief  The identifier value.
-            unsigned long long int identifier;
+            unsigned long long int value;
 
         public:
             /// @brief  Construct an identifier type from an integer.
-            /// @param  identifier - The integer used as the id value.
-            explicit id(unsigned long long int identifier = 0)
-                : identifier(identifier) {
+            /// @param  unique_value The integer used as the id value.
+            explicit id(unsigned long long int unique_value = 0)
+                : value(unique_value) {
             }
 
             /// @brief  The less than operator is the only one defined using the identifier value, all other operators are defined using this one.
-            /// @param  rhs - The right hand side of the comparison.
+            /// @param  rhs The right hand side of the comparison.
             constexpr bool operator < (const id& rhs) const {
-                return (this->identifier < rhs.identifier);
+                return (this->value < rhs.value);
             }
 
             /// @brief  The greater than operator defined using the less than operator with the sides of the comparison reversed.
-            /// @param  rhs - The right hand side of the comparison.
+            /// @param  rhs The right hand side of the comparison.
             constexpr bool operator > (const id& rhs) const {
                 return rhs < *this;
             }
 
             /// @brief  The less than or equal to operator defined using the greater than operator and inverted.
-            /// @param  rhs - The right hand side of the comparison.
+            /// @param  rhs The right hand side of the comparison.
             constexpr bool operator <=(const id& rhs) const {
                 return !(*this > rhs);
             }
 
             /// @brief  The greater than or equal to operator defined using the less than operator and inverted.
-            /// @param  rhs - The right hand side of the comparison.
+            /// @param  rhs The right hand side of the comparison.
             constexpr bool operator >=(const id& rhs) const {
                 return !(*this < rhs);
             }
 
             /// @brief  The inequality operator defined using the less than and greater than operators.
-            /// @param  rhs - The right hand side of the comparison.
+            /// @param  rhs The right hand side of the comparison.
             constexpr bool operator !=(const id& rhs) const {
                 return (*this < rhs) || (*this > rhs);
             }
 
             /// @brief  The equality operator defined using the inequality operator and inverted.
-            /// @param  rhs - The right hand side of the comparison.
+            /// @param  rhs The right hand side of the comparison.
             constexpr bool operator ==(const id& rhs) const {
                 return !(*this != rhs);
             }
@@ -174,7 +174,7 @@ namespace gtl {
             }
 
             /// @brief  The copy constructor copies variables from another object, if there is a copier function it is used to copy the function.
-            /// @param  other - The lambda to copy.
+            /// @param  other The lambda to copy.
             lambda(const lambda& other)
                 : function(other.copier ? other.copier(other.function) : nullptr)
                 , copier(other.copier)
@@ -186,7 +186,7 @@ namespace gtl {
             lambda(lambda&&) noexcept = default;
 
             /// @brief  The copy assignment operator copies variables from another object, if there is a copier function it is used to copy the function.
-            /// @param  other - The lambda to copy.
+            /// @param  other The lambda to copy.
             lambda& operator=(const lambda& other) {
                 if (this != &other) {
                     this->function = other.copier ? other.copier(other.function) : nullptr;
@@ -201,43 +201,43 @@ namespace gtl {
             lambda& operator=(lambda&&) noexcept = default;
 
             /// @brief  Constructor from a function type copies a provided function to a heap allocated internal function,.
-            /// @param  function - The function to wrap.
+            /// @param  raw_function The function to wrap.
             template <typename function_type>
-            lambda(const function_type& function)
-                : function(new function_type(function))
-                , copier([](void* function) -> void* {
-                    if (function) {
-                        return new function_type(*reinterpret_cast<function_type*>(function));
+            lambda(const function_type& raw_function)
+                : function(new function_type(raw_function))
+                , copier([](void* function_pointer) -> void* {
+                    if (function_pointer) {
+                        return new function_type(*reinterpret_cast<function_type*>(function_pointer));
                     }
                     return nullptr;
                 })
-                , deleter([](void* function) -> void {
-                    delete reinterpret_cast<function_type*>(function);
+                , deleter([](void* function_pointer) -> void {
+                    delete reinterpret_cast<function_type*>(function_pointer);
                 })
-                , executor([](void* function) -> void {
-                    return reinterpret_cast<function_type*>(function)->operator()();
+                , executor([](void* function_pointer) -> void {
+                    return reinterpret_cast<function_type*>(function_pointer)->operator()();
                 }) {
             }
 
             /// @brief  Copy assignement operator from a function type copies a provided function to a heap allocated internal function,.
-            /// @param  function - The function to wrap.
+            /// @param  raw_function The function to wrap.
             template <typename function_type>
-            lambda& operator=(const function_type& function) {
+            lambda& operator=(const function_type& raw_function) {
                 if (this->function != nullptr) {
                     this->deleter(this->function);
                 }
-                this->function = new function_type(function);
-                this->copier = [](void* function) -> void* {
-                    if (function) {
-                        return new function_type(*reinterpret_cast<function_type*>(function));
+                this->function = new function_type(raw_function);
+                this->copier = [](void* function_pointer) -> void* {
+                    if (function_pointer) {
+                        return new function_type(*reinterpret_cast<function_type*>(function_pointer));
                     }
                     return nullptr;
                 };
-                this->deleter = [](void* function) -> void {
-                    delete reinterpret_cast<function_type*>(function);
+                this->deleter = [](void* function_pointer) -> void {
+                    delete reinterpret_cast<function_type*>(function_pointer);
                 };
-                this->executor = [](void* function) -> void {
-                    return reinterpret_cast<function_type*>(function)->operator()();
+                this->executor = [](void* function_pointer) -> void {
+                    return reinterpret_cast<function_type*>(function_pointer)->operator()();
                 };
                 return *this;
             }
@@ -339,10 +339,10 @@ namespace gtl {
         }
 
         /// @brief  Constructor creates a coroutine context, taking a function as an argument to call from the coroutine context.
-        /// @param  function - Function to call from the coroutine context.
-        /// @param  arguments - Function arguments to provide to the function at call time.
+        /// @param  coroutine_function Function to call from the coroutine context.
+        /// @param  coroutine_arguments Function arguments to provide to the function at call time.
         template <typename function_type, typename... argument_types>
-        coroutine(function_type&& function, argument_types&&... arguments)
+        coroutine(function_type&& coroutine_function, argument_types&&... coroutine_arguments)
 #           if !defined(_WIN32)
                 : signal_raised(0)
                 , stack(new unsigned char[coroutine::stack_size])
@@ -360,18 +360,18 @@ namespace gtl {
 
                 // Step 1:
                 // Preserve the current signal mask and block an arbitrary worker signal.
-                // coroutine::signal_identifier is used here, but any signal can be used for this (even an already used one).
+                // coroutine::trigger_signal_identifier is used here, but any signal can be used for this (even an already used one).
                 // This worker signal is later temporarily required for the trampoline step.
                 sigset_t coroutine_signal_set = {};
                 if (sigemptyset(&coroutine_signal_set) != 0) {
                     std::terminate();
                 }
-                if (sigaddset(&coroutine_signal_set, coroutine::signal_identifier) != 0) {
+                if (sigaddset(&coroutine_signal_set, coroutine::trigger_signal_identifier) != 0) {
                     std::terminate();
                 }
 
-                sigset_t parent_signal_set = {};
-                if (sigprocmask(SIG_BLOCK, &coroutine_signal_set, &parent_signal_set) != 0) {
+                sigset_t local_parent_signal_set = {};
+                if (sigprocmask(SIG_BLOCK, &coroutine_signal_set, &local_parent_signal_set) != 0) {
                     std::terminate();
                 }
 
@@ -386,18 +386,18 @@ namespace gtl {
                 }
 
                 struct sigaction parent_signal_action = {};
-                if (sigaction(coroutine::signal_identifier, &coroutine_signal_action, &parent_signal_action) != 0) {
+                if (sigaction(coroutine::trigger_signal_identifier, &coroutine_signal_action, &parent_signal_action) != 0) {
                     std::terminate();
                 }
 
                 // Step 3:
                 // Preserve a possibly active alternate signal stack and configure the memory chunk starting at this->stack as the new temporary alternate signal stack of length size.
-                stack_t stack = {};
-                stack.ss_sp = this->stack;
-                stack.ss_size = coroutine::stack_size;
-                stack.ss_flags = 0;
-                stack_t parent_stack;
-                if (sigaltstack(&stack, &parent_stack) != 0) {
+                stack_t signal_stack = {};
+                signal_stack.ss_sp = this->stack;
+                signal_stack.ss_size = coroutine::stack_size;
+                signal_stack.ss_flags = 0;
+                stack_t parent_signal_stack;
+                if (sigaltstack(&signal_stack, &parent_signal_stack) != 0) {
                     std::terminate();
                 }
 
@@ -405,8 +405,8 @@ namespace gtl {
                 // Save parameters for the trampoline step in member variables.
                 // Send the current process the worker signal, temporarily unblock it and this way allow it to be delivered on the signal stack.
                 // This transfers execution control to the trampoline function.
-                this->function = [function, arguments...](){ function(arguments...); };
-                this->parent_signal_set = parent_signal_set;
+                this->function = [coroutine_function, coroutine_arguments...](){ coroutine_function(coroutine_arguments...); };
+                this->parent_signal_set = local_parent_signal_set;
                 this->signal_raised = 0;
 
                 // Store the currently executing coroutine in previous.
@@ -415,13 +415,13 @@ namespace gtl {
                 gtl::current_coroutine = this;
 
                 // Raise the signal.
-                if (raise(coroutine::signal_identifier) != 0) {
+                if (raise(coroutine::trigger_signal_identifier) != 0) {
                     std::terminate();
                 }
 
                 // Unblock and wait for the signal by suspending the current thread.
                 sigfillset(&coroutine_signal_set);
-                sigdelset(&coroutine_signal_set, coroutine::signal_identifier);
+                sigdelset(&coroutine_signal_set, coroutine::trigger_signal_identifier);
                 while(!this->signal_raised) {
                     if (sigsuspend(&coroutine_signal_set) != -1) {
                         std::terminate();
@@ -431,23 +431,23 @@ namespace gtl {
                 // Step 6:
                 // Restore the preserved alternate signal stack, preserved signal action and preserved signal mask for worker signal.
                 // This way an existing application configuration for the worker signal is restored.
-                if (sigaltstack(nullptr, &stack) != 0) {
+                if (sigaltstack(nullptr, &signal_stack) != 0) {
                     std::terminate();
                 }
-                stack.ss_flags = SS_DISABLE;
-                if (sigaltstack(&stack, nullptr) != 0) {
+                signal_stack.ss_flags = SS_DISABLE;
+                if (sigaltstack(&signal_stack, nullptr) != 0) {
                     std::terminate();
                 }
-                if (sigaltstack(nullptr, &stack) != 0) {
+                if (sigaltstack(nullptr, &signal_stack) != 0) {
                     std::terminate();
                 }
-                if (!(parent_stack.ss_flags & SS_DISABLE)) {
-                    if (sigaltstack(&parent_stack, nullptr) != 0) {
+                if (!(parent_signal_stack.ss_flags & SS_DISABLE)) {
+                    if (sigaltstack(&parent_signal_stack, nullptr) != 0) {
                         std::terminate();
                     }
                 }
 
-                if (sigaction(coroutine::signal_identifier, &parent_signal_action, nullptr) != 0) {
+                if (sigaction(coroutine::trigger_signal_identifier, &parent_signal_action, nullptr) != 0) {
                     std::terminate();
                 }
                 if (sigprocmask(SIG_SETMASK, &parent_signal_set, nullptr) != 0) {
@@ -499,7 +499,7 @@ namespace gtl {
     private:
 #       if !defined(_WIN32)
             /// @brief  Signal handler, called by the os with a new stack when this class calls raise.
-            /// @param  signal_identifier - The identifying code of the raised signal.
+            /// @param  signal_identifier The identifying code of the raised signal.
             static void signal_handler_trampolene(int signal_identifier) {
                 // Don't need to validate which signal it is as this routine only handles one.
                 static_cast<void>(signal_identifier);
@@ -518,6 +518,7 @@ namespace gtl {
             }
 
             /// @brief  Container function jumped to and from when joining and yielding from a coroutine.
+            [[noreturn]]
             static void bootstrap() {
                 // Beware this function cannot be a member function, because the coroutine could have been moved while we were away.
                 // Moving the coroutine changes the "this" pointer, therefore the code "this->function()" would be invalid.
@@ -635,7 +636,7 @@ namespace gtl {
         }
 
         /// @brief  Sleep a coroutine for an amount of time, provided to match the std::thread api.
-        /// @param  duration - Length of time to sleep for.
+        /// @param  duration Length of time to sleep for.
         template<typename number_of_ticks_type, typename period_type>
         static void sleep_for(const std::chrono::duration<number_of_ticks_type, period_type>& duration) {
             GTL_COROUTINE_ASSERT(gtl::current_coroutine != nullptr, "A coroutine must be running to sleep.");
@@ -643,7 +644,7 @@ namespace gtl {
         }
 
         /// @brief  Sleep a coroutine until a specific time, provided to match the std::thread api.
-        /// @param  time_point - Time to sleep until.
+        /// @param  time_point Time to sleep until.
         template<typename clock_type, typename duration_type>
         static void sleep_until(const std::chrono::time_point<clock_type, duration_type>& time_point) {
             GTL_COROUTINE_ASSERT(gtl::current_coroutine != nullptr, "A coroutine must be running to sleep.");

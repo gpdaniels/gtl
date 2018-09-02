@@ -20,6 +20,7 @@ THE SOFTWARE
 
 #include <main.tests.hpp>
 #include <benchmark.tests.hpp>
+#include <comparison.tests.hpp>
 #include <macro.tests.hpp>
 
 #include <random_mt>
@@ -70,15 +71,15 @@ TEST(function, get_random_raw) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
     unsigned int random_raw = random_mt.get_random_raw();
-    REQUIRE(random_raw == 1802874368, "Pseudo-random number 1 was %u, expected %u", random_raw, 1802874368u);
+    REQUIRE(comparison::is_equal(random_raw, 1802874368u), "Pseudo-random number 1 was %u, expected %u", random_raw, 1802874368u);
     random_raw = random_mt.get_random_raw();
-    REQUIRE(random_raw == 453914126, "Pseudo-random number 2 was %u, expected %u", random_raw, 453914126u);
+    REQUIRE(comparison::is_equal(random_raw, 453914126u), "Pseudo-random number 2 was %u, expected %u", random_raw, 453914126u);
     random_raw = random_mt.get_random_raw();
-    REQUIRE(random_raw == 2896676756, "Pseudo-random number 3 was %u, expected %u", random_raw, 2896676756u);
+    REQUIRE(comparison::is_equal(random_raw, 2896676756u), "Pseudo-random number 3 was %u, expected %u", random_raw, 2896676756u);
     random_raw = random_mt.get_random_raw();
-    REQUIRE(random_raw == 1924626451, "Pseudo-random number 4 was %u, expected %u", random_raw, 1924626451u);
+    REQUIRE(comparison::is_equal(random_raw, 1924626451u), "Pseudo-random number 4 was %u, expected %u", random_raw, 1924626451u);
     random_raw = random_mt.get_random_raw();
-    REQUIRE(random_raw == 1073351711, "Pseudo-random number 5 was %u, expected %u", random_raw, 1073351711u);
+    REQUIRE(comparison::is_equal(random_raw, 1073351711u), "Pseudo-random number 5 was %u, expected %u", random_raw, 1073351711u);
 }
 
 TEST(function, get_random_exclusive) {
@@ -86,15 +87,15 @@ TEST(function, get_random_exclusive) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
     double random_exclusive = round(random_mt.get_random_exclusive());
-    REQUIRE(random_exclusive == 0.419764, "Pseudo-random number 1 was %lf, expected %lf", random_exclusive, 0.419764);
+    REQUIRE(comparison::is_equal(random_exclusive, 0.419764), "Pseudo-random number 1 was %lf, expected %lf", random_exclusive, 0.419764);
     random_exclusive = round(random_mt.get_random_exclusive());
-    REQUIRE(random_exclusive == 0.105685, "Pseudo-random number 2 was %lf, expected %lf", random_exclusive, 0.105685);
+    REQUIRE(comparison::is_equal(random_exclusive, 0.105685), "Pseudo-random number 2 was %lf, expected %lf", random_exclusive, 0.105685);
     random_exclusive = round(random_mt.get_random_exclusive());
-    REQUIRE(random_exclusive == 0.674435, "Pseudo-random number 3 was %lf, expected %lf", random_exclusive, 0.674435);
+    REQUIRE(comparison::is_equal(random_exclusive, 0.674435), "Pseudo-random number 3 was %lf, expected %lf", random_exclusive, 0.674435);
     random_exclusive = round(random_mt.get_random_exclusive());
-    REQUIRE(random_exclusive == 0.448112, "Pseudo-random number 4 was %lf, expected %lf", random_exclusive, 0.448112);
+    REQUIRE(comparison::is_equal(random_exclusive, 0.448112), "Pseudo-random number 4 was %lf, expected %lf", random_exclusive, 0.448112);
     random_exclusive = round(random_mt.get_random_exclusive());
-    REQUIRE(random_exclusive == 0.249909, "Pseudo-random number 5 was %lf, expected %lf", random_exclusive, 0.249909);
+    REQUIRE(comparison::is_equal(random_exclusive, 0.249909), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive, 0.249909);
 }
 
 TEST(function, get_random_exclusive_top) {
@@ -102,15 +103,15 @@ TEST(function, get_random_exclusive_top) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
     double random_exclusive_top = round(random_mt.get_random_exclusive_top());
-    REQUIRE(random_exclusive_top == 0.419764, "Pseudo-random number 1 was %lf, expected %lf", random_exclusive_top, 0.419764);
+    REQUIRE(comparison::is_equal(random_exclusive_top, 0.419764), "Pseudo-random number 1 was %lf, expected %lf", random_exclusive_top, 0.419764);
     random_exclusive_top = round(random_mt.get_random_exclusive_top());
-    REQUIRE(random_exclusive_top == 0.105685, "Pseudo-random number 2 was %lf, expected %lf", random_exclusive_top, 0.105685);
+    REQUIRE(comparison::is_equal(random_exclusive_top, 0.105685), "Pseudo-random number 2 was %lf, expected %lf", random_exclusive_top, 0.105685);
     random_exclusive_top = round(random_mt.get_random_exclusive_top());
-    REQUIRE(random_exclusive_top == 0.674435, "Pseudo-random number 3 was %lf, expected %lf", random_exclusive_top, 0.674435);
+    REQUIRE(comparison::is_equal(random_exclusive_top, 0.674435), "Pseudo-random number 3 was %lf, expected %lf", random_exclusive_top, 0.674435);
     random_exclusive_top = round(random_mt.get_random_exclusive_top());
-    REQUIRE(random_exclusive_top == 0.448112, "Pseudo-random number 4 was %lf, expected %lf", random_exclusive_top, 0.448112);
+    REQUIRE(comparison::is_equal(random_exclusive_top, 0.448112), "Pseudo-random number 4 was %lf, expected %lf", random_exclusive_top, 0.448112);
     random_exclusive_top = round(random_mt.get_random_exclusive_top());
-    REQUIRE(random_exclusive_top == 0.249909, "Pseudo-random number 5 was %lf, expected %lf", random_exclusive_top, 0.249909);
+    REQUIRE(comparison::is_equal(random_exclusive_top, 0.249909), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive_top, 0.249909);
 }
 
 TEST(function, get_random_inclusive) {
@@ -118,30 +119,30 @@ TEST(function, get_random_inclusive) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
     double random_inclusive = round(random_mt.get_random_inclusive());
-    REQUIRE(random_inclusive == 0.419764, "Pseudo-random number 1 was %lf, expected %lf", random_inclusive, 0.419764);
+    REQUIRE(comparison::is_equal(random_inclusive, 0.419764), "Pseudo-random number 1 was %lf, expected %lf", random_inclusive, 0.419764);
     random_inclusive = round(random_mt.get_random_inclusive());
-    REQUIRE(random_inclusive == 0.105685, "Pseudo-random number 2 was %lf, expected %lf", random_inclusive, 0.105685);
+    REQUIRE(comparison::is_equal(random_inclusive, 0.105685), "Pseudo-random number 2 was %lf, expected %lf", random_inclusive, 0.105685);
     random_inclusive = round(random_mt.get_random_inclusive());
-    REQUIRE(random_inclusive == 0.674435, "Pseudo-random number 3 was %lf, expected %lf", random_inclusive, 0.674435);
+    REQUIRE(comparison::is_equal(random_inclusive, 0.674435), "Pseudo-random number 3 was %lf, expected %lf", random_inclusive, 0.674435);
     random_inclusive = round(random_mt.get_random_inclusive());
-    REQUIRE(random_inclusive == 0.448112, "Pseudo-random number 4 was %lf, expected %lf", random_inclusive, 0.448112);
+    REQUIRE(comparison::is_equal(random_inclusive, 0.448112), "Pseudo-random number 4 was %lf, expected %lf", random_inclusive, 0.448112);
     random_inclusive = round(random_mt.get_random_inclusive());
-    REQUIRE(random_inclusive == 0.249909, "Pseudo-random number 5 was %lf, expected %lf", random_inclusive, 0.249909);
+    REQUIRE(comparison::is_equal(random_inclusive, 0.249909), "Pseudo-random number 5 was %lf, expected %lf", random_inclusive, 0.249909);
 }
 
 TEST(function, get_random_bounded_long) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
     unsigned int random = random_mt.get_random(0u, 1u);
-    REQUIRE(random == 0, "Pseudo-random number 1 was %u, expected %u", random, 0u);
+    REQUIRE(comparison::is_equal(random, 0u), "Pseudo-random number 1 was %u, expected %u", random, 0u);
     random = random_mt.get_random(0u, 1u);
-    REQUIRE(random == 0, "Pseudo-random number 2 was %u, expected %u", random, 0u);
+    REQUIRE(comparison::is_equal(random, 0u), "Pseudo-random number 2 was %u, expected %u", random, 0u);
     random = random_mt.get_random(0u, 1u);
-    REQUIRE(random == 0, "Pseudo-random number 3 was %u, expected %u", random, 0u);
+    REQUIRE(comparison::is_equal(random, 0u), "Pseudo-random number 3 was %u, expected %u", random, 0u);
     random = random_mt.get_random(0u, 1u);
-    REQUIRE(random == 1, "Pseudo-random number 4 was %u, expected %u", random, 1u);
+    REQUIRE(comparison::is_equal(random, 1u), "Pseudo-random number 4 was %u, expected %u", random, 1u);
     random = random_mt.get_random(0u, 1u);
-    REQUIRE(random == 1, "Pseudo-random number 5 was %u, expected %u", random, 1u);
+    REQUIRE(comparison::is_equal(random, 1u), "Pseudo-random number 5 was %u, expected %u", random, 1u);
 }
 
 TEST(function, get_random_bounded_double) {
@@ -149,15 +150,15 @@ TEST(function, get_random_bounded_double) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
     double random = round(random_mt.get_random(-1.0, 0.0));
-    REQUIRE(random == -0.580236, "Pseudo-random number 1 was %lf, expected %lf", random, -0.580236);
+    REQUIRE(comparison::is_equal(random, -0.580236), "Pseudo-random number 1 was %lf, expected %lf", random, -0.580236);
     random = round(random_mt.get_random(-1.0, 0.0));
-    REQUIRE(random == -0.894315, "Pseudo-random number 2 was %lf, expected %lf", random, -0.894315);
+    REQUIRE(comparison::is_equal(random, -0.894315), "Pseudo-random number 2 was %lf, expected %lf", random, -0.894315);
     random = round(random_mt.get_random(-1.0, 0.0));
-    REQUIRE(random == -0.325565, "Pseudo-random number 3 was %lf, expected %lf", random, -0.325565);
+    REQUIRE(comparison::is_equal(random, -0.325565), "Pseudo-random number 3 was %lf, expected %lf", random, -0.325565);
     random = round(random_mt.get_random(-1.0, 0.0));
-    REQUIRE(random == -0.551888, "Pseudo-random number 4 was %lf, expected %lf", random, -0.551888);
+    REQUIRE(comparison::is_equal(random, -0.551888), "Pseudo-random number 4 was %lf, expected %lf", random, -0.551888);
     random = round(random_mt.get_random(-1.0, 0.0));
-    REQUIRE(random == -0.750091, "Pseudo-random number 5 was %lf, expected %lf", random, -0.750091);
+    REQUIRE(comparison::is_equal(random, -0.750091), "Pseudo-random number 5 was %lf, expected %lf", random, -0.750091);
 }
 
 TEST(evaluation, random_numbers) {
@@ -167,5 +168,5 @@ TEST(evaluation, random_numbers) {
     for (unsigned int iteration = 0; iteration < 1000000; ++iteration) {
         random_bias += (random_mt.get_random(0u, 1u) == 0) ? +1 : -1;
     }
-    REQUIRE(random_bias == 74, "Pseudo-random number generator bias was %d, expected %d", random_bias, 74);
+    REQUIRE(comparison::is_equal(random_bias, 74), "Pseudo-random number generator bias was %d, expected %d", random_bias, 74);
 }

@@ -26,7 +26,7 @@ THE SOFTWARE
 // These are defined in the main tests header as they are the minumum required to run tests.
 #define TEST_EXPAND(GROUP_NAME, TEST_NAME)  TEST_##GROUP_NAME##_##TEST_NAME
 #define TEST_CALL(GROUP_NAME, TEST_NAME)    TEST_EXPAND(GROUP_NAME, TEST_NAME)()
-#define TEST(GROUP_NAME, TEST_NAME)         void TEST_EXPAND(GROUP_NAME, TEST_NAME)(void)
+#define TEST(GROUP_NAME, TEST_NAME)         void TEST_EXPAND(GROUP_NAME, TEST_NAME)(void); void TEST_EXPAND(GROUP_NAME, TEST_NAME)(void)
 
 // Declare the main function.
 int main(int argument_count, char* arguments[]);

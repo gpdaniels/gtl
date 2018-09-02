@@ -48,26 +48,26 @@ struct value_collection { };
 // Define a template struct to hold a function to call for each collection of types.
 template <typename function_type, typename type>
 struct type_function_container {
-    function_type function;
+    function_type type_function;
     type_function_container(function_type function)
-        : function(function) {
+        : type_function(function) {
     }
     template <typename... argument_types>
     void operator()(argument_types... arguments) {
-        function(type_container<type>{}, arguments...);
+        type_function(type_container<type>{}, arguments...);
     }
 };
 
 // Define a template struct to hold a function to call for each collection of values.
 template <typename function_type, unsigned long long value>
 struct value_function_container {
-    function_type function;
+    function_type value_function;
     value_function_container(function_type function)
-        : function(function) {
+        : value_function(function) {
     }
     template <typename... argument_types>
     void operator()(argument_types... arguments) {
-        function(value_container<value>{}, arguments...);
+        value_function(value_container<value>{}, arguments...);
     }
 };
 

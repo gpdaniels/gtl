@@ -75,6 +75,26 @@ public:
 //      , variable__mvci(1)
       {
       }
+
+      int use() {
+          return 0
+             + this->variable__a__i
+             + this->variable__av_i
+             + this->variable__a_ci
+             + this->variable__avci
+             + this->variable__s__i
+             + this->variable__sv_i
+             + this->variable__s_ci
+             + this->variable__svci
+             + this->variable__m__i
+             + this->variable__mv_i
+//           + this->variable__m_ci
+//           + this->variable__mvci
+             + this->variable_xs__i
+             + this->variable_xsv_i
+             + this->variable_xs_ci
+             + this->variable_xsvci;
+      }
 };
 /*volatile*/ /*const*/    int   test_class::variable__s__i = 1;
   volatile   /*const*/    int   test_class::variable__sv_i = 1;

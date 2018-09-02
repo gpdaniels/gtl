@@ -86,10 +86,10 @@ TEST(function, get_alpha) {
     REQUIRE(simulation_loop.get_alpha<float>() == 0.0f);
     std::this_thread::sleep_until(start + std::chrono::milliseconds(5));
     simulation_loop.update();
-    REQUIRE(0.3 < simulation_loop.get_alpha<float>() || simulation_loop.get_alpha<float>() < 0.7, "Expecting alpha to be approximately 0.5, got %f.", simulation_loop.get_alpha<float>());
+    REQUIRE(0.3f < simulation_loop.get_alpha<float>() || simulation_loop.get_alpha<float>() < 0.7f, "Expecting alpha to be approximately 0.5, got %f.", static_cast<double>(simulation_loop.get_alpha<float>()));
     std::this_thread::sleep_until(start + std::chrono::milliseconds(10));
     simulation_loop.update();
-    REQUIRE(0.8 < simulation_loop.get_alpha<float>() || simulation_loop.get_alpha<float>() < 0.2, "Expecting alpha to be approximately 0.0, got %f.", simulation_loop.get_alpha<float>());
+    REQUIRE(0.8f < simulation_loop.get_alpha<float>() || simulation_loop.get_alpha<float>() < 0.2f, "Expecting alpha to be approximately 0.0, got %f.", static_cast<double>(simulation_loop.get_alpha<float>()));
 }
 
 TEST(evaluation, game_loop) {

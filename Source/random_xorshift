@@ -64,13 +64,13 @@ namespace gtl {
         random_xorshift& operator=(random_xorshift&&) = default;
 
         /// @brief  Constructor with 64 bit seed.
-        /// @param  seed_value - Seed value used to initialise the state.
+        /// @param  seed_value Seed value used to initialise the state.
         random_xorshift(std::uint64_t seed_value) {
             this->seed(seed_value);
         }
 
         /// @brief  Initialise the state from a 64 bit seed.
-        /// @param  seed_value - Seed value used to initialise the state.
+        /// @param  seed_value Seed value used to initialise the state.
         void seed(std::uint64_t seed_value) {
             this->state = seed_value;
         }
@@ -105,8 +105,8 @@ namespace gtl {
         }
 
         /// @brief  Get a random number between two bounds.
-        /// @param  inclusive_min - Minimum number that can be returned.
-        /// @param  inclusive_max - Max number than can be returned.
+        /// @param  inclusive_min Minimum number that can be returned.
+        /// @param  inclusive_max Max number than can be returned.
         /// @return A pseudo-random number.
         std::uint32_t get_random(std::uint32_t inclusive_min, std::uint32_t inclusive_max)  {
             GTL_RANDOM_XORSHIFT_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");
@@ -114,8 +114,8 @@ namespace gtl {
         }
 
         /// @brief  Get a random number between two bounds.
-        /// @param  inclusive_min - Minimum number that can be returned.
-        /// @param  inclusive_max - Max number than can be returned.
+        /// @param  inclusive_min Minimum number that can be returned.
+        /// @param  inclusive_max Max number than can be returned.
         /// @return A pseudo-random number.
         double get_random(double inclusive_min, double inclusive_max) {
             GTL_RANDOM_XORSHIFT_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");

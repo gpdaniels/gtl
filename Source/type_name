@@ -71,11 +71,12 @@ namespace gtl {
             const char string[length];
         public:
             /// @brief  Compile-time string construction from a string array and an integer_sequence to index it.
-            /// @param  string - Input string to wrap.
-            /// @param  - Template holding the indexes of the string.
+            /// @param  raw_string Input string to wrap.
+            /// @param  index_sequence Template holding the indexes of the string.
             template<unsigned long long... indexes>
-            constexpr string_literal(const char(&string)[sizeof...(indexes)], integer_sequence<unsigned long long, indexes...>)
-                : string{ string[indexes]... } {
+            constexpr string_literal(const char(&raw_string)[sizeof...(indexes)], integer_sequence<unsigned long long, indexes...> index_sequence)
+                : string{ raw_string[indexes]... } {
+                static_cast<void>(index_sequence);
             }
         public:
             /// @brief  Get a pointer to the string data.
@@ -85,24 +86,25 @@ namespace gtl {
             }
         public:
             /// @brief  Create a substring from this string by providing a template start position, length, and integer_sequence of indexes.
-            /// @param  - Template holding the indexes of the new string.
+            /// @param  substring_index_sequence Template holding the indexes of the new string.
             /// @return A string_literal holding the requested substring.
             template<unsigned long long substring_start, unsigned long long substring_length, unsigned long long... substring_indexes>
-            constexpr string_literal<substring_length + 1> substr(integer_sequence<unsigned long long, substring_indexes...>) const {
+            constexpr string_literal<substring_length + 1> substr(integer_sequence<unsigned long long, substring_indexes...> substring_index_sequence) const {
+                static_cast<void>(substring_index_sequence);
                 return string_literal<substring_length + 1>({ this->string[substring_start + substring_indexes]..., '\0' }, make_integer_sequence<unsigned long long, substring_length + 1>{});
             }
         public:
             /// @brief  Search for a given character within this string.
-            /// @param  character - The character to find.
-            /// @param  starting_index - The index of the string to start searching from.
+            /// @param  character The character to find.
+            /// @param  starting_index The index of the string to start searching from.
             /// @return The index of the character if found, otherwise 0xFFFFFFFFFFFFFFFF.
             constexpr unsigned long long find(const char character, const unsigned long long starting_index = 0) const {
                 return ((starting_index >= length) ? 0xFFFFFFFFFFFFFFFF : ((this->string[starting_index] == character) ? starting_index : this->find(character, starting_index + 1)));
             }
 
             /// @brief  Search for a given character within this string in reverse order starting from the end.
-            /// @param  character - The character to find.
-            /// @param  starting_index - The index of the string to start searching from.
+            /// @param  character The character to find.
+            /// @param  starting_index The index of the string to start searching from.
             /// @return The index of the character if found, otherwise 0xFFFFFFFFFFFFFFFF.
             constexpr unsigned long long rfind(const char character, const unsigned long long starting_index = length - 1) const {
                 return ((starting_index == 0) ? ((this->string[starting_index] == character) ? starting_index : 0xFFFFFFFFFFFFFFFF) : ((this->string[starting_index] == character) ? starting_index : this->rfind(character, starting_index - 1)));

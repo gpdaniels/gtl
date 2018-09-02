@@ -18,16 +18,4 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE
 */
 
-#include "main.tests.hpp"
-#include "macro.tests.hpp"
-
-TEST(SUB_TEST_GROUP, SUB_TEST_NAME);
-
-int main(int argument_count, char* arguments[]) {
-    UNUSED(argument_count);
-    UNUSED(arguments);
-    PRINT("Starting test...");
-    TEST_CALL(SUB_TEST_GROUP, SUB_TEST_NAME);
-    PRINT("Finish test, '%lld' assertions, detected '%lld' errors.", REQUIRE_COUNT, REQUIRE_FAILURE_COUNT);
-    return static_cast<int>(REQUIRE_FAILURE_COUNT);
-}
+#include "comparison.tests.hpp"

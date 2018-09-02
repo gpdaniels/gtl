@@ -134,7 +134,7 @@ namespace gtl {
         }
 
         /// @brief  Get the size of a specified dimension in this array_nd.
-        /// @param  index - The index of the dimension we want the size of.
+        /// @param  dimension_index The index of the dimension we want the size of.
         /// @return The size of dimension in this array_nd specified by index.
         constexpr static unsigned long long size(unsigned long long dimension_index = 0) {
             if constexpr (sizeof...(dimension_sizes) == 0) {
@@ -150,7 +150,7 @@ namespace gtl {
 
     public:
         /// @brief  Get a const reference to the slice_type of this level.
-        /// @param  index - Used to specify the location to get within the current dimension size.
+        /// @param  index Used to specify the location to get within the current dimension size.
         /// @return A const reference to the slice_type of this level.
         constexpr const slice_type& operator[](unsigned long long index) const {
             GTL_ARRAY_ND_ASSERT(index < this->size(), "Array index must be less than the maximum size of the dimension.");
@@ -158,7 +158,7 @@ namespace gtl {
         }
 
         /// @brief  Get a non-const reference to the slice_type of this level.
-        /// @param  index - Used to specify the location to get within the current dimension size.
+        /// @param  index Used to specify the location to get within the current dimension size.
         /// @return A non-const reference to the slice_type of this level.
         constexpr slice_type& operator[](unsigned long long index) {
             GTL_ARRAY_ND_ASSERT(index < this->size(), "Array index must be less than the maximum size of the dimension.");
@@ -167,8 +167,8 @@ namespace gtl {
 
     public:
         /// @brief  Get a const reference to the slice_type of the level argument-count below.
-        /// @param  first_index - Used to specify the location to get within the current dimension size.
-        /// @params remaining_indexes - Used to specify the locations for the argument-count dimension sizes below.
+        /// @param  first_index Used to specify the location to get within the current dimension size.
+        /// @param  remaining_indexes Used to specify the locations for the argument-count dimension sizes below.
         /// @return A const reference to the slice_type of the level argument-count below.
         template <typename... index_types>
         constexpr const type& operator()(unsigned long long first_index, index_types... remaining_indexes) const {
@@ -182,8 +182,8 @@ namespace gtl {
         }
 
         /// @brief  Get a non-const reference to the slice_type of the level argument-count below.
-        /// @param  first_index - Used to specify the location to get within the current dimension size.
-        /// @params remaining_indexes - Used to specify the locations for the argument-count dimension sizes below.
+        /// @param  first_index Used to specify the location to get within the current dimension size.
+        /// @param  remaining_indexes Used to specify the locations for the argument-count dimension sizes below.
         /// @return A non-const reference to the slice_type of the level argument-count below.
         template <typename... index_types>
         constexpr type& operator()(unsigned long long first_index, index_types... remaining_indexes) {

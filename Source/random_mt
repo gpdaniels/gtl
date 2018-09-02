@@ -72,15 +72,15 @@ namespace gtl {
         random_mt& operator=(random_mt&&) = default;
 
         /// @brief  Constructor with 32 bit seed.
-        /// @param  seed_value - Seed value used to initialise the state.
+        /// @param  seed_value Seed value used to initialise the state.
         random_mt(std::uint32_t seed_value)
             : position(0) {
             this->seed(seed_value);
         }
 
         /// @brief  Constructor using an array of 32 bit std::uint32_tegers as the seed.
-        /// @param  seed_values - Seed value used to initialise the state.
-        /// @param  size - Number of entried in the array.
+        /// @param  seed_values Seed value used to initialise the state.
+        /// @param  size Number of entried in the array.
         random_mt(const std::uint32_t* seed_values, const std::uint32_t size)
             : position(0) {
             this->seed(seed_values, size);
@@ -88,7 +88,7 @@ namespace gtl {
 
     public:
         /// @brief  Initialise the state from a 32 bit seed.
-        /// @param  seed_value - Seed value used to initialise the state.
+        /// @param  seed_value Seed value used to initialise the state.
         void seed(std::uint32_t seed_value) {
             // This PRNG uses a linear congruential generator (LCG) which is one of the oldest known pseudo-random number generator algorithms.
             this->state[0] = seed_value & 0xFFFFFFFFul;
@@ -101,8 +101,8 @@ namespace gtl {
         }
 
         /// @brief  Initialise the state from an array of 32 bit ints as seed.
-        /// @param  seed_values - Seed values used to initialise the state.
-        /// @param  size - Number of seed values in the input array.
+        /// @param  seed_values Seed values used to initialise the state.
+        /// @param  size Number of seed values in the input array.
         void seed(const std::uint32_t* seed_values, std::uint32_t size) {
             this->seed(19650218ul);
             std::uint32_t i = 1, j = 0;
@@ -143,8 +143,8 @@ namespace gtl {
 
     private:
         /// @brief  Bit twiddle a pair of values.
-        /// @param  left - The left value.
-        /// @param  right - The right value.
+        /// @param  left The left value.
+        /// @param  right The right value.
         static std::uint32_t twiddle(const std::uint32_t& left, const std::uint32_t& right) {
             return (((left & 0x80000000ul) | (right & 0x7FFFFFFFul)) >> 1) ^ ((right & 1ul) ? 0x9908B0DFul : 0x0ul);
         }
@@ -181,8 +181,8 @@ namespace gtl {
         }
 
         /// @brief  Get a random number between two bounds.
-        /// @param  inclusive_min - Minimum number that can be returned.
-        /// @param  inclusive_max - Max number than can be returned.
+        /// @param  inclusive_min Minimum number that can be returned.
+        /// @param  inclusive_max Max number than can be returned.
         /// @return A pseudo-random number.
         std::uint32_t get_random(std::uint32_t inclusive_min, std::uint32_t inclusive_max)  {
             GTL_RANDOM_MT_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");
@@ -190,8 +190,8 @@ namespace gtl {
         }
 
         /// @brief  Get a random number between two bounds.
-        /// @param  inclusive_min - Minimum number that can be returned.
-        /// @param  inclusive_max - Max number than can be returned.
+        /// @param  inclusive_min Minimum number that can be returned.
+        /// @param  inclusive_max Max number than can be returned.
         /// @return A pseudo-random number.
         double get_random(double inclusive_min, double inclusive_max) {
             GTL_RANDOM_MT_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");

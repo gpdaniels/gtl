@@ -234,8 +234,8 @@ const char* test_data<long double>::name = "long double";
 const long double test_data<long double>::data[] = {
     -std::numeric_limits<long double>::infinity(),
     std::numeric_limits<long double>::lowest(),
-    -1.0, -0.0,
-    0.0, 1.0,
+    static_cast<long double>(-1.0), static_cast<long double>(-0.0),
+    static_cast<long double>(0.0), static_cast<long double>(1.0),
     std::numeric_limits<long double>::min(),
     std::numeric_limits<long double>::max(),
     std::numeric_limits<long double>::infinity()

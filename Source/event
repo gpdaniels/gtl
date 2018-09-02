@@ -80,14 +80,23 @@ namespace gtl {
         /// @brief  Singleton instance helper function.
         /// @return A reference to a static instance of this class.
         static event_manager& get_instance() {
+            // Disable the exit-time-destructors warning in clang.
+            #if defined(__clang__)
+                #pragma clang diagnostic push
+                #pragma clang diagnostic ignored "-Wexit-time-destructors"
+            #endif
             // Construct a static instance of this class, this is guaranteed to be thread safe by the standard.
             static event_manager<event_type> instance;
+            // Re-enable warnings in clang.
+            #if defined(__clang__)
+                #pragma clang diagnostic pop
+            #endif
             return instance;
         }
 
     public:
         /// @brief  Add an event_queue subscriber to this event_manager.
-        /// @param  subscriber - Pointer to an event_queue to be subscribed.
+        /// @param  subscriber Pointer to an event_queue to be subscribed.
         static void subscribe(event_queue<event_type>* subscriber) {
             // Lock the subscriber mutex.
             std::lock_guard<std::mutex> lock(event_manager::get_instance().mutex);
@@ -101,7 +110,7 @@ namespace gtl {
         }
 
         /// @brief  Remove an event_queue subscriber from this event_manager.
-        /// @param  subscriber - Pointer to an event_queue to be unsubscribed.
+        /// @param  subscriber Pointer to an event_queue to be unsubscribed.
         static void unsubscribe(event_queue<event_type>* subscriber) {
             // Lock the subscriber mutex.
             std::lock_guard<std::mutex> lock(event_manager::get_instance().mutex);
@@ -116,8 +125,8 @@ namespace gtl {
 
     public:
         /// @brief  Emit an event to a particular subscriber only.
-        /// @param  event - The event to emit.
-        /// @param  subscriber - The target subscriber event_queue.
+        /// @param  event The event to emit.
+        /// @param  subscriber The target subscriber event_queue.
         static void emit(std::shared_ptr<event_type>&& event, event_queue<event_type>* subscriber) {
             // Lock the subscriber mutex.
             std::lock_guard<std::mutex> lock(event_manager::get_instance().mutex);
@@ -128,14 +137,14 @@ namespace gtl {
         }
 
         /// @brief  Emit an event to a particular subscriber only.
-        /// @param  event - The event to emit.
-        /// @param  subscriber - The target subscriber event_queue.
+        /// @param  event The event to emit.
+        /// @param  subscriber The target subscriber event_queue.
         static void emit(event_type&& event, event_queue<event_type>* subscriber) {
             event_manager::emit(std::make_shared<event_type>(std::move(event)), subscriber);
         }
 
         /// @brief  Emit an event to all subscribers.
-        /// @param  event - The event to emit.
+        /// @param  event The event to emit.
         static void emit(std::shared_ptr<event_type>&& event) {
             // Lock the subscriber mutex.
             std::lock_guard<std::mutex> lock(event_manager::get_instance().mutex);
@@ -150,7 +159,7 @@ namespace gtl {
         }
 
         /// @brief  Emit an event to all subscribers.
-        /// @param  event - The event to emit.
+        /// @param  event The event to emit.
         static void emit(event_type&& event) {
             event_manager::emit(std::make_shared<event_type>(std::move(event)));
         }
@@ -187,9 +196,9 @@ namespace gtl {
         }
 
         /// @brief  Constructor automatically subscribes this event_queue to the event_manager for this event_type.
-        /// @param  signal - A condition_variable that will be notified when events are ready to be processed.
-        event_queue(std::condition_variable& signal)
-            : signal(&signal) {
+        /// @param  shared_signal A condition_variable that will be notified when events are ready to be processed.
+        event_queue(std::condition_variable& shared_signal)
+            : signal(&shared_signal) {
             event_manager<event_type>::subscribe(this);
         }
 
@@ -208,7 +217,7 @@ namespace gtl {
 
     private:
         /// @brief  Add an event to the queue and notify the signal if there is one.
-        /// @param  event - The event to add to the queue.
+        /// @param  event The event to add to the queue.
         void push_back(std::shared_ptr<event_type>&& event) {
             // Push the event
             this->mutex.lock();

@@ -20,6 +20,7 @@ THE SOFTWARE
 
 #include <main.tests.hpp>
 #include <benchmark.tests.hpp>
+#include <comparison.tests.hpp>
 #include <data.tests.hpp>
 #include <macro.tests.hpp>
 #include <template.tests.hpp>
@@ -349,7 +350,7 @@ TEST(operator, subscript) {
                 gtl::array_nd<type, value1> array_nd_1d;
                 for (unsigned int index1 = 0; index1 < value1; ++index1) {
                     array_nd_1d[index1] = value;
-                    REQUIRE(array_nd_1d[index1] == value);
+                    REQUIRE(comparison::is_equal(array_nd_1d[index1], value));
                 }
             }
             test_template<value_collection<1, 10>>(
@@ -362,7 +363,7 @@ TEST(operator, subscript) {
                         for (unsigned int index1 = 0; index1 < value1; ++index1) {
                             for (unsigned int index2 = 0; index2 < value2; ++index2) {
                                 array_nd_2d[index1][index2] = value;
-                                REQUIRE(array_nd_2d[index1][index2] == value);
+                                REQUIRE(comparison::is_equal(array_nd_2d[index1][index2], value));
                             }
                         }
                     }
@@ -378,7 +379,7 @@ TEST(operator, subscript) {
                                     for (unsigned int index2 = 0; index2 < value2; ++index2) {
                                         for (unsigned int index3 = 0; index3 < value3; ++index3) {
                                             array_nd_3d[index1][index2][index3] = value;
-                                            REQUIRE(array_nd_3d[index1][index2][index3] == value);
+                                            REQUIRE(comparison::is_equal(array_nd_3d[index1][index2][index3], value));
                                         }
                                     }
                                 }
@@ -401,7 +402,7 @@ TEST(operator, parenthesis) {
                 gtl::array_nd<type, value1> array_nd_1d;
                 for (unsigned int index1 = 0; index1 < value1; ++index1) {
                     array_nd_1d(index1) = value;
-                    REQUIRE(array_nd_1d(index1) == value);
+                    REQUIRE(comparison::is_equal(array_nd_1d(index1), value));
                 }
             }
             test_template<value_collection<1, 10>>(
@@ -414,7 +415,7 @@ TEST(operator, parenthesis) {
                         for (unsigned int index1 = 0; index1 < value1; ++index1) {
                             for (unsigned int index2 = 0; index2 < value2; ++index2) {
                                 array_nd_2d(index1, index2) = value;
-                                REQUIRE(array_nd_2d(index1, index2) == value);
+                                REQUIRE(comparison::is_equal(array_nd_2d(index1, index2), value));
                             }
                         }
                     }
@@ -430,7 +431,7 @@ TEST(operator, parenthesis) {
                                     for (unsigned int index2 = 0; index2 < value2; ++index2) {
                                         for (unsigned int index3 = 0; index3 < value3; ++index3) {
                                             array_nd_3d(index1, index2, index3) = value;
-                                            REQUIRE(array_nd_3d(index1, index2, index3) == value);
+                                            REQUIRE(comparison::is_equal(array_nd_3d(index1, index2, index3), value));
                                         }
                                     }
                                 }

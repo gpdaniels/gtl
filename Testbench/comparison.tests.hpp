@@ -18,16 +18,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE
 */
 
-#include "main.tests.hpp"
-#include "macro.tests.hpp"
+#pragma once
+#ifndef COMPARISON_TESTS_HPP
+#define COMPARISON_TESTS_HPP
 
-TEST(SUB_TEST_GROUP, SUB_TEST_NAME);
+#include <algorithm>
 
-int main(int argument_count, char* arguments[]) {
-    UNUSED(argument_count);
-    UNUSED(arguments);
-    PRINT("Starting test...");
-    TEST_CALL(SUB_TEST_GROUP, SUB_TEST_NAME);
-    PRINT("Finish test, '%lld' assertions, detected '%lld' errors.", REQUIRE_COUNT, REQUIRE_FAILURE_COUNT);
-    return static_cast<int>(REQUIRE_FAILURE_COUNT);
+struct comparison {
+    template <typename type>
+    static bool is_equal(const type& lhs, const type& rhs);
+};
+
+template <typename type>
+bool comparison::is_equal(const type& lhs, const type& rhs) {
+    return std::equal(&lhs, &lhs + 1, &rhs, &rhs + 1);
 }
+
+#endif // COMPARISON_TESTS_HPP

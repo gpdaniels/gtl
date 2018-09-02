@@ -62,9 +62,9 @@ namespace gtl {
         }
 
         /// @brief  Constructor sets the number of sync calls required before the barrier is triggered.
-        /// @param  trigger_count - The number of sync calls required before the barrier is triggered.
-        barrier(unsigned long long int trigger_count = 0)
-            : trigger_count(trigger_count)
+        /// @param  required_trigger_count The number of sync calls required before the barrier is triggered.
+        barrier(unsigned long long int required_trigger_count = 0)
+            : trigger_count(required_trigger_count)
             , waiting_count(0)
             , triggered(false) {
         }
@@ -83,14 +83,14 @@ namespace gtl {
 
     public:
         /// @brief  Set the number calls required before the barrier is triggered.
-        /// @param  trigger_count - The number of sync calls required before the barrier is triggered.
-        void set_trigger_count(unsigned long long int trigger_count = 0) {
+        /// @param  new_trigger_count The number of sync calls required before the barrier is triggered.
+        void set_trigger_count(unsigned long long int new_trigger_count = 0) {
             // Lock the barrier mutex
             std::unique_lock<std::mutex> unique_lock(this->mutex);
             static_cast<void>(unique_lock);
 
             // Update the trigger count.
-            this->trigger_count = trigger_count;
+            this->trigger_count = new_trigger_count;
 
             // If there are already enough threads waiting.
             if (this->waiting_count >= this->trigger_count) {

@@ -111,6 +111,7 @@ TEST(evaluate, assert) {
 
 namespace gtl_assert_test {
     static bool triggered = false;
+    void abort();
     void abort() {
         triggered = true;
     }

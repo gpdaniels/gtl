@@ -31,13 +31,13 @@ class test_pimpl::pimpl::implementation final {
 public:
     int value;
 public:
-    implementation(int value)
-        : value(value) {
+    implementation(int input_value)
+        : value(input_value) {
     }
 };
 
-test_pimpl::test_pimpl(int value)
-    : pimpl(value) {
+test_pimpl::test_pimpl(int input_value)
+    : pimpl(input_value) {
 }
 
 int test_pimpl::return_value() const {
