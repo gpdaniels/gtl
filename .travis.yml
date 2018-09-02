@@ -155,3 +155,6 @@ script:
   - cmake --build . -- -j
   - make test
   - popd
+
+notifications:
+  email: false
