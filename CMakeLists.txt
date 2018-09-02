@@ -20,7 +20,7 @@ SET(CMAKE_CXX_EXTENSIONS OFF)
 
 # Add warnings.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -Wfatal-errors -Wall -Wextra -Wpedantic -Wno-unknown-pragmas -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-newline-eof -Wno-reserved-id-macro")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -Wfatal-errors -Wall -Wextra -Wpedantic -Wno-unknown-pragmas -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-newline-eof -Wno-reserved-id-macro -Wno-padded -Wno-disabled-macro-expansion")
 ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -Wfatal-errors -Wall -Wextra -Wpedantic -Wno-unknown-pragmas")
 ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
