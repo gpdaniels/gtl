@@ -40,7 +40,7 @@ TEST(traits, standard) {
 
     REQUIRE(std::is_trivially_copyable<gtl::event_manager<test_event>>::value == false, "Expected std::is_trivially_copyable to be false.");
 
-#if defined(__APPLE__)
+#if defined(__clang__)
     REQUIRE(std::is_standard_layout<gtl::event_manager<test_event>>::value == true, "Expected std::is_standard_layout to be true.");
 #else
     REQUIRE(std::is_standard_layout<gtl::event_manager<test_event>>::value == false, "Expected std::is_standard_layout to be false.");

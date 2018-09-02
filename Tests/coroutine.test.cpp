@@ -32,7 +32,7 @@ TEST(traits, standard) {
 
 #if defined(_MSC_VER)
     REQUIRE(sizeof(gtl::coroutine) >= 32, "sizeof(gtl::coroutine) = %ld, expected >= %lld", sizeof(gtl::coroutine), 32ull);
-#elif defined(__APPLE__)
+#elif defined(__clang__)
     REQUIRE(sizeof(gtl::coroutine) >= 360, "sizeof(gtl::coroutine) = %ld, expected >= %lld", sizeof(gtl::coroutine), 360ull);
 #else
     REQUIRE(sizeof(gtl::coroutine) >= 576, "sizeof(gtl::coroutine) = %ld, expected >= %lld", sizeof(gtl::coroutine), 576ull);
