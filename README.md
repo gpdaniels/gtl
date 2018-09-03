@@ -3,6 +3,8 @@
 
 This repository aims is a collection of useful well-commented, self-contained, simple, and/or interesting C++ classes in the style of the standard template library.
 
+[![Build Status](https://travis-ci.org/gpdaniels/gtl.svg?branch=master)](https://travis-ci.org/gpdaniels/gtl)
+
 ## Content ##
 
 The current classes are as described below:
