@@ -21,7 +21,7 @@ THE SOFTWARE
 #include <pimpl>
 
 class test_pimpl
-    : private gtl::pimpl<test_pimpl, 4> {
+    : private gtl::pimpl<test_pimpl, 4, alignof(int)> {
 public:
     test_pimpl(int value);
     int return_value() const;

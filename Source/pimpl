@@ -26,7 +26,7 @@ THE SOFTWARE
 
 namespace gtl {
     /// @brief  pimpl is a sized pointer to implementation class to enable hiding implemtation details.
-    template <typename implemented_class, unsigned long long int size>
+    template <typename implemented_class, unsigned long long int size, unsigned long long alignment>
     class pimpl {
     private:
         /// @brief  The implementation class is declared here to allow operations on it in this class.
@@ -34,7 +34,7 @@ namespace gtl {
 
     private:
         /// @brief  The raw memory of the implementation filled using placement new.
-        unsigned char implementation_data[size];
+        alignas(alignment) unsigned char implementation_data[size];
 
     public:
         /// @brief  Constructor forwards arguments to the constructor of the implementation.
