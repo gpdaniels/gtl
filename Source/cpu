@@ -1,0 +1,190 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#ifndef GTL_CPU_HPP
+#define GTL_CPU_HPP
+
+#if defined _MSC_VER
+#   include <intrin.h>
+#else
+#   include <cpuid.h>
+#endif
+
+#include <array>
+#include <cstdint>
+#include <string>
+#include <vector>
+
+namespace gtl {
+    /// @brief  The cpu class extracts information about the current cpu.
+    class cpu {
+    public:
+        constexpr static const std::uint32_t leaf_vendor_id = 0;
+        constexpr static const std::uint32_t leaf_feature_bits = 1;
+        constexpr static const std::uint32_t leaf_extended_feature_bits = 7;
+
+        constexpr static const std::uint32_t register_eax = 0;
+        constexpr static const std::uint32_t register_ebx = 1;
+        constexpr static const std::uint32_t register_ecx = 2;
+        constexpr static const std::uint32_t register_edx = 3;
+
+    private:
+        /// @brief  This array of arrays stores all the extractable cpu information.
+        std::vector<std::array<std::uint32_t, 4> > cpu_data;
+
+    private:
+        /// @brief  Helper function for getting values from the cpuid instruction.
+        /// @param  leaf_id The leaf number to read.
+        /// @return An array of four 32 bit values that hold the values of the registers eax, ebx, ecx, and edx;
+        std::array<std::uint32_t, 4> query_cpuid(std::uint32_t leaf_id) {
+            std::array<std::uint32_t, 4> leaf_data;
+            #if defined(_MSC_VER)
+                __cpuidex(reinterpret_cast<int*>(leaf_data.data()), leaf_id, 0);
+            #elif defined(__GNUC__)
+                __cpuid_count(leaf_id, 0, leaf_data[cpu::register_eax], leaf_data[cpu::register_ebx], leaf_data[cpu::register_ecx], leaf_data[cpu::register_edx]);
+            #else
+                leaf_data = {};
+            #endif
+            return leaf_data;
+        }
+
+    public:
+        /// @brief  The constructor extracts all available cpu information and stores it in an array.
+        cpu() {
+            // First get the maximum supported cpuid leaf and the manufacturer id by calling with a cpuid leaf of 0.
+            this->cpu_data.emplace_back(this->query_cpuid(cpu::leaf_vendor_id));
+
+            // Reserve memory for cpu_data to fit remaining queries.
+            this->cpu_data.reserve(this->get_max_leaf_id());
+
+            // Extract every leaf.
+            for (std::uint32_t leaf_id = 1; leaf_id < this->get_max_leaf_id(); ++leaf_id) {
+                this->cpu_data.emplace_back(this->query_cpuid(leaf_id));
+            }
+        }
+
+    public:
+        /// @brief  Get the value of a single bit in one of the extracted leafs registers.
+        /// @param  leaf_id The id number of the leaf to read.
+        /// @param  register_id The register number within a leaf.
+        /// @param  bit_id The individual bit number within a register.
+        /// @return true if the specified bit is 1 in the specified leaf register, false otherwise.
+        bool get_leaf_register_bit(std::uint32_t leaf_id, std::uint32_t register_id, std::uint32_t bit_id) const {
+            // Check the requested leaf_id is within those available.
+            if (this->get_max_leaf_id() < leaf_id) {
+                return false;
+            }
+
+            // Check the register_id is one of the four available.
+            if (register_id > 3) {
+                return false;
+            }
+
+            // Check the bit_id is within the size of a register.
+            if (bit_id > 31) {
+                return false;
+            }
+
+            // Return the extracted value of the bit.
+            return this->cpu_data[leaf_id][register_id] & (1 << bit_id);
+        }
+
+    public:
+        /// @brief  Get the maximum valid leaf number for this processor.
+        /// @return The maximum valid leaf number for this processor.
+        std::uint32_t get_max_leaf_id() const {
+            return this->cpu_data[cpu::leaf_vendor_id][cpu::register_eax];
+        }
+
+        /// @brief  Get the name of the processors manufacturer.
+        /// @return The name of the manufacturer of this processor as a string.
+        std::string get_manufacturer_id() const {
+            std::string manufacturer_id;
+            manufacturer_id.reserve(13);
+            manufacturer_id.append(reinterpret_cast<const char*>(&this->cpu_data[cpu::leaf_vendor_id][cpu::register_ebx]), 4);
+            manufacturer_id.append(reinterpret_cast<const char*>(&this->cpu_data[cpu::leaf_vendor_id][cpu::register_edx]), 4);
+            manufacturer_id.append(reinterpret_cast<const char*>(&this->cpu_data[cpu::leaf_vendor_id][cpu::register_ecx]), 4);
+            return manufacturer_id;
+        }
+
+    public:
+        /// @brief  Check if mmx instructions are supported.
+        /// @return true if the instruction is supported, false otherwise.
+        bool has_mmx() const {
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_edx, 23);
+        }
+
+        /// @brief  Check if sse instructions are supported.
+        /// @return true if the instruction is supported, false otherwise.
+        bool has_sse() const {
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_edx, 25);
+        }
+
+        /// @brief  Check if sse2 instructions are supported.
+        /// @return true if the instruction is supported, false otherwise.
+        bool has_sse2() const {
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_edx, 26);
+        }
+
+        /// @brief  Check if sse3 instructions are supported.
+        /// @return true if the instruction is supported, false otherwise.
+        bool has_sse3() const {
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx, 0);
+        }
+
+        /// @brief  Check if ssse3 instructions are supported.
+        /// @return true if the instruction is supported, false otherwise.
+        bool has_ssse3() const {
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx, 9);
+        }
+
+        /// @brief  Check if sse4.1 instructions are supported.
+        /// @return true if the instruction is supported, false otherwise.
+        bool has_sse4_1() const {
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx, 19);
+        }
+
+        /// @brief  Check if sse4.2 instructions are supported.
+        /// @return true if the instruction is supported, false otherwise.
+        bool has_sse4_2() const {
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx, 20);
+        }
+
+        /// @brief  Check if popcnt instructions are supported.
+        /// @return true if the instruction is supported, false otherwise.
+        bool has_popcnt() const {
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx, 23);
+        }
+
+        /// @brief  Check if avx instructions are supported.
+        /// @return true if the instruction is supported, false otherwise.
+        bool has_avx() const {
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx, 28);
+        }
+
+        /// @brief  Check if avx2 instructions are supported.
+        /// @return true if the instruction is supported, false otherwise.
+        bool has_avx2() const {
+            return this->get_leaf_register_bit(cpu::leaf_extended_feature_bits, cpu::register_ebx, 5);
+        }
+    };
+}
+
+#endif // GTL_CPU_HPP
