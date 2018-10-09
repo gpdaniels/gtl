@@ -22,7 +22,7 @@ THE SOFTWARE
 #ifndef GTL_BARRIER_HPP
 #define GTL_BARRIER_HPP
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()
 #   endif

@@ -22,7 +22,7 @@ THE SOFTWARE
 #ifndef GTL_RANDOM_SPLITMIX_HPP
 #define GTL_RANDOM_SPLITMIX_HPP
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()
 #   endif

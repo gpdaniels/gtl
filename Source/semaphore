@@ -22,7 +22,7 @@ THE SOFTWARE
 #ifndef GTL_SEMAPHORE_HPP
 #define GTL_SEMAPHORE_HPP
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()
 #   endif
