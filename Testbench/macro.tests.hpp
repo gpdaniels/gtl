@@ -39,10 +39,10 @@ THE SOFTWARE
     ARG_16, ARG_15, ARG_14, ARG_13, ARG_12, ARG_11, ARG_10, ARG_09, ARG_08, ARG_07, ARG_06, ARG_05, ARG_04, ARG_03, ARG_02, ARG_01, SUFFIX, ...) FUNCTION ## _ ## SUFFIX
 
 /// @brief  Print the output format, with no arguments.
-#define PRINT_1(FORMAT)      (printf(FORMAT "\n"))
+#define PRINT_1(FORMAT)      (fprintf(stderr, FORMAT "\n"))
 
 /// @brief  Print the output format, with the provided arguments.
-#define PRINT_N(FORMAT, ...) (printf(FORMAT "\n", __VA_ARGS__))
+#define PRINT_N(FORMAT, ...) (fprintf(stderr, FORMAT "\n", __VA_ARGS__))
 
 /// @brief  Print the output by counting the number of arguments to select the correct PRINT_* macro.
 #define PRINT(...) UNUSED(SELECT_FUNCTION(PRINT, __VA_ARGS__, \
