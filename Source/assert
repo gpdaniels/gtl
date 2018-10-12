@@ -36,12 +36,22 @@ namespace assert {
             #pragma clang diagnostic ignored "-Wformat-security"
             #pragma clang diagnostic ignored "-Wformat-nonliteral"
         #endif
+
+        #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+            #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wformat-security"
+        #endif
+
         // Print the formatted error message.
         const int output_length = std::fprintf(stderr, format_string, arguments...);
 
         // Re-enable warnings in clang.
         #if defined(__clang__)
             #pragma clang diagnostic pop
+        #endif
+
+        #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+            #pragma GCC diagnostic pop
         #endif
 
         // Ensure the stream is flushed.
@@ -53,16 +63,12 @@ namespace assert {
     
     // Attempt to use a more detailed function macro if possible.
     #if defined(__clang__)
-    //  Clang.
     #   define GTL_ASSERT_FUNCTION __PRETTY_FUNCTION__
     #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
-    //  GCC.
     #   define GTL_ASSERT_FUNCTION __PRETTY_FUNCTION__
     #elif defined(_MSC_VER)
-    //  MSVC.
     #   define GTL_ASSERT_FUNCTION __FUNCSIG__
     #else
-    //  Otherwise standard c.
     #   define GTL_ASSERT_FUNCTION __func__
     #endif
 
