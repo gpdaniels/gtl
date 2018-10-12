@@ -1,0 +1,183 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_RING_BUFFER_HPP
+#define GTL_RING_BUFFER_HPP
+
+#include <atomic>
+
+namespace gtl {
+    /// @brief  The ring_buffer class implements a thread-safe multi-producer multi-consumer ring-buffer.
+    template <typename data_type, unsigned int static_data_size>
+    class ring_buffer final {
+    private:
+        static_assert(static_data_size != 0, "Data size must be greater than 0.");
+        static_assert(static_data_size <= 0x80000000, "Data size must be less than 2^31.");
+
+    public:
+        /// @brief  Make the data type publically accessible.
+        using type = data_type;
+
+        /// @brief  Make the data size publically accessible.
+        constexpr static const unsigned int data_size = static_data_size;
+
+    private:
+        /// @brief  Structure that holds a read and write index.
+        struct index_type {
+            unsigned int read;
+            unsigned int write;
+        };
+
+    private:
+        /// @brief  Reader holds the current write and pending read locations.
+        std::atomic<index_type> reader;
+
+        /// @brief  Writer holds the current read and pending write locations.
+        std::atomic<index_type> writer;
+
+        /// @brief  The ring buffer data array.
+        type data[data_size];
+
+    public:
+        /// @brief  Defaulted destructor.
+        ~ring_buffer() = default;
+
+        /// @brief  Constructor zeros the atomic reader and writer structures.
+        ring_buffer()
+            : reader{}
+            , writer{} {
+        }
+
+    public:
+        /// @brief  Get a boolean that represents if the ring buffer is empty, ignoring pending reads and writess.
+        /// @return true if the ring buffer is empty, false otherwise.
+        bool empty() const {
+            //Both the reader and writer are used here to get both the current read and current write locations.
+            const index_type current_reader = this->reader.load();
+            const index_type current_writer = this->writer.load();
+            // If the current read is equal to the pending write then the ring buffer is full.
+            return (current_writer.read == current_reader.write);
+        }
+
+        /// @brief  Get a boolean that represents if the ring buffer is full, ignoring pending reads and writes.
+        /// @return true if the ring buffer is full, false otherwise.
+        bool full() const {
+            //Both the reader and writer are used here to get both the current read and current write locations.
+            const index_type current_reader = this->reader.load();
+            const index_type current_writer = this->writer.load();
+            // First calculate the current size, as the locations can be either size of one another use the ternary operator to compare them first.
+            const unsigned int current_size = (current_writer.read > current_reader.write) ? (current_writer.read - current_reader.write) : (current_reader.write - current_writer.read);
+            // If the data size is zero we are full, otherwise if the current size is zero we are empty, otherwise if the current size is a multiple of the buffer size we are full.
+            return ((this->data_size == 0) || ((current_size != 0) && ((current_size % this->data_size) == 0)));
+        }
+
+    public:
+        /// @brief  Get the size of the ring buffer that is filled with elements, ignoring pending reads and writes.
+        /// @return The number of items pushed into the ring buffer that have not been popped out.
+        unsigned long long size() const {
+            //Both the reader and writer are used here to get both the current read and current write locations.
+            const index_type current_reader = this->writer.load();
+            const index_type current_writer = this->reader.load();
+            // First calculate the current size, as the locations can be either size of one another use the ternary operator to compare them first.
+            const unsigned int current_size = (current_writer.read > current_reader.write) ? (current_writer.read - current_reader.write) : (current_reader.write - current_writer.read);
+            // If the current size is zero then size is zero, otherwise if current size is a multiple of the data size we are full, otherwise the size is the current size remainder.
+            return (current_size == 0) ? 0 : (((current_size % this->data_size) == 0) ? this->data_size : current_size % this->data_size);
+        }
+
+    public:
+        /// @brief  Attempt to push a value into the ring buffer.
+        /// @param  value An input parameter to providing the value to push into the ring buffer.
+        /// @return true if value was successfully stored in the ring buffer, false otherwise.
+        bool try_push(const type& value) {
+            // Create a local copy of the writer.
+            index_type current_writer = this->writer.load();
+
+            // Check if the ring buffer is full.
+            const unsigned int current_size = (current_writer.read > current_writer.write) ? (current_writer.read - current_writer.write) : (current_writer.write - current_writer.read);
+            if ((current_size != 0) && ((current_size % this->data_size) == 0)) {
+                return false;
+            }
+
+            // Attempt to assign/allocate/reserve an index for writing using atomic_compare_exchange_weak.
+            // Remember the writer holds the current read and pending write locations, so this tries to increment the pending write location.
+            // if (this->writer == current_writer) {  this->writer = { ... }; } else { current_writer = this->writer; }
+            if (!std::atomic_compare_exchange_weak(&this->writer, &current_writer, { current_writer.read, (current_writer.write + 1) % (2 * this->data_size) })) {
+                return false;
+            }
+
+            // Reuse the local writer to hold the assigned/allocated/reserved pending write index.
+            current_writer.write = (current_writer.write + 1) % (2 * this->data_size);
+
+            // Write the value to the buffer at the pending write index.
+            this->data[current_writer.write % this->data_size] = value;
+
+            // Create a local copy of the reader.
+            index_type current_reader = this->reader.load();
+
+            // Update the reader to publish the pending write using atomic_compare_exchange_weak.
+            // Remember the reader holds the current write and the pending read locations, so this tries to set the current write location.
+            // if (this->reader == current_reader) {  this->reader = { ... }; } else { current_reader = this->reader; }
+            while (!std::atomic_compare_exchange_weak(&this->reader, &current_reader, { current_reader.read, current_writer.write }));
+
+            // Success.
+            return true;
+        }
+
+        /// @brief      Attempt to pop a value from the ring buffer.
+        /// @param[out] value An output parameter to store the value that is popped out of the ring buffer.
+        /// @return     true if value was successfully recovered from the ring buffer, false otherwise.
+        bool try_pop(type& value) {
+            // Create a local copy of the reader.
+            index_type current_reader = this->reader.load();
+
+            // Check if the ring buffer is empty.
+            if (current_reader.read == current_reader.write) {
+                return false;
+            }
+
+            // Attempt to assign/allocate/reserve an index for reading using atomic_compare_exchange_weak.
+            // Remember the reader holds the current write and pending read locations, so this tries to increment the pending read location.
+            // if (this->reader == current_reader) {  this->reader = { ... }; } else { current_reader = this->reader; }
+            if (!std::atomic_compare_exchange_weak(&this->reader, &current_reader, { (current_reader.read + 1) % (2 * this->data_size), current_reader.write })) {
+                return false;
+            }
+
+            // Reuse the local reader to hold the assigned/allocated/reserved pending read index.
+            current_reader.read = (current_reader.read + 1) % (2 * this->data_size);
+
+            // Read the value from the buffer at the pending read index.
+            value = this->data[current_reader.read % this->data_size];
+
+            // Create a local copy of the writer.
+            index_type current_writer = this->writer.load();
+
+            // Update the writer to publish the pending read using atomic_compare_exchange_weak.
+            // Remember the writer holds the current read and the pending write locations, so this tries to set the current read location.
+            // if (this->writer == current_writer) {  this->writer = { ... }; } else { current_writer = this->writer; }
+            while (!std::atomic_compare_exchange_weak(&this->writer, &current_writer, { current_reader.read, current_writer.write }));
+
+            // Success.
+            return true;
+        }
+    };
+}
+
+#endif // GTL_RING_BUFFER_HPP
