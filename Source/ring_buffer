@@ -116,18 +116,18 @@ namespace gtl {
                 return false;
             }
 
+            // Create a new writer location to hold the assigned/allocated/reserved pending write index.
+            index_type new_writer = { current_writer.read, (current_writer.write + 1) % (2 * this->data_size) };
+            
             // Attempt to assign/allocate/reserve an index for writing using atomic_compare_exchange_weak.
             // Remember the writer holds the current read and pending write locations, so this tries to increment the pending write location.
-            // if (this->writer == current_writer) {  this->writer = { ... }; } else { current_writer = this->writer; }
-            if (!std::atomic_compare_exchange_weak(&this->writer, &current_writer, { current_writer.read, (current_writer.write + 1) % (2 * this->data_size) })) {
+            // if (this->writer == current_writer) {  this->writer = new_writer; } else { current_writer = this->writer; }
+            if (!std::atomic_compare_exchange_weak(&this->writer, &current_writer, new_writer)) {
                 return false;
             }
 
-            // Reuse the local writer to hold the assigned/allocated/reserved pending write index.
-            current_writer.write = (current_writer.write + 1) % (2 * this->data_size);
-
             // Write the value to the buffer at the pending write index.
-            this->data[current_writer.write % this->data_size] = value;
+            this->data[new_writer.write % this->data_size] = value;
 
             // Create a local copy of the reader.
             index_type current_reader = this->reader.load();
@@ -135,7 +135,11 @@ namespace gtl {
             // Update the reader to publish the pending write using atomic_compare_exchange_weak.
             // Remember the reader holds the current write and the pending read locations, so this tries to set the current write location.
             // if (this->reader == current_reader) {  this->reader = { ... }; } else { current_reader = this->reader; }
-            while (!std::atomic_compare_exchange_weak(&this->reader, &current_reader, { current_reader.read, current_writer.write }));
+            do {
+                // Overwrite the readers current write location to ensure that pushes are finalised in order.
+                current_reader.write = current_writer.write;
+            }
+            while (!std::atomic_compare_exchange_weak(&this->reader, &current_reader, { current_reader.read, new_writer.write }));
 
             // Success.
             return true;
@@ -153,18 +157,18 @@ namespace gtl {
                 return false;
             }
 
+            // Create a new reader location to hold the assigned/allocated/reserved pending read index.
+            index_type new_reader = { (current_reader.read + 1) % (2 * this->data_size), current_reader.write };
+            
             // Attempt to assign/allocate/reserve an index for reading using atomic_compare_exchange_weak.
             // Remember the reader holds the current write and pending read locations, so this tries to increment the pending read location.
-            // if (this->reader == current_reader) {  this->reader = { ... }; } else { current_reader = this->reader; }
-            if (!std::atomic_compare_exchange_weak(&this->reader, &current_reader, { (current_reader.read + 1) % (2 * this->data_size), current_reader.write })) {
+            // if (this->reader == current_reader) {  this->reader = new_reader; } else { current_reader = this->reader; }
+            if (!std::atomic_compare_exchange_weak(&this->reader, &current_reader, new_reader)) {
                 return false;
             }
 
-            // Reuse the local reader to hold the assigned/allocated/reserved pending read index.
-            current_reader.read = (current_reader.read + 1) % (2 * this->data_size);
-
             // Read the value from the buffer at the pending read index.
-            value = this->data[current_reader.read % this->data_size];
+            value = this->data[new_reader.read % this->data_size];
 
             // Create a local copy of the writer.
             index_type current_writer = this->writer.load();
@@ -172,7 +176,11 @@ namespace gtl {
             // Update the writer to publish the pending read using atomic_compare_exchange_weak.
             // Remember the writer holds the current read and the pending write locations, so this tries to set the current read location.
             // if (this->writer == current_writer) {  this->writer = { ... }; } else { current_writer = this->writer; }
-            while (!std::atomic_compare_exchange_weak(&this->writer, &current_writer, { current_reader.read, current_writer.write }));
+            do {
+                // Overwrite the writers current read location to ensure that pops are finalised in order.
+                current_writer.read = current_reader.read;
+            }
+            while (!std::atomic_compare_exchange_weak(&this->writer, &current_writer, { new_reader.read, current_writer.write }));
 
             // Success.
             return true;
