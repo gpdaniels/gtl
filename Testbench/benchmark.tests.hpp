@@ -22,6 +22,7 @@ THE SOFTWARE
 #ifndef BENCHMARK_TESTS_HPP
 #define BENCHMARK_TESTS_HPP
 
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <functional>
@@ -71,5 +72,28 @@ void do_not_optimise_away(std::function<type(void)>&& function) {
 
 template <>
 void do_not_optimise_away(std::function<void(void)>&& function);
+
+// Simple benchmarking function
+template <typename type = void>
+std::pair<double, unsigned long long int> benchmark(std::function<type(void)>&& testFunction, unsigned long long int minimum_iterations = 1, double minimum_runtime = 0.0) {
+    // Warmup
+    do_not_optimise_away(std::forward<std::function<type(void)>>(testFunction));
+
+    // Monitoring variables.
+    std::chrono::steady_clock::time_point Start = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point End = Start;
+    unsigned long long int iterations = 0;
+
+    // Testing
+    while ((iterations < minimum_iterations) || (std::chrono::duration<double>(End - Start).count() < minimum_runtime)) {
+
+        do_not_optimise_away(std::forward<std::function<type(void)>>(testFunction));
+
+        ++iterations;
+        End = std::chrono::steady_clock::now();
+    }
+
+    return { std::chrono::duration<double, std::nano>(End - Start).count() / static_cast<double>(iterations), iterations };
+}
 
 #endif // BENCHMARK_TESTS_HPP
