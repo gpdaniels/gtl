@@ -42,12 +42,12 @@ TEST(traits, standard) {
 
 TEST(constructor, empty) {
     gtl::random_pcg random_pcg;
-    DoNotOptimiseAway(random_pcg);
+    do_not_optimise_away(random_pcg);
 }
 
 TEST(constructor, seed) {
     gtl::random_pcg random_pcg(0x01234567);
-    DoNotOptimiseAway(random_pcg);
+    do_not_optimise_away(random_pcg);
 }
 
 TEST(function, seed) {

@@ -21,7 +21,7 @@ THE SOFTWARE
 #include "benchmark.tests.hpp"
 
 template <>
-void DoNotOptimizeAway(std::function<void(void)>&& function) {
+void do_not_optimise_away(std::function<void(void)>&& function) {
     // Call function.
     function();
 

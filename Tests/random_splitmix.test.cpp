@@ -42,12 +42,12 @@ TEST(traits, standard) {
 
 TEST(constructor, empty) {
     gtl::random_splitmix random_splitmix;
-    DoNotOptimiseAway(random_splitmix);
+    do_not_optimise_away(random_splitmix);
 }
 
 TEST(constructor, seed) {
     gtl::random_splitmix random_splitmix(0x01234567);
-    DoNotOptimiseAway(random_splitmix);
+    do_not_optimise_away(random_splitmix);
 }
 
 TEST(function, seed) {

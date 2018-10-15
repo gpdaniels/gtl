@@ -42,12 +42,12 @@ TEST(traits, standard) {
 
 TEST(constructor, empty) {
     gtl::random_xorshift random_xorshift;
-    DoNotOptimiseAway(random_xorshift);
+    do_not_optimise_away(random_xorshift);
 }
 
 TEST(constructor, seed) {
     gtl::random_xorshift random_xorshift(0x01234567);
-    DoNotOptimiseAway(random_xorshift);
+    do_not_optimise_away(random_xorshift);
 }
 
 TEST(function, seed) {

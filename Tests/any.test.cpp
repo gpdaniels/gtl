@@ -42,12 +42,12 @@ TEST(traits, standard) {
 
 TEST(constructor, empty) {
     gtl::any any;
-    DoNotOptimiseAway(any);
+    do_not_optimise_away(any);
 }
 
 TEST(constructor, value) {
     gtl::any any(1);
-    DoNotOptimiseAway(any);
+    do_not_optimise_away(any);
 }
 
 TEST(evaluation, any) {

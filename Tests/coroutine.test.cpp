@@ -49,7 +49,7 @@ TEST(traits, standard) {
 
 TEST(constructor, empty) {
     gtl::coroutine coroutine;
-    DoNotOptimiseAway(coroutine);
+    do_not_optimise_away(coroutine);
 }
 
 

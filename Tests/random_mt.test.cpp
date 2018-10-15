@@ -42,18 +42,18 @@ TEST(traits, standard) {
 
 TEST(constructor, empty) {
     gtl::random_mt random_mt;
-    DoNotOptimiseAway(random_mt);
+    do_not_optimise_away(random_mt);
 }
 
 TEST(constructor, seed_value) {
     gtl::random_mt random_mt(0x01234567);
-    DoNotOptimiseAway(random_mt);
+    do_not_optimise_away(random_mt);
 }
 
 TEST(constructor, seed_array) {
     unsigned int seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
     gtl::random_mt random_mt(seed_values, 5);
-    DoNotOptimiseAway(random_mt);
+    do_not_optimise_away(random_mt);
 }
 
 TEST(function, seed_value) {

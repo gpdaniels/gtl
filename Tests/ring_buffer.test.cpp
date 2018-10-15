@@ -54,7 +54,7 @@ TEST(constructor, empty) {
             using type_value = decltype(value_type);
             constexpr static const unsigned long long value = type_value::value;
             gtl::ring_buffer<type, value> ring_buffer;
-            DoNotOptimiseAway(ring_buffer);
+            do_not_optimise_away(ring_buffer);
         }
     );
 }

@@ -48,7 +48,7 @@ TEST(constructor, type) {
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
             gtl::type_id type_id(type{});
-            DoNotOptimiseAway(type_id);
+            do_not_optimise_away(type_id);
         }
     );
 }
@@ -59,7 +59,7 @@ TEST(function, id) {
             using type = typename decltype(test_type)::type;
             gtl::type_id type_id(type{});
             unsigned long long int id = type_id.id();
-            DoNotOptimiseAway(id);
+            do_not_optimise_away(id);
         }
     );
 }
@@ -70,7 +70,7 @@ TEST(operator, unsigned_long_long_int) {
             using type = typename decltype(test_type)::type;
             gtl::type_id type_id(type{});
             unsigned long long int id = type_id;
-            DoNotOptimiseAway(id);
+            do_not_optimise_away(id);
         }
     );
 }

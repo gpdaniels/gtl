@@ -70,7 +70,7 @@ TEST(constructor, empty) {
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
             gtl::type_name<type> type_name;
-            DoNotOptimiseAway(type_name);
+            do_not_optimise_away(type_name);
         }
     );
 }

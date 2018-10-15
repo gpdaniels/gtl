@@ -40,7 +40,7 @@ TEST(traits, standard) {
 
 TEST(constructor, empty) {
     gtl::cpu cpu;
-    DoNotOptimiseAway(cpu);
+    do_not_optimise_away(cpu);
 }
 
 TEST(function, get_max_leaf_id) {

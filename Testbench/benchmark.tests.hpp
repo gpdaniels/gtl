@@ -29,7 +29,7 @@ THE SOFTWARE
 #include <utility>
 
 template <typename type>
-void DoNotOptimiseAway(type&& value) {
+void do_not_optimise_away(type&& value) {
     // To prevent value being optimised away it needs to be used somwhere.
     // When using the value it must not impact the benchmark being performed.
     // Therefore, use the value inside a never executed if block.
@@ -48,7 +48,7 @@ void DoNotOptimiseAway(type&& value) {
 }
 
 template <typename type>
-void DoNotOptimizeAway(std::function<type(void)>&& function) {
+void do_not_optimise_away(std::function<type(void)>&& function) {
     // Call function and get returned value.
     volatile type value = function();
 
@@ -70,6 +70,6 @@ void DoNotOptimizeAway(std::function<type(void)>&& function) {
 }
 
 template <>
-void DoNotOptimizeAway(std::function<void(void)>&& function);
+void do_not_optimise_away(std::function<void(void)>&& function);
 
 #endif // BENCHMARK_TESTS_HPP
