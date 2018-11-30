@@ -7,8 +7,14 @@ language: cpp
 # Sudo is not required.
 sudo: false
 
+# Linux distributions: xenial, trusty, precise
+
 matrix:
   include:
+    ############################################################################
+    # Linux trusty with clang
+    ############################################################################
+    
     # Clang 3.5
     #- os: linux
     #  dist: trusty
@@ -58,6 +64,8 @@ matrix:
       addons: { apt: { packages: ["clang-6.0"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-6.0"] } }
     
     ############################################################################
+    # Linux trusty with gcc
+    ############################################################################
     
     # GCC 6
     #- os: linux
@@ -71,6 +79,34 @@ matrix:
       env: COMPILER=g++-7
       addons: { apt: { packages: ["g++-7"], sources: ["ubuntu-toolchain-r-test"] } }
     
+    ############################################################################
+    # Linux xenial with clang
+    ############################################################################
+    
+    # Clang 6.0
+    #- os: linux
+    #  dist: xenial
+    #  env: COMPILER=clang++-6.0
+    #  addons: { apt: { packages: ["clang-6.0"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-6.0"] } }
+    
+    ############################################################################
+    # Linux xenial with gcc
+    ############################################################################
+    
+    # GCC 6
+    #- os: linux
+    #  dist: xenial
+    #  env: COMPILER=g++-6
+    #  addons: { apt: { packages: ["g++-6"], sources: ["ubuntu-toolchain-r-test"] } }
+    
+    # GCC 7
+    - os: linux
+      dist: xenial
+      env: COMPILER=g++-7
+      addons: { apt: { packages: ["g++-7"], sources: ["ubuntu-toolchain-r-test"] } }
+    
+    ############################################################################
+    # Macintosh osx with clang
     ############################################################################
     
     # Xcode 6.4
@@ -101,6 +137,8 @@ matrix:
     - os: osx
       osx_image: xcode9.4
     
+    ############################################################################
+    # Windows server with Visual Studio 2017
     ############################################################################
     
     - os: windows
