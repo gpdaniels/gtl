@@ -1,14 +1,8 @@
 # Travis CI script.
-# Created using boostorg/hana/.travis.yml
+# Derived from boostorg/hana/.travis.yml
 
 # Repository language to compile.
 language: cpp
-
-# Jobs are on Linux unless specified otherwise
-os: linux
-
-# Jobs are on Trusty unless specified otherwise
-dist: trusty
 
 # Sudo is not required.
 sudo: false
@@ -16,65 +10,85 @@ sudo: false
 matrix:
   include:
     # Clang 3.5
-    #- env: COMPILER=clang++-3.5
+    #- os: linux
+    #  dist: trusty
+    #  env: COMPILER=clang++-3.5
     #  addons: { apt: { packages: ["clang-3.5"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.5"] } }
     
     # Clang 3.6
-    #- env: COMPILER=clang++-3.6
+    #- os: linux
+    #  dist: trusty
+    #  env: COMPILER=clang++-3.6
     #  addons: { apt: { packages: ["clang-3.6"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.6"] } }
     
     # Clang 3.7
-    #- env: COMPILER=clang++-3.7
+    #- os: linux
+    #  dist: trusty
+    #  env: COMPILER=clang++-3.7
     #  addons: { apt: { packages: ["clang-3.7"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.7"] } }
     
     # Clang 3.8
-    #- env: COMPILER=clang++-3.8
+    #- os: linux
+    #  dist: trusty
+    #  env: COMPILER=clang++-3.8
     #  addons: { apt: { packages: ["clang-3.8"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.8"] } }
     
     # Clang 3.9
-    #- env: COMPILER=clang++-3.9
+    #- os: linux
+    #  dist: trusty
+    #  env: COMPILER=clang++-3.9
     #  addons: { apt: { packages: ["clang-3.9"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-3.9"] } }
     
     # Clang 4.0
-    #- env: COMPILER=clang++-4.0
+    #- os: linux
+    #  dist: trusty
+    #  env: COMPILER=clang++-4.0
     #  addons: { apt: { packages: ["clang-4.0"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-4.0"] } }
     
     # Clang 5.0
-    #- env: COMPILER=clang++-5.0
+    #- os: linux
+    #  dist: trusty
+    #  env: COMPILER=clang++-5.0
     #  addons: { apt: { packages: ["clang-5.0"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-5.0"] } }
-
+    
     # Clang 6.0
-    - env: COMPILER=clang++-6.0
+    - os: linux
+      dist: trusty
+      env: COMPILER=clang++-6.0
       addons: { apt: { packages: ["clang-6.0"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-6.0"] } }
-
+    
     ############################################################################
-
+    
     # GCC 6
-    #- env: COMPILER=g++-6
+    #- os: linux
+    #  dist: trusty
+    #  env: COMPILER=g++-6
     #  addons: { apt: { packages: ["g++-6"], sources: ["ubuntu-toolchain-r-test"] } }
-
+    
     # GCC 7
-    - env: COMPILER=g++-7
+    - os: linux
+      dist: trusty
+      env: COMPILER=g++-7
       addons: { apt: { packages: ["g++-7"], sources: ["ubuntu-toolchain-r-test"] } }
-
+    
     ############################################################################
     
     # Xcode 6.4
     #- os: osx
     #  osx_image: xcode6.4
-
+    
     # Xcode 7.3
     #- os: osx
     #  osx_image: xcode7.3
-
+    
     # Xcode 8.3
     #- os: osx
     #  osx_image: xcode8.3
-
+    
     # Xcode 9.1
     #- os: osx
     #  osx_image: xcode9.1
-      
+    
     # Xcode 9.2
     #- os: osx
     #  osx_image: xcode9.2
@@ -86,7 +100,11 @@ matrix:
     # Xcode 9.4
     - os: osx
       osx_image: xcode9.4
-
+    
+    ############################################################################
+    
+    - os: windows
+    
 install:
   ############################################################################
   # All the dependencies are installed in ${HOME}/deps/.
@@ -94,13 +112,13 @@ install:
   - DEPS_DIR="${HOME}/deps"
   - mkdir -p ${DEPS_DIR}
   - pushd ${DEPS_DIR}
-
+  
   ############################################################################
   # Override CXX set by Travis.
   ############################################################################
   - if [[ "${COMPILER}" != "" ]]; then export CXX=${COMPILER}; fi
   - ${CXX} --version
-
+  
   ############################################################################
   # Install a recent CMake.
   ############################################################################
@@ -109,8 +127,14 @@ install:
       CMAKE_URL="https://cmake.org/files/v3.10/cmake-3.10.0-Linux-x86_64.tar.gz"
       mkdir cmake && travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C cmake
       export PATH=${DEPS_DIR}/cmake/bin:${PATH}
-    else
+    elif [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
       brew install cmake || brew upgrade cmake
+    elif [[ "${TRAVIS_OS_NAME}" == "windows" ]]; then
+      CMAKE_URL="https://cmake.org/files/v3.10/cmake-3.10.0-win64-x64.zip"
+      CMAKE_FILE=`mktemp`
+      mkdir cmake && travis_retry wget --no-check-certificate --quiet - ${CMAKE_URL} -O ${CMAKE_FILE}
+      unzip -d cmake ${CMAKE_FILE} && f=("cmake"/*) && mv "cmake"/*/* "cmake" && rmdir "${f[@]}"
+      export PATH=${DEPS_DIR}/cmake/bin:${PATH}
     fi
   - cmake --version
 
@@ -153,7 +177,7 @@ script:
   - pushd BUILD
   - cmake -DCMAKE_BUILD_TYPE=Debug ..
   - cmake --build . -- -j
-  - make test
+  - cmake --build . --target test
   - popd
 
 notifications:
