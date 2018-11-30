@@ -133,7 +133,7 @@ install:
       CMAKE_URL="https://cmake.org/files/v3.10/cmake-3.10.0-win64-x64.zip"
       CMAKE_FILE=`mktemp`
       mkdir cmake && travis_retry wget --no-check-certificate --quiet - ${CMAKE_URL} -O ${CMAKE_FILE}
-      unzip -d cmake ${CMAKE_FILE} && f=("cmake"/*) && mv "cmake"/*/* "cmake" && rmdir "${f[@]}"
+      unzip -q -d cmake ${CMAKE_FILE} && f=("cmake"/*) && mv "cmake"/*/* "cmake" && rmdir "${f[@]}"
       export PATH=${DEPS_DIR}/cmake/bin:${PATH}
     fi
   - cmake --version
