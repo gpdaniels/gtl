@@ -176,8 +176,8 @@ script:
   - mkdir BUILD 
   - pushd BUILD
   - cmake -DCMAKE_BUILD_TYPE=Debug ..
-  - cmake --build . 
-  - cmake --build . --target test
+  - cmake --build . --config Debug
+  - cmake --build . --config Debug --target test
   - popd
 
 notifications:
