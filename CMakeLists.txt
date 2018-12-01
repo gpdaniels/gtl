@@ -1,5 +1,6 @@
 # Define the minimum version of CMake that is required.
 CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
+CMAKE_POLICY(VERSION 3.5.1)
 
 # Project name.
 SET(PROJECT_NAME "gtl")
@@ -20,14 +21,14 @@ SET(CMAKE_CXX_EXTENSIONS OFF)
 
 # Add warnings.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -Wfatal-errors -Wall -Wextra -Wpedantic -Wno-unknown-pragmas -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-newline-eof -Wno-reserved-id-macro -Wno-padded -Wno-disabled-macro-expansion")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -Wfatal-errors -Wall -Wextra -Wpedantic -Wno-unknown-pragmas -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-newline-eof -Wno-reserved-id-macro -Wno-padded -Wno-disabled-macro-expansion -Wno-global-constructors -Wno-exit-time-destructors")
     SET(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
 ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -Wfatal-errors -Wall -Wextra -Wpedantic -Wno-unknown-pragmas")
 ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 
 ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP8 -D_USE_MATH_DEFINES=1 -DNOMINMAX=1 -D_ITERATOR_DEBUG_LEVEL=0 -D_ENABLE_ATOMIC_ALIGNMENT_FIX=1 -D_CRT_NONSTDC_NO_WARNINGS=1 -D_CRT_SECURE_NO_WARNINGS=1 /Wall /wd4996 /wd4514 /wd4711 /wd4571 /wd4003")
 ELSE("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     MESSAGE(WARNING "Unsupported compiler.")
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -89,7 +90,7 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
 
     # Read the test file.
     FILE(READ ${TEST_FILE} TEST_CODE_FILE)
-    
+
     # Replace block comments.
     STRING(ASCII 2 BLOCK_COMMENT_BEGIN)
     STRING(ASCII 3 BLOCK_COMMENT_CLOSE)
@@ -102,18 +103,18 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
 
     # Loop over each line detecting tests.
     FOREACH(TEST_CODE_LINE ${TEST_CODE})
-    
+
         # C++ only allows letters, digits and the underscore characters in variable names. => [a-zA-Z_][0-9a-zA-Z_]*
         IF("${TEST_CODE_LINE}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*TEST[ \t]*[\\(][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[,][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[\\)]")
             LIST(APPEND SUB_TEST_GROUPS ${CMAKE_MATCH_1})
             LIST(APPEND SUB_TEST_NAMES ${CMAKE_MATCH_2})
         ENDIF("${TEST_CODE_LINE}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*TEST[ \t]*[\\(][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[,][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[\\)]")
-        
+
     ENDFOREACH(TEST_CODE_LINE ${TEST_CODE})
 
     # Count the number of tests found.
     LIST(LENGTH SUB_TEST_GROUPS SUB_TEST_COUNT)
-    
+
     # Set the starting index to zero.
     SET(SUB_TEST_INDEX 0)
 
@@ -132,7 +133,7 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
 
     # For each test found in the test file, create a test executable.
     WHILE(SUB_TEST_INDEX LESS ${SUB_TEST_COUNT})
-        
+
         # Extract the test name and ground from the lists.
         LIST(GET SUB_TEST_GROUPS ${SUB_TEST_INDEX} SUB_TEST_GROUP)
         LIST(GET SUB_TEST_NAMES  ${SUB_TEST_INDEX} SUB_TEST_NAME)
@@ -156,7 +157,7 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
         TARGET_LINK_LIBRARIES(${CURRENT_TEST_NAME} PRIVATE $<TARGET_OBJECTS:${TEST_FILE_NAME}>)
 
         # Link to the thread library.
-        TARGET_LINK_LIBRARIES(${CURRENT_TEST_NAME} PRIVATE Threads::Threads)
+        TARGET_LINK_LIBRARIES(${CURRENT_TEST_NAME} PRIVATE Threads::Threads ${CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}})
 
         # Set the dependency of the test on the test library.
         ADD_DEPENDENCIES(${CURRENT_TEST_NAME} ${TEST_FILE_NAME})
@@ -166,13 +167,13 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
 
         # Set a timeout to prevent long running tests.
         SET_TESTS_PROPERTIES(${CURRENT_TEST_NAME} PROPERTIES TIMEOUT 1)
-        
+
         # Set the working directory of the test.
         SET_TESTS_PROPERTIES(${CURRENT_TEST_NAME} PROPERTIES REQUIRED_FILES $<TARGET_FILE:${CURRENT_TEST_NAME}> WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-        
+
         # Increment the loop index.
         MATH(EXPR SUB_TEST_INDEX "${SUB_TEST_INDEX} + 1")
-        
+
     ENDWHILE(SUB_TEST_INDEX LESS ${SUB_TEST_COUNT})
 
     MESSAGE(STATUS " ")
