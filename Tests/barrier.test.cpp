@@ -24,8 +24,16 @@ THE SOFTWARE
 
 #include <barrier>
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <thread>
 #include <type_traits>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 TEST(traits, standard) {
     REQUIRE(sizeof(gtl::barrier) >= 1, "sizeof(gtl::barrier) = %ld, expected >= %lld", sizeof(gtl::barrier), 1ull);

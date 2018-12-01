@@ -23,8 +23,16 @@ THE SOFTWARE
 
 #include <simulation_loop>
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <thread>
 #include <type_traits>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 TEST(traits, standard) {
     REQUIRE(sizeof(gtl::simulation_loop<100>) >= 24, "sizeof(gtl::simulation_loop) = %ld, expected >= %lld", sizeof(gtl::simulation_loop<100>), 24ull);

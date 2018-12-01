@@ -22,12 +22,20 @@ THE SOFTWARE
 #ifndef BENCHMARK_TESTS_HPP
 #define BENCHMARK_TESTS_HPP
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <functional>
 #include <thread>
 #include <utility>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 template <typename type>
 void do_not_optimise_away(type&& value) {

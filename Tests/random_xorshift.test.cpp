@@ -25,8 +25,16 @@ THE SOFTWARE
 
 #include <random_xorshift>
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <cmath>
 #include <type_traits>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 TEST(traits, standard) {
     REQUIRE(sizeof(gtl::random_xorshift) >= 8ull, "sizeof(gtl::random_xorshift) = %ld, expected >= %lld", sizeof(gtl::random_xorshift), 8ull);

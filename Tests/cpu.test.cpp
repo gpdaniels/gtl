@@ -24,7 +24,15 @@ THE SOFTWARE
 
 #include <cpu>
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <type_traits>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 TEST(traits, standard) {
     REQUIRE(sizeof(gtl::cpu) >= 24, "sizeof(gtl::cpu) = %ld, expected >= %lld", sizeof(gtl::cpu), 24ull);

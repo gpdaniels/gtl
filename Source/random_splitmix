@@ -33,7 +33,15 @@ THE SOFTWARE
 #   define GTL_RANDOM_SPLITMIX_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <cstdint>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 namespace gtl {
     /// @brief  The random_splitmix class implements the splitmix pseudo-random-number generator.

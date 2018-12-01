@@ -25,7 +25,15 @@ THE SOFTWARE
 
 #include <enum_name>
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <type_traits>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 enum class test_enum {
     first,

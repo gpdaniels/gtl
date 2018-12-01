@@ -33,7 +33,15 @@ THE SOFTWARE
 #   define GTL_SEMAPHORE_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <mutex>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 namespace gtl {
     /// @brief  The semaphore class is a mutex structure that atomically counts notifications.

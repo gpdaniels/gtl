@@ -22,7 +22,15 @@ THE SOFTWARE
 #ifndef MACRO_TESTS_HPP
 #define MACRO_TESTS_HPP
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <cstdio>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 /// @brief  A helper macro to prevent compiler warnings about unused variables.
 #define UNUSED(VARIABLE) (static_cast<void>(VARIABLE))

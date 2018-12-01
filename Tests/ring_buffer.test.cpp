@@ -27,9 +27,17 @@ THE SOFTWARE
 
 #include <ring_buffer>
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <array>
 #include <thread>
 #include <type_traits>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 TEST(traits, standard) {
     test_template<test_types, value_collection<1, 10, 100>>(

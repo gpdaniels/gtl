@@ -33,8 +33,16 @@ THE SOFTWARE
 #   define GTL_BARRIER_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <condition_variable>
 #include <mutex>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 namespace gtl {
     /// @brief  The barrier class blocks a number of threads until they are syncronised.
