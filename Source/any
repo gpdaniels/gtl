@@ -22,7 +22,15 @@ THE SOFTWARE
 #ifndef GTL_ANY_HPP
 #define GTL_ANY_HPP
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <memory>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 #if defined(__clang__)
     #pragma clang diagnostic push

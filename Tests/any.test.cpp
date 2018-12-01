@@ -26,7 +26,15 @@ THE SOFTWARE
 
 #include <any>
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <type_traits>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 TEST(traits, standard) {
     REQUIRE(sizeof(gtl::any) >= 1, "sizeof(gtl::any) = %ld, expected >= %lld", sizeof(gtl::any), 1ull);

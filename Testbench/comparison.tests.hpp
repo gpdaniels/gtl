@@ -22,7 +22,15 @@ THE SOFTWARE
 #ifndef COMPARISON_TESTS_HPP
 #define COMPARISON_TESTS_HPP
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <algorithm>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 struct comparison {
     template <typename type>

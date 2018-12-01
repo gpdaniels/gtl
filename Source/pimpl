@@ -22,7 +22,15 @@ THE SOFTWARE
 #ifndef GTL_PIMPL_HPP
 #define GTL_PIMPL_HPP
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <new>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 namespace gtl {
     /// @brief  pimpl is a sized pointer to implementation class to enable hiding implemtation details.

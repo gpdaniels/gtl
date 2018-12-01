@@ -24,8 +24,16 @@ THE SOFTWARE
 
 #include <spin_lock>
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <mutex>
 #include <type_traits>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 TEST(traits, standard) {
     REQUIRE(sizeof(gtl::spin_lock) >= 1, "sizeof(gtl::spin_lock) = %ld, expected >= %lld", sizeof(gtl::spin_lock), 1ull);

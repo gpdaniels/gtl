@@ -24,7 +24,15 @@ THE SOFTWARE
 
 #include <pimpl>
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <type_traits>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 template <>
 class test_pimpl::pimpl::implementation final {

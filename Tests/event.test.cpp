@@ -24,8 +24,16 @@ THE SOFTWARE
 
 #include <event>
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <functional>
 #include <type_traits>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 struct test_event {
     int value;

@@ -50,12 +50,26 @@ THE SOFTWARE
 #   define WIN32_LEAN_AND_MEAN
 #   define VC_EXTRALEAN
 #   define STRICT
+#   if defined(_MSC_VER)
+#       pragma warning(push, 0)
+#   endif
 #   include <windows.h>
+#   if defined(_MSC_VER)
+#       pragma warning(pop)
+#   endif
 #   define sig_atomic_t int
+#endif
+
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
 #endif
 
 #include <mutex>
 #include <thread>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 namespace gtl {
 

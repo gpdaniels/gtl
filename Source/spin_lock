@@ -33,7 +33,15 @@ THE SOFTWARE
 #   define GTL_SPIN_LOCK_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <atomic>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 namespace gtl {
     /// @brief  The spin_lock is a simple mutex structure that doesn't put threads to sleep.

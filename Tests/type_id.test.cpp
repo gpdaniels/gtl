@@ -25,7 +25,15 @@ THE SOFTWARE
 
 #include <type_id>
 
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
 #include <type_traits>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 TEST(traits, standard) {
     REQUIRE(sizeof(gtl::type_id) >= 1, "sizeof(gtl::type_id) = %ld, expected >= %lld", sizeof(gtl::type_id), 1ull);
