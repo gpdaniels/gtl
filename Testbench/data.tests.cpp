@@ -134,7 +134,7 @@ const unsigned int* test_data<unsigned int>::end()   { return data + sizeof(data
 
 const char* test_data<signed int>::name = "int";
 const signed int test_data<signed int>::data[] = {
-    -2147483648, -2147483647, -65536, -65535, -32768, -32767, -256, -255, -128, -127, -1, 0, 1, 127, 128, 255, 256, 32767, 32768, 65535, 65536, 2147483647
+    -2147483648ll, -2147483647, -65536, -65535, -32768, -32767, -256, -255, -128, -127, -1, 0, 1, 127, 128, 255, 256, 32767, 32768, 65535, 65536, 2147483647
 };
 const signed int* test_data<signed int>::begin() { return data; }
 const signed int* test_data<signed int>::end()   { return data + sizeof(data) / sizeof(signed int); }
@@ -170,7 +170,7 @@ const unsigned long int* test_data<unsigned long int>::end()   { return data + s
     #error "No support for this compiler."
 #endif
 const signed long int test_data<signed long int>::data[] = {
-    -2147483648, -2147483647, -65536, -65535, -32768, -32767, -256, -255, -128, -127, -1, 0, 1, 127, 128, 255, 256, 32767, 32768, 65535, 65536, 2147483647
+    -2147483648ll, -2147483647, -65536, -65535, -32768, -32767, -256, -255, -128, -127, -1, 0, 1, 127, 128, 255, 256, 32767, 32768, 65535, 65536, 2147483647
 };
 const signed long int* test_data<signed long int>::begin() { return data; }
 const signed long int* test_data<signed long int>::end()   { return data + sizeof(data) / sizeof(signed long int); }
@@ -206,7 +206,7 @@ const unsigned long long int* test_data<unsigned long long int>::end()   { retur
     #error "No support for this compiler."
 #endif
 const signed long long int test_data<signed long long int>::data[] = {
-    -9223372036854775807ll - 1, -9223372036854775807ll, -4294967296, -4294967295, -2147483648, -2147483647, -65536, -65535, -32768, -32767, -256, -255, -128, -127, -1, 0, 1, 127, 128, 255, 256, 32767, 32768, 65535, 65536, 2147483647, 2147483648, 4294967295, 4294967296, 9223372036854775807ll
+    -9223372036854775807ll - 1, -9223372036854775807ll, -4294967296ll, -4294967295ll, -2147483648ll, -2147483647, -65536, -65535, -32768, -32767, -256, -255, -128, -127, -1, 0, 1, 127, 128, 255, 256, 32767, 32768, 65535, 65536, 2147483647, 2147483648, 4294967295, 4294967296, 9223372036854775807ll
 };
 const signed long long int* test_data<signed long long int>::begin() { return data; }
 const signed long long int* test_data<signed long long int>::end()   { return data + sizeof(data) / sizeof(signed long long int); }

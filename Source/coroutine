@@ -485,7 +485,7 @@ namespace gtl {
                 // Return to the calling application.
 #           else
                 // Save parameters for the coroutine in member variables.
-                this->function = [function, arguments...](){ function(arguments...); };
+                this->function = [coroutine_function, coroutine_arguments...](){ coroutine_function(coroutine_arguments...); };
 
                 // Create the fiber based coroutine.
                 this->stack = CreateFiber(0, [](LPVOID) {
