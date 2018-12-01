@@ -59,6 +59,43 @@ LIST(REMOVE_ITEM TESTS_SOURCE_FILES ${TESTS_MAIN_SOURCE_FILE})
 SET(THREADS_PREFER_PTHREAD_FLAG ON)
 FIND_PACKAGE(Threads REQUIRED)
 
+# Get cmake system name in UPPER form.
+STRING(TOUPPER ${CMAKE_SYSTEM_NAME} UPPER_CMAKE_SYSTEM_NAME)
+
+# Create a list variable to hold detected #pragma linker flags.
+SET(CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME} "")
+
+# Parse header files for custom pragma.
+FOREACH(HEADER_FILE ${HEADER_FILES})
+    # Read the header file.
+    FILE(READ ${HEADER_FILE} TEST_CODE_FILE)
+
+    # Replace block comments.
+    STRING(ASCII 2 BLOCK_COMMENT_BEGIN)
+    STRING(ASCII 3 BLOCK_COMMENT_CLOSE)
+    STRING(REGEX REPLACE "[/][*]" "${BLOCK_COMMENT_BEGIN}" TEST_CODE_NOCOMMENTS "${TEST_CODE_FILE}")
+    STRING(REGEX REPLACE "[*][/]" "${BLOCK_COMMENT_CLOSE}" TEST_CODE_NOCOMMENTS "${TEST_CODE_NOCOMMENTS}")
+    STRING(REGEX REPLACE "${BLOCK_COMMENT_BEGIN}[^${BLOCK_COMMENT_CLOSE}]*${BLOCK_COMMENT_CLOSE}" "" TEST_CODE_NOCOMMENTS "${TEST_CODE_NOCOMMENTS}")
+
+    # Convert lines to list.
+    STRING(REGEX REPLACE "[\r]*[\n]+" ";" TEST_CODE "${TEST_CODE_NOCOMMENTS}")
+
+    # Loop over each line detecting tests.
+    FOREACH(TEST_CODE_LINE ${TEST_CODE})
+
+        # Search for pragmas
+        IF("${TEST_CODE_LINE}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*[#][ \t]*pragma[ \t]*comment[ \t]*[\\(][ \t]*CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}[ \t]*[,][ \t]*[\"]([-][l][0-9a-zA-Z_]*)[\"][ \t]*[\\)]")
+            LIST(APPEND CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME} ${CMAKE_MATCH_1})
+        ENDIF("${TEST_CODE_LINE}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*[#][ \t]*pragma[ \t]*comment[ \t]*[\\(][ \t]*CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}[ \t]*[,][ \t]*[\"]([-][l][0-9a-zA-Z_]*)[\"][ \t]*[\\)]")
+
+    ENDFOREACH(TEST_CODE_LINE ${TEST_CODE})
+
+ENDFOREACH(HEADER_FILE ${HEADER_FILES})
+
+IF(NOT "'${CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}}'" STREQUAL "''")
+    MESSAGE(STATUS "Found additional linker flags: ${CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}}")
+ENDIF(NOT "'${CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}}'" STREQUAL "''")
+
 # Enable testing.
 ENABLE_TESTING()
 
