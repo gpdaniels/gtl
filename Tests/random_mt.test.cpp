@@ -59,7 +59,7 @@ TEST(constructor, seed_value) {
 }
 
 TEST(constructor, seed_array) {
-    unsigned int seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
+    std::uint32_t seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
     gtl::random_mt random_mt(seed_values, 5);
     do_not_optimise_away(random_mt);
 }
@@ -70,7 +70,7 @@ TEST(function, seed_value) {
 }
 
 TEST(function, seed_array) {
-    unsigned int seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
+    std::uint32_t seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
     gtl::random_mt random_mt;
     random_mt.seed(seed_values, 5);
 }
@@ -78,7 +78,7 @@ TEST(function, seed_array) {
 TEST(function, get_random_raw) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
-    unsigned int random_raw = random_mt.get_random_raw();
+    std::uint32_t random_raw = random_mt.get_random_raw();
     REQUIRE(comparison::is_equal(random_raw, 1802874368u), "Pseudo-random number 1 was %u, expected %u", random_raw, 1802874368u);
     random_raw = random_mt.get_random_raw();
     REQUIRE(comparison::is_equal(random_raw, 453914126u), "Pseudo-random number 2 was %u, expected %u", random_raw, 453914126u);
@@ -141,7 +141,7 @@ TEST(function, get_random_inclusive) {
 TEST(function, get_random_bounded_long) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
-    unsigned int random = random_mt.get_random(0u, 1u);
+    std::uint32_t random = random_mt.get_random(0u, 1u);
     REQUIRE(comparison::is_equal(random, 0u), "Pseudo-random number 1 was %u, expected %u", random, 0u);
     random = random_mt.get_random(0u, 1u);
     REQUIRE(comparison::is_equal(random, 0u), "Pseudo-random number 2 was %u, expected %u", random, 0u);
@@ -174,7 +174,7 @@ TEST(evaluation, random_numbers) {
     random_mt.seed(0x01234567);
     int random_bias = 0;
     for (unsigned int iteration = 0; iteration < 1000000; ++iteration) {
-        random_bias += (random_mt.get_random(0u, 1u) == 0) ? +1 : -1;
+        random_bias += (random_mt.get_random(0u, 1u) == 0u) ? +1 : -1;
     }
     REQUIRE(comparison::is_equal(random_bias, 74), "Pseudo-random number generator bias was %d, expected %d", random_bias, 74);
 }

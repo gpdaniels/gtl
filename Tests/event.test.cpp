@@ -48,12 +48,12 @@ TEST(traits, standard) {
 
     REQUIRE(std::is_trivially_copyable<gtl::event_manager<test_event>>::value == false, "Expected std::is_trivially_copyable to be false.");
 
-#if defined(__APPLE__)
-    REQUIRE(std::is_standard_layout<gtl::event_manager<test_event>>::value == true, "Expected std::is_standard_layout to be true.");
-#else
-    // This test seems to be unreliable between compilers and operating systems.
-    //REQUIRE(std::is_standard_layout<gtl::event_manager<test_event>>::value == false, "Expected std::is_standard_layout to be false.");
-#endif
+    #if defined(__APPLE__)
+        REQUIRE(std::is_standard_layout<gtl::event_manager<test_event>>::value == true, "Expected std::is_standard_layout to be true.");
+    #else
+        // This test seems to be unreliable between compilers and operating systems.
+        //REQUIRE(std::is_standard_layout<gtl::event_manager<test_event>>::value == false, "Expected std::is_standard_layout to be false.");
+    #endif
 }
 
 class test_class

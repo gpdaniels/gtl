@@ -42,11 +42,13 @@ TEST(traits, standard) {
 
     REQUIRE(std::is_trivial<gtl::type_id>::value == false, "Expected std::is_trivial to be false.");
 
-#if defined(_MSC_VER)
-    REQUIRE(std::is_trivially_copyable<gtl::type_id>::value == false, "Expected std::is_trivially_copyable to be false.");
-#else
-    REQUIRE(std::is_trivially_copyable<gtl::type_id>::value == true, "Expected std::is_trivially_copyable to be true.");
-#endif
+    #if defined(__clang__)
+        REQUIRE(std::is_trivially_copyable<gtl::type_id>::value == true, "Expected std::is_trivially_copyable to be true.");
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+        REQUIRE(std::is_trivially_copyable<gtl::type_id>::value == true, "Expected std::is_trivially_copyable to be true.");
+    #elif defined(_MSC_VER)
+        REQUIRE(std::is_trivially_copyable<gtl::type_id>::value == false, "Expected std::is_trivially_copyable to be false.");
+    #endif
 
     REQUIRE(std::is_standard_layout<gtl::type_id>::value == true, "Expected std::is_standard_layout to be true.");
 }

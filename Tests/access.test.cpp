@@ -153,11 +153,14 @@ TEST(traits, standard) {
     REQUIRE(std::is_trivial<test_class>::value == false);
     REQUIRE(std::is_trivial<test_class_access>::value == false);
 
-#if defined(_MSC_VER)
-    REQUIRE(std::is_trivially_copyable<test_class>::value == false);
-#else
-    REQUIRE(std::is_trivially_copyable<test_class>::value == true);
-#endif
+    #if defined(__clang__)
+        REQUIRE(std::is_trivially_copyable<test_class>::value == true);
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+        REQUIRE(std::is_trivially_copyable<test_class>::value == true);
+    #elif defined(_MSC_VER)
+        REQUIRE(std::is_trivially_copyable<test_class>::value == false);
+    #endif
+
     REQUIRE(std::is_trivially_copyable<test_class_access>::value == false);
 
     REQUIRE(std::is_standard_layout<test_class>::value == true);
