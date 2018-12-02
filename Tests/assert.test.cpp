@@ -55,22 +55,48 @@ TEST(evaluate, assert) {
     
     // Asserting in an if statement, with {}.
     {
-        if (true == true) {
+        constexpr static const int variable1 = -1;
+        volatile double variable2 = 2.0;
+        if (variable1 != variable2) {
+            GTL_ASSERT(true);
+        }
+        
+        if (variable1 != variable2) {
             GTL_ASSERT(true);
         }
         else {
             // This should never be reached.
             REQUIRE(false);
         }
+
+        if (variable1 == variable2) {
+            // This should never be reached.
+            REQUIRE(false);
+        }
+        else {
+            GTL_ASSERT(true);
+        }
     }
 
     // Asserting in an if statement, without {}.
     {
-        if (true != false)
+        constexpr static const int variable1 = -1;
+        volatile double variable2 = 2.0;
+
+        if (variable1 != variable2)
+            GTL_ASSERT(true);
+
+        if (variable1 != variable2)
             GTL_ASSERT(true);
         else
             // This should never be reached.
             REQUIRE(false);
+
+        if (variable1 == variable2)
+            // This should never be reached.
+            GTL_ASSERT(false);
+        else
+            REQUIRE(true);
     }
     
     // Asserting in a for loop, with {}.
@@ -78,12 +104,19 @@ TEST(evaluate, assert) {
         for (bool loop = true; loop; loop = false) {
             GTL_ASSERT(true);
         }
+
+        for (bool loop = false; loop; loop = false) {
+            GTL_ASSERT(false);
+        }
     }
     
     // Asserting in a for loop, without {}.
     {
         for (bool loop = true; loop; loop = false)
             GTL_ASSERT(true);
+
+        for (bool loop = false; loop; loop = false)
+            GTL_ASSERT(false);
     }
     
     // Asserting in a while loop, with {}.
@@ -93,6 +126,10 @@ TEST(evaluate, assert) {
             GTL_ASSERT(true);
             loop = false;
         }
+
+        while (loop) {
+            GTL_ASSERT(false);
+        }
     }
     
     // Asserting in a while loop, without {}.
@@ -100,6 +137,9 @@ TEST(evaluate, assert) {
         bool loop = true;
         while (loop)
             GTL_ASSERT(true), loop = false;
+
+        while (loop)
+            GTL_ASSERT(false);
     }
 
     // Asserting in a do while loop, with {}.
