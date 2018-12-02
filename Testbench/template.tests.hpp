@@ -52,7 +52,10 @@ struct type_function_container {
     type_function_container(function_type function)
         : type_function(function) {
     }
+    type_function_container(const type_function_container&) = default;
+    type_function_container(type_function_container&&) = default;
     type_function_container& operator=(const type_function_container&) = delete;
+    type_function_container& operator=(type_function_container&&) = delete;
     template <typename... argument_types>
     void operator()(argument_types... arguments) {
         type_function(type_container<type>{}, arguments...);
@@ -66,7 +69,10 @@ struct value_function_container {
     value_function_container(function_type function)
         : value_function(function) {
     }
+    value_function_container(const value_function_container&) = default;
+    value_function_container(value_function_container&&) = default;
     value_function_container& operator=(const value_function_container&) = delete;
+    value_function_container& operator=(value_function_container&&) = delete;
     template <typename... argument_types>
     void operator()(argument_types... arguments) {
         value_function(value_container<value>{}, arguments...);
