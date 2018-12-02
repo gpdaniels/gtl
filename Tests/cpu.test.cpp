@@ -36,13 +36,13 @@ THE SOFTWARE
 
 TEST(traits, standard) {
 
-#if defined(_MSC_VER)
-    REQUIRE(sizeof(gtl::cpu) == 12, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 12ull);
-#elif defined(__clang__)
-    REQUIRE(sizeof(gtl::cpu) == 24, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 24ull);
-#else
-    REQUIRE(sizeof(gtl::cpu) == 24, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 24ull);
-#endif
+    #if defined(__clang__)
+        REQUIRE(sizeof(gtl::cpu) == 24, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 24ull);
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+        REQUIRE(sizeof(gtl::cpu) == 24, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 24ull);
+    #elif defined(_MSC_VER)
+        REQUIRE(sizeof(gtl::cpu) == 12, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 12ull);
+    #endif
 
     REQUIRE(std::is_pod<gtl::cpu>::value == false, "Expected std::is_pod to be false.");
 
