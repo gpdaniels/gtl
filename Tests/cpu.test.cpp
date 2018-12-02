@@ -35,7 +35,14 @@ THE SOFTWARE
 #endif
 
 TEST(traits, standard) {
-    REQUIRE(sizeof(gtl::cpu) >= 24, "sizeof(gtl::cpu) = %ld, expected >= %lld", sizeof(gtl::cpu), 24ull);
+
+#if defined(_MSC_VER)
+    REQUIRE(sizeof(gtl::cpu) == 12, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 12ull);
+#elif defined(__clang__)
+    REQUIRE(sizeof(gtl::cpu) == 24, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 24ull);
+#else
+    REQUIRE(sizeof(gtl::cpu) == 24, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 24ull);
+#endif
 
     REQUIRE(std::is_pod<gtl::cpu>::value == false, "Expected std::is_pod to be false.");
 
