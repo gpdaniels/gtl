@@ -174,7 +174,7 @@ namespace assert {
     // The first argument of the GTL_ASSERT() macro must be the assertion test itself.
     #define GTL_ASSERT(...)                                                                                                         \
         GTL_ASSERT_IF(GTL_ASSERT_HAS_TWO_ARGUMENTS(__VA_ARGS__))(                                                                   \
-            static_cast<void>((GTL_ASSERT_ARGUMENT_1(GTL_ASSERT_EXPAND(__VA_ARGS__))) || (                                          \
+            static_cast<void>((GTL_ASSERT_EXPAND(GTL_ASSERT_ARGUMENT_1(__VA_ARGS__))) || (                                          \
                 gtl::assert::print_error("Assertion failure:\n"),                                                                   \
                 gtl::assert::print_error("  Assertion:          %s\n", GTL_ASSERT_TO_STRING(GTL_ASSERT_ARGUMENT_1(__VA_ARGS__))),   \
                 gtl::assert::print_error("  File:               %s\n", __FILE__),                                                   \
@@ -185,7 +185,7 @@ namespace assert {
                 gtl::assert::print_error("\n"),                                                                                     \
                 std::abort(), 0)                                                                                                    \
             )                                                                                                                       \
-        /*ELSE*/,                                                                                                                   \
+        /*GTL_ASSERT_ELSE*/,                                                                                                        \
             static_cast<void>((__VA_ARGS__) || (                                                                                    \
                 gtl::assert::print_error("Assertion failure:\n"),                                                                   \
                 gtl::assert::print_error("  Assertion:          %s\n", GTL_ASSERT_TO_STRING(__VA_ARGS__)),                          \
