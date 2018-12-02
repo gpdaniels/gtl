@@ -49,7 +49,15 @@ TEST(traits, standard) {
             REQUIRE(sizeof(gtl::ring_buffer<type, value>) >= expected_size, "sizeof(gtl::ring_buffer<type, value>) = %ld, expected >= %lld", sizeof(gtl::ring_buffer<type, value>), expected_size);
             REQUIRE((std::is_pod<gtl::ring_buffer<type, value> >::value == false), "Expected std::is_pod to be false.");
             REQUIRE((std::is_trivial<gtl::ring_buffer<type, value> >::value == false), "Expected std::is_trivial to be false.");
-            REQUIRE((std::is_trivially_copyable<gtl::ring_buffer<type, value> >::value == true), "Expected std::is_trivially_copyable to be true.");
+
+            #if defined(__clang__)
+                REQUIRE((std::is_trivially_copyable<gtl::ring_buffer<type, value> >::value == true), "Expected std::is_trivially_copyable to be true.");
+            #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+                REQUIRE((std::is_trivially_copyable<gtl::ring_buffer<type, value> >::value == true), "Expected std::is_trivially_copyable to be true.");
+            #elif defined(_MSC_VER)
+                REQUIRE((std::is_trivially_copyable<gtl::ring_buffer<type, value> >::value == false), "Expected std::is_trivially_copyable to be false.");
+            #endif
+
             REQUIRE((std::is_standard_layout<gtl::ring_buffer<type, value> >::value == true), "Expected std::is_standard_layout to be true.");
         }
     );
