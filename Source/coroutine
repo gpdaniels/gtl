@@ -287,9 +287,6 @@ namespace gtl {
         /// @brief  Coroutine stack allocated on the heap stack using new.
         void* stack;
 
-        /// @brief  Coroutine id, derived from stack pointer.
-        id identifier;
-
         /// @brief  Function to call from the coroutine context.
         lambda function;
 
@@ -316,8 +313,7 @@ namespace gtl {
         /// @brief  Default constructor does nothing.
         coroutine(void)
             : signal_raised(0)
-            , stack(nullptr)
-            , identifier(reinterpret_cast<unsigned long long int>(this->stack)) {
+            , stack(nullptr) {
         }
 
         /// @brief  Copy constructor is explicitly deleted.
@@ -349,7 +345,6 @@ namespace gtl {
 #           endif
             std::swap(this->signal_raised,  other.signal_raised);
             std::swap(this->stack,          other.stack);
-            std::swap(this->identifier,     other.identifier);
             std::swap(this->function,       other.function);
 
             // Return this, other will be destructed and cleanup after itself.
@@ -363,11 +358,9 @@ namespace gtl {
         coroutine(function_type&& coroutine_function, argument_types&&... coroutine_arguments)
 #           if !defined(_WIN32)
                 : signal_raised(0)
-                , stack(new unsigned char[coroutine::stack_size])
-                , identifier(reinterpret_cast<unsigned long long int>(this->stack)) {
+                , stack(new unsigned char[coroutine::stack_size]) {
 #           else
-                : stack(nullptr)
-                , identifier(reinterpret_cast<unsigned long long int>(this->stack)) {
+                : stack(nullptr) {
 #           endif
 
 #           if !defined(_WIN32)
@@ -506,9 +499,6 @@ namespace gtl {
                     return;
                 }
 
-                // Update the id.
-                this->identifier = id(reinterpret_cast<unsigned long long int>(this->stack));
-
                 // Set flag to indicate the coroutine is ready.
                 this->signal_raised = 1;
 #           endif
@@ -575,8 +565,8 @@ namespace gtl {
     public:
         /// @brief  Get the unique identifier of the coroutine.
         /// @return The unique identider.
-        const id& get_id() const {
-            return this->identifier;
+        id get_id() const {
+            return id(reinterpret_cast<unsigned long long int>(this->stack)) ;
         }
 
         /// @brief  Checks whether the coroutine is joinable, i.e. unfinished.
