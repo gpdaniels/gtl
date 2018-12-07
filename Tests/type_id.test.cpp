@@ -112,9 +112,7 @@ TEST(operator, inequality) {
             test_template<test_types>(
                 [&match_found](auto test_type2)->void {
                     using type2 = typename decltype(test_type2)::type;
-                    if (gtl::type_id(type1{}) != gtl::type_id(type2{})) {
-                    }
-                    else {
+                    if (gtl::type_id(type1{}) == gtl::type_id(type2{})) {
                         REQUIRE(match_found == false);
                         match_found = true;
                     }
