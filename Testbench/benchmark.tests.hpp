@@ -28,6 +28,7 @@ THE SOFTWARE
 
 #include <chrono>
 #include <cstdio>
+#include <cstring>
 #include <cstdlib>
 #include <functional>
 #include <thread>
@@ -47,10 +48,14 @@ void do_not_optimise_away(type&& value) {
     // Enter std::thread::id, the compiler cannot know that the current thread id will never match std::thread::id().
     static std::thread::id thread_id = std::this_thread::get_id();
     if (thread_id == std::thread::id()) {
-        // Once inside the if block we must now "use" the value, start by taking a pointer to the value.
-        const void* value_pointer = &value;
-        // Reinterpret the pointer as a char and print it to stdout.
-        putchar(reinterpret_cast<volatile const char&>(value_pointer));
+        // Once inside the if block we must now "use" the function and value.
+        // Copy the raw data of the value.
+        char buffer_value[sizeof(type)] = {};
+        std::memcpy(buffer_value, &value, sizeof(type));
+        // Print it all out.
+        for (const char character : buffer_value) {
+            putchar(character);
+        }
         // To sanity check that this block of code is never reached, abort.
         std::abort();
     }
@@ -69,10 +74,21 @@ void do_not_optimise_away(std::function<type(void)>&& function) {
     // Enter std::thread::id, the compiler cannot know that the current thread id will never match std::thread::id().
     static std::thread::id thread_id = std::this_thread::get_id();
     if (thread_id == std::thread::id()) {
-        // Once inside the if block we must now "use" the function and value, start by taking a pointer to the value and function.
-        const void* value_and_function_pointer = &value + &function;
-        // Reinterpret the pointer as a char and print it to stdout.
-        putchar(reinterpret_cast<volatile const char&>(value_and_function_pointer));
+        // Once inside the if block we must now "use" the function and value.
+        // Copy the raw data of the value.
+        char buffer_value[sizeof(type)] = {};
+        std::memcpy(buffer_value, &value, sizeof(type));
+        // Print it all out.
+        for (const char character : buffer_value) {
+            putchar(character);
+        }
+        // Copy the raw data of the function.
+        char buffer_function[sizeof(std::function<type(void)>)] = {};
+        std::memcpy(buffer_function, &function, sizeof(std::function<type(void)>));
+        // Print it all out.
+        for (const char character : buffer_function) {
+            putchar(character);
+        }
         // To sanity check that this block of code is never reached, abort.
         std::abort();
     }

@@ -33,10 +33,14 @@ void do_not_optimise_away(std::function<void(void)>&& function) {
     // Enter std::thread::id, the compiler cannot know that the current thread id will never match std::thread::id().
     static std::thread::id thread_id = std::this_thread::get_id();
     if (thread_id == std::thread::id()) {
-        // Once inside the if block we must now "use" the function, start by taking a pointer to the function.
-        const void* function_pointer = &function;
-        // Reinterpret the pointer as a char and print it to stdout.
-        putchar(reinterpret_cast<volatile const char&>(function_pointer));
+        // Once inside the if block we must now "use" the function.
+        // Copy the raw data of the function.
+        char buffer_function[sizeof(std::function<void(void)>)] = {};
+        std::memcpy(buffer_function, &function, sizeof(std::function<void(void)>));
+        // Print it all out.
+        for (const char character : buffer_function) {
+            putchar(character);
+        }
         // To sanity check that this block of code is never reached, abort.
         std::abort();
     }
