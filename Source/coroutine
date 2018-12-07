@@ -72,21 +72,10 @@ THE SOFTWARE
 #endif
 
 namespace gtl {
-
-    /// @brief  Early declaration of the coroutine class to allow the creation of global coroutine variables that are used within the coroutine class.
+    // Predeclarations.
     class coroutine;
-
-    namespace {
-        /// @brief  Each process can only have one signal handler, therefore only one thread can create a coroutine at a time, enforce this with a mutex.
-        static std::mutex signal_handler_mutex;
-
-        /// @brief  Store a pointer to the currently executing coroutine as a global thread_local variable.
-        static thread_local coroutine* current_coroutine = nullptr;
-
-#       if defined(_WIN32)
-            /// @brief  Store the root thread fiber pointer
-            static thread_local void* thread_fiber = nullptr;
-#       endif
+    namespace this_coroutine {
+        static coroutine* get_self();
     }
 
     // The process to create a coroutine follows the proces described in the below paper:
@@ -101,6 +90,22 @@ namespace gtl {
 
             /// @brief  The id of the signal raised to trigger a signal handler.
             constexpr static const int trigger_signal_identifier = SIGUSR1;
+#       endif
+
+    private:
+        /// @brief  Friend accessor function that is allowed to access the coroutines private state.
+        friend coroutine* this_coroutine::get_self();
+
+    private:
+        /// @brief  Each process can only have one signal handler, therefore only one thread can create a coroutine at a time, enforce this with a mutex.
+        static inline std::mutex signal_handler_mutex;
+
+        /// @brief  Store a pointer to the currently executing coroutine as a global thread_local variable.
+        static inline thread_local coroutine* current = nullptr;
+
+#       if defined(_WIN32)
+            /// @brief  Store the root thread fiber pointer
+            static inline thread_local void* thread_fiber = nullptr;
 #       endif
 
     public:
@@ -156,8 +161,6 @@ namespace gtl {
 
         /// @brief  Simple lambda class for containing a void() lambda.
         class lambda {
-            // This version of the lamda class is simplified as it only ever needs to hold a "void(void)" function.
-
         private:
             /// @brief  A pointer to a heap allocated copy of the function.
             void* function;
@@ -274,6 +277,7 @@ namespace gtl {
             /// @brief  The signal set of the program at coroutine creation saved as a member variable so it can be restored in the coroutine context.
             sigset_t parent_signal_set;
 #       else
+            /// @brief  Fibre used to exit the coroutine.
             void* parent_stack;
 #       endif
 
@@ -424,9 +428,9 @@ namespace gtl {
                 this->signal_raised = 0;
 
                 // Store the currently executing coroutine in previous.
-                coroutine* parent_coroutine = gtl::current_coroutine;
+                coroutine* parent_coroutine = gtl::coroutine::current;
                 // Save the new coroutine in current.
-                gtl::current_coroutine = this;
+                gtl::coroutine::current = this;
 
                 // Raise the signal.
                 if (raise(coroutine::trigger_signal_identifier) != 0) {
@@ -479,7 +483,7 @@ namespace gtl {
                 }
 
                 // Restore the currently running coroutine.
-                gtl::current_coroutine = parent_coroutine;
+                gtl::coroutine::current = parent_coroutine;
 
                 // Step 14:
                 // Return to the calling application.
@@ -490,11 +494,11 @@ namespace gtl {
                 // Create the fiber based coroutine.
                 this->stack = CreateFiber(0, [](LPVOID) {
                     // The coroutine function call.
-                    gtl::current_coroutine->function();
+                    gtl::coroutine::current->function();
                     // Clear the signal raised flag to indicate the coroutine is finished.
-                    gtl::current_coroutine->signal_raised = 0;
+                    gtl::coroutine::current->signal_raised = 0;
                     // Yield to another coroutine or the root.
-                    gtl::current_coroutine->yield();
+                    gtl::coroutine::current->yield();
                 }, nullptr);
 
                 // Check to see if the fiber failed to be created.
@@ -521,8 +525,8 @@ namespace gtl {
                 // Step 5:
                 // After the trampoline function asynchronously entered, save its machine context in the structure.
                 // Then immediately return from it to terminate the signal handler scope.
-                if (sigsetjmp(gtl::current_coroutine->coroutine_context, 0) == 0) {
-                    gtl::current_coroutine->signal_raised = 1;
+                if (sigsetjmp(gtl::coroutine::current->coroutine_context, 0) == 0) {
+                    gtl::coroutine::current->signal_raised = 1;
                     return;
                 }
 
@@ -540,34 +544,31 @@ namespace gtl {
                 // Step 10:
                 // Set the new signal mask to be the same as the original signal mask which was active when the coroutine was created.
                 // This is required because in the first trampoline step we usually had at least the worker signal blocked.
-                if (sigprocmask(SIG_SETMASK, &gtl::current_coroutine->parent_signal_set, nullptr) != 0) {
+                if (sigprocmask(SIG_SETMASK, &gtl::coroutine::current->parent_signal_set, nullptr) != 0) {
                     std::terminate();
                 }
 
                 // Step 11:
                 // Load the passed startup information (the function) from the constructor into local (stack based) variables.
                 // This is not required as the coroutine is an raii class.
-                //lambda function = gtl::current_coroutine->function;
+                //lambda function = gtl::coroutine::current->function;
 
                 // Step 12:
                 // Save the current machine context for later restoring by the calling application.
-                if (sigsetjmp(gtl::current_coroutine->coroutine_context, 0) == 0) {
+                if (sigsetjmp(gtl::coroutine::current->coroutine_context, 0) == 0) {
                     // Step 13:
                     // Restore the previously saved machine context of the coroutine to transfer execution control back to it.
-                    siglongjmp(gtl::current_coroutine->parent_context, 1);
+                    siglongjmp(gtl::coroutine::current->parent_context, 1);
                 }
 
                 // The coroutine function call.
-                gtl::current_coroutine->function();
+                gtl::coroutine::current->function();
 
                 // Clear the signal raised flag to indicate the coroutine is finished.
-                gtl::current_coroutine->signal_raised = 0;
+                gtl::coroutine::current->signal_raised = 0;
 
                 // Exit by jumping to the creator location.
-                siglongjmp(gtl::current_coroutine->parent_context, 1);
-
-                // NEVER REACHED.
-                std::terminate();
+                siglongjmp(gtl::coroutine::current->parent_context, 1);
             }
 #       endif
 
@@ -588,44 +589,44 @@ namespace gtl {
         void join() {
             GTL_COROUTINE_ASSERT(this->joinable(), "Coroutine must be joinable to be joined.");
             // Store the currently running coroutine.
-            coroutine* parent_coroutine = gtl::current_coroutine;
+            coroutine* parent_coroutine = gtl::coroutine::current;
             // Set the now running coroutine.
-            gtl::current_coroutine = this;
+            gtl::coroutine::current = this;
 #           if !defined(_WIN32)
                 // Switch execution contexts.
-                if (sigsetjmp(gtl::current_coroutine->parent_context, 0) == 0) {
-                    siglongjmp(gtl::current_coroutine->coroutine_context, 1);
+                if (sigsetjmp(gtl::coroutine::current->parent_context, 0) == 0) {
+                    siglongjmp(gtl::coroutine::current->coroutine_context, 1);
                 }
 #           else
                 // If there is no parent coroutine then convert this thread to a fiber.
-                if (!gtl::thread_fiber) {
-                    gtl::thread_fiber = ConvertThreadToFiber(nullptr);
+                if (!gtl::coroutine::thread_fiber) {
+                    gtl::coroutine::thread_fiber = ConvertThreadToFiber(nullptr);
                 }
                 // Save parent inside the coroutine to enable the yield function.
-                gtl::current_coroutine->parent_stack = (parent_coroutine != nullptr) ? parent_coroutine->stack : gtl::thread_fiber;
+                gtl::coroutine::current->parent_stack = (parent_coroutine != nullptr) ? parent_coroutine->stack : gtl::coroutine::thread_fiber;
                 // Switch execution contexts.
-                SwitchToFiber(gtl::current_coroutine->stack);
+                SwitchToFiber(gtl::coroutine::current->stack);
                 // Reset the parent stack.
-                gtl::current_coroutine->parent_stack = nullptr;
+                gtl::coroutine::current->parent_stack = nullptr;
                 // If the current coroutine is null convert back to a thread.
                 if (!parent_coroutine) {
                     ConvertFiberToThread();
-                    gtl::thread_fiber = nullptr;
+                    gtl::coroutine::thread_fiber = nullptr;
                 }
 #           endif
             // Upon return reset the currently running coroutine.
-            gtl::current_coroutine = parent_coroutine;
+            gtl::coroutine::current = parent_coroutine;
         }
 
         /// @brief  Yield from the coroutine, i.e. force a return to the parent execution context.
         void yield() {
-            GTL_COROUTINE_ASSERT(gtl::current_coroutine == this, "This coroutine must be running to yield.");
+            GTL_COROUTINE_ASSERT(gtl::coroutine::current == this, "This coroutine must be running to yield.");
 #           if !defined(_WIN32)
-                if (sigsetjmp(gtl::current_coroutine->coroutine_context, 0) == 0) {
-                    siglongjmp(gtl::current_coroutine->parent_context, 1);
+                if (sigsetjmp(gtl::coroutine::current->coroutine_context, 0) == 0) {
+                    siglongjmp(gtl::coroutine::current->parent_context, 1);
                 }
 #           else
-                SwitchToFiber(gtl::current_coroutine->parent_stack);
+                SwitchToFiber(gtl::coroutine::current->parent_stack);
 #           endif
         }
     };
@@ -634,26 +635,32 @@ namespace gtl {
 namespace gtl {
     /// @brief  The this_coroutine class cannot be instantiated and provides static functions to operate on the current coroutine.
     namespace this_coroutine {
+        /// @brief  Get a pointer to the currently running coroutine if there is one.
+        /// @return A pointer to the currently running coroutine or a nullptr if there isn't one.
+        static coroutine* get_self() {
+            return gtl::coroutine::current;
+        }
+
         /// @brief  Get the unique identifier of the currently running coroutine if there is one.
         /// @return The unique identider of the currently running coroutine or a null id if there isn't one.
-        static coroutine::id get_id() {
-            if (gtl::current_coroutine == nullptr) {
+        static gtl::coroutine::id get_id() {
+            if (get_self() == nullptr) {
                 return coroutine::id();
             }
-            return gtl::current_coroutine->get_id();
+            return get_self()->get_id();
         }
 
         /// @brief  Yield from the currently running coroutine, i.e. force a return to the parent execution context.
         static void yield() {
-            GTL_COROUTINE_ASSERT(gtl::current_coroutine != nullptr, "A coroutine must be running to yield.");
-            gtl::current_coroutine->yield();
+            GTL_COROUTINE_ASSERT(get_self() != nullptr, "A coroutine must be running to yield.");
+            get_self()->yield();
         }
 
         /// @brief  Sleep a coroutine for an amount of time, provided to match the std::thread api.
         /// @param  duration Length of time to sleep for.
         template<typename number_of_ticks_type, typename period_type>
         static void sleep_for(const std::chrono::duration<number_of_ticks_type, period_type>& duration) {
-            GTL_COROUTINE_ASSERT(gtl::current_coroutine != nullptr, "A coroutine must be running to sleep.");
+            GTL_COROUTINE_ASSERT(get_self() != nullptr, "A coroutine must be running to sleep.");
             std::this_thread::sleep_for(duration);
         }
 
@@ -661,7 +668,7 @@ namespace gtl {
         /// @param  time_point Time to sleep until.
         template<typename clock_type, typename duration_type>
         static void sleep_until(const std::chrono::time_point<clock_type, duration_type>& time_point) {
-            GTL_COROUTINE_ASSERT(gtl::current_coroutine != nullptr, "A coroutine must be running to sleep.");
+            GTL_COROUTINE_ASSERT(get_self() != nullptr, "A coroutine must be running to sleep.");
             std::this_thread::sleep_until(time_point);
         }
     }
