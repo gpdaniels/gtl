@@ -38,12 +38,12 @@ THE SOFTWARE
 
 TEST(traits, standard) {
 
-    #if defined(__clang__)
-        REQUIRE(sizeof(gtl::coroutine) >= 360, "sizeof(gtl::coroutine) = %ld, expected >= %lld", sizeof(gtl::coroutine), 360ull);
-    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
-        REQUIRE(sizeof(gtl::coroutine) >= 576, "sizeof(gtl::coroutine) = %ld, expected >= %lld", sizeof(gtl::coroutine), 576ull);
-    #elif defined(_MSC_VER)
-        REQUIRE(sizeof(gtl::coroutine) >= 32, "sizeof(gtl::coroutine) = %ld, expected >= %lld", sizeof(gtl::coroutine), 32ull);
+    #if defined(__APPLE__)
+        REQUIRE(sizeof(gtl::coroutine) == 352, "sizeof(gtl::coroutine) = %ld, expected == %lld", sizeof(gtl::coroutine), 352ull);
+    #elif defined(__linux__)
+        REQUIRE(sizeof(gtl::coroutine) == 576, "sizeof(gtl::coroutine) = %ld, expected == %lld", sizeof(gtl::coroutine), 576ull);
+    #elif defined(_WIN32)
+        REQUIRE(sizeof(gtl::coroutine) == 28, "sizeof(gtl::coroutine) = %ld, expected == %lld", sizeof(gtl::coroutine), 28ull);
     #endif
 
     REQUIRE(std::is_pod<gtl::coroutine>::value == false, "Expected std::is_pod to be false.");
