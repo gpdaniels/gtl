@@ -55,13 +55,11 @@ TEST(evaluate, assert) {
     
     // Asserting in an if statement, with {}.
     {
-        constexpr static const int variable1 = -1;
-        volatile double variable2 = 2.0;
-        if (variable1 != variable2) {
+        if (true) {
             GTL_ASSERT(true);
         }
         
-        if (variable1 != variable2) {
+        if (true) {
             GTL_ASSERT(true);
         }
         else {
@@ -69,7 +67,7 @@ TEST(evaluate, assert) {
             REQUIRE(false);
         }
 
-        if (variable1 == variable2) {
+        if (false) {
             // This should never be reached.
             REQUIRE(false);
         }
@@ -80,19 +78,16 @@ TEST(evaluate, assert) {
 
     // Asserting in an if statement, without {}.
     {
-        constexpr static const int variable1 = -1;
-        volatile double variable2 = 2.0;
-
-        if (variable1 != variable2)
+        if (true)
             GTL_ASSERT(true);
 
-        if (variable1 != variable2)
+        if (true)
             GTL_ASSERT(true);
         else
             // This should never be reached.
             REQUIRE(false);
 
-        if (variable1 == variable2)
+        if (false)
             // This should never be reached.
             GTL_ASSERT(false);
         else
