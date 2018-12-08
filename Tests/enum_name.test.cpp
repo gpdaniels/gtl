@@ -21,7 +21,7 @@ THE SOFTWARE
 #include <main.tests.hpp>
 #include <benchmark.tests.hpp>
 #include <data.tests.hpp>
-#include <macro.tests.hpp>
+#include <require.tests.hpp>
 
 #include <enum_name>
 

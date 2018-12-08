@@ -18,18 +18,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE
 */
 
-#include "main.tests.hpp"
-#include "print.tests.hpp"
-#include "require.tests.hpp"
-#include "unused.tests.hpp"
+#pragma once
+#ifndef UNUSED_TESTS_HPP
+#define UNUSED_TESTS_HPP
 
-TEST(SUB_TEST_GROUP, SUB_TEST_NAME);
+/// @brief  A helper macro to prevent compiler warnings about unused variables.
+#define UNUSED(VARIABLE) (static_cast<void>(VARIABLE))
 
-int main(int argument_count, char* arguments[]) {
-    UNUSED(argument_count);
-    UNUSED(arguments);
-    PRINT("Starting test...\n");
-    TEST_CALL(SUB_TEST_GROUP, SUB_TEST_NAME);
-    PRINT("Finished test. '%lld' assertions, detected '%lld' errors.\n", REQUIRE_COUNT, REQUIRE_FAILURE_COUNT);
-    return static_cast<int>(REQUIRE_FAILURE_COUNT);
-}
+#endif // UNUSED_TESTS_HPP

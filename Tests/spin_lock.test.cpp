@@ -20,7 +20,7 @@ THE SOFTWARE
 
 #include <main.tests.hpp>
 #include <benchmark.tests.hpp>
-#include <macro.tests.hpp>
+#include <require.tests.hpp>
 
 #include <spin_lock>
 

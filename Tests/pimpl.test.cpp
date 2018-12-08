@@ -19,7 +19,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
-#include <macro.tests.hpp>
+#include <require.tests.hpp>
 #include <pimpl.test.hpp>
 
 #include <pimpl>

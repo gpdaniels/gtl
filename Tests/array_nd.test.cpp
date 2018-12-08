@@ -22,7 +22,7 @@ THE SOFTWARE
 #include <benchmark.tests.hpp>
 #include <comparison.tests.hpp>
 #include <data.tests.hpp>
-#include <macro.tests.hpp>
+#include <require.tests.hpp>
 #include <template.tests.hpp>
 
 #include <array_nd>

@@ -18,7 +18,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE
 */
 
-#include "macro.tests.hpp"
+#include "require.tests.hpp"
 
 unsigned long long REQUIRE_COUNT = 0;
 unsigned long long REQUIRE_FAILURE_COUNT = 0;

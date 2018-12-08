@@ -18,18 +18,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE
 */
 
-#include "main.tests.hpp"
-#include "print.tests.hpp"
-#include "require.tests.hpp"
-#include "unused.tests.hpp"
+#pragma once
+#ifndef PRINT_TESTS_HPP
+#define PRINT_TESTS_HPP
 
-TEST(SUB_TEST_GROUP, SUB_TEST_NAME);
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
 
-int main(int argument_count, char* arguments[]) {
-    UNUSED(argument_count);
-    UNUSED(arguments);
-    PRINT("Starting test...\n");
-    TEST_CALL(SUB_TEST_GROUP, SUB_TEST_NAME);
-    PRINT("Finished test. '%lld' assertions, detected '%lld' errors.\n", REQUIRE_COUNT, REQUIRE_FAILURE_COUNT);
-    return static_cast<int>(REQUIRE_FAILURE_COUNT);
-}
+#include <cstdio>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
+
+/// @brief  Print the output format.
+#define PRINT(...) (fprintf(stderr, __VA_ARGS__))
+
+#endif // PRINT_TESTS_HPP

@@ -19,7 +19,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
-#include <macro.tests.hpp>
+#include <require.tests.hpp>
 
 #include <simulation_loop>
 
@@ -114,12 +114,12 @@ TEST(evaluation, game_loop) {
         // Render using the buffered input thus far and the current alpha value for interpolating the current state forwards.
         // Required for an actual game loop, not in this test.
 
-        //PRINT("Alpha: %f", simulation_loop.get_alpha<float>());
+        //PRINT("Alpha: %f\n", simulation_loop.get_alpha<float>());
     }
 
     average_tick_rate /= static_cast<double>(simulation_loop.get_current_tick());
-    PRINT("Desired Tick Rate: %f", 100.0);
-    PRINT("Average Tick Rate: %f", 1000.0 / average_tick_rate);
+    PRINT("Desired Tick Rate: %f\n", 100.0);
+    PRINT("Average Tick Rate: %f\n", 1000.0 / average_tick_rate);
 
     REQUIRE(9.0 < average_tick_rate && average_tick_rate < 11.0);
 }

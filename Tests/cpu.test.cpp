@@ -20,7 +20,7 @@ THE SOFTWARE
 
 #include <main.tests.hpp>
 #include <benchmark.tests.hpp>
-#include <macro.tests.hpp>
+#include <require.tests.hpp>
 
 #include <cpu>
 
@@ -88,21 +88,21 @@ TEST(function, has_xxx) {
 
 TEST(evaluation, print_flags) {
     gtl::cpu cpu;
-    PRINT("get_max_leaf_id:     %d", cpu.get_max_leaf_id());
+    PRINT("get_max_leaf_id:     %d\n", cpu.get_max_leaf_id());
 
-    PRINT("get_manufacturer_id: %s", cpu.get_manufacturer_id().c_str());
+    PRINT("get_manufacturer_id: %s\n", cpu.get_manufacturer_id().c_str());
 
-    PRINT("has_mmx:             %d", cpu.has_mmx());
+    PRINT("has_mmx:             %d\n", cpu.has_mmx());
 
-    PRINT("has_sse:             %d", cpu.has_sse());
-    PRINT("has_sse2:            %d", cpu.has_sse2());
-    PRINT("has_sse3:            %d", cpu.has_sse3());
-    PRINT("has_ssse3:           %d", cpu.has_ssse3());
-    PRINT("has_sse4.1:          %d", cpu.has_sse4_1());
-    PRINT("has_sse4.2:          %d", cpu.has_sse4_2());
+    PRINT("has_sse:             %d\n", cpu.has_sse());
+    PRINT("has_sse2:            %d\n", cpu.has_sse2());
+    PRINT("has_sse3:            %d\n", cpu.has_sse3());
+    PRINT("has_ssse3:           %d\n", cpu.has_ssse3());
+    PRINT("has_sse4.1:          %d\n", cpu.has_sse4_1());
+    PRINT("has_sse4.2:          %d\n", cpu.has_sse4_2());
 
-    PRINT("has_popcnt:          %d", cpu.has_popcnt());
+    PRINT("has_popcnt:          %d\n", cpu.has_popcnt());
 
-    PRINT("has_avx:             %d", cpu.has_avx());
-    PRINT("has_avx2:            %d", cpu.has_avx2());
+    PRINT("has_avx:             %d\n", cpu.has_avx());
+    PRINT("has_avx2:            %d\n", cpu.has_avx2());
 }
