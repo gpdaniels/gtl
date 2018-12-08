@@ -1,9 +1,9 @@
 
 # gtl #
 
-This repository aims is a collection of useful well-commented, self-contained, simple, and/or interesting C++ classes in the style of the standard template library.
+This repository aims is a collection of useful cross-platform, well-commented, self-contained, simple, and interesting C++ classes in the style of the standard template library.
 
-[![Build Status](https://travis-ci.org/gpdaniels/gtl.svg?branch=master)](https://travis-ci.org/gpdaniels/gtl)
+[![Build Status](https://travis-ci.org/gpdaniels/gtl.svg?branch=master)](https://travis-ci.org/gpdaniels/gtl) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/gpdaniels/gtl.svg)](https://lgtm.com/projects/g/gpdaniels/gtl/context:cpp) [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT) 
 
 ## Content ##
 
@@ -11,48 +11,48 @@ The current classes are as described below:
 
 ### Data Structures ###
 
-|               Class | Description                                                                                    |
-|--------------------:|:-----------------------------------------------------------------------------------------------|
-|             **any** | A class that can hold any variable type.                                                       |
-|        **array_nd** | N-dimensional staticly sized array.                                                            |
-|     **ring_buffer** | Staticly sized thread-safe multi-producer multi-consumer ring-buffer.                          |
+|               Class | Description                                                                             |
+|--------------------:|:----------------------------------------------------------------------------------------|
+|             **any** | A class that can hold any variable type.                                                |
+|        **array_nd** | N-dimensional staticly sized array.                                                     |
+|     **ring_buffer** | Staticly sized thread-safe multi-producer multi-consumer ring-buffer.                   |
 
 ### Support ###
 
-|               Class | Description                                                                                    |
-|--------------------:|:-----------------------------------------------------------------------------------------------|
-|          **access** | Classes and macros for accessing class private members.                                        |
-|          **assert** | Macros for creating an assert macro that can take an optional format string and parameters.    |
-|             **cpu** | A class to extract cpuid information to determine supported instructions at runtime.           |
-|           **pimpl** | A statically sized pointer to implementation wrapper.                                          |
-| **simulation_loop** | Fixed time step helper class for creating game loops.                                          | 
+|               Class | Description                                                                             |
+|--------------------:|:----------------------------------------------------------------------------------------|
+|          **access** | Classes and macros for accessing class private members.                                 |
+|          **assert** | Macros that define an assert macro that optionally takes a format string and parameters.|
+|             **cpu** | A class to extract cpuid information to determine supported instructions at runtime.    |
+|           **pimpl** | A statically sized pointer to implementation wrapper.                                   |
+| **simulation_loop** | Fixed time step helper class for creating game loops.                                   | 
 
 ### Multi-Threading ###
 
-|               Class | Description                                                                                    |
-|--------------------:|:-----------------------------------------------------------------------------------------------|
-|         **barrier** | Thread syncronisation barrier.                                                                 |
-|       **coroutine** | Setjump/longjump implementation of stackful coroutines.                                        |
-|           **event** | A thread safe multi-in/multi-out event/messaging system.                                       |
-|       **semaphore** | Semaphore made using a mutex and condition variable.                                           | 
-|       **spin_lock** | Spin lock implemented using an atomic flag.                                                    | 
+|               Class | Description                                                                             |
+|--------------------:|:----------------------------------------------------------------------------------------|
+|         **barrier** | Thread syncronisation barrier.                                                          |
+|       **coroutine** | Setjump/longjump implementation of stackful coroutines.                                 |
+|           **event** | A thread safe multi-in/multi-out event/messaging system.                                |
+|       **semaphore** | Semaphore made using a mutex and condition variable.                                    | 
+|       **spin_lock** | Spin lock implemented using an atomic flag.                                             | 
 
 ### Pseudorandom Number Generators ###
 
-|               Class | Description                                                                                    |
-|--------------------:|:-----------------------------------------------------------------------------------------------|
-|       **random_mt** | Mersenne twister pseudo-random number generator.                                               | 
-|      **random_pcg** | PCG pseudo-random number generator.                                                            | 
-| **random_splitmix** | Splitmix pseudo-random number generator.                                                       | 
-| **random_xorshift** | Xorshift pseudo-random number generator.                                                       | 
+|               Class | Description                                                                             |
+|--------------------:|:----------------------------------------------------------------------------------------|
+|       **random_mt** | Mersenne twister pseudo-random number generator.                                        | 
+|      **random_pcg** | PCG pseudo-random number generator.                                                     | 
+| **random_splitmix** | Splitmix pseudo-random number generator.                                                | 
+| **random_xorshift** | Xorshift pseudo-random number generator.                                                | 
 
 ### Type Information ###
 
-|               Class | Description                                                                                    |
-|--------------------:|:-----------------------------------------------------------------------------------------------|
-|       **enum_name** | Compile-time enum value name as a string with -fno-rtti.                                       |
-|         **type_id** | Simple run-time-type-information (rtti) with -fno-rtti.                                        |
-|       **type_name** | Compile-time type name as a string with -fno-rtti.                                             |
+|               Class | Description                                                                             |
+|--------------------:|:----------------------------------------------------------------------------------------|
+|       **enum_name** | Compile-time enum value name as a string with -fno-rtti.                                |
+|         **type_id** | Simple run-time-type-information (rtti) with -fno-rtti.                                 |
+|       **type_name** | Compile-time type name as a string with -fno-rtti.                                      |
 
 
 ## License ##
