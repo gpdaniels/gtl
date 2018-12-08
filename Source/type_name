@@ -26,7 +26,6 @@ namespace gtl {
     /// @brief  The type_name class provides a name function for a given type.
     template<typename type>
     class type_name final {
-        template <typename enum_type, enum_type enum_value> friend class enum_name;
     private:
         /// @brief  Template struct that holds a sequence of integers, derived from http://stackoverflow.com/a/32223343.
         template <typename integer_type, integer_type... indexes>
