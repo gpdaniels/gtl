@@ -36,7 +36,7 @@ void do_not_optimise_away(std::function<void(void)>&& function) {
         // Once inside the if block we must now "use" the function.
         // Copy the raw data of the function.
         char buffer_function[sizeof(std::function<void(void)>)] = {};
-        std::memcpy(buffer_function, &function, sizeof(std::function<void(void)>));
+        std::memcpy(&buffer_function[0], &function, sizeof(std::function<void(void)>));
         // Print it all out.
         for (const char character : buffer_function) {
             putchar(character);

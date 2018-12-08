@@ -60,7 +60,7 @@ TEST(constructor, seed_value) {
 
 TEST(constructor, seed_array) {
     std::uint32_t seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
-    gtl::random_mt random_mt(seed_values, 5);
+    gtl::random_mt random_mt(&seed_values[0], 5);
     do_not_optimise_away(random_mt);
 }
 
@@ -72,7 +72,7 @@ TEST(function, seed_value) {
 TEST(function, seed_array) {
     std::uint32_t seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
     gtl::random_mt random_mt;
-    random_mt.seed(seed_values, 5);
+    random_mt.seed(&seed_values[0], 5);
 }
 
 TEST(function, get_random_raw) {

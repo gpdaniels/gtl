@@ -51,7 +51,7 @@ void do_not_optimise_away(type&& value) {
         // Once inside the if block we must now "use" the function and value.
         // Copy the raw data of the value.
         char buffer_value[sizeof(type)] = {};
-        std::memcpy(buffer_value, &value, sizeof(type));
+        std::memcpy(&buffer_value[0], &value, sizeof(type));
         // Print it all out.
         for (const char character : buffer_value) {
             putchar(character);
@@ -84,7 +84,7 @@ void do_not_optimise_away(std::function<type(void)>&& function) {
         }
         // Copy the raw data of the function.
         char buffer_function[sizeof(std::function<type(void)>)] = {};
-        std::memcpy(buffer_function, &function, sizeof(std::function<type(void)>));
+        std::memcpy(&buffer_function[0], &function, sizeof(std::function<type(void)>));
         // Print it all out.
         for (const char character : buffer_function) {
             putchar(character);

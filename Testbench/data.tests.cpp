@@ -37,23 +37,23 @@ const bool test_data<bool>::data[] = {
     false,
     true
 };
-const bool* test_data<bool>::begin() { return data; }
-const bool* test_data<bool>::end()   { return data + sizeof(data) / sizeof(bool); }
+const bool* test_data<bool>::begin() { return &data[0]; }
+const bool* test_data<bool>::end()   { return &data[0] + sizeof(data) / sizeof(bool); }
 
 // Character.
 const char* test_data<unsigned char>::name = "unsigned char";
 const unsigned char test_data<unsigned char>::data[] = {
     0, 1, 127, 128, 255
 };
-const unsigned char* test_data<unsigned char>::begin() { return data; }
-const unsigned char* test_data<unsigned char>::end()   { return data + sizeof(data) / sizeof(unsigned char); }
+const unsigned char* test_data<unsigned char>::begin() { return &data[0]; }
+const unsigned char* test_data<unsigned char>::end()   { return &data[0] + sizeof(data) / sizeof(unsigned char); }
 
 const char* test_data<signed char>::name = "signed char";
 const signed char test_data<signed char>::data[] = {
     -128, -127, -1, 0, 1, 127
 };
-const signed char* test_data<signed char>::begin() { return data; }
-const signed char* test_data<signed char>::end()   { return data + sizeof(data) / sizeof(signed char); }
+const signed char* test_data<signed char>::begin() { return &data[0]; }
+const signed char* test_data<signed char>::end()   { return &data[0] + sizeof(data) / sizeof(signed char); }
 
 const char* test_data<char>::name = "char";
 const char test_data<char>::data[] = {
@@ -63,30 +63,30 @@ const char test_data<char>::data[] = {
     -128, -127, -1, 0, 1, 127
 #endif
 };
-const char* test_data<char>::begin() { return data; }
-const char* test_data<char>::end()   { return data + sizeof(data) / sizeof(char); }
+const char* test_data<char>::begin() { return &data[0]; }
+const char* test_data<char>::end()   { return &data[0] + sizeof(data) / sizeof(char); }
 
 // Extended characters.
 const char* test_data<wchar_t>::name = "wchar_t";
 const wchar_t test_data<wchar_t>::data[] = {
     0, 1, 127, 128, 255, 256, 32767, 32768, 65535
 };
-const wchar_t* test_data<wchar_t>::begin() { return data; }
-const wchar_t* test_data<wchar_t>::end()   { return data + sizeof(data) / sizeof(wchar_t); }
+const wchar_t* test_data<wchar_t>::begin() { return &data[0]; }
+const wchar_t* test_data<wchar_t>::end()   { return &data[0] + sizeof(data) / sizeof(wchar_t); }
 
 const char* test_data<char16_t>::name = "char16_t";
 const char16_t test_data<char16_t>::data[] = {
     0, 1, 127, 128, 255, 256, 32767, 32768, 65535
 };
-const char16_t* test_data<char16_t>::begin() { return data; }
-const char16_t* test_data<char16_t>::end()   { return data + sizeof(data) / sizeof(char16_t); }
+const char16_t* test_data<char16_t>::begin() { return &data[0]; }
+const char16_t* test_data<char16_t>::end()   { return &data[0] + sizeof(data) / sizeof(char16_t); }
 
 const char* test_data<char32_t>::name = "char32_t";
 const char32_t test_data<char32_t>::data[] = {
     0, 1, 127, 128, 255, 256, 32767, 32768, 65535, 65536, 2147483647, 2147483648, 4294967295
 };
-const char32_t* test_data<char32_t>::begin() { return data; }
-const char32_t* test_data<char32_t>::end()   { return data + sizeof(data) / sizeof(char32_t); }
+const char32_t* test_data<char32_t>::begin() { return &data[0]; }
+const char32_t* test_data<char32_t>::end()   { return &data[0] + sizeof(data) / sizeof(char32_t); }
 
 // Fixed point.
 #if defined(__clang__)
@@ -104,8 +104,8 @@ const char32_t* test_data<char32_t>::end()   { return data + sizeof(data) / size
 const unsigned short int test_data<unsigned short int>::data[] = {
     0, 1, 127, 128, 255, 256, 32767, 32768, 65535
 };
-const unsigned short int* test_data<unsigned short int>::begin() { return data; }
-const unsigned short int* test_data<unsigned short int>::end()   { return data + sizeof(data) / sizeof(unsigned short int); }
+const unsigned short int* test_data<unsigned short int>::begin() { return &data[0]; }
+const unsigned short int* test_data<unsigned short int>::end()   { return &data[0] + sizeof(data) / sizeof(unsigned short int); }
 
 #if defined(__clang__)
     // clang.
@@ -122,22 +122,22 @@ const unsigned short int* test_data<unsigned short int>::end()   { return data +
 const signed short int test_data<signed short int>::data[] = {
     -32768, -32767, -256, -255, -128, -127, -1, 0, 1, 127, 128, 255, 256, 32767
 };
-const signed short int* test_data<signed short int>::begin() { return data; }
-const signed short int* test_data<signed short int>::end()   { return data + sizeof(data) / sizeof(signed short int); }
+const signed short int* test_data<signed short int>::begin() { return &data[0]; }
+const signed short int* test_data<signed short int>::end()   { return &data[0] + sizeof(data) / sizeof(signed short int); }
 
 const char* test_data<unsigned int>::name = "unsigned int";
 const unsigned int test_data<unsigned int>::data[] = {
     0, 1, 127, 128, 255, 256, 32767, 32768, 65535, 65536, 2147483647, 2147483648, 4294967295
 };
-const unsigned int* test_data<unsigned int>::begin() { return data; }
-const unsigned int* test_data<unsigned int>::end()   { return data + sizeof(data) / sizeof(unsigned int); }
+const unsigned int* test_data<unsigned int>::begin() { return &data[0]; }
+const unsigned int* test_data<unsigned int>::end()   { return &data[0] + sizeof(data) / sizeof(unsigned int); }
 
 const char* test_data<signed int>::name = "int";
 const signed int test_data<signed int>::data[] = {
     -2147483648ll, -2147483647, -65536, -65535, -32768, -32767, -256, -255, -128, -127, -1, 0, 1, 127, 128, 255, 256, 32767, 32768, 65535, 65536, 2147483647
 };
-const signed int* test_data<signed int>::begin() { return data; }
-const signed int* test_data<signed int>::end()   { return data + sizeof(data) / sizeof(signed int); }
+const signed int* test_data<signed int>::begin() { return &data[0]; }
+const signed int* test_data<signed int>::end()   { return &data[0] + sizeof(data) / sizeof(signed int); }
 
 #if defined(__clang__)
     // clang.
@@ -154,8 +154,8 @@ const signed int* test_data<signed int>::end()   { return data + sizeof(data) / 
 const unsigned long int test_data<unsigned long int>::data[] = {
     0, 1, 127, 128, 255, 256, 32767, 32768, 65535, 65536, 2147483647, 2147483648, 4294967295
 };
-const unsigned long int* test_data<unsigned long int>::begin() { return data; }
-const unsigned long int* test_data<unsigned long int>::end()   { return data + sizeof(data) / sizeof(unsigned long int); }
+const unsigned long int* test_data<unsigned long int>::begin() { return &data[0]; }
+const unsigned long int* test_data<unsigned long int>::end()   { return &data[0] + sizeof(data) / sizeof(unsigned long int); }
 
 #if defined(__clang__)
     // clang.
@@ -172,8 +172,8 @@ const unsigned long int* test_data<unsigned long int>::end()   { return data + s
 const signed long int test_data<signed long int>::data[] = {
     -2147483648ll, -2147483647, -65536, -65535, -32768, -32767, -256, -255, -128, -127, -1, 0, 1, 127, 128, 255, 256, 32767, 32768, 65535, 65536, 2147483647
 };
-const signed long int* test_data<signed long int>::begin() { return data; }
-const signed long int* test_data<signed long int>::end()   { return data + sizeof(data) / sizeof(signed long int); }
+const signed long int* test_data<signed long int>::begin() { return &data[0]; }
+const signed long int* test_data<signed long int>::end()   { return &data[0] + sizeof(data) / sizeof(signed long int); }
 
 #if defined(__clang__)
     // clang.
@@ -190,8 +190,8 @@ const signed long int* test_data<signed long int>::end()   { return data + sizeo
 const unsigned long long int test_data<unsigned long long int>::data[] = {
     0, 1, 127, 128, 255, 256, 32767, 32768, 65535, 65536, 2147483647ull, 2147483648ull, 4294967295ull, 4294967296ull, 18446744073709551615ull
 };
-const unsigned long long int* test_data<unsigned long long int>::begin() { return data; }
-const unsigned long long int* test_data<unsigned long long int>::end()   { return data + sizeof(data) / sizeof(unsigned long long int); }
+const unsigned long long int* test_data<unsigned long long int>::begin() { return &data[0]; }
+const unsigned long long int* test_data<unsigned long long int>::end()   { return &data[0] + sizeof(data) / sizeof(unsigned long long int); }
 
 #if defined(__clang__)
     // clang.
@@ -208,8 +208,8 @@ const unsigned long long int* test_data<unsigned long long int>::end()   { retur
 const signed long long int test_data<signed long long int>::data[] = {
     -9223372036854775807ll - 1, -9223372036854775807ll, -4294967296ll, -4294967295ll, -2147483648ll, -2147483647, -65536, -65535, -32768, -32767, -256, -255, -128, -127, -1, 0, 1, 127, 128, 255, 256, 32767, 32768, 65535, 65536, 2147483647, 2147483648, 4294967295, 4294967296, 9223372036854775807ll
 };
-const signed long long int* test_data<signed long long int>::begin() { return data; }
-const signed long long int* test_data<signed long long int>::end()   { return data + sizeof(data) / sizeof(signed long long int); }
+const signed long long int* test_data<signed long long int>::begin() { return &data[0]; }
+const signed long long int* test_data<signed long long int>::end()   { return &data[0] + sizeof(data) / sizeof(signed long long int); }
 
 // Floating point.
 const char* test_data<float>::name = "float";
@@ -222,8 +222,8 @@ const float test_data<float>::data[] = {
     std::numeric_limits<float>::max(),
     std::numeric_limits<float>::infinity()
 };
-const float* test_data<float>::begin() { return data; }
-const float* test_data<float>::end()   { return data + sizeof(data) / sizeof(float); }
+const float* test_data<float>::begin() { return &data[0]; }
+const float* test_data<float>::end()   { return &data[0] + sizeof(data) / sizeof(float); }
 
 const char* test_data<double>::name = "double";
 const double test_data<double>::data[] = {
@@ -235,8 +235,8 @@ const double test_data<double>::data[] = {
     std::numeric_limits<double>::max(),
     std::numeric_limits<double>::infinity()
 };
-const double* test_data<double>::begin() { return data; }
-const double* test_data<double>::end()   { return data + sizeof(data) / sizeof(double); }
+const double* test_data<double>::begin() { return &data[0]; }
+const double* test_data<double>::end()   { return &data[0] + sizeof(data) / sizeof(double); }
 
 const char* test_data<long double>::name = "long double";
 const long double test_data<long double>::data[] = {
@@ -248,8 +248,8 @@ const long double test_data<long double>::data[] = {
     std::numeric_limits<long double>::max(),
     std::numeric_limits<long double>::infinity()
 };
-const long double* test_data<long double>::begin() { return data; }
-const long double* test_data<long double>::end()   { return data + sizeof(data) / sizeof(long double); }
+const long double* test_data<long double>::begin() { return &data[0]; }
+const long double* test_data<long double>::end()   { return &data[0] + sizeof(data) / sizeof(long double); }
 
 // Pointer type.
 #if defined(__clang__)
@@ -267,5 +267,5 @@ const long double* test_data<long double>::end()   { return data + sizeof(data) 
 const decltype(nullptr) test_data<decltype(nullptr)>::data[] = {
     nullptr
 };
-const decltype(nullptr)* test_data<decltype(nullptr)>::begin() { return data; }
-const decltype(nullptr)* test_data<decltype(nullptr)>::end()   { return data + sizeof(data) / sizeof(decltype(nullptr)); }
+const decltype(nullptr)* test_data<decltype(nullptr)>::begin() { return &data[0]; }
+const decltype(nullptr)* test_data<decltype(nullptr)>::end()   { return &data[0] + sizeof(data) / sizeof(decltype(nullptr)); }

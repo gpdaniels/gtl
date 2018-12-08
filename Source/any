@@ -147,15 +147,6 @@ namespace gtl {
         any& operator=(any&&) = default;
 
     public:
-        template<typename const_type>
-        struct remove_const {
-            using type = const_type;
-        };
-        template<typename const_type>
-        struct remove_const<const const_type> {
-            using type = const_type;
-        };
-
         /// @brief  Templated copy assignment operator.
         /// @param  any_value The value to store in the any.
         template <typename type>

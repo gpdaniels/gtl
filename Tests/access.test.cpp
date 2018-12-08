@@ -36,18 +36,18 @@ THE SOFTWARE
 class test_class {
 private:
     /*         storage */ /*volatile*/ /*const*/ /*type*/ /*name*/
-    /*            auto */ /*volatile*/ /*const*/    int   variable__a__i;
-    /*            auto */   volatile   /*const*/    int   variable__av_i;
-    /*            auto */ /*volatile*/   const      int   variable__a_ci;
-    /*            auto */   volatile     const      int   variable__avci;
-                static    /*volatile*/ /*const*/    int   variable__s__i;
-                static      volatile   /*const*/    int   variable__sv_i;
-                static    /*volatile*/   const      int   variable__s_ci;
-                static      volatile     const      int   variable__svci;
-               mutable    /*volatile*/ /*const*/    int   variable__m__i;
-               mutable      volatile   /*const*/    int   variable__mv_i;
-//             mutable    /*volatile*/   const      int   variable__m_ci;
-//             mutable      volatile     const      int   variable__mvci;
+    /*            auto */ /*volatile*/ /*const*/    int   variable__a__i = 1;
+    /*            auto */   volatile   /*const*/    int   variable__av_i = 1;
+    /*            auto */ /*volatile*/   const      int   variable__a_ci = 1;
+    /*            auto */   volatile     const      int   variable__avci = 1;
+         inline static    /*volatile*/ /*const*/    int   variable__s__i = 1;
+         inline static      volatile   /*const*/    int   variable__sv_i = 1;
+         inline static    /*volatile*/   const      int   variable__s_ci = 1;
+         inline static      volatile     const      int   variable__svci = 1;
+               mutable    /*volatile*/ /*const*/    int   variable__m__i = 1;
+               mutable      volatile   /*const*/    int   variable__mv_i = 1;
+//             mutable    /*volatile*/   const      int   variable__m_ci = 1;
+//             mutable      volatile     const      int   variable__mvci = 1;
       constexpr static    /*volatile*/ /*const*/    int   variable_xs__i = 1;
       constexpr static      volatile   /*const*/    int   variable_xsv_i = 1;
       constexpr static    /*volatile*/   const      int   variable_xs_ci = 1;
@@ -72,42 +72,26 @@ private:
       static int  function_svci(  volatile     const   int) { return 1; }
 
 public:
-      test_class(void)
-        : variable__a__i(1)
-        , variable__av_i(1)
-        , variable__a_ci(1)
-        , variable__avci(1)
-        , variable__m__i(1)
-        , variable__mv_i(1)
-//      , variable__m_ci(1)
-//      , variable__mvci(1)
-      {
-      }
-
       int use() {
           return 0
              + this->variable__a__i
              + this->variable__av_i
              + this->variable__a_ci
              + this->variable__avci
-             + this->variable__s__i
-             + this->variable__sv_i
-             + this->variable__s_ci
-             + this->variable__svci
+             + test_class::variable__s__i
+             + test_class::variable__sv_i
+             + test_class::variable__s_ci
+             + test_class::variable__svci
              + this->variable__m__i
              + this->variable__mv_i
 //           + this->variable__m_ci
 //           + this->variable__mvci
-             + this->variable_xs__i
-             + this->variable_xsv_i
-             + this->variable_xs_ci
-             + this->variable_xsvci;
+             + test_class::variable_xs__i
+             + test_class::variable_xsv_i
+             + test_class::variable_xs_ci
+             + test_class::variable_xsvci;
       }
 };
-/*volatile*/ /*const*/    int   test_class::variable__s__i = 1;
-  volatile   /*const*/    int   test_class::variable__sv_i = 1;
-/*volatile*/   const      int   test_class::variable__s_ci = 1;
-  volatile     const      int   test_class::variable__svci = 1;
 
 GTL_ACCESS_GENERATE(test_class_access, test_class,
     GTL_ACCESS_TYPE,    auto,                int, variable__a__i,

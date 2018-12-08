@@ -19,8 +19,8 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef GTL_ASSERT_ASSERT_HPP
-#define GTL_ASSERT_ASSERT_HPP
+#ifndef GTL_ASSERT_HPP
+#define GTL_ASSERT_HPP
 
 #if defined(_MSC_VER)
 #   pragma warning(push, 0)
@@ -197,4 +197,4 @@ namespace assert {
         )
 }}
 
-#endif // GTL_ASSERT_ASSERT_HPP
+#endif // GTL_ASSERT_HPP

@@ -60,13 +60,10 @@ class test_class
     : private gtl::event_queue<test_event>
     , private gtl::event_queue<std::function<void(void)>>{
 public:
-    int value;
-
-public:
-    test_class(void);
+    int value = 0;
 
 private:
-    virtual void on_event(test_event& data) override;
+    void on_event(test_event& data) override;
 
     // This line is just to silence a clang warning.
     using gtl::event_queue<std::function<void(void)>>::on_event;
@@ -74,10 +71,6 @@ private:
 public:
     void process();
 };
-
-test_class::test_class(void)
-    : value(0) {
-}
 
 void test_class::on_event(test_event& data) {
     this->value = data.value;

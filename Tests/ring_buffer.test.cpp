@@ -167,8 +167,8 @@ TEST(evaluation, threads) {
     constexpr static const unsigned int test_size = 1000;
 
     gtl::ring_buffer<unsigned int, buffer_size> ring_buffer;
-    std::array<bool, test_size> have_pushed;
-    std::array<unsigned int, test_size> have_popped;
+    std::array<bool, test_size> have_pushed = {};
+    std::array<unsigned int, test_size> have_popped = {};
 
     std::thread pusher = std::thread([&](){
         for (unsigned int i = 0; i < test_size; ++i) {

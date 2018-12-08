@@ -55,10 +55,10 @@ namespace gtl {
 
     private:
         /// @brief  Current state of the random number generator, using an array of 624 32-bit values with 31 of the bits being unused we have (624 * 32) - 31 = 19937 bits of information.
-        std::uint32_t state[random_mt::state_size];
+        std::uint32_t state[random_mt::state_size] = {};
 
         /// @brief  Position in the state.
-        std::uint32_t position;
+        std::uint32_t position = 0;
 
     public:
         /// @brief  Defaulted destructor.
