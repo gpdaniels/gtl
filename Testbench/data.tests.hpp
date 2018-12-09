@@ -32,8 +32,8 @@ struct test_data { };
     struct test_data<TYPE> { \
         static const char* name; \
         static const TYPE data[]; \
-        static const TYPE* begin(void); \
-        static const TYPE* end(void); \
+        static const TYPE* begin(); \
+        static const TYPE* end(); \
     }
 
 // Boolean.
