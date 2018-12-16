@@ -105,19 +105,20 @@ FOREACH(HEADER_FILE ${HEADER_FILES})
     STRING(REGEX REPLACE "[/][*]" "${BLOCK_COMMENT_BEGIN}" TEST_CODE_NOCOMMENTS "${TEST_CODE_FILE}")
     STRING(REGEX REPLACE "[*][/]" "${BLOCK_COMMENT_CLOSE}" TEST_CODE_NOCOMMENTS "${TEST_CODE_NOCOMMENTS}")
     STRING(REGEX REPLACE "${BLOCK_COMMENT_BEGIN}[^${BLOCK_COMMENT_CLOSE}]*${BLOCK_COMMENT_CLOSE}" "" TEST_CODE_NOCOMMENTS "${TEST_CODE_NOCOMMENTS}")
+    STRING(REGEX REPLACE "\n[ \t]*//+[^\n]+" "\n" ${TEST_CODE_NOCOMMENTS} "${TEST_CODE_NOCOMMENTS}")
 
-    # Convert lines to list.
-    STRING(REGEX REPLACE "[\r]*[\n]+" ";" TEST_CODE "${TEST_CODE_NOCOMMENTS}")
+    # Find all pragmas.
+    STRING(REGEX MATCHALL "[#][ \t]*pragma[ \t]*comment[ \t]*[\\(][ \t]*CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}[ \t]*[,][ \t]*[\"]((-l|-framework )[0-9a-zA-Z_]*)[\"][ \t]*[\\)]" DETECTED_PRAGMAS "${TEST_CODE_NOCOMMENTS}")
 
-    # Loop over each line detecting tests.
-    FOREACH(TEST_CODE_LINE ${TEST_CODE})
+    # Replace newlines.
+    STRING(REGEX REPLACE "[\r]*[\n]+" ";" DETECTED_PRAGMAS "${DETECTED_PRAGMAS}")
 
-        # Search for pragmas
-        IF("${TEST_CODE_LINE}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*[#][ \t]*pragma[ \t]*comment[ \t]*[\\(][ \t]*CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}[ \t]*[,][ \t]*[\"]([-][l][0-9a-zA-Z_]*)[\"][ \t]*[\\)]")
+    # Extract information from matches.
+    FOREACH(DETECTED_PRAGMA ${DETECTED_PRAGMAS})
+        IF("${DETECTED_PRAGMA}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*[#][ \t]*pragma[ \t]*comment[ \t]*[\\(][ \t]*CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}[ \t]*[,][ \t]*[\"]((-l|-framework )[0-9a-zA-Z_]*)[\"][ \t]*[\\)]")
             LIST(APPEND CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME} ${CMAKE_MATCH_1})
-        ENDIF("${TEST_CODE_LINE}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*[#][ \t]*pragma[ \t]*comment[ \t]*[\\(][ \t]*CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}[ \t]*[,][ \t]*[\"]([-][l][0-9a-zA-Z_]*)[\"][ \t]*[\\)]")
-
-    ENDFOREACH(TEST_CODE_LINE ${TEST_CODE})
+        ENDIF("${DETECTED_PRAGMA}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*[#][ \t]*pragma[ \t]*comment[ \t]*[\\(][ \t]*CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}[ \t]*[,][ \t]*[\"]((-l|-framework )[0-9a-zA-Z_]*)[\"][ \t]*[\\)]")
+    ENDFOREACH(DETECTED_PRAGMA ${DETECTED_PRAGMAS})
 
 ENDFOREACH(HEADER_FILE ${HEADER_FILES})
 
@@ -163,20 +164,24 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
     STRING(REGEX REPLACE "[/][*]" "${BLOCK_COMMENT_BEGIN}" TEST_CODE_NOCOMMENTS "${TEST_CODE_FILE}")
     STRING(REGEX REPLACE "[*][/]" "${BLOCK_COMMENT_CLOSE}" TEST_CODE_NOCOMMENTS "${TEST_CODE_NOCOMMENTS}")
     STRING(REGEX REPLACE "${BLOCK_COMMENT_BEGIN}[^${BLOCK_COMMENT_CLOSE}]*${BLOCK_COMMENT_CLOSE}" "" TEST_CODE_NOCOMMENTS "${TEST_CODE_NOCOMMENTS}")
+    STRING(REGEX REPLACE "\n[ \t]*//+[^\n]+" "\n" ${TEST_CODE_NOCOMMENTS} "${TEST_CODE_NOCOMMENTS}")
 
-    # Convert lines to list.
-    STRING(REGEX REPLACE "[\r]*[\n]+" ";" TEST_CODE "${TEST_CODE_NOCOMMENTS}")
+    # Find all tests.
+    STRING(REGEX MATCHALL "TEST[ \t]*[\\(][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[,][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[\\)]" DETECTED_TESTS "${TEST_CODE_NOCOMMENTS}")
 
-    # Loop over each line detecting tests.
-    FOREACH(TEST_CODE_LINE ${TEST_CODE})
+    # Replace newlines.
+    STRING(REGEX REPLACE "[\r]*[\n]+" ";" DETECTED_TESTS "${DETECTED_TESTS}")
+
+    # Extract information from matches.
+    FOREACH(DETECTED_TEST ${DETECTED_TESTS})
 
         # C++ only allows letters, digits and the underscore characters in variable names. => [a-zA-Z_][0-9a-zA-Z_]*
-        IF("${TEST_CODE_LINE}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*TEST[ \t]*[\\(][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[,][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[\\)]")
+        IF("${DETECTED_TEST}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*TEST[ \t]*[\\(][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[,][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[\\)]")
             LIST(APPEND SUB_TEST_GROUPS ${CMAKE_MATCH_1})
             LIST(APPEND SUB_TEST_NAMES ${CMAKE_MATCH_2})
-        ENDIF("${TEST_CODE_LINE}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*TEST[ \t]*[\\(][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[,][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[\\)]")
+        ENDIF("${DETECTED_TEST}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*TEST[ \t]*[\\(][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[,][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[\\)]")
 
-    ENDFOREACH(TEST_CODE_LINE ${TEST_CODE})
+    ENDFOREACH(DETECTED_TEST ${DETECTED_TESTS})
 
     # Count the number of tests found.
     LIST(LENGTH SUB_TEST_GROUPS SUB_TEST_COUNT)
