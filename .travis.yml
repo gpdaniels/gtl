@@ -143,7 +143,12 @@ matrix:
     
     - os: windows
     
+before_install:
+  - echo "Running before_install..." 
+  
 install:
+  - echo "Running install..." 
+  
   ############################################################################
   # All the dependencies are installed in ${HOME}/deps/.
   ############################################################################
@@ -210,13 +215,20 @@ install:
   ############################################################################
   - popd
 
+before_script:
+  - echo "Running before_script..." 
+
 script:
-  - mkdir BUILD 
+  - echo "Running script..." 
+  - mkdir -p BUILD 
   - pushd BUILD
   - cmake -DCMAKE_BUILD_TYPE=Debug ..
   - cmake --build . --config Debug
   - cmake --build . --config Debug --target test
   - popd
+
+after_success:
+  - echo "Running after_success..."
 
 notifications:
   email: false
