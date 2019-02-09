@@ -36,6 +36,7 @@ The current classes are as described below:
 |           **event** | A thread safe multi-in/multi-out event/messaging system.                                |
 |       **semaphore** | Semaphore made using a mutex and condition variable.                                    | 
 |       **spin_lock** | Spin lock implemented using an atomic flag.                                             | 
+|   **triple_buffer** | A lockless triple buffer interface to three buffers.                                    | 
 
 ### Pseudorandom Number Generators ###
 

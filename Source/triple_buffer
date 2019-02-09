@@ -1,0 +1,122 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_TRIPLE_BUFFER_HPP
+#define GTL_TRIPLE_BUFFER_HPP
+
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
+#include <atomic>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
+
+namespace gtl {
+    /// @brief  The triple_buffer class implements a thread-safe single-producer single-consumer triple-buffer.
+    template<typename buffer_type>
+    class triple_buffer {
+    public:
+        /// @brief  Make the buffer type publically accessible.
+        using type = buffer_type;
+
+    private:
+        /// @brief  Atomic flag that representes if the read buffer contents are newer than the swap buffer.
+        std::atomic_flag not_stale;
+
+        /// @brief  Pointer to the buffer that can currently be read.
+        std::atomic<type*> read;
+
+        /// @brief  Pointer to the buffer that can be swapped with either the read or write buffers.
+        std::atomic<type*> swap;
+
+        /// @brief  Pointer to the buffer that can currently be written.
+        std::atomic<type*> write;
+
+    public:
+        /// @brief  Defaulted destructor.
+        ~triple_buffer() = default;
+
+        /// @brief  Constructor takes the addresses of the three provided buffers.
+        triple_buffer(
+            type& read_buffer,
+            type& swap_buffer,
+            type& write_buffer
+        )
+            : read(&read_buffer)
+            , swap(&swap_buffer)
+            , write(&write_buffer) {
+
+            // Set the atomic flag to mark the read buffer data as the latest.
+            this->not_stale.test_and_set();
+        }
+
+        /// @brief  Deleted copy constructor.
+        triple_buffer(const triple_buffer&) = delete;
+
+        /// @brief  Defaulted move constructor.
+        triple_buffer(triple_buffer&&) = default;
+
+        /// @brief  Deleted copy asignement operator.
+        triple_buffer& operator=(const triple_buffer&) = delete;
+
+        /// @brief  Defaulted move asignement operator.
+        triple_buffer& operator=(triple_buffer&&) = default;
+
+        /// @brief  Update the read buffer location if newer data is available in the swap buffer.
+        /// @return true if the read buffer location was updated, false otherwise.
+        bool update_read() {
+            // Set the atomic flag to mark the read buffer as holding the latest data.
+            if (!this->not_stale.test_and_set()) {
+                // If the read buffer was out of date update it by swapping it with the swap buffer.
+                this->read = this->swap.exchange(this->read);
+                // Return true to notify that the buffers were swapped.
+                return true;
+            }
+            // Return false to notify that the buffers were not swapped.
+            return false;
+        }
+
+        /// @brief  Get a reference to the read buffer.
+        /// @return A reference to the read buffer.
+        type& get_read() {
+            return *this->read.load();
+        }
+
+        /// @brief  Get a reference to the write buffer.
+        /// @return A reference to the write buffer.
+        type& get_write() {
+            return *this->write.load();
+        }
+
+        /// @brief  Update the write buffer location to the swap buffer.
+        void update_write() {
+            // Update the write buffer by swapping it with the swap buffer.
+            this->write = this->swap.exchange(this->write);
+            // Clear the atomic flag to mark the read buffer as out of date.
+            this->not_stale.clear();
+        }
+    };
+}
+
+#endif // GTL_TRIPLE_BUFFER_HPP
