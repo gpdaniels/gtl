@@ -6,15 +6,18 @@ CMAKE_POLICY(VERSION 3.5.1)
 SET(PROJECT_NAME "gtl")
 PROJECT(${PROJECT_NAME})
 
+# Settings.
+SET(ENABLE_TEST_TARGETS OFF CACHE BOOL "Enable building individual unit test targets.")
+
 # Print status.
 MESSAGE(STATUS "Configuring ${PROJECT_NAME}...")
 
-# Require c11
+# Require c11.
 SET(CMAKE_C_STANDARD 11)
 SET(CMAKE_C_STANDARD_REQUIRED ON)
 SET(CMAKE_C_EXTENSIONS OFF)
 
-# Require c++14
+# Require c++17.
 SET(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS OFF)
@@ -38,6 +41,23 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-global-constructors")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-exit-time-destructors")
     SET(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
+ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfatal-errors")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpedantic")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++98-compat")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++98-compat-pedantic")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-newline-eof")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reserved-id-macro")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-padded")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-disabled-macro-expansion")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-global-constructors")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-exit-time-destructors")
 ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
@@ -201,6 +221,11 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
 
     # Print status.
     MESSAGE(STATUS "Preparing tests for file '${TEST_FILE_NAME}'...")
+
+    # Skip producing the actual test executables.
+    IF(NOT ${ENABLE_TEST_TARGETS})
+        CONTINUE()
+    ENDIF(NOT ${ENABLE_TEST_TARGETS})
 
     # For each test found in the test file, create a test executable.
     WHILE(SUB_TEST_INDEX LESS ${SUB_TEST_COUNT})
