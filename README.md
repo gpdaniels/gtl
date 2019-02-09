@@ -55,6 +55,16 @@ The current classes are as described below:
 |         **type_id** | Simple run-time-type-information (rtti) with -fno-rtti.                                 |
 |       **type_name** | Compile-time type name as a string with -fno-rtti.                                      |
 
+## Build matrix ##
+
+| Operating System    | Version                                                           | Compiler   | Status |
+|:--------------------|:------------------------------------------------------------------|:-----------|:------:|
+| Linux               | Ubuntu 14.04 Trusty                                               | Clang 6.0  | [![Build Status](https://travis-matrix-badges.herokuapp.com/repos/gpdaniels/gtl/branches/master/1)](https://travis-ci.org/gpdaniels/gtl) |
+| Linux               | Ubuntu 14.04 Trusty                                               | GCC 7      | [![Build Status](https://travis-matrix-badges.herokuapp.com/repos/gpdaniels/gtl/branches/master/2)](https://travis-ci.org/gpdaniels/gtl) |
+| Linux               | Ubuntu 16.04 Xenial                                               | GCC 7      | [![Build Status](https://travis-matrix-badges.herokuapp.com/repos/gpdaniels/gtl/branches/master/3)](https://travis-ci.org/gpdaniels/gtl) |
+| Macintosh           | macOS 10.13                                                       | XCode 9.3  | [![Build Status](https://travis-matrix-badges.herokuapp.com/repos/gpdaniels/gtl/branches/master/4)](https://travis-ci.org/gpdaniels/gtl) |
+| Macintosh           | macOS 10.13                                                       | XCode 9.4  | [![Build Status](https://travis-matrix-badges.herokuapp.com/repos/gpdaniels/gtl/branches/master/5)](https://travis-ci.org/gpdaniels/gtl) |
+| Windows             | Windows Server, version 1803                                      | VS 2017    | [![Build Status](https://travis-matrix-badges.herokuapp.com/repos/gpdaniels/gtl/branches/master/6)](https://travis-ci.org/gpdaniels/gtl) |
 
 ## License ##
 
