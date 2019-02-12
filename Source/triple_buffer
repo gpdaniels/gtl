@@ -41,34 +41,30 @@ namespace gtl {
         using type = buffer_type;
 
     private:
-        /// @brief  Atomic flag that representes if the read buffer contents are newer than the swap buffer.
-        std::atomic_flag not_stale;
+        /// @brief  Structure that holds the index of the read, swap and write buffers, and a flag that is set on write.
+        struct index_type {
+            unsigned char read : 2;
+            unsigned char swap : 2;
+            unsigned char write : 2;
+            unsigned char updated : 2;
+        };
 
-        /// @brief  Pointer to the buffer that can currently be read.
-        std::atomic<type*> read;
+        static_assert(sizeof(index_type) == 1, "The size of the index_type is assumed to be one byte.");
 
-        /// @brief  Pointer to the buffer that can be swapped with either the read or write buffers.
-        std::atomic<type*> swap;
+    private:
+        /// @brief  An atomic index using the index_type to index into the buffers array;
+        std::atomic<index_type> indexes;
 
-        /// @brief  Pointer to the buffer that can currently be written.
-        std::atomic<type*> write;
+        /// @brief  The buffers.
+        buffer_type buffers[3];
 
     public:
         /// @brief  Defaulted destructor.
         ~triple_buffer() = default;
 
-        /// @brief  Constructor takes the addresses of the three provided buffers.
-        triple_buffer(
-            type& read_buffer,
-            type& swap_buffer,
-            type& write_buffer
-        )
-            : read(&read_buffer)
-            , swap(&swap_buffer)
-            , write(&write_buffer) {
-
-            // Set the atomic flag to mark the read buffer data as the latest.
-            this->not_stale.test_and_set();
+        /// @brief  Constructor initialises the atomic indexes.
+        triple_buffer() {
+            this->indexes.store(index_type{0, 1, 2, 0});
         }
 
         /// @brief  Deleted copy constructor.
@@ -87,9 +83,13 @@ namespace gtl {
         /// @return true if the read buffer location was updated, false otherwise.
         bool update_read() {
             // Set the atomic flag to mark the read buffer as holding the latest data.
-            if (!this->not_stale.test_and_set()) {
-                // If the read buffer was out of date update it by swapping it with the swap buffer.
-                this->read = this->swap.exchange(this->read);
+            if (this->indexes.load().updated > 0) {
+                // Get the current indexes.
+                index_type current_indexes = this->indexes.load();
+
+                // Try repeatably to exchange the swap and read indexes and set the updated flag to 0.
+                while (!std::atomic_compare_exchange_weak(&this->indexes, &current_indexes, index_type{ current_indexes.swap, current_indexes.read, current_indexes.write, 0 }));
+
                 // Return true to notify that the buffers were swapped.
                 return true;
             }
@@ -100,21 +100,22 @@ namespace gtl {
         /// @brief  Get a reference to the read buffer.
         /// @return A reference to the read buffer.
         type& get_read() {
-            return *this->read.load();
+            return this->buffers[this->indexes.load().read];
         }
 
         /// @brief  Get a reference to the write buffer.
         /// @return A reference to the write buffer.
         type& get_write() {
-            return *this->write.load();
+            return this->buffers[this->indexes.load().write];
         }
 
         /// @brief  Update the write buffer location to the swap buffer.
         void update_write() {
-            // Update the write buffer by swapping it with the swap buffer.
-            this->write = this->swap.exchange(this->write);
-            // Clear the atomic flag to mark the read buffer as out of date.
-            this->not_stale.clear();
+            // Get the current indexes.
+            index_type current_indexes = this->indexes.load();
+
+            // Try repeatably to exchange the write and swap indexes.
+            while (!std::atomic_compare_exchange_weak(&this->indexes, &current_indexes, index_type{ current_indexes.read, current_indexes.write, current_indexes.swap, 1 }));
         }
     };
 }
