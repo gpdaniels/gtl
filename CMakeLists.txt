@@ -7,7 +7,7 @@ SET(PROJECT_NAME "gtl")
 PROJECT(${PROJECT_NAME})
 
 # Settings.
-SET(ENABLE_TEST_TARGETS OFF CACHE BOOL "Enable building individual unit test targets.")
+SET(ENABLE_TEST_TARGETS ON CACHE BOOL "Enable building individual unit test targets.")
 
 # Print status.
 MESSAGE(STATUS "Configuring ${PROJECT_NAME}...")
