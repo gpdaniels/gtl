@@ -39,10 +39,16 @@ class test_pimpl::pimpl::implementation final {
 public:
     int value;
 public:
+    ~implementation() {
+    }
+
     implementation(int input_value)
         : value(input_value) {
     }
 };
+
+test_pimpl::~test_pimpl() {
+}
 
 test_pimpl::test_pimpl(int input_value)
     : pimpl(input_value) {
@@ -59,7 +65,7 @@ TEST(traits, standard) {
 
     REQUIRE(std::is_trivial<test_pimpl>::value == false, "Expected std::is_trivial to be false.");
 
-    REQUIRE(std::is_trivially_copyable<test_pimpl>::value == true, "Expected std::is_trivially_copyable to be true.");
+    REQUIRE(std::is_trivially_copyable<test_pimpl>::value == false, "Expected std::is_trivially_copyable to be false.");
 
     REQUIRE(std::is_standard_layout<test_pimpl>::value == true, "Expected std::is_standard_layout to be true.");
 }

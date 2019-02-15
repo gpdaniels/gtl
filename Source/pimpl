@@ -34,7 +34,7 @@ THE SOFTWARE
 
 namespace gtl {
     /// @brief  pimpl is a sized pointer to implementation class to enable hiding implemtation details.
-    template <typename implemented_class, unsigned long long int size, unsigned long long alignment>
+    template <typename implemented_class, unsigned long long int size, unsigned long long alignment_size = size>
     class pimpl {
     private:
         /// @brief  The implementation class is declared here to allow operations on it in this class.
@@ -42,9 +42,14 @@ namespace gtl {
 
     private:
         /// @brief  The raw memory of the implementation filled using placement new.
-        alignas(alignment) unsigned char implementation_data[size];
+        alignas(alignment_size) unsigned char implementation_data[size];
 
     public:
+        /// @brief  Destructor calls the destructor of the implementation.
+        ~pimpl() {
+            reinterpret_cast<implementation*>(&this->implementation_data[0])->~implementation();;
+        }
+
         /// @brief  Constructor forwards arguments to the constructor of the implementation.
         /// @param  arguments The arguments to forward to the constructor of the implementation.
         template<class ... argument_types>
