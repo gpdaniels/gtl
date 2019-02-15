@@ -37,11 +37,11 @@ THE SOFTWARE
 TEST(traits, standard) {
 
     #if defined(__clang__)
-        REQUIRE(sizeof(gtl::cpu) == 24, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 24ull);
+        REQUIRE(sizeof(gtl::cpu) == 48, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 48ull);
     #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
-        REQUIRE(sizeof(gtl::cpu) == 24, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 24ull);
+        REQUIRE(sizeof(gtl::cpu) == 48, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 48ull);
     #elif defined(_MSC_VER)
-        REQUIRE(sizeof(gtl::cpu) == 12, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 12ull);
+        REQUIRE(sizeof(gtl::cpu) == 24, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 24ull);
     #endif
 
     REQUIRE(std::is_pod<gtl::cpu>::value == false, "Expected std::is_pod to be false.");
@@ -88,21 +88,31 @@ TEST(function, has_xxx) {
 
 TEST(evaluation, print_flags) {
     gtl::cpu cpu;
-    PRINT("get_max_leaf_id:     %d\n", cpu.get_max_leaf_id());
+    PRINT("get_max_leaf_id:             %d\n", cpu.get_max_leaf_id());
+    PRINT("get_max_extended_leaf_id:    %d\n", cpu.get_max_extended_leaf_id());
 
-    PRINT("get_manufacturer_id: %s\n", cpu.get_manufacturer_id().c_str());
+    PRINT("get_manufacturer_id:         %s\n", cpu.get_manufacturer_id().c_str());
+    PRINT("get_brand_string:            %s\n", cpu.get_brand_string().c_str());
 
-    PRINT("has_mmx:             %d\n", cpu.has_mmx());
+    PRINT("has_mmx:                     %d\n", cpu.has_mmx());
 
-    PRINT("has_sse:             %d\n", cpu.has_sse());
-    PRINT("has_sse2:            %d\n", cpu.has_sse2());
-    PRINT("has_sse3:            %d\n", cpu.has_sse3());
-    PRINT("has_ssse3:           %d\n", cpu.has_ssse3());
-    PRINT("has_sse4.1:          %d\n", cpu.has_sse4_1());
-    PRINT("has_sse4.2:          %d\n", cpu.has_sse4_2());
+    PRINT("has_fma:                     %d\n", cpu.has_fma());
 
-    PRINT("has_popcnt:          %d\n", cpu.has_popcnt());
+    PRINT("has_sse:                     %d\n", cpu.has_sse());
+    PRINT("has_sse2:                    %d\n", cpu.has_sse2());
+    PRINT("has_sse3:                    %d\n", cpu.has_sse3());
+    PRINT("has_ssse3:                   %d\n", cpu.has_ssse3());
+    PRINT("has_sse4.1:                  %d\n", cpu.has_sse4_1());
+    PRINT("has_sse4.2:                  %d\n", cpu.has_sse4_2());
 
-    PRINT("has_avx:             %d\n", cpu.has_avx());
-    PRINT("has_avx2:            %d\n", cpu.has_avx2());
+    PRINT("has_popcnt:                  %d\n", cpu.has_popcnt());
+
+    PRINT("has_avx:                     %d\n", cpu.has_avx());
+    PRINT("has_avx2:                    %d\n", cpu.has_avx2());
+
+    PRINT("has_avx512f:                 %d\n", cpu.has_avx512_foundation());
+
+    PRINT("has_bmi:                     %d\n", cpu.has_bmi());
+    PRINT("has_bmi2:                    %d\n", cpu.has_bmi2());
+
 }

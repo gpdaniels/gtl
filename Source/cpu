@@ -44,18 +44,34 @@ namespace gtl {
     /// @brief  The cpu class extracts information about the current cpu.
     class cpu {
     public:
-        constexpr static const std::uint32_t leaf_vendor_id = 0;
-        constexpr static const std::uint32_t leaf_feature_bits = 1;
-        constexpr static const std::uint32_t leaf_extended_feature_bits = 7;
+        constexpr static const std::uint32_t leaf_vendor_id                 = 0x00000000u;
+        constexpr static const std::uint32_t leaf_feature_bits              = 0x00000001u;
+        constexpr static const std::uint32_t leaf_cache_and_tlb             = 0x00000002u;
+        constexpr static const std::uint32_t leaf_serial_number             = 0x00000003u;
+        constexpr static const std::uint32_t leaf_thread_core_and_cache     = 0x00000004u;
+        constexpr static const std::uint32_t leaf_extended_feature_bits     = 0x00000007u;
 
-        constexpr static const std::uint32_t register_eax = 0;
-        constexpr static const std::uint32_t register_ebx = 1;
-        constexpr static const std::uint32_t register_ecx = 2;
-        constexpr static const std::uint32_t register_edx = 3;
+        constexpr static const std::uint32_t extended_leaf_highest_function = 0x80000000u;
+        constexpr static const std::uint32_t extended_leaf_feature_bits     = 0x80000001u;
+        constexpr static const std::uint32_t extended_leaf_brand_string_0   = 0x80000002u;
+        constexpr static const std::uint32_t extended_leaf_brand_string_1   = 0x80000003u;
+        constexpr static const std::uint32_t extended_leaf_brand_string_2   = 0x80000004u;
+        constexpr static const std::uint32_t extended_leaf_l1_cache_and_tlb = 0x80000005u;
+        constexpr static const std::uint32_t extended_leaf_l2_cache         = 0x80000005u;
+        constexpr static const std::uint32_t extended_leaf_power_management = 0x80000007u;
+        constexpr static const std::uint32_t extended_leaf_raw_size         = 0x80000008u;
+
+        constexpr static const std::uint32_t register_eax_index = 0;
+        constexpr static const std::uint32_t register_ebx_index = 1;
+        constexpr static const std::uint32_t register_ecx_index = 2;
+        constexpr static const std::uint32_t register_edx_index = 3;
 
     private:
         /// @brief  This array of arrays stores all the extractable cpu information.
-        std::vector<std::array<std::uint32_t, 4> > cpu_data;
+        std::vector<std::array<std::uint32_t, 4u> > cpu_data;
+
+        /// @brief  This array of arrays stores all the extractable extended cpu information.
+        std::vector<std::array<std::uint32_t, 4u> > cpu_extended_data;
 
     private:
         /// @brief  Helper function for getting values from the cpuid instruction.
@@ -64,9 +80,9 @@ namespace gtl {
         std::array<std::uint32_t, 4> query_cpuid(std::uint32_t leaf_id) {
             std::array<std::uint32_t, 4> leaf_data;
             #if defined(_MSC_VER)
-                __cpuidex(reinterpret_cast<int*>(leaf_data.data()), leaf_id, 0);
+                __cpuidex(reinterpret_cast<int*>(leaf_data.data()), leaf_id, 0u);
             #elif defined(__GNUC__)
-                __cpuid_count(leaf_id, 0, leaf_data[cpu::register_eax], leaf_data[cpu::register_ebx], leaf_data[cpu::register_ecx], leaf_data[cpu::register_edx]);
+                __cpuid_count(leaf_id, 0u, leaf_data[cpu::register_eax_index], leaf_data[cpu::register_ebx_index], leaf_data[cpu::register_ecx_index], leaf_data[cpu::register_edx_index]);
             #else
                 leaf_data = {};
             #endif
@@ -76,15 +92,26 @@ namespace gtl {
     public:
         /// @brief  The constructor extracts all available cpu information and stores it in an array.
         cpu() {
-            // First get the maximum supported cpuid leaf and the manufacturer id by calling with a cpuid leaf of 0.
+            // First get the maximum supported cpuid leaf and the manufacturer id by calling with a cpuid leaf of 0x00000000.
             this->cpu_data.emplace_back(this->query_cpuid(cpu::leaf_vendor_id));
 
             // Reserve memory for cpu_data to fit remaining queries.
             this->cpu_data.reserve(this->get_max_leaf_id());
 
             // Extract every leaf.
-            for (std::uint32_t leaf_id = 1; leaf_id < this->get_max_leaf_id(); ++leaf_id) {
+            for (std::uint32_t leaf_id = 1u; leaf_id < this->get_max_leaf_id(); ++leaf_id) {
                 this->cpu_data.emplace_back(this->query_cpuid(leaf_id));
+            }
+
+            // Get the maximum supported cpuid extended leaf by calling with a cpuid leaf of 0x80000000.
+            this->cpu_extended_data.emplace_back(this->query_cpuid(cpu::extended_leaf_highest_function));
+
+            // Reserve memory for cpu_extended_data to fit remaining queries.
+            this->cpu_extended_data.reserve(this->get_max_extended_leaf_id());
+
+            // Extract every extended leaf.
+            for (std::uint32_t leaf_id = 1u; leaf_id < this->get_max_extended_leaf_id(); ++leaf_id) {
+                this->cpu_extended_data.emplace_back(this->query_cpuid(leaf_id | 0x80000000u));
             }
         }
 
@@ -100,35 +127,73 @@ namespace gtl {
                 return false;
             }
 
+            // Double check the requested leaf_id is within those available.
+            if (this->cpu_data.size() <= leaf_id) {
+                return false;
+            }
+
             // Check the register_id is one of the four available.
-            if (register_id > 3) {
+            if (register_id > 3u) {
                 return false;
             }
 
             // Check the bit_id is within the size of a register.
-            if (bit_id > 31) {
+            if (bit_id > 31u) {
                 return false;
             }
 
             // Return the extracted value of the bit.
-            return this->cpu_data[leaf_id][register_id] & (1 << bit_id);
+            return this->cpu_data[leaf_id][register_id] & (1u << bit_id);
+        }
+
+        /// @brief  Get the value of a single bit in one of the extracted extended leafs registers.
+        /// @param  extended_leaf_id The id number of the leaf to read.
+        /// @param  register_id The register number within a leaf.
+        /// @param  bit_id The individual bit number within a register.
+        /// @return true if the specified bit is 1 in the specified leaf register, false otherwise.
+        bool get_extended_leaf_register_bit(std::uint32_t extended_leaf_id, std::uint32_t register_id, std::uint32_t bit_id) const {
+            // First remove the top bit.
+            extended_leaf_id = extended_leaf_id & 0x7FFFFFFFu;
+
+            // Check the requested leaf_id is within those available.
+            if (this->get_max_extended_leaf_id() < extended_leaf_id) {
+                return false;
+            }
+
+            // Double check the requested leaf_id is within those available.
+            if (this->cpu_extended_data.size() <= extended_leaf_id) {
+                return false;
+            }
+
+            // Check the register_id is one of the four available.
+            if (register_id > 3u) {
+                return false;
+            }
+
+            // Check the bit_id is within the size of a register.
+            if (bit_id > 31u) {
+                return false;
+            }
+
+            // Return the extracted value of the bit.
+            return this->cpu_extended_data[extended_leaf_id][register_id] & (1u << bit_id);
         }
 
     public:
         /// @brief  Get the maximum valid leaf number for this processor.
         /// @return The maximum valid leaf number for this processor.
         std::uint32_t get_max_leaf_id() const {
-            return this->cpu_data[cpu::leaf_vendor_id][cpu::register_eax];
+            return this->cpu_data[cpu::leaf_vendor_id][cpu::register_eax_index];
         }
 
         /// @brief  Get the name of the processors manufacturer.
         /// @return The name of the manufacturer of this processor as a string.
         std::string get_manufacturer_id() const {
             std::string manufacturer_id;
-            manufacturer_id.reserve(13);
-            manufacturer_id.append(reinterpret_cast<const char*>(&this->cpu_data[cpu::leaf_vendor_id][cpu::register_ebx]), 4);
-            manufacturer_id.append(reinterpret_cast<const char*>(&this->cpu_data[cpu::leaf_vendor_id][cpu::register_edx]), 4);
-            manufacturer_id.append(reinterpret_cast<const char*>(&this->cpu_data[cpu::leaf_vendor_id][cpu::register_ecx]), 4);
+            manufacturer_id.reserve(13u);
+            manufacturer_id.append(reinterpret_cast<const char*>(&this->cpu_data[cpu::leaf_vendor_id][cpu::register_ebx_index]), 4u);
+            manufacturer_id.append(reinterpret_cast<const char*>(&this->cpu_data[cpu::leaf_vendor_id][cpu::register_edx_index]), 4u);
+            manufacturer_id.append(reinterpret_cast<const char*>(&this->cpu_data[cpu::leaf_vendor_id][cpu::register_ecx_index]), 4u);
             return manufacturer_id;
         }
 
@@ -136,62 +201,119 @@ namespace gtl {
         /// @brief  Check if mmx instructions are supported.
         /// @return true if the instruction is supported, false otherwise.
         bool has_mmx() const {
-            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_edx, 23);
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_edx_index, 23);
+        }
+
+        /// @brief  Check if fma instructions are supported.
+        /// @return true if the instruction is supported, false otherwise.
+        bool has_fma() const {
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx_index, 12);
         }
 
         /// @brief  Check if sse instructions are supported.
         /// @return true if the instruction is supported, false otherwise.
         bool has_sse() const {
-            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_edx, 25);
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_edx_index, 25);
         }
 
         /// @brief  Check if sse2 instructions are supported.
         /// @return true if the instruction is supported, false otherwise.
         bool has_sse2() const {
-            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_edx, 26);
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_edx_index, 26);
         }
 
         /// @brief  Check if sse3 instructions are supported.
         /// @return true if the instruction is supported, false otherwise.
         bool has_sse3() const {
-            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx, 0);
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx_index, 0);
         }
 
         /// @brief  Check if ssse3 instructions are supported.
         /// @return true if the instruction is supported, false otherwise.
         bool has_ssse3() const {
-            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx, 9);
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx_index, 9);
         }
 
         /// @brief  Check if sse4.1 instructions are supported.
         /// @return true if the instruction is supported, false otherwise.
         bool has_sse4_1() const {
-            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx, 19);
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx_index, 19);
         }
 
         /// @brief  Check if sse4.2 instructions are supported.
         /// @return true if the instruction is supported, false otherwise.
         bool has_sse4_2() const {
-            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx, 20);
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx_index, 20);
         }
 
         /// @brief  Check if popcnt instructions are supported.
         /// @return true if the instruction is supported, false otherwise.
         bool has_popcnt() const {
-            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx, 23);
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx_index, 23);
         }
 
         /// @brief  Check if avx instructions are supported.
         /// @return true if the instruction is supported, false otherwise.
         bool has_avx() const {
-            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx, 28);
+            return this->get_leaf_register_bit(cpu::leaf_feature_bits, cpu::register_ecx_index, 28);
         }
 
         /// @brief  Check if avx2 instructions are supported.
         /// @return true if the instruction is supported, false otherwise.
         bool has_avx2() const {
-            return this->get_leaf_register_bit(cpu::leaf_extended_feature_bits, cpu::register_ebx, 5);
+            return this->get_leaf_register_bit(cpu::leaf_extended_feature_bits, cpu::register_ebx_index, 5);
         }
+
+        /// @brief  Check if avx512 foundation instructions are supported.
+        /// @return true if the instruction is supported, false otherwise.
+        bool has_avx512_foundation() const {
+            return this->get_extended_leaf_register_bit(cpu::leaf_extended_feature_bits, cpu::register_ebx_index, 16);
+        }
+
+        /// @brief  Check if bmi instructions are supported.
+        /// @return true if the instruction is supported, false otherwise.
+        bool has_bmi() const {
+            return this->get_leaf_register_bit(cpu::leaf_extended_feature_bits, cpu::register_ebx_index, 3);
+        }
+
+        /// @brief  Check if bmi2 instructions are supported.
+        /// @return true if the instruction is supported, false otherwise.
+        bool has_bmi2() const {
+            return this->get_leaf_register_bit(cpu::leaf_extended_feature_bits, cpu::register_ebx_index, 8);
+        }
+
+    public:
+        /// @brief  Get the maximum valid extended leaf number for this processor.
+        /// @return The maximum valid leaf number for this processor.
+        std::uint32_t get_max_extended_leaf_id() const {
+            return this->cpu_extended_data[cpu::extended_leaf_highest_function & 0x7FFFFFFFu][cpu::register_eax_index] & 0x7FFFFFFFu;
+        }
+
+        /// @brief  Get the name of the processors manufacturer.
+        /// @return The name of the manufacturer of this processor as a string.
+        std::string get_brand_string() const {
+            std::string brand_string;
+            brand_string.reserve(49u);
+            brand_string.append(reinterpret_cast<const char*>(&this->cpu_extended_data[cpu::extended_leaf_brand_string_0 & 0x7FFFFFFFu][cpu::register_eax_index]), 4u);
+            brand_string.append(reinterpret_cast<const char*>(&this->cpu_extended_data[cpu::extended_leaf_brand_string_0 & 0x7FFFFFFFu][cpu::register_ebx_index]), 4u);
+            brand_string.append(reinterpret_cast<const char*>(&this->cpu_extended_data[cpu::extended_leaf_brand_string_0 & 0x7FFFFFFFu][cpu::register_ecx_index]), 4u);
+            brand_string.append(reinterpret_cast<const char*>(&this->cpu_extended_data[cpu::extended_leaf_brand_string_0 & 0x7FFFFFFFu][cpu::register_edx_index]), 4u);
+
+            brand_string.append(reinterpret_cast<const char*>(&this->cpu_extended_data[cpu::extended_leaf_brand_string_1 & 0x7FFFFFFFu][cpu::register_eax_index]), 4u);
+            brand_string.append(reinterpret_cast<const char*>(&this->cpu_extended_data[cpu::extended_leaf_brand_string_1 & 0x7FFFFFFFu][cpu::register_ebx_index]), 4u);
+            brand_string.append(reinterpret_cast<const char*>(&this->cpu_extended_data[cpu::extended_leaf_brand_string_1 & 0x7FFFFFFFu][cpu::register_ecx_index]), 4u);
+            brand_string.append(reinterpret_cast<const char*>(&this->cpu_extended_data[cpu::extended_leaf_brand_string_1 & 0x7FFFFFFFu][cpu::register_edx_index]), 4u);
+
+            brand_string.append(reinterpret_cast<const char*>(&this->cpu_extended_data[cpu::extended_leaf_brand_string_2 & 0x7FFFFFFFu][cpu::register_eax_index]), 4u);
+            brand_string.append(reinterpret_cast<const char*>(&this->cpu_extended_data[cpu::extended_leaf_brand_string_2 & 0x7FFFFFFFu][cpu::register_ebx_index]), 4u);
+            brand_string.append(reinterpret_cast<const char*>(&this->cpu_extended_data[cpu::extended_leaf_brand_string_2 & 0x7FFFFFFFu][cpu::register_ecx_index]), 4u);
+            brand_string.append(reinterpret_cast<const char*>(&this->cpu_extended_data[cpu::extended_leaf_brand_string_2 & 0x7FFFFFFFu][cpu::register_edx_index]), 4u);
+
+            return brand_string;
+        }
+
+    public:
+
     };
 }
 
