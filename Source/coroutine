@@ -33,7 +33,8 @@ THE SOFTWARE
 #   define GTL_COROUTINE_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
-#if !defined(_WIN32)
+#if (defined(linux) || defined(__linux) || defined(__linux__)) || defined(__APPLE__)
+
 //  Store the value of the _FORTIFY_SOURCE macro so it can be reset later.
 #   pragma push_macro("_FORTIFY_SOURCE")
 
@@ -46,18 +47,27 @@ THE SOFTWARE
 #   pragma pop_macro("_FORTIFY_SOURCE")
 
 #   include <csignal>
-#else
-#   define WIN32_LEAN_AND_MEAN
-#   define VC_EXTRALEAN
-#   define STRICT
+
+#endif
+
+#if defined(_WIN32)
+
 #   if defined(_MSC_VER)
 #       pragma warning(push, 0)
 #   endif
+
+#   define WIN32_LEAN_AND_MEAN
+#   define VC_EXTRALEAN
+#   define STRICT
+
 #   include <windows.h>
+
 #   if defined(_MSC_VER)
 #       pragma warning(pop)
 #   endif
+
 #   define sig_atomic_t int
+
 #endif
 
 #if defined(_MSC_VER)
