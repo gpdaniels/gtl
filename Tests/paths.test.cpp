@@ -37,11 +37,19 @@ THE SOFTWARE
 TEST(traits, standard) {
     REQUIRE(sizeof(gtl::paths) >= 0);
 
-    REQUIRE((std::is_pod<gtl::paths>::value == false));
-
-    REQUIRE((std::is_trivial<gtl::paths>::value == false));
-
-    REQUIRE((std::is_trivially_copyable<gtl::paths>::value == false));
+    #if defined(__clang__)
+        REQUIRE((std::is_pod<gtl::paths>::value == false));
+        REQUIRE((std::is_trivial<gtl::paths>::value == false));
+        REQUIRE((std::is_trivially_copyable<gtl::paths>::value == false));
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+        REQUIRE((std::is_pod<gtl::paths>::value == true));
+        REQUIRE((std::is_trivial<gtl::paths>::value == true));
+        REQUIRE((std::is_trivially_copyable<gtl::paths>::value == true));
+    #elif defined(_MSC_VER)
+        REQUIRE((std::is_pod<gtl::paths>::value == false));
+        REQUIRE((std::is_trivial<gtl::paths>::value == false));
+        REQUIRE((std::is_trivially_copyable<gtl::paths>::value == false));
+    #endif
 
     REQUIRE((std::is_standard_layout<gtl::paths>::value == true));
 }
