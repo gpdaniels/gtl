@@ -24,6 +24,7 @@ The current classes are as described below:
 |          **access** | Classes and macros for accessing class private members.                                 |
 |          **assert** | Macros that define an assert macro that optionally takes a format string and parameters.|
 |             **cpu** | A class to extract cpuid information to determine supported instructions at runtime.    |
+|           **paths** | A collection of cross platform functions to provide useful paths.                       |
 |           **pimpl** | A statically sized pointer to implementation wrapper.                                   |
 | **simulation_loop** | Fixed time step helper class for creating game loops.                                   | 
 
