@@ -116,6 +116,59 @@ namespace gtl {
         }
 
     public:
+        /// @brief  Check the build is compatible with the cpu.
+        /// @return true if the build flags are a subset of the available cpu instructions, false otherwise.
+        bool is_build_compatible() {
+            #if defined(__MMX__)
+                if (!this->has_mmx()) return false;
+            #endif
+
+            #if defined(__SSE__)
+                if (!this->has_sse()) return false;
+            #endif
+            #if defined(__SSE2__)
+                if (!this->has_sse2()) return false;
+            #endif
+            #if defined(__SSE3__)
+                if (!this->has_sse3()) return false;
+            #endif
+            #if defined(__SSSE3__)
+                if (!this->has_ssse3()) return false;
+            #endif
+            #if defined(__SSE4_1__)
+                if (!this->has_sse4_1()) return false;
+            #endif
+            #if defined(__SSE4_2__)
+                if (!this->has_sse4_2()) return false;
+            #endif
+
+            #if defined(__POPCNT__)
+                if (!this->has_popcnt()) return false;
+            #endif
+
+            #if defined(__AVX__)
+                if (!this->has_avx()) return false;
+            #endif
+            #if defined(__AVX2__)
+                if (!this->has_avx2()) return false;
+            #endif
+
+            #if defined(__AVX512F__)
+                if (!this->has_avx512_foundation()) return false;
+            #endif
+
+            #if defined(__BMI__)
+                if (!this->has_bmi()) return false;
+            #endif
+
+            #if defined(__BMI2__)
+                if (!this->has_bmi2()) return false;
+            #endif
+
+            return true;
+        }
+
+    public:
         /// @brief  Get the value of a single bit in one of the extracted leafs registers.
         /// @param  leaf_id The id number of the leaf to read.
         /// @param  register_id The register number within a leaf.
@@ -284,13 +337,13 @@ namespace gtl {
 
     public:
         /// @brief  Get the maximum valid extended leaf number for this processor.
-        /// @return The maximum valid leaf number for this processor.
+        /// @return The maximum valid extended leaf number for this processor.
         std::uint32_t get_max_extended_leaf_id() const {
             return this->cpu_extended_data[cpu::extended_leaf_highest_function & 0x7FFFFFFFu][cpu::register_eax_index] & 0x7FFFFFFFu;
         }
 
-        /// @brief  Get the name of the processors manufacturer.
-        /// @return The name of the manufacturer of this processor as a string.
+        /// @brief  Get the brand string of the processors manufacturer.
+        /// @return The brand string of the manufacturer of this processor as a string.
         std::string get_brand_string() const {
             std::string brand_string;
             brand_string.reserve(49u);
@@ -309,11 +362,13 @@ namespace gtl {
             brand_string.append(reinterpret_cast<const char*>(&this->cpu_extended_data[cpu::extended_leaf_brand_string_2 & 0x7FFFFFFFu][cpu::register_ecx_index]), 4u);
             brand_string.append(reinterpret_cast<const char*>(&this->cpu_extended_data[cpu::extended_leaf_brand_string_2 & 0x7FFFFFFFu][cpu::register_edx_index]), 4u);
 
+            // Trim the null chars off the end.
+            std::size_t brand_string_size = brand_string.find_last_not_of('\0');
+            if (brand_string_size != std::string::npos) {
+                brand_string.resize(brand_string_size + 1);
+            }
             return brand_string;
         }
-
-    public:
-
     };
 }
 

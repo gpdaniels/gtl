@@ -58,6 +58,11 @@ TEST(constructor, empty) {
     do_not_optimise_away(cpu);
 }
 
+TEST(function, is_build_compatible) {
+    gtl::cpu cpu;
+    REQUIRE(cpu.is_build_compatible());
+}
+
 TEST(function, get_max_leaf_id) {
     gtl::cpu cpu;
     cpu.get_max_leaf_id();
@@ -66,6 +71,11 @@ TEST(function, get_max_leaf_id) {
 TEST(function, get_manufacturer_id) {
     gtl::cpu cpu;
     cpu.get_manufacturer_id();
+}
+
+TEST(function, get_brand_string) {
+    gtl::cpu cpu;
+    cpu.get_brand_string();
 }
 
 TEST(function, has_xxx) {
@@ -84,6 +94,11 @@ TEST(function, has_xxx) {
 
     cpu.has_avx();
     cpu.has_avx2();
+
+    cpu.has_avx512_foundation();
+
+    cpu.has_bmi();
+    cpu.has_bmi2();
 }
 
 TEST(evaluation, print_flags) {
