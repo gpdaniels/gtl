@@ -178,7 +178,8 @@ IF(VALGRIND_EXECUTABLE)
         COMMAND "${CMAKE_CTEST_COMMAND}" "-C" "$<CONFIG>" "--output-on-failure" "--parallel" "4" "--timeout" "1"
         COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running tests under memcheck..."
         COMMAND "${CMAKE_CTEST_COMMAND}" "-C" "$<CONFIG>" "--output-on-failure" "--parallel" "4" "--timeout" "10" "--force-new-ctest-process" "--test-action" "memcheck"
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMAND "cat" "./Testing/Temporary/MemoryChecker.*.log"
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     )
     SET_TARGET_PROPERTIES(test PROPERTIES FOLDER CMakePredefinedTargets)
     CMAKE_POLICY(POP)
@@ -191,7 +192,7 @@ ELSE()
         COMMAND "${CMAKE_COMMAND}" "--build" "." "--config" "$<CONFIG>"
         COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running tests..."
         COMMAND "${CMAKE_CTEST_COMMAND}" "-C" "$<CONFIG>" "--output-on-failure" "--parallel" "4" "--timeout" "1"
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     )
     SET_TARGET_PROPERTIES(test PROPERTIES FOLDER CMakePredefinedTargets)
     CMAKE_POLICY(POP)
