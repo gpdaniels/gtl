@@ -6,6 +6,9 @@ CMAKE_POLICY(VERSION 3.5.1)
 SET(PROJECT_NAME "gtl")
 PROJECT(${PROJECT_NAME})
 
+# Include testing machinery.
+INCLUDE(CTest)
+
 # Settings.
 SET(ENABLE_TEST_TARGETS ON CACHE BOOL "Enable building individual unit test targets.")
 
@@ -162,17 +165,37 @@ ENDIF(NOT "'${CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}}'" STREQUAL "''")
 # Enable testing.
 ENABLE_TESTING()
 
-# Override the test command such that tests are built and ctest provides output on error.
-CMAKE_POLICY(PUSH)
-CMAKE_POLICY(SET CMP0037 OLD)
-ADD_CUSTOM_TARGET(test
-    COMMAND ${CMAKE_COMMAND} --build . --config $<CONFIG>
-    COMMAND echo ""
-    COMMAND ${CMAKE_COMMAND} -E env CTEST_OUTPUT_ON_FAILURE=1 ${CMAKE_CTEST_COMMAND} -C $<CONFIG> --parallel
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-)
-SET_TARGET_PROPERTIES(test PROPERTIES FOLDER CMakePredefinedTargets)
-CMAKE_POLICY(POP)
+# Add memcheck tests if valgrind is installed
+FIND_PROGRAM(VALGRIND_EXECUTABLE NAMES valgrind)
+IF(VALGRIND_EXECUTABLE)
+    # Override the test command such that tests are built and ctest provides output on error.
+    CMAKE_POLICY(PUSH)
+    CMAKE_POLICY(SET CMP0037 OLD)
+    ADD_CUSTOM_TARGET(test
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Building tests..."
+        COMMAND "${CMAKE_COMMAND}" "--build" "." "--config" "$<CONFIG>"
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running tests..."
+        COMMAND "${CMAKE_CTEST_COMMAND}" "-C" "$<CONFIG>" "--output-on-failure" "--parallel" "4" "--timeout" "1"
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running tests under memcheck..."
+        COMMAND "${CMAKE_CTEST_COMMAND}" "-C" "$<CONFIG>" "--output-on-failure" "--parallel" "4" "--timeout" "10" "--force-new-ctest-process" "--test-action" "memcheck"
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+    SET_TARGET_PROPERTIES(test PROPERTIES FOLDER CMakePredefinedTargets)
+    CMAKE_POLICY(POP)
+ELSE()
+    # Override the test command such that tests are built and ctest provides output on error.
+    CMAKE_POLICY(PUSH)
+    CMAKE_POLICY(SET CMP0037 OLD)
+    ADD_CUSTOM_TARGET(test
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Building tests..."
+        COMMAND "${CMAKE_COMMAND}" "--build" "." "--config" "$<CONFIG>"
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running tests..."
+        COMMAND "${CMAKE_CTEST_COMMAND}" "-C" "$<CONFIG>" "--output-on-failure" "--parallel" "4" "--timeout" "1"
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+    SET_TARGET_PROPERTIES(test PROPERTIES FOLDER CMakePredefinedTargets)
+    CMAKE_POLICY(POP)
+ENDIF()
 
 # Enable grouping by folder in an IDE.
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -290,7 +313,7 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
         ADD_TEST(NAME ${CURRENT_TEST_NAME} COMMAND $<TARGET_FILE:${CURRENT_TEST_NAME}>)
 
         # Set a timeout to prevent long running tests.
-        SET_TESTS_PROPERTIES(${CURRENT_TEST_NAME} PROPERTIES TIMEOUT 1)
+        #SET_TESTS_PROPERTIES(${CURRENT_TEST_NAME} PROPERTIES TIMEOUT 1)
 
         # Set the working directory of the test.
         SET_TESTS_PROPERTIES(${CURRENT_TEST_NAME} PROPERTIES REQUIRED_FILES $<TARGET_FILE:${CURRENT_TEST_NAME}> WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
