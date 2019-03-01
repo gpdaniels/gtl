@@ -35,7 +35,7 @@ THE SOFTWARE
 #endif
 
 TEST(traits, standard) {
-    REQUIRE(sizeof(gtl::paths) >= 0);
+    REQUIRE(sizeof(gtl::paths) > 0);
 
     #if defined(__clang__)
         REQUIRE((std::is_pod<gtl::paths>::value == false));
