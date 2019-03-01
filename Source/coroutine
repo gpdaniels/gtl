@@ -47,6 +47,8 @@ THE SOFTWARE
 #   pragma pop_macro("_FORTIFY_SOURCE")
 
 #   include <csignal>
+#   include <cstdint>
+#   include <cstdlib>
 
 //  Valgrind.
 #   if !defined(NDEBUG) && __has_include(<valgrind/valgrind.h>)
@@ -82,7 +84,6 @@ THE SOFTWARE
 #   pragma warning(push, 0)
 #endif
 
-#include <cstdlib>
 #include <mutex>
 #include <thread>
 
@@ -388,7 +389,7 @@ namespace gtl {
         coroutine(function_type&& coroutine_function, argument_types&&... coroutine_arguments)
 #           if !defined(_WIN32)
                 : signal_raised(0)
-                , stack(std::aligned_alloc(coroutine::stack_alignment, coroutine::stack_size)) {
+                , stack(std::malloc(coroutine::stack_size + (coroutine::stack_alignment - 1))) {
 #           else
                 : stack(nullptr) {
 #           endif
@@ -439,7 +440,7 @@ namespace gtl {
                 // Step 3:
                 // Preserve a possibly active alternate signal stack and configure the memory chunk starting at this->stack as the new temporary alternate signal stack of length size.
                 stack_t signal_stack = {};
-                signal_stack.ss_sp = this->stack;
+                signal_stack.ss_sp = reinterpret_cast<void*>((reinterpret_cast<std::uintptr_t>(this->stack) + (coroutine::stack_alignment - 1)) & ~std::uintptr_t(coroutine::stack_alignment - 1));
                 signal_stack.ss_size = coroutine::stack_size;
                 signal_stack.ss_flags = 0;
                 stack_t parent_signal_stack;
