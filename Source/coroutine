@@ -48,6 +48,14 @@ THE SOFTWARE
 
 #   include <csignal>
 
+//  Valgrind.
+#   if !defined(NDEBUG) && __has_include(<valgrind/valgrind.h>)
+#       include <valgrind/valgrind.h>
+#       define GTL_COROUTINE_HAVE_VALGRIND 1
+#   else
+#       define GTL_COROUTINE_HAVE_VALGRIND 0
+#   endif
+
 #endif
 
 #if defined(_WIN32)
@@ -74,6 +82,7 @@ THE SOFTWARE
 #   pragma warning(push, 0)
 #endif
 
+#include <cstdlib>
 #include <mutex>
 #include <thread>
 
@@ -95,6 +104,9 @@ namespace gtl {
     class coroutine {
     public:
 #       if !defined(_WIN32)
+            /// @brief  The alignement of the stack memory.
+            constexpr static const unsigned long long stack_alignment = 16;
+
             /// @brief  The amount of memory to allocate for the stack of the coroutine.
             constexpr static const unsigned long long stack_size = SIGSTKSZ;
 
@@ -297,27 +309,35 @@ namespace gtl {
         /// @brief  Coroutine stack allocated on the heap stack using new.
         void* stack;
 
+#       if GTL_COROUTINE_HAVE_VALGRIND
+            unsigned int valgrind_stack_id;
+#       endif
+
         /// @brief  Function to call from the coroutine context.
         lambda function;
 
     public:
         /// @brief Destructor ensures the coroutine is finished.
         ~coroutine() {
+            // Ensure joined or throw.
+            if (this->joinable()) {
+                std::terminate();
+            }
 #           if !defined(_WIN32)
                 // Cleanup stack.
                 if (this->stack) {
-                    delete[] static_cast<unsigned char*>(this->stack);
+                    std::free(this->stack);
                 }
+                // If we are testing with valgrind deregister the coroutine stack.
+#               if GTL_COROUTINE_HAVE_VALGRIND
+                    VALGRIND_STACK_DEREGISTER(this->valgrind_stack_id);
+#               endif
 #           else
                 // Cleanup stack.
                 if (this->stack) {
                     DeleteFiber(this->stack);
                 }
 #           endif
-            // Ensure joined or throw.
-            if (this->joinable()) {
-                std::terminate();
-            }
         }
 
         /// @brief  Default constructor does nothing.
@@ -368,12 +388,17 @@ namespace gtl {
         coroutine(function_type&& coroutine_function, argument_types&&... coroutine_arguments)
 #           if !defined(_WIN32)
                 : signal_raised(0)
-                , stack(new unsigned char[coroutine::stack_size]) {
+                , stack(std::aligned_alloc(coroutine::stack_alignment, coroutine::stack_size)) {
 #           else
                 : stack(nullptr) {
 #           endif
 
 #           if !defined(_WIN32)
+                // If we are testing with valgrind register the coroutine stack.
+#               if GTL_COROUTINE_HAVE_VALGRIND
+                    this->valgrind_stack_id = VALGRIND_STACK_REGISTER(this->stack, static_cast<unsigned char*>(this->stack) + coroutine::stack_size);
+#               endif
+
                 // Use a lock guard so the mutex is unlocked automatically when we return from the construtor.
                 std::lock_guard<std::mutex> signal_handler_lock(signal_handler_mutex);
                 // Cast the lock guard to void to prevent unused variable warnings.
@@ -439,6 +464,12 @@ namespace gtl {
                 if (raise(coroutine::trigger_signal_identifier) != 0) {
                     std::terminate();
                 }
+
+                // Valgrind seems to think the creation of alternative context is dodgy.
+                // Therefore the only sensible solution is to disable valgrind error reporting!
+#               if GTL_COROUTINE_HAVE_VALGRIND
+                    VALGRIND_DISABLE_ERROR_REPORTING;
+#               endif
 
                 // Unblock and wait for the signal by suspending the current thread.
                 sigfillset(&coroutine_signal_set);
@@ -538,6 +569,12 @@ namespace gtl {
             /// @brief  Container function jumped to and from when joining and yielding from a coroutine.
             [[noreturn]]
             static void bootstrap() {
+
+                // Re-enable valgrind error reporting.
+#               if GTL_COROUTINE_HAVE_VALGRIND
+                    VALGRIND_ENABLE_ERROR_REPORTING;
+#               endif
+
                 // Beware this function cannot be a member function, because the coroutine could have been moved while we were away.
                 // Moving the coroutine changes the "this" pointer, therefore the code "this->function()" would be invalid.
 
@@ -674,6 +711,7 @@ namespace gtl {
     }
 }
 
+#undef GTL_COROUTINE_HAVE_VALGRIND
 #undef GTL_COROUTINE_ASSERT
 
 #endif // GTL_COROUTINE_HPP
