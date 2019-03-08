@@ -15,8 +15,8 @@ The current classes are as described below:
 |--------------------:|:----------------------------------------------------------------------------------------|
 |             **any** | A class that can hold any variable type.                                                |
 |        **array_nd** | N-dimensional statically or dynamically sized array.                                    |
-|     **ring_buffer** | Staticly sized thread-safe multi-producer multi-consumer ring-buffer.                   |
-| **static_array_nd** | N-dimensional staticly sized array.                                                     |
+|     **ring_buffer** | Statically sized thread-safe multi-producer multi-consumer ring-buffer.                 |
+| **static_array_nd** | N-dimensional statically sized array.                                                   |
 
 ### Support ###
 
