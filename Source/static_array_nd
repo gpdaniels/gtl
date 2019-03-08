@@ -19,24 +19,24 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef GTL_ARRAY_ND_HPP
-#define GTL_ARRAY_ND_HPP
+#ifndef GTL_STATIC_ARRAY_ND_HPP
+#define GTL_STATIC_ARRAY_ND_HPP
 
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()
 #   endif
-/// @brief A simple assert macro to break the program if the array_nd is misused.
-#   define GTL_ARRAY_ND_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+/// @brief A simple assert macro to break the program if the static_array_nd is misused.
+#   define GTL_STATIC_ARRAY_ND_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_ARRAY_ND_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#   define GTL_STATIC_ARRAY_ND_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 namespace gtl {
-    /// @brief  The array_nd class holds a constant size multi-dimensional array of a template type.
+    /// @brief  The static_array_nd class holds a constant size multi-dimensional array of a template type.
     template <typename data_type, unsigned long long... dimension_sizes>
-    class array_nd final {
+    class static_array_nd final {
     public:
         /// @brief  Make the data value type publically accessible.
         using type = data_type;
@@ -64,14 +64,14 @@ namespace gtl {
         /// @brief  Wrapper type for slice_type and array_type deferred generation of arrays of arrays, this avoids invalid type errors when using zero_one_or_more_switch.
         template <template <typename, unsigned long long...> typename deferred_type>
         struct deferred_array {
-            /// @brief  The slice_type is the array_type of the next dimension of the array_nd.
+            /// @brief  The slice_type is the array_type of the next dimension of the static_array_nd.
             template <unsigned long long first_deferred_dimension, unsigned long long... deferred_dimensions>
-            using slice_type = array_nd<type, deferred_dimensions...>;
+            using slice_type = static_array_nd<type, deferred_dimensions...>;
 
             /// @brief  The array_type is an array of slice_type the size of the dimension.
             template <unsigned long long first_deferred_dimension, unsigned long long... deferred_dimensions>
             struct array_type_validator {
-                 using array_type = array_nd<type, deferred_dimensions...>[first_deferred_dimension];
+                 using array_type = static_array_nd<type, deferred_dimensions...>[first_deferred_dimension];
             };
 
             /// @brief  When the size of the dimension is zero the array_type is not valid.
@@ -84,7 +84,7 @@ namespace gtl {
         /// @brief  Wrapper type for slice_type and array_type deferred generation of arrays, this avoids invalid type errors when using zero_one_or_more_switch.
         template <template <typename, unsigned long long...> typename deferred_type>
         struct deferred_element {
-            /// @brief  The final slice_type is just the data value type of the array_nd.
+            /// @brief  The final slice_type is just the data value type of the static_array_nd.
             template <unsigned long long first_deferred_dimension>
             using slice_type = type;
 
@@ -117,32 +117,32 @@ namespace gtl {
 
     public:
         /// @brief  This is the type of the elements of the array at this dimension.
-        using slice_type = typename switch_zero_one_or_more_type<sizeof...(dimension_sizes), deferred_invalid<array_nd>, deferred_element<array_nd>, deferred_array<array_nd> >::type::template slice_type<dimension_sizes...>;
+        using slice_type = typename switch_zero_one_or_more_type<sizeof...(dimension_sizes), deferred_invalid<static_array_nd>, deferred_element<static_array_nd>, deferred_array<static_array_nd> >::type::template slice_type<dimension_sizes...>;
 
         /// @brief  This is the type of data stored at this dimension.
-        using array_type = typename switch_zero_one_or_more_type<sizeof...(dimension_sizes), deferred_invalid<array_nd>, deferred_element<array_nd>, deferred_array<array_nd> >::type::template array_type_validator<dimension_sizes...>::array_type;
+        using array_type = typename switch_zero_one_or_more_type<sizeof...(dimension_sizes), deferred_invalid<static_array_nd>, deferred_element<static_array_nd>, deferred_array<static_array_nd> >::type::template array_type_validator<dimension_sizes...>::array_type;
 
     public:
         /// @brief  The actual multi-dimensional array data.
         array_type data;
 
     public:
-        /// @brief  Get the number of dimensions of this array_nd.
-        /// @return The number of dimensions of this array_nd.
+        /// @brief  Get the number of dimensions of this static_array_nd.
+        /// @return The number of dimensions of this static_array_nd.
         constexpr static unsigned long long dimensions() {
             return sizeof...(dimension_sizes);
         }
 
-        /// @brief  Get the size of a specified dimension in this array_nd.
+        /// @brief  Get the size of a specified dimension in this static_array_nd.
         /// @param  dimension_index The index of the dimension we want the size of.
-        /// @return The size of dimension in this array_nd specified by index.
+        /// @return The size of dimension in this static_array_nd specified by index.
         constexpr static unsigned long long size(unsigned long long dimension_index = 0) {
             if constexpr (sizeof...(dimension_sizes) == 0) {
                 static_cast<void>(dimension_index);
                 return 0;
             }
             else {
-                GTL_ARRAY_ND_ASSERT(dimension_index < sizeof...(dimension_sizes), "Dimension index must be within number of dimensions of the array");
+                GTL_STATIC_ARRAY_ND_ASSERT(dimension_index < sizeof...(dimension_sizes), "Dimension index must be within number of dimensions of the array");
                 const unsigned long long dimension_sizes_array[sizeof...(dimension_sizes)] = { dimension_sizes... };
                 return dimension_sizes_array[dimension_index];
             }
@@ -153,7 +153,7 @@ namespace gtl {
         /// @param  index Used to specify the location to get within the current dimension size.
         /// @return A const reference to the slice_type of this level.
         constexpr const slice_type& operator[](unsigned long long index) const {
-            GTL_ARRAY_ND_ASSERT(index < this->size(), "Array index must be less than the maximum size of the dimension.");
+            GTL_STATIC_ARRAY_ND_ASSERT(index < this->size(), "Array index must be less than the maximum size of the dimension.");
             return this->data[index];
         }
 
@@ -161,7 +161,7 @@ namespace gtl {
         /// @param  index Used to specify the location to get within the current dimension size.
         /// @return A non-const reference to the slice_type of this level.
         constexpr slice_type& operator[](unsigned long long index) {
-            GTL_ARRAY_ND_ASSERT(index < this->size(), "Array index must be less than the maximum size of the dimension.");
+            GTL_STATIC_ARRAY_ND_ASSERT(index < this->size(), "Array index must be less than the maximum size of the dimension.");
             return this->data[index];
         }
 
@@ -197,19 +197,19 @@ namespace gtl {
         }
     };
 
-    /// @brief  array_1d is a helper type for creating a one dimensional array.
+    /// @brief  static_array_1d is a helper type for creating a one dimensional array.
     template <typename type, unsigned long long width>
-    using array_1d = array_nd<type, width>;
+    using static_array_1d = static_array_nd<type, width>;
 
-    /// @brief  array_2d is a helper type for creating a two dimensional array.
+    /// @brief  static_array_2d is a helper type for creating a two dimensional array.
     template <typename type, unsigned long long width, unsigned long long height>
-    using array_2d = array_nd<type, width, height>;
+    using static_array_2d = static_array_nd<type, width, height>;
 
-    /// @brief  array_3d is a helper type for creating a three dimensional array.
+    /// @brief  static_array_3d is a helper type for creating a three dimensional array.
     template <typename type, unsigned long long width, unsigned long long height, unsigned long long depth>
-    using array_3d = array_nd<type, width, height, depth>;
+    using static_array_3d = static_array_nd<type, width, height, depth>;
 }
 
-#undef GTL_ARRAY_ND_ASSERT
+#undef GTL_STATIC_ARRAY_ND_ASSERT
 
-#endif // GTL_ARRAY_ND_HPP
+#endif // GTL_STATIC_ARRAY_ND_HPP
