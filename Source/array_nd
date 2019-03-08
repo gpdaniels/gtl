@@ -1,0 +1,293 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_ARRAY_ND_HPP
+#define GTL_ARRAY_ND_HPP
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the array_nd is misused.
+#   define GTL_ARRAY_ND_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_ARRAY_ND_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+namespace gtl {
+    /// @brief  The array_nd class holds a constant size multi-dimensional array of a template type.
+    template <typename data_type, unsigned long long int... dimension_sizes>
+    class array_nd final {
+    public:
+        /// @brief  Make the data value type publically accessible.
+        using type = data_type;
+
+        /// @brief  The total number of dimensions.
+        constexpr static const unsigned long long int dimensions_total = sizeof...(dimension_sizes);
+
+        /// @brief  The number of dimensions that are static.
+        constexpr static const unsigned long long int dimensions_static = (0 + ... + (dimension_sizes != 0));
+
+        /// @brief  The number of dimensions that are dynamic.
+        constexpr static const unsigned long long int dimensions_dynamic = (0 + ... + (dimension_sizes == 0));
+
+    private:
+        /// @brief  Template to manage array memory.
+        template <typename array_data_type, unsigned long long int array_dimensions_static, unsigned long long int array_dimensions_dynamic>
+        struct array_type final {
+            unsigned long long int dimensions_sizes[array_dimensions_static + array_dimensions_dynamic] = { dimension_sizes... };
+            constexpr static const unsigned long long int dimensions_fixed[array_dimensions_static + array_dimensions_dynamic] = { (dimension_sizes != 0)... };
+            unsigned long long int size;
+            array_data_type* data;
+
+        private:
+            constexpr static void swap(array_type& lhs, array_type& rhs) {
+                for (unsigned long long int dimension = 0; dimension < (array_dimensions_static + array_dimensions_dynamic); ++dimension) {
+                    const unsigned long long int swap_dimension = lhs.dimensions_sizes[dimension];
+                    lhs.dimensions_sizes[dimension] = rhs.dimensions_sizes[dimension];
+                    rhs.dimensions_sizes[dimension] = swap_dimension;
+                }
+
+                const unsigned long long int swap_size = lhs.size;
+                lhs.size = rhs.size;
+                rhs.size = swap_size;
+
+                array_data_type* swap_data = lhs.data;
+                lhs.data = rhs.data;
+                rhs.data = swap_data;
+            }
+
+        public:
+            ~array_type() {
+                delete[] this->data;
+            }
+
+            constexpr array_type()
+                : size(0)
+                , data(nullptr) {
+            }
+
+            template <typename... array_dimensions_dynamic_size_types>
+            constexpr array_type(array_dimensions_dynamic_size_types... array_dimensions_dynamic_sizes)
+                : size(1) {
+                static_assert(array_nd::dimensions_dynamic == sizeof...(array_dimensions_dynamic_sizes), "Invalid number of dynamic array dimension sizes.");
+
+                const unsigned long long int dimensions_dynamic_sizes[] = { array_dimensions_dynamic_sizes... };
+
+                for (unsigned long long int dimension = 0, dimension_dynamic = 0; dimension < (array_dimensions_static + array_dimensions_dynamic); ++dimension) {
+                    if (!this->dimensions_fixed[dimension]) {
+                        this->dimensions_sizes[dimension] = dimensions_dynamic_sizes[dimension_dynamic++];
+                    }
+                    this->size *= this->dimensions_sizes[dimension];
+                }
+
+                GTL_ARRAY_ND_ASSERT(this->size > 0, "Invalid dynamic array dimension size, all sizes must be greater than zero.");
+
+                this->data = new array_data_type[this->size];
+            }
+
+            constexpr array_type(const array_type& other)
+                : size(other.size)
+                , data(((size) ? (new type[size]) : (nullptr))) {
+
+                const unsigned long long int* other_dimensions_sizes_begin = &other.dimensions_sizes[0];
+                unsigned long long int* this_dimensions_sizes_begin = &this->dimensions_sizes[0];
+                for (unsigned long long int dimension = 0; dimension < (array_dimensions_static + array_dimensions_dynamic); ++dimension) {
+                    *this_dimensions_sizes_begin++ = *other_dimensions_sizes_begin++;
+                }
+
+                const type* other_data_begin = &other.data[0];
+                type* this_data_begin = &this->data[0];
+                for (unsigned long long int index = 0; index < other.size; ++index) {
+                    *this_data_begin++ = *other_data_begin++;
+                }
+            }
+
+            constexpr array_type(array_type&& other)
+                : array_type() {
+                array_type::swap(*this, other);
+            }
+
+            // Intentionally not a const reference to allow optimisation.
+            constexpr array_type& operator=(array_type other) {
+                array_type::swap(*this, other);
+                return *this;
+            }
+
+            constexpr array_type& operator=(array_type&& other) {
+                array_type::swap(*this, other);
+                return *this;
+            }
+        };
+
+        /// @brief  Template overload for a static array.
+        template <typename array_data_type, unsigned long long int array_dimensions_total>
+        struct array_type<array_data_type, array_dimensions_total, 0> final {
+            constexpr static const unsigned long long int dimensions_sizes[array_dimensions_total] = { dimension_sizes... };
+            constexpr static const unsigned long long int dimensions_fixed[array_dimensions_total] = { (dimension_sizes != 0)... };
+            constexpr static const unsigned long long int size = (1 * ... * dimension_sizes);
+            array_data_type data[size];
+        };
+
+        /// @brief  Template overload for a dimensionless array.
+        template <typename array_data_type>
+        struct array_type<array_data_type, 0, 0> final {
+            constexpr static const unsigned long long int* dimensions_sizes = nullptr;
+            constexpr static const unsigned long long int* dimensions_fixed = nullptr;
+            constexpr static const unsigned long long int* dimensions_offsets = nullptr;
+            constexpr static const unsigned long long int size = 0;
+            array_data_type* data = nullptr;
+        };
+
+    private:
+        /// @brief  The actual multi-dimensional array data is in the array_type structure.
+        array_type<type, array_nd::dimensions_static, array_nd::dimensions_dynamic> array;
+
+    public:
+        /// @brief  Empty constructor to allow construction with no allocation.
+        constexpr array_nd()
+            : array() {
+        }
+
+        /// @brief  Allocating constructor when array is dynamic.
+        template <typename... dimensions_dynamic_size_types>
+        constexpr array_nd(dimensions_dynamic_size_types... dimensions_dynamic_sizes)
+            : array(dimensions_dynamic_sizes...) {
+            static_assert(array_nd::dimensions_dynamic == sizeof...(dimensions_dynamic_sizes), "Invalid number of dynamic array dimension sizes.");
+        }
+
+    public:
+        /// @brief  Get the number of dimensions.
+        /// @return The number of dimensions.
+        constexpr static unsigned long long int dimensions() {
+            return array_nd::dimensions_total;
+        }
+
+        /// @brief  Get the size of the data.
+        /// @return The size of the data in this array_nd.
+        constexpr unsigned long long int size() const {
+            return this->array.size;
+        }
+
+        /// @brief  Get the size of a specified dimension.
+        /// @param  dimension_index The index of the dimension.
+        /// @return The size of the dimension.
+        constexpr unsigned long long int size(unsigned long long int dimension_index) const {
+            GTL_ARRAY_ND_ASSERT(dimension_index < array_nd::dimensions_total, "Dimension index must be within number of dimensions of the array");
+            return this->array.dimensions_sizes[dimension_index];
+        }
+
+        /// @brief  Get the step size of a specified dimension.
+        /// @param  dimension_index The index of the dimension.
+        /// @return The step size of the dimension.
+        constexpr unsigned long long int step(unsigned long long int dimension_index) const {
+            GTL_ARRAY_ND_ASSERT(dimension_index < array_nd::dimensions_total, "Dimension index must be within number of dimensions of the array");
+            if constexpr (array_nd::dimensions_total > 0) {
+                unsigned long long int step_size = 1;
+                for (unsigned long long int dimension = 0; dimension < dimension_index; ++dimension) {
+                    step_size *= this->array.dimensions_sizes[dimension];
+                }
+                return step_size;
+            }
+            else {
+                return 0;
+            }
+        }
+
+        /// @brief  Get a const pointer to the internal data.
+        /// @param  dimension_indexes An optional parameter to specify the index to address.
+        /// @return A const pointer to the data.
+        template <typename... dimension_index_types>
+        constexpr const type* data(dimension_index_types... dimension_indexes) const {
+            if constexpr (sizeof...(dimension_indexes) == 0) {
+                return this->array.data;
+            }
+            else {
+                static_assert(array_nd::dimensions_total == sizeof...(dimension_indexes), "Invalid number of array dimension indexes.");
+                const unsigned long long int dimension_index_array[array_nd::dimensions_total] = { dimension_indexes... };
+                const type* pointer = this->array.data;
+                unsigned long long int step_size = 1;
+                for (unsigned long long int dimension = 0; dimension < array_nd::dimensions_total; ++dimension) {
+                    pointer += dimension_index_array[dimension] * step_size;
+                    step_size *= this->array.dimensions_sizes[dimension];
+                }
+                return pointer;
+            }
+        }
+
+        /// @brief  Get a pointer to the internal data.
+        /// @param  dimension_indexes An optional parameter to specify the index to address.
+        /// @return A pointer to the data.
+        template <typename... dimension_index_types>
+        constexpr type* data(dimension_index_types... dimension_indexes) {
+            if constexpr (sizeof...(dimension_indexes) == 0) {
+                return this->array.data;
+            }
+            else {
+                static_assert(array_nd::dimensions_total == sizeof...(dimension_indexes), "Invalid number of array dimension indexes.");
+                const unsigned long long int dimension_index_array[array_nd::dimensions_total] = { dimension_indexes... };
+                type* pointer = this->array.data;
+                unsigned long long int step_size = 1;
+                for (unsigned long long int dimension = 0; dimension < array_nd::dimensions_total; ++dimension) {
+                    pointer += dimension_index_array[dimension] * step_size;
+                    step_size *= this->array.dimensions_sizes[dimension];
+                }
+                return pointer;
+            }
+        }
+
+    public:
+        /// @brief  Get a const reference to the value at a specified location.
+        /// @param  dimension_indexes The location of the value to return.
+        /// @return A const reference to the value.
+        template <typename... dimension_index_types>
+        constexpr const type& operator()(dimension_index_types... dimension_indexes) const {
+            static_assert(array_nd::dimensions_total == sizeof...(dimension_indexes), "Invalid number of array dimension indexes.");
+            return *(this->data(dimension_indexes...));
+        }
+
+        /// @brief  Get a reference to the value at a specified location.
+        /// @param  dimension_indexes The location of the value to return.
+        /// @return A reference to the value.
+        template <typename... dimension_index_types>
+        constexpr type& operator()(dimension_index_types... dimension_indexes) {
+            static_assert(array_nd::dimensions_total == sizeof...(dimension_indexes), "Invalid number of array dimension indexes.");
+            return *(this->data(dimension_indexes...));
+        }
+    };
+
+    /// @brief  array_1d is a helper type for creating a one dimensional array.
+    template <typename type, unsigned long long int width>
+    using array_1d = array_nd<type, width>;
+
+    /// @brief  array_2d is a helper type for creating a two dimensional array.
+    template <typename type, unsigned long long int width, unsigned long long int height>
+    using array_2d = array_nd<type, width, height>;
+
+    /// @brief  array_3d is a helper type for creating a three dimensional array.
+    template <typename type, unsigned long long int width, unsigned long long int height, unsigned long long int depth>
+    using array_3d = array_nd<type, width, height, depth>;
+}
+
+#undef GTL_ARRAY_ND_ASSERT
+
+#endif // GTL_ARRAY_ND_HPP
