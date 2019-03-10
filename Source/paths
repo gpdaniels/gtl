@@ -128,6 +128,7 @@ namespace gtl {
                     return false;
                 }
                 executable_path.resize(executable_path_size + 1);
+                return true;
 
             #elif defined(__APPLE__)
 
