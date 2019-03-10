@@ -35,7 +35,7 @@ THE SOFTWARE
 #endif
 
 TEST(traits, standard) {
-    REQUIRE(sizeof(gtl::static_lambda<void(), 128>) == 152, "sizeof(gtl::static_lambda<void(), 128>) = %ld, expected == %lld", sizeof(gtl::static_lambda<void(), 128>), 152ull);
+    REQUIRE(sizeof(gtl::static_lambda<void(), 128>) == 128 + sizeof(void*) * 3, "sizeof(gtl::static_lambda<void(), 128>) = %ld, expected == %lld", sizeof(gtl::static_lambda<void(), 128>), 128ull + sizeof(void*) * 3ull);
 
     REQUIRE((std::is_pod<gtl::static_lambda<void(), 128>>::value == false));
 
