@@ -132,11 +132,6 @@ namespace gtl {
                 array_type::swap(*this, other);
                 return *this;
             }
-
-            constexpr array_type& operator=(array_type&& other) {
-                array_type::swap(*this, other);
-                return *this;
-            }
         };
 
         /// @brief  Template overload for a static array.
