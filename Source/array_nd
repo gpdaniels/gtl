@@ -37,6 +37,22 @@ namespace gtl {
     /// @brief  The array_nd class holds a constant size multi-dimensional array of a template type.
     template <typename data_type, unsigned long long int... dimension_sizes>
     class array_nd final {
+        #if defined(_MSC_VER)
+        private:
+            template<typename sum_type, unsigned long long int... dimension_sizes>
+            struct sum_zero_dimension_sizes;
+
+            template<typename sum_type, unsigned long long int first_dimension_size, unsigned long long int... dimension_sizes>
+            struct sum_zero_dimension_sizes<sum_type, first_dimension_size, dimension_sizes...> final {
+                constexpr static const sum_type value = (first_dimension_size == 0) + sum_zero_dimension_sizes<sum_type, dimension_sizes...>::value;
+            };
+
+            template<typename sum_type>
+            struct sum_zero_dimension_sizes<sum_type> final {
+                constexpr static const sum_type value = 0;
+            };
+        #endif
+   
     public:
         /// @brief  Make the data value type publically accessible.
         using type = data_type;
@@ -45,15 +61,24 @@ namespace gtl {
         constexpr static const unsigned long long int dimensions_total = sizeof...(dimension_sizes);
 
         /// @brief  The number of dimensions that are static.
-        constexpr static const unsigned long long int dimensions_static = (0 + ... + (dimension_sizes != 0));
+        #if defined(_MSC_VER)
+            constexpr static const unsigned long long int dimensions_static = dimensions_total - sum_zero_dimension_sizes<unsigned long long int, dimension_sizes...>::value;
+        #else
+            constexpr static const unsigned long long int dimensions_static = (0 + ... + (dimension_sizes != 0));
+        #endif
 
         /// @brief  The number of dimensions that are dynamic.
-        constexpr static const unsigned long long int dimensions_dynamic = (0 + ... + (dimension_sizes == 0));
+        #if defined(_MSC_VER)
+            constexpr static const unsigned long long int dimensions_dynamic = sum_zero_dimension_sizes<unsigned long long int, dimension_sizes...>::value;
+        #else
+            constexpr static const unsigned long long int dimensions_dynamic = (0 + ... + (dimension_sizes == 0));
+        #endif
 
     private:
         /// @brief  Template to manage array memory.
         template <typename array_data_type, unsigned long long int array_dimensions_static, unsigned long long int array_dimensions_dynamic>
         struct array_type final {
+        public:
             unsigned long long int dimensions_sizes[array_dimensions_static + array_dimensions_dynamic] = { dimension_sizes... };
             constexpr static const unsigned long long int dimensions_fixed[array_dimensions_static + array_dimensions_dynamic] = { (dimension_sizes != 0)... };
             unsigned long long int size;
@@ -137,15 +162,37 @@ namespace gtl {
         /// @brief  Template overload for a static array.
         template <typename array_data_type, unsigned long long int array_dimensions_total>
         struct array_type<array_data_type, array_dimensions_total, 0> final {
+            #if defined(_MSC_VER)
+            private:
+                template<typename sum_type, unsigned long long int... dimension_sizes>
+                struct product_dimension_sizes;
+
+                template<typename sum_type, unsigned long long int first_dimension_size, unsigned long long int... dimension_sizes>
+                struct product_dimension_sizes<sum_type, first_dimension_size, dimension_sizes...> final {
+                    constexpr static const sum_type value = first_dimension_size * product_dimension_sizes<sum_type, dimension_sizes...>::value;
+                };
+
+                template<typename sum_type>
+                struct product_dimension_sizes<sum_type> final {
+                    constexpr static const sum_type value = (sizeof...(dimension_sizes) > 0);
+                };
+            #endif
+
+        public:
             constexpr static const unsigned long long int dimensions_sizes[array_dimensions_total] = { dimension_sizes... };
             constexpr static const unsigned long long int dimensions_fixed[array_dimensions_total] = { (dimension_sizes != 0)... };
-            constexpr static const unsigned long long int size = (1 * ... * dimension_sizes);
+            #if defined(_MSC_VER)
+                constexpr static const unsigned long long int size = product_dimension_sizes<unsigned long long int, dimension_sizes...>::value;
+            #else
+                constexpr static const unsigned long long int size = ((sizeof...(dimension_sizes) > 0) * ... * dimension_sizes);
+            #endif
             array_data_type data[size];
         };
 
         /// @brief  Template overload for a dimensionless array.
         template <typename array_data_type>
         struct array_type<array_data_type, 0, 0> final {
+        public:
             constexpr static const unsigned long long int* dimensions_sizes = nullptr;
             constexpr static const unsigned long long int* dimensions_fixed = nullptr;
             constexpr static const unsigned long long int* dimensions_offsets = nullptr;
