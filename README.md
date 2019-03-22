@@ -28,7 +28,7 @@ The current classes are as described below:
 |             **cpu** | A class to extract cpuid information to determine supported instructions at runtime.    |
 |           **paths** | A collection of cross platform functions to provide useful paths.                       |
 |           **pimpl** | A statically sized pointer to implementation wrapper.                                   |
-| **simulation_loop** | Fixed time step helper class for creating game loops.                                   | 
+| **simulation_loop** | Fixed time step helper class for creating game loops.                                   |
 
 ### Multi-Threading ###
 
@@ -37,18 +37,19 @@ The current classes are as described below:
 |         **barrier** | Thread syncronisation barrier.                                                          |
 |       **coroutine** | Setjump/longjump implementation of stackful coroutines.                                 |
 |           **event** | A thread safe multi-in/multi-out event/messaging system.                                |
-|       **semaphore** | Semaphore made using a mutex and condition variable.                                    | 
-|       **spin_lock** | Spin lock implemented using an atomic flag.                                             | 
-|   **triple_buffer** | A lockless triple buffer interface to three buffers.                                    | 
+|       **semaphore** | Semaphore made using a mutex and condition variable.                                    |
+|       **spin_lock** | Spin lock implemented using an atomic flag.                                             |
+|   **triple_buffer** | A lockless triple buffer interface to three buffers.                                    |
+|     **thread_pool** | A multi-queue thread-pool that performs jobs in priority order.                         |
 
 ### Pseudorandom Number Generators ###
 
 |               Class | Description                                                                             |
 |--------------------:|:----------------------------------------------------------------------------------------|
-|       **random_mt** | Mersenne twister pseudo-random number generator.                                        | 
-|      **random_pcg** | PCG pseudo-random number generator.                                                     | 
-| **random_splitmix** | Splitmix pseudo-random number generator.                                                | 
-| **random_xorshift** | Xorshift pseudo-random number generator.                                                | 
+|       **random_mt** | Mersenne twister pseudo-random number generator.                                        |
+|      **random_pcg** | PCG pseudo-random number generator.                                                     |
+| **random_splitmix** | Splitmix pseudo-random number generator.                                                |
+| **random_xorshift** | Xorshift pseudo-random number generator.                                                |
 
 ### Type Information ###
 
