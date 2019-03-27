@@ -139,10 +139,17 @@ TEST(parameter, name) {
         return *LHS == *RHS;
     };
 
+#if defined(__clang__)
+    REQUIRE(strcmp(error1.name, "error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "error_code1");
+    REQUIRE(strcmp(error2.name, "error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "error_code1");
+    REQUIRE(strcmp(error3.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "error_code2");
+    REQUIRE(strcmp(error4.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "error_code2");
+#else
     REQUIRE(strcmp(error1.name, "TEST_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "TEST_parameter_name()::error_code1");
-    REQUIRE(strcmp(error2.name, "TEST_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "TEST_parameter_name()::error_code2");
-    REQUIRE(strcmp(error3.name, "TEST_parameter_name()::error_code3") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "TEST_parameter_name()::error_code3");
-    REQUIRE(strcmp(error4.name, "TEST_parameter_name()::error_code4") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "TEST_parameter_name()::error_code4");
+    REQUIRE(strcmp(error2.name, "TEST_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "TEST_parameter_name()::error_code1");
+    REQUIRE(strcmp(error3.name, "TEST_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "TEST_parameter_name()::error_code2");
+    REQUIRE(strcmp(error4.name, "TEST_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "TEST_parameter_name()::error_code2");
+#endif
 }
 
 TEST(evaluate, call_stack) {
