@@ -66,13 +66,75 @@ TEST(function, name) {
         };
 
         gtl::enum_name<test_enum, test_enum::first> enum_name1;
-        REQUIRE(strcmp(enum_name1.name(), "first") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name(), "first");
+        REQUIRE(strcmp(enum_name1.name(), "test_enum::first") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name(), "test_enum::first");
 
         gtl::enum_name<test_enum, test_enum::second> enum_name2;
-        REQUIRE(strcmp(enum_name2.name(), "second") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name2.name(), "second");
+        REQUIRE(strcmp(enum_name2.name(), "test_enum::second") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name(), "test_enum::second");
 
         gtl::enum_name<test_enum, test_enum::third> enum_name3;
-        REQUIRE(strcmp(enum_name3.name(), "third") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name3.name(), "third");
+        REQUIRE(strcmp(enum_name3.name(), "test_enum::third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name(), "test_enum::third");
+    #elif defined(__GNUC__)
+        auto strcmp = [](const char* LHS, const char* RHS) -> bool {
+            while (*LHS && (*LHS++==*RHS++));
+            return *LHS == *RHS;
+        };
+
+        gtl::enum_name<test_enum, test_enum::first> enum_name1;
+        REQUIRE(strcmp(enum_name1.name(), "(test_enum)0") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name(), "(test_enum)0");
+
+        gtl::enum_name<test_enum, test_enum::second> enum_name2;
+        REQUIRE(strcmp(enum_name2.name(), "(test_enum)123456") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name(), "(test_enum)123456");
+
+        gtl::enum_name<test_enum, test_enum::third> enum_name3;
+        REQUIRE(strcmp(enum_name3.name(), "(test_enum)123457") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name(), "(test_enum)123457");
+    #endif
+}
+
+TEST(function, name_type) {
+    auto strcmp = [](const char* LHS, const char* RHS) -> bool {
+        while (*LHS && (*LHS++==*RHS++));
+        return *LHS == *RHS;
+    };
+
+    gtl::enum_name<test_enum, test_enum::first> enum_name1;
+    REQUIRE(strcmp(enum_name1.name_type(), "test_enum") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name_type(), "test_enum");
+
+    gtl::enum_name<test_enum, test_enum::second> enum_name2;
+    REQUIRE(strcmp(enum_name2.name_type(), "test_enum") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name_type(), "test_enum");
+
+    gtl::enum_name<test_enum, test_enum::third> enum_name3;
+    REQUIRE(strcmp(enum_name3.name_type(), "test_enum") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_type(), "test_enum");
+}
+
+TEST(function, name_value) {
+    #if defined(__clang__) || defined(_MSC_VER)
+        auto strcmp = [](const char* LHS, const char* RHS) -> bool {
+            while (*LHS && (*LHS++==*RHS++));
+            return *LHS == *RHS;
+        };
+
+        gtl::enum_name<test_enum, test_enum::first> enum_name1;
+        REQUIRE(strcmp(enum_name1.name_value(), "first") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name_value(), "first");
+
+        gtl::enum_name<test_enum, test_enum::second> enum_name2;
+        REQUIRE(strcmp(enum_name2.name_value(), "second") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name_value(), "second");
+
+        gtl::enum_name<test_enum, test_enum::third> enum_name3;
+        REQUIRE(strcmp(enum_name3.name_value(), "third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_value(), "third");
+    #elif defined(__GNUC__)
+        auto strcmp = [](const char* LHS, const char* RHS) -> bool {
+            while (*LHS && (*LHS++==*RHS++));
+            return *LHS == *RHS;
+        };
+
+        gtl::enum_name<test_enum, test_enum::first> enum_name1;
+        REQUIRE(strcmp(enum_name1.name_value(), "0") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name_value(), "0");
+
+        gtl::enum_name<test_enum, test_enum::second> enum_name2;
+        REQUIRE(strcmp(enum_name2.name_value(), "123456") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name_value(), "123456");
+
+        gtl::enum_name<test_enum, test_enum::third> enum_name3;
+        REQUIRE(strcmp(enum_name3.name_value(), "123457") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_value(), "123457");
     #endif
 }
 
