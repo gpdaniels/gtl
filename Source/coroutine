@@ -191,11 +191,11 @@ namespace gtl {
             /// @brief  A lambda function to copy the function.
             void* (*copier)(void*);
 
-            /// @brief  A lambda function to delete the function.
-            void (*deleter)(void*);
-
             /// @brief  A lambda function to execute the function.
             void (*executor)(void*);
+
+            /// @brief  A lambda function to delete the function.
+            void (*deleter)(void*);
 
         public:
             /// @brief  The destructor calls the deleter function if it exists to cleanup the lambda function.
@@ -209,8 +209,8 @@ namespace gtl {
             lambda()
                 : function(nullptr)
                 , copier(nullptr)
-                , deleter(nullptr)
-                , executor(nullptr) {
+                , executor(nullptr)
+                , deleter(nullptr) {
             }
 
             /// @brief  The copy constructor copies variables from another object, if there is a copier function it is used to copy the function.
@@ -218,8 +218,8 @@ namespace gtl {
             lambda(const lambda& other)
                 : function(other.copier ? other.copier(other.function) : nullptr)
                 , copier(other.copier)
-                , deleter(other.deleter)
-                , executor(other.executor) {
+                , executor(other.executor)
+                , deleter(other.deleter) {
             }
 
             /// @brief  Defaulted move constructor.
@@ -230,9 +230,9 @@ namespace gtl {
             lambda& operator=(const lambda& other) {
                 if (this != &other) {
                     this->function = other.copier ? other.copier(other.function) : nullptr;
+                    this->copier = other.copier;
                     this->executor = other.executor;
                     this->deleter = other.deleter;
-                    this->copier = other.copier;
                 }
                 return *this;
             }
@@ -251,11 +251,11 @@ namespace gtl {
                     }
                     return nullptr;
                 })
-                , deleter([](void* function_pointer) -> void {
-                    delete reinterpret_cast<function_type*>(function_pointer);
-                })
                 , executor([](void* function_pointer) -> void {
                     return reinterpret_cast<function_type*>(function_pointer)->operator()();
+                })
+                , deleter([](void* function_pointer) -> void {
+                    delete reinterpret_cast<function_type*>(function_pointer);
                 }) {
             }
 
@@ -273,11 +273,11 @@ namespace gtl {
                     }
                     return nullptr;
                 };
-                this->deleter = [](void* function_pointer) -> void {
-                    delete reinterpret_cast<function_type*>(function_pointer);
-                };
                 this->executor = [](void* function_pointer) -> void {
                     return reinterpret_cast<function_type*>(function_pointer)->operator()();
+                };
+                this->deleter = [](void* function_pointer) -> void {
+                    delete reinterpret_cast<function_type*>(function_pointer);
                 };
                 return *this;
             }
