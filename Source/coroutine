@@ -102,7 +102,7 @@ namespace gtl {
     // R.Engleschall's Portable Multithreading: "The Signal Stack Trick for User-Space Thread Creation" in Proceedings of the USENIX Annual Technical Conference, 2000
 
     /// @brief  The coroutine class creates and stores a stack and an execution context to enable non-pre-emptive threading of functions.
-    class coroutine {
+    class coroutine final {
     public:
 #       if !defined(_WIN32)
             /// @brief  The alignement of the stack memory.
@@ -133,7 +133,7 @@ namespace gtl {
 
     public:
         /// @brief  An identifier type used to uniquely identify coroutines.
-        class id {
+        class id final {
         private:
             /// @brief  The identifier value.
             unsigned long long int value;
@@ -183,7 +183,7 @@ namespace gtl {
         };
 
         /// @brief  Simple lambda class for containing a void() lambda.
-        class lambda {
+        class lambda final {
         private:
             /// @brief  A pointer to a heap allocated copy of the function.
             void* function;

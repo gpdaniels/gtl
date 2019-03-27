@@ -42,7 +42,7 @@ THE SOFTWARE
 
 namespace gtl {
     /// @brief  The cpu class extracts information about the current cpu.
-    class cpu {
+    class cpu final {
     public:
         constexpr static const std::uint32_t leaf_vendor_id                 = 0x00000000u;
         constexpr static const std::uint32_t leaf_feature_bits              = 0x00000001u;

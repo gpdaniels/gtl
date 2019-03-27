@@ -49,7 +49,7 @@ namespace gtl {
 
     private:
         /// @brief  Structure that holds a read and write index.
-        struct index_type {
+        struct index_type final {
             unsigned int read;
             unsigned int write;
         };

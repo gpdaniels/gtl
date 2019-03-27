@@ -61,7 +61,7 @@ namespace gtl {
 
         private:
             /// @brief  A comparison structure to enable standard containers to order queue objects by priority.
-            struct comparison {
+            struct comparison final {
                 bool operator()(const queue* lhs, const queue* rhs){
                     return lhs->priority < rhs->priority;
                 }

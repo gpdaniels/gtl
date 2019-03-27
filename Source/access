@@ -36,7 +36,7 @@ namespace gtl {
 namespace access {
     /// @brief  The connection template which when explicitly specialised routes a private member pointer to the return of a public friend function.
     template <typename member_type, member_type member, typename connection_id>
-    class connection {
+    class connection final {
         friend member_type get_member(connection_id) {
             return member;
         }
@@ -48,49 +48,49 @@ namespace access {
 
     /// @brief  Specialisation of the target template for member variables.
     template <typename class_type, typename return_type>
-    struct target<class_type, return_type> {
+    struct target<class_type, return_type> final {
         using member_type = return_type class_type::*;
         using connection_type = return_type&;
     };
 
     /// @brief  Specialisation of the target template for static member variables.
     template <typename return_type>
-    struct target<void, return_type> {
+    struct target<void, return_type> final {
         using member_type = return_type*;
         using connection_type = return_type&;
     };
 
     /// @brief  Specialisation of the target template for member functions.
     template <typename class_type, typename return_type, typename... arguments>
-    struct target<class_type, return_type(arguments...)> {
+    struct target<class_type, return_type(arguments...)> final {
         using member_type = return_type(class_type::*)(arguments...);
         using connection_type = std::function<return_type(arguments...)>;
     };
 
     /// @brief  Specialisation of the target template for const member functions.
     template <typename class_type, typename return_type, typename... arguments>
-    struct target<class_type, return_type(arguments...) const> {
+    struct target<class_type, return_type(arguments...) const> final {
         using member_type = return_type(class_type::*)(arguments...) const;
         using connection_type = std::function<return_type(arguments...)>;
     };
 
     /// @brief  Specialisation of the target template for volatile member functions.
     template <typename class_type, typename return_type, typename... arguments>
-    struct target<class_type, return_type(arguments...) volatile> {
+    struct target<class_type, return_type(arguments...) volatile> final {
         using member_type = return_type(class_type::*)(arguments...) volatile;
         using connection_type = std::function<return_type(arguments...)>;
     };
 
     /// @brief  Specialisation of the target template for volatile const member functions.
     template <typename class_type, typename return_type, typename... arguments>
-    struct target<class_type, return_type(arguments...) volatile const> {
+    struct target<class_type, return_type(arguments...) volatile const> final {
         using member_type = return_type(class_type::*)(arguments...) volatile const;
         using connection_type = std::function<return_type(arguments...)>;
     };
 
     /// @brief  Specialisation of the target template for static member functions.
     template <typename return_type, typename... arguments>
-    struct target<void, return_type(arguments...)> {
+    struct target<void, return_type(arguments...)> final {
         using member_type = return_type(*)(arguments...);
         using connection_type = std::function<return_type(arguments...)>;
     };
@@ -162,19 +162,19 @@ namespace access {
 
     // Connecting automatic member variables.
     #define GTL_ACCESS_CONNECT_GTL_ACCESS_TYPE_auto(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
-        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}; \
+        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) final {}; \
         target<CLASS_NAME, MEMBER_TYPE>::member_type get_member(GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)); \
         template class connection<target<CLASS_NAME, MEMBER_TYPE>::member_type, &CLASS_NAME::MEMBER_NAME, GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)>;
 
     // Connecting static member variables.
     #define GTL_ACCESS_CONNECT_GTL_ACCESS_TYPE_static(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
-        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}; \
+        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) final {}; \
         target<void, MEMBER_TYPE>::member_type get_member(GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)); \
         template class connection<target<void, MEMBER_TYPE>::member_type, &CLASS_NAME::MEMBER_NAME, GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)>;
 
     // Connecting mutable member variables.
     #define GTL_ACCESS_CONNECT_GTL_ACCESS_TYPE_mutable(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
-        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}; \
+        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) final {}; \
         target<CLASS_NAME, MEMBER_TYPE>::member_type get_member(GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)); \
         template class connection<target<CLASS_NAME, MEMBER_TYPE>::member_type, &CLASS_NAME::MEMBER_NAME, GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)>;
 
@@ -185,19 +185,19 @@ namespace access {
 
     // Connecting automatic member functions.
     #define GTL_ACCESS_CONNECT_GTL_ACCESS_FUNCTION_auto(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
-        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}; \
+        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) final {}; \
         target<CLASS_NAME, MEMBER_TYPE>::member_type get_member(GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)); \
         template class connection<target<CLASS_NAME, MEMBER_TYPE>::member_type, &CLASS_NAME::MEMBER_NAME, GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)>;
 
     // Connecting static member functions.
     #define GTL_ACCESS_CONNECT_GTL_ACCESS_FUNCTION_static(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
-        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}; \
+        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) final {}; \
         target<void, MEMBER_TYPE>::member_type get_member(GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)); \
         template class connection<target<void, MEMBER_TYPE>::member_type, &CLASS_NAME::MEMBER_NAME, GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)>;
 
     // Connecting mutable member functions.
     #define GTL_ACCESS_CONNECT_GTL_ACCESS_FUNCTION_mutable(CLASS_NAME, MEMBER_TYPE, MEMBER_NAME) \
-        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) {}; \
+        struct GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME) final {}; \
         target<CLASS_NAME, MEMBER_TYPE>::member_type get_member(GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)); \
         template class connection<target<CLASS_NAME, MEMBER_TYPE>::member_type, &CLASS_NAME::MEMBER_NAME, GTL_ACCESS_CONNECTION_ID(CLASS_NAME, MEMBER_NAME)>;
 
@@ -285,7 +285,7 @@ namespace access {
         namespace access {                                                                                \
             GTL_ACCESS_FOR_EACH(GTL_ACCESS_CONNECT, GTL_ACCESS_NOTHING, CLASS_NAME, __VA_ARGS__)          \
         }}                                                                                                \
-        class ACCESS_CLASS_NAME {                                                                         \
+        class ACCESS_CLASS_NAME final {                                                                   \
         public:                                                                                           \
             GTL_ACCESS_FOR_EACH(GTL_ACCESS_GENERATE, GTL_ACCESS_NOTHING, CLASS_NAME, __VA_ARGS__)         \
         public:                                                                                           \

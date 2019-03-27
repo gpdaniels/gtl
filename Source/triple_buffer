@@ -35,14 +35,14 @@ THE SOFTWARE
 namespace gtl {
     /// @brief  The triple_buffer class implements a thread-safe single-producer single-consumer triple-buffer.
     template<typename buffer_type>
-    class triple_buffer {
+    class triple_buffer final {
     public:
         /// @brief  Make the buffer type publically accessible.
         using type = buffer_type;
 
     private:
         /// @brief  Structure that holds the index of the read, swap and write buffers, and a flag that is set on write.
-        struct index_type {
+        struct index_type final {
             unsigned char read : 2;
             unsigned char swap : 2;
             unsigned char write : 2;

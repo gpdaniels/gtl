@@ -36,7 +36,7 @@ namespace gtl {
     /// @brief  A simulation loop template that operates at a given tick rate.
     /// @tparam tick_rate The simulation loop uses a fixed tick rate per second.
     template <unsigned long long int tick_rate = 100>
-    class simulation_loop {
+    class simulation_loop final {
     private:
         static_assert(tick_rate > 0, "The simuation loop must tick at least once per second.");
 

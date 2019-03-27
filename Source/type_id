@@ -28,7 +28,7 @@ namespace gtl {
     private:
         /// @brief  To generate the unique types an lambda function is created in a template struct, when the struct is used the template parameter makes the address of the lambda unique.
         template <typename type>
-        struct identifier_generator {
+        struct identifier_generator final {
             /// @brief  The actual bit of unique type information.
             constexpr static const auto identifier = [](){};
         };

@@ -44,74 +44,74 @@ namespace gtl {
     private:
         /// @brief  Type selection template that takes an unsigned index and returns one of three types for indexes of zero, one, and greater-than-one repectively.
         template <unsigned long long index_parameter, typename zero_type, typename one_type, typename more_type>
-        struct switch_zero_one_or_more_type {
+        struct switch_zero_one_or_more_type final {
             using type = more_type;
         };
 
         /// @brief  Type selection specialisation for an index of 1.
         template <typename zero_type, typename one_type, typename more_type>
-        struct switch_zero_one_or_more_type<1, zero_type, one_type, more_type> {
+        struct switch_zero_one_or_more_type<1, zero_type, one_type, more_type> final {
             using type = one_type;
         };
 
         /// @brief  Type selection specialisation for an index of 0.
         template <typename zero_type, typename one_type, typename more_type>
-        struct switch_zero_one_or_more_type<0, zero_type, one_type, more_type> {
+        struct switch_zero_one_or_more_type<0, zero_type, one_type, more_type> final {
             using type = zero_type;
         };
 
     private:
         /// @brief  Wrapper type for slice_type and array_type deferred generation of arrays of arrays, this avoids invalid type errors when using zero_one_or_more_switch.
         template <template <typename, unsigned long long...> typename deferred_type>
-        struct deferred_array {
+        struct deferred_array final {
             /// @brief  The slice_type is the array_type of the next dimension of the static_array_nd.
             template <unsigned long long first_deferred_dimension, unsigned long long... deferred_dimensions>
             using slice_type = static_array_nd<type, deferred_dimensions...>;
 
             /// @brief  The array_type is an array of slice_type the size of the dimension.
             template <unsigned long long first_deferred_dimension, unsigned long long... deferred_dimensions>
-            struct array_type_validator {
+            struct array_type_validator final {
                  using array_type = static_array_nd<type, deferred_dimensions...>[first_deferred_dimension];
             };
 
             /// @brief  When the size of the dimension is zero the array_type is not valid.
             template <unsigned long long... deferred_dimensions>
-            struct array_type_validator<0, deferred_dimensions...> {
-                struct array_type { };
+            struct array_type_validator<0, deferred_dimensions...> final {
+                struct array_type final { };
             };
         };
 
         /// @brief  Wrapper type for slice_type and array_type deferred generation of arrays, this avoids invalid type errors when using zero_one_or_more_switch.
         template <template <typename, unsigned long long...> typename deferred_type>
-        struct deferred_element {
+        struct deferred_element final {
             /// @brief  The final slice_type is just the data value type of the static_array_nd.
             template <unsigned long long first_deferred_dimension>
             using slice_type = type;
 
             /// @brief  The final array_type is an array of slice_type the size of the dimension.
             template <unsigned long long first_deferred_dimension, unsigned long long... deferred_dimensions>
-            struct array_type_validator {
+            struct array_type_validator final {
                  using array_type = type[first_deferred_dimension];
             };
 
             /// @brief  When the size of the dimension is zero the array_type is not valid.
             template <unsigned long long... deferred_dimensions>
-            struct array_type_validator<0, deferred_dimensions...> {
+            struct array_type_validator<0, deferred_dimensions...> final {
                 struct array_type { };
             };
         };
 
         /// @brief  Wrapper type for slice_type and array_type deferred generation of invalid types, this avoids invalid type errors when using zero_one_or_more_switch.
         template <template <typename, unsigned long long...> typename deferred_type>
-        struct deferred_invalid {
+        struct deferred_invalid final {
             /// @brief  When the number of dimension_sizes is zero the slice_type is not valid.
             template <unsigned long long... deferred_dimensions>
-            struct slice_type { };
+            struct slice_type final { };
 
             /// @brief  When the number of dimension_sizes is zero the array_type is not valid.
             template <unsigned long long... deferred_dimensions>
-            struct array_type_validator {
-                struct array_type { };
+            struct array_type_validator final {
+                struct array_type final { };
             };
         };
 

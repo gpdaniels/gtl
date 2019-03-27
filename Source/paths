@@ -81,7 +81,7 @@ THE SOFTWARE
 #endif
 
 namespace gtl {
-    class paths {
+    class paths final {
     private:
         /// @brief  Deleted destructor.
         ~paths() = delete;
