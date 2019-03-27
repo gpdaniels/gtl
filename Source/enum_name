@@ -45,19 +45,19 @@ namespace gtl {
 
         /// @brief  Template struct to create an integer_sequence from zero to the given length.
         template <typename integer_type, unsigned long long length>
-        struct make_integer_sequence
+        struct make_integer_sequence final
             : merge_sequences<integer_type, typename make_integer_sequence<integer_type, length / 2>::sequence_type, typename make_integer_sequence<integer_type, length - length / 2>::sequence_type> {
         };
 
         /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length zero.
         template<typename integer_type>
-        struct make_integer_sequence<integer_type, 0>
+        struct make_integer_sequence<integer_type, 0> final
             : integer_sequence<integer_type> {
         };
 
         /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length one.
         template<typename integer_type>
-        struct make_integer_sequence<integer_type, 1>
+        struct make_integer_sequence<integer_type, 1> final
              : integer_sequence<integer_type, 0> {
         };
 
