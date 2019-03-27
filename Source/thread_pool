@@ -94,11 +94,11 @@ namespace gtl {
             }
 
             /// @brief  Constructor that sets the reference to the thread_pool and initialises internal variables.
-            /// @param  pool The thread_pool that will process the tasks in this queue.
-            /// @param  priority The priority of the tasks in this queue, lower value is higher priority.
-            queue(thread_pool& pool, int priority = 0)
-                : pool(pool)
-                , priority(priority)
+            /// @param  target_pool The thread_pool that will process the tasks in this queue.
+            /// @param  queue_priority The priority of the tasks in this queue, lower value is higher priority.
+            queue(thread_pool& target_pool, int queue_priority = 0)
+                : pool(target_pool)
+                , priority(queue_priority)
                 , inserted(0)
                 , completed(0) {
             }
@@ -175,7 +175,7 @@ namespace gtl {
         /// @brief  The core loop that is run on each thread_pool thread.
         void thread_loop() {
 
-            queue* queue;
+            queue* queue = nullptr;
             std::function<void()> task;
 
             for (;;) {
@@ -187,7 +187,7 @@ namespace gtl {
                         // Select the highest priority queue.
                         queue = *this->queues.begin();
                         {
-                            std::lock_guard<std::mutex> lock(queue->tasks_mutex);
+                            std::lock_guard<std::mutex> lock2(queue->tasks_mutex);
 
                             // Try and get a task.
                             if (!queue->tasks.empty()) {
@@ -239,7 +239,7 @@ namespace gtl {
                 {
                     std::lock_guard<std::mutex> lock(this->queue_mutex);
                     {
-                        std::lock_guard<std::mutex> lock(queue.tasks_mutex);
+                        std::lock_guard<std::mutex> lock2(queue.tasks_mutex);
                         if (!queue.tasks.empty()) {
                             task = std::move(queue.tasks.front());
                             queue.tasks.pop();
