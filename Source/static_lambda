@@ -42,7 +42,7 @@ namespace gtl {
 
     /// @brief  An optionally capturing lambda that is stored on the stack.
     /// @tparam return_type The return type of the lambda to store.
-    /// @tparam argument_types... The argument types of the lambda to store.
+    /// @tparam argument_types The argument types of the lambda to store.
     /// @tparam size The reserved stack buffer size.
     template <typename return_type, typename... argument_types, unsigned long long int size>
     class static_lambda<return_type(argument_types...), size> final {
@@ -98,7 +98,7 @@ namespace gtl {
         /// @brief  Swap function to simplify constructors by following the copy-and-swap idiom.
         /// @param  lhs The left hand side static_lambda to swap.
         /// @param  rhs The right hand side static_lambda to swap.
-        void swap(static_lambda& lhs, static_lambda& rhs) {
+        static void swap(static_lambda& lhs, static_lambda& rhs) {
             for (unsigned long long int index = 0; index < size; ++index) {
                 unsigned char byte = lhs.function[index];
                 lhs.function[index] = rhs.function[index];
@@ -262,7 +262,7 @@ namespace gtl {
 
     public:
         /// @brief  The function call operator is overloaded to call the internal lambda function.
-        /// @param  arguments... Any required internal lambda function arguments.
+        /// @param  arguments Any required internal lambda function arguments.
         constexpr return_type operator()(argument_types... arguments) const {
             GTL_STATIC_LAMBDA_ASSERT(this->operator bool() == true, "Executing a null lambda.");
             return this->executor(this->function, arguments...);

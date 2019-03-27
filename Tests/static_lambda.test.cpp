@@ -199,10 +199,10 @@ TEST(operator, executing_with_arguments)
 {
     {
         bool flag = false;
-        gtl::static_lambda<void(bool&), 128> static_lambda([](bool& flag){
-            REQUIRE(!flag);
-            flag = true;
-            REQUIRE(flag);
+        gtl::static_lambda<void(bool&), 128> static_lambda([](bool& flag_argument){
+            REQUIRE(!flag_argument);
+            flag_argument = true;
+            REQUIRE(flag_argument);
         });
         static_lambda(flag);
         REQUIRE(flag);
@@ -221,10 +221,10 @@ TEST(operator, executing_with_arguments)
     {
         int variable = 123;
         bool flag = false;
-        gtl::static_lambda<void(bool&), 128> static_lambda([=](bool& flag){
-            REQUIRE(!flag);
-            flag = true;
-            REQUIRE(flag);
+        gtl::static_lambda<void(bool&), 128> static_lambda([=](bool& flag_argument){
+            REQUIRE(!flag_argument);
+            flag_argument = true;
+            REQUIRE(flag_argument);
             REQUIRE(variable == 123);
         });
         static_lambda(flag);
@@ -235,10 +235,10 @@ TEST(operator, executing_with_arguments)
     {
         int variable = 123;
         bool flag = false;
-        gtl::static_lambda<void(bool&), 128> static_lambda([&](bool& flag){
-            REQUIRE(!flag);
-            flag = true;
-            REQUIRE(flag);
+        gtl::static_lambda<void(bool&), 128> static_lambda([&](bool& flag_argument){
+            REQUIRE(!flag_argument);
+            flag_argument = true;
+            REQUIRE(flag_argument);
             REQUIRE(variable == 123);
             variable = 321;
             REQUIRE(variable == 321);
@@ -253,10 +253,10 @@ TEST(operator, executing_with_arguments)
         unsigned char variable2 = 234;
         float variable3 = 345.678f;
         bool flag = false;
-        gtl::static_lambda<void(bool&), 128> static_lambda([variable1, variable2, variable3](bool& flag){
-            REQUIRE(!flag);
-            flag = true;
-            REQUIRE(flag);
+        gtl::static_lambda<void(bool&), 128> static_lambda([variable1, variable2, variable3](bool& flag_argument){
+            REQUIRE(!flag_argument);
+            flag_argument = true;
+            REQUIRE(flag_argument);
             REQUIRE(variable1 == 123);
             REQUIRE(variable2 == 234);
             REQUIRE(variable3 > 345.677f);
@@ -273,10 +273,10 @@ TEST(operator, executing_with_arguments)
         int variable1 = 123;
         int variable2 = 234;
         bool flag = false;
-        gtl::static_lambda<void(bool&), 128> static_lambda([variable1, &variable2](bool& flag){
-            REQUIRE(!flag);
-            flag = true;
-            REQUIRE(flag);
+        gtl::static_lambda<void(bool&), 128> static_lambda([variable1, &variable2](bool& flag_argument){
+            REQUIRE(!flag_argument);
+            flag_argument = true;
+            REQUIRE(flag_argument);
             REQUIRE(variable1 == 123);
             REQUIRE(variable2 == 567);
             PRINT("Print inside static_lambda with two variables %d and %d.\n", variable1, variable2);

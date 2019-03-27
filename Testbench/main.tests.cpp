@@ -31,5 +31,5 @@ int main(int argument_count, char* arguments[]) {
     PRINT("Starting test...\n");
     TEST_CALL(SUB_TEST_GROUP, SUB_TEST_NAME);
     PRINT("Finished test. '%lld' assertions, detected '%lld' errors.\n", REQUIRE_COUNT, REQUIRE_FAILURE_COUNT);
-    return static_cast<int>(REQUIRE_FAILURE_COUNT);
+    return (REQUIRE_FAILURE_COUNT != 0);
 }
