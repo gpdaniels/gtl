@@ -36,14 +36,9 @@ THE SOFTWARE
 
 TEST(traits, standard) {
 
-#if defined(__APPLE__)
-    REQUIRE(sizeof(gtl::thread_pool) == 168, "sizeof(gtl::thread_pool) = %ld, expected == %lld", sizeof(gtl::thread_pool), 168ull);
-#elif defined(__clang__)
-    REQUIRE(sizeof(gtl::thread_pool) == 144, "sizeof(gtl::thread_pool) = %ld, expected == %lld", sizeof(gtl::thread_pool), 144ull);
-#elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
-    REQUIRE(sizeof(gtl::thread_pool) == 168, "sizeof(gtl::thread_pool) = %ld, expected == %lld", sizeof(gtl::thread_pool), 168ull);
-#elif defined(_MSC_VER)
-    REQUIRE(sizeof(gtl::thread_pool) == 112, "sizeof(gtl::thread_pool) = %ld, expected == %lld", sizeof(gtl::thread_pool), 112ull);
+#if 0
+    // 176, 168, 152, 144, or 112...
+    REQUIRE(sizeof(gtl::thread_pool) == 176, "sizeof(gtl::thread_pool) = %ld, expected == %lld", sizeof(gtl::thread_pool), 176ull);
 #endif
 
     REQUIRE((std::is_pod<gtl::thread_pool>::value == false));
@@ -52,13 +47,8 @@ TEST(traits, standard) {
 
     REQUIRE((std::is_trivially_copyable<gtl::thread_pool>::value == false));
 
-#if defined(__APPLE__)
-    REQUIRE((std::is_standard_layout<gtl::thread_pool>::value == true));
-#elif defined(__clang__)
-    REQUIRE((std::is_standard_layout<gtl::thread_pool>::value == true));
-#elif (defined(linux) || defined(__linux) || defined(__linux__))
-    REQUIRE((std::is_standard_layout<gtl::thread_pool>::value == false));
-#elif defined(_MSC_VER)
+#if 0
+    // Not reliable across compiler / os.
     REQUIRE((std::is_standard_layout<gtl::thread_pool>::value == true));
 #endif
 }
