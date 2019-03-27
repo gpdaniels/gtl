@@ -13,7 +13,7 @@ The current classes are as described below:
 
 |               Class | Description                                                                             |
 |--------------------:|:----------------------------------------------------------------------------------------|
-|             **any** | A class that can hold any variable type.                                                |
+|             **any** | Class that can hold any variable type.                                                  |
 |        **array_nd** | N-dimensional statically or dynamically sized array.                                    |
 |     **ring_buffer** | Statically sized thread-safe multi-producer multi-consumer ring-buffer.                 |
 | **static_array_nd** | N-dimensional statically sized array.                                                   |
@@ -25,9 +25,10 @@ The current classes are as described below:
 |--------------------:|:----------------------------------------------------------------------------------------|
 |          **access** | Classes and macros for accessing class private members.                                 |
 |          **assert** | Macros that define an assert macro that optionally takes a format string and parameters.|
-|             **cpu** | A class to extract cpuid information to determine supported instructions at runtime.    |
-|           **paths** | A collection of cross platform functions to provide useful paths.                       |
-|           **pimpl** | A statically sized pointer to implementation wrapper.                                   |
+|             **cpu** | Class to extract cpuid information to determine supported instructions at runtime.      |
+|           **error** | Composable error class that can be returned down a call stack.                          |
+|           **paths** | Collection of cross platform functions to provide useful paths.                         |
+|           **pimpl** | Statically sized pointer to implementation wrapper.                                     |
 | **simulation_loop** | Fixed time step helper class for creating game loops.                                   |
 
 ### Multi-Threading ###
@@ -35,12 +36,12 @@ The current classes are as described below:
 |               Class | Description                                                                             |
 |--------------------:|:----------------------------------------------------------------------------------------|
 |         **barrier** | Thread syncronisation barrier.                                                          |
-|       **coroutine** | Setjump/longjump implementation of stackful coroutines.                                 |
-|           **event** | A thread safe multi-in/multi-out event/messaging system.                                |
+|       **coroutine** | Setjump/Longjump implementation of stackful coroutines.                                 |
+|           **event** | Thread safe multi-in/multi-out event/messaging system.                                  |
 |       **semaphore** | Semaphore made using a mutex and condition variable.                                    |
 |       **spin_lock** | Spin lock implemented using an atomic flag.                                             |
-|   **triple_buffer** | A lockless triple buffer interface to three buffers.                                    |
-|     **thread_pool** | A multi-queue thread-pool that performs jobs in priority order.                         |
+|   **triple_buffer** | Lockless triple buffer interface to three buffers.                                      |
+|     **thread_pool** | Multi-queue thread-pool that performs jobs in priority order.                           |
 
 ### Pseudorandom Number Generators ###
 
