@@ -131,7 +131,8 @@ namespace gtl {
 
         /// @brief  Empty constructor.
         constexpr static_lambda()
-            : copier(nullptr)
+            : function{}
+            , copier(nullptr)
             , executor(nullptr)
             , destructor(nullptr) {
         }
@@ -139,7 +140,8 @@ namespace gtl {
         /// @brief  Copy constructor for non const static_lambda types.
         /// @param  other The static_lambda to copy.
         constexpr static_lambda(static_lambda& other)
-            : copier(other.copier)
+            : function{}
+            , copier(other.copier)
             , executor(other.executor)
             , destructor(other.destructor) {
             if (this->copier) {
@@ -150,7 +152,8 @@ namespace gtl {
         /// @brief  Copy constructor for const static_lambda types.
         /// @param  other The static_lambda to copy.
         constexpr static_lambda(const static_lambda& other)
-            : copier(other.copier)
+            : function{}
+            , copier(other.copier)
             , executor(other.executor)
             , destructor(other.destructor) {
             if (this->copier) {
@@ -192,7 +195,8 @@ namespace gtl {
         /// @param  raw_function The lambda to store.
         template <typename function_type>
         constexpr static_lambda(const function_type& raw_function)
-            : copier([](erased_type_const source, erased_type destination) -> void {
+            : function{}
+            , copier([](erased_type_const source, erased_type destination) -> void {
                 new (destination) function_type(*static_cast<function_type*>(const_cast<erased_type>(source)));
             })
             , executor([](erased_type_const function_pointer, argument_types... arguments) -> return_type {
@@ -210,7 +214,8 @@ namespace gtl {
         /// @param  raw_function The lambda to store.
         template <typename function_type>
         constexpr static_lambda(function_type&& raw_function)
-            : copier([](erased_type_const source, erased_type destination) -> void {
+            : function{}
+            , copier([](erased_type_const source, erased_type destination) -> void {
                 using function_type_unreferenced = typename remove_reference<function_type, function_type>::type_unreferenced;
                 new (destination) function_type_unreferenced(static_cast<function_type&&>(*static_cast<function_type_unreferenced*>(const_cast<erased_type>(source))));
             })
