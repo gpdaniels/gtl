@@ -41,7 +41,11 @@ TEST(traits, standard) {
 
     REQUIRE((std::is_trivial<gtl::error>::value == false));
 
-    REQUIRE((std::is_trivially_copyable<gtl::error>::value == true));
+    #if defined(_MSC_VER)
+        REQUIRE((std::is_trivially_copyable<gtl::error>::value == false));
+    #else
+        REQUIRE((std::is_trivially_copyable<gtl::error>::value == true));
+    #endif
 
     REQUIRE((std::is_standard_layout<gtl::error>::value == true));
 }
@@ -139,17 +143,22 @@ TEST(parameter, name) {
         return *LHS == *RHS;
     };
 
-#if defined(__clang__)
-    REQUIRE(strcmp(error1.name, "error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "error_code1");
-    REQUIRE(strcmp(error2.name, "error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "error_code1");
-    REQUIRE(strcmp(error3.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "error_code2");
-    REQUIRE(strcmp(error4.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "error_code2");
-#else
-    REQUIRE(strcmp(error1.name, "TEST_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "TEST_parameter_name()::error_code1");
-    REQUIRE(strcmp(error2.name, "TEST_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "TEST_parameter_name()::error_code1");
-    REQUIRE(strcmp(error3.name, "TEST_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "TEST_parameter_name()::error_code2");
-    REQUIRE(strcmp(error4.name, "TEST_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "TEST_parameter_name()::error_code2");
-#endif
+    #if defined(__clang__)
+        REQUIRE(strcmp(error1.name, "error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "error_code1");
+        REQUIRE(strcmp(error2.name, "error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "error_code1");
+        REQUIRE(strcmp(error3.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "error_code2");
+        REQUIRE(strcmp(error4.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "error_code2");
+    #elif defined(__GNUC__)
+        REQUIRE(strcmp(error1.name, "TEST_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "TEST_parameter_name()::error_code1");
+        REQUIRE(strcmp(error2.name, "TEST_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "TEST_parameter_name()::error_code1");
+        REQUIRE(strcmp(error3.name, "TEST_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "TEST_parameter_name()::error_code2");
+        REQUIRE(strcmp(error4.name, "TEST_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "TEST_parameter_name()::error_code2");
+    #elif defined(_MSC_VER)
+        REQUIRE(strcmp(error1.name, "TEST_parameter_name::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "TEST_parameter_name::error_code1");
+        REQUIRE(strcmp(error2.name, "TEST_parameter_name::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "TEST_parameter_name::error_code1");
+        REQUIRE(strcmp(error3.name, "TEST_parameter_name::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "TEST_parameter_name::error_code2");
+        REQUIRE(strcmp(error4.name, "TEST_parameter_name::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "TEST_parameter_name::error_code2");
+    #endif
 }
 
 TEST(evaluate, call_stack) {
