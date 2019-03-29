@@ -35,7 +35,7 @@ THE SOFTWARE
 #endif
 
 TEST(traits, standard) {
-    REQUIRE(sizeof(gtl::error) >= 0);
+    REQUIRE(sizeof(gtl::error) >= 24, "sizeof(gtl::error) = %ld, expected >= %lld", sizeof(gtl::error), 24ull);
 
     REQUIRE((std::is_pod<gtl::error>::value == false));
 
