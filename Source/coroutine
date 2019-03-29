@@ -426,7 +426,7 @@ namespace gtl {
                 // Preserve a possibly existing signal action for the worker signal and configure a trampoline function as the new temporary signal action.
                 // The signal delivery is configured to occur on an alternate signal stack (see next step).
                 struct sigaction coroutine_signal_action = {};
-                coroutine_signal_action.sa_handler = signal_handler_trampolene;
+                coroutine_signal_action.sa_handler = signal_handler_trampoline;
                 coroutine_signal_action.sa_flags = SA_ONSTACK;
                 if (sigemptyset(&coroutine_signal_action.sa_mask) != 0) {
                     std::terminate();
@@ -550,7 +550,7 @@ namespace gtl {
 #       if !defined(_WIN32)
             /// @brief  Signal handler, called by the os with a new stack when this class calls raise.
             /// @param  signal_identifier The identifying code of the raised signal.
-            static void signal_handler_trampolene(int signal_identifier) {
+            static void signal_handler_trampoline(int signal_identifier) {
                 // Don't need to validate which signal it is as this routine only handles one.
                 static_cast<void>(signal_identifier);
 
