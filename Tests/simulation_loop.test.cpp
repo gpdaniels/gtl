@@ -51,10 +51,12 @@ TEST(constructor, empty) {
 }
 
 TEST(function, update) {
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     gtl::simulation_loop<100> simulation_loop;
     REQUIRE(simulation_loop.update() == false);
-    std::this_thread::sleep_for(std::chrono::milliseconds(15));
-    REQUIRE(simulation_loop.update());
+    while (!simulation_loop.update());
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    REQUIRE(std::chrono::nanoseconds(end - start).count() >= 1000000, "Failed %ld !>= %ld", (end - start).count(), 10000000l);
 }
 
 TEST(function, get_tick_rate) {
@@ -68,11 +70,13 @@ TEST(function, get_tick_step) {
 }
 
 TEST(function, get_current_tick) {
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     gtl::simulation_loop<100> simulation_loop;
     REQUIRE(simulation_loop.update() == false);
     REQUIRE(simulation_loop.get_current_tick() == 0);
-    std::this_thread::sleep_for(std::chrono::milliseconds(15));
-    REQUIRE(simulation_loop.update() == true);
+    while (!simulation_loop.update());
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    REQUIRE(std::chrono::nanoseconds(end - start).count() >= 10000000, "Failed %ld !>= %ld", (end - start).count(), 10000000l);
     REQUIRE(simulation_loop.get_current_tick() == 1);
 }
 
