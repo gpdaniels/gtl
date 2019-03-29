@@ -327,7 +327,7 @@ TEST(constructor, list_initialiser) {
                     constexpr static const unsigned long long value1 = type_value1::value;
                     constexpr static const unsigned long long value2 = type_value2::value;
                     for (const type& value : test_data<type>()) {
-                        gtl::static_array_nd<type, value1, value2> static_array_nd_2d = {{{ value }}};
+                        gtl::static_array_nd<type, value1, value2> static_array_nd_2d = {{{{ value }}}};
                         do_not_optimise_away(static_array_nd_2d);
                     }
                     test_template<value_collection<1, 10>>(
@@ -337,7 +337,7 @@ TEST(constructor, list_initialiser) {
                             constexpr static const unsigned long long value2 = type_value2::value;
                             constexpr static const unsigned long long value3 = type_value3::value;
                             for (const type& value : test_data<type>()) {
-                                gtl::static_array_nd<type, value1, value2, value3> static_array_nd_3d = {{{{{ value }}}}};
+                                gtl::static_array_nd<type, value1, value2, value3> static_array_nd_3d = {{{{{{ value }}}}}};
                                 do_not_optimise_away(static_array_nd_3d);
                             }
                         }
