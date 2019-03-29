@@ -35,20 +35,17 @@ THE SOFTWARE
 
 #if (defined(linux) || defined(__linux) || defined(__linux__)) || defined(__APPLE__)
 
-//  Store the value of the _FORTIFY_SOURCE macro so it can be reset later.
-#   pragma push_macro("_FORTIFY_SOURCE")
-
-//  Prevent release builds on linux from crashing.
-#   undef _FORTIFY_SOURCE
-
 #   include <csetjmp>
-
-//  Restore the value of the _FORTIFY_SOURCE macro.
-#   pragma pop_macro("_FORTIFY_SOURCE")
 
 #   include <csignal>
 #   include <cstdint>
 #   include <cstdlib>
+
+#ifdef __GLIBC__
+    // Use glibc internal longjmp to bypass fortify checks.
+    extern "C" void __libc_siglongjmp(sigjmp_buf env, int val);
+    #define siglongjmp __libc_siglongjmp
+#endif
 
 //  Valgrind.
 #   if !defined(NDEBUG) && __has_include(<valgrind/valgrind.h>)
@@ -711,6 +708,11 @@ namespace gtl {
         }
     }
 }
+
+// Undo the siglongjmp override.
+#ifdef __GLIBC__
+#   undef siglongjmp
+#endif
 
 #undef GTL_COROUTINE_HAVE_VALGRIND
 #undef GTL_COROUTINE_ASSERT
