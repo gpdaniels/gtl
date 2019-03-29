@@ -225,21 +225,10 @@ before_script:
 
 script:
   - echo "Running script..." 
-  - mkdir -p BUILD 
-  - pushd BUILD
-  - cmake -DCMAKE_BUILD_TYPE=Debug ..
-  - cmake --build . --config Debug
-  - cmake --build . --config Debug --target test
-  - cmake -DCMAKE_BUILD_TYPE=Release ..
-  - cmake --build . --config Release
-  - cmake --build . --config Release --target test
-  - cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
-  - cmake --build . --config RelWithDebInfo
-  - cmake --build . --config RelWithDebInfo --target test
-  - cmake -DCMAKE_BUILD_TYPE=MinSizeRel ..
-  - cmake --build . --config MinSizeRel
-  - cmake --build . --config MinSizeRel --target test
-  - popd
+  - bash compile.sh Debug
+  - bash compile.sh Release
+  - bash compile.sh RelWithDebInfo
+  - bash compile.sh MinSizeRel
 
 after_success:
   - echo "Running after_success..."
