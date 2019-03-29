@@ -45,7 +45,10 @@ namespace gtl {
         constexpr static const std::chrono::nanoseconds tick_step = std::chrono::nanoseconds(1000000000ull / tick_rate);
 
         /// @brief  The current system time.
-        std::chrono::high_resolution_clock::time_point current_time;
+        std::chrono::steady_clock::time_point current_time;
+
+        /// @brief  The last tick time.
+        std::chrono::steady_clock::time_point last_tick_time;
 
         /// @brief  The current tick.
         unsigned long long int current_tick;
@@ -56,7 +59,8 @@ namespace gtl {
     public:
         /// @brief  Default constructor initialises internal state.
         simulation_loop()
-            : current_time(std::chrono::high_resolution_clock::now())
+            : current_time(std::chrono::steady_clock::now())
+            , last_tick_time(current_time)
             , current_tick{0}
             , lag_duration{0} {
         }
@@ -65,16 +69,16 @@ namespace gtl {
         /// @return True if the tick time step has passed and the current tick has been incremented, false otherwise.
         bool update() {
             // Get the current time.
-            const std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+            this->current_time = std::chrono::steady_clock::now();
 
             // Add the elapsed duration since the last update to the lag duration.
-            this->lag_duration += std::chrono::duration_cast<std::chrono::nanoseconds>(now - this->current_time);
-
-            // Update the world time.
-            this->current_time = now;
+            this->lag_duration = std::chrono::nanoseconds(this->current_time - this->last_tick_time);
 
             // While the current state is lagging perform an update.
             if (this->lag_duration >= simulation_loop::tick_step) {
+
+                // Advance the last tick time by the tick time step.
+                this->last_tick_time += simulation_loop::tick_step;
 
                 // Reduce the lag by the tick time step.
                 this->lag_duration -= simulation_loop::tick_step;
