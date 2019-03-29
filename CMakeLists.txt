@@ -128,8 +128,8 @@ FILE(GLOB HEADER_FILES "${PROJECT_SOURCE_DIR}/Source/*")
 FILE(GLOB TEST_SOURCE_FILES "${PROJECT_SOURCE_DIR}/Tests/*.test.cpp")
 
 # Get the main testbench files.
-SET(TESTS_MAIN_HEADER_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Testbench/main.tests.hpp")
-SET(TESTS_MAIN_SOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Testbench/main.tests.cpp")
+SET(TESTS_MAIN_HEADER_FILE "${PROJECT_SOURCE_DIR}/Testbench/main.tests.hpp")
+SET(TESTS_MAIN_SOURCE_FILE "${PROJECT_SOURCE_DIR}/Testbench/main.tests.cpp")
 
 # Get the auxiliary testbench files.
 FILE(GLOB TESTS_HEADER_FILES "${PROJECT_SOURCE_DIR}/Testbench/*.tests.hpp")
