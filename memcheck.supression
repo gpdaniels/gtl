@@ -1,0 +1,6 @@
+{
+  Standard_library_dynamic_linker
+  obj:*
+  Memcheck:Leak
+  fun:_dl_init
+}

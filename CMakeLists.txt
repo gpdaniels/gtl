@@ -187,6 +187,9 @@ ENABLE_TESTING()
 # Add memcheck tests if valgrind is installed
 FIND_PROGRAM(VALGRIND_EXECUTABLE NAMES valgrind)
 IF(VALGRIND_EXECUTABLE)
+    # Set valgrind options.
+    SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "${PROJECT_SOURCE_DIR}/memcheck.supression")
+    
     # Override the test command such that tests are built and ctest provides output on error.
     CMAKE_POLICY(PUSH)
     CMAKE_POLICY(SET CMP0037 OLD)
