@@ -20,7 +20,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     # Linux.
     mkdir -p BUILD
     pushd BUILD
-    cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DENABLE_TEST_TARGETS=ON ..
+    cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=ON -DBUILD_MEMCHECK=ON ..
     cmake --build . --config ${BUILD_TYPE} -- -j4
     cmake --build . --config ${BUILD_TYPE} --target test
     popd
@@ -28,7 +28,7 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
     # Mac OSX.
     mkdir -p BUILD
     pushd BUILD
-    cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DENABLE_TEST_TARGETS=ON ..
+    cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=ON -DBUILD_MEMCHECK=ON  ..
     cmake --build . --config ${BUILD_TYPE} -- -j4
     cmake --build . --config ${BUILD_TYPE} --target test
     popd
@@ -36,7 +36,7 @@ elif [[ "$OSTYPE" == "msys" ]]; then
     # Lightweight shell and GNU utilities compiled for Windows (part of MinGW).
     mkdir -p BUILD
     pushd BUILD
-    cmake -DENABLE_TEST_TARGETS=ON ..
+    cmake -DBUILD_TESTING=ON -DBUILD_MEMCHECK=ON  ..
     cmake --build . --config ${BUILD_TYPE} -- -nologo -verbosity:minimal -maxcpucount
     cmake --build . --config ${BUILD_TYPE} --target test
     popd

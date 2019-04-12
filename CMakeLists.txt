@@ -26,14 +26,15 @@ CMAKE_POLICY(VERSION 3.5.1)
 SET(PROJECT_NAME "gtl")
 PROJECT(${PROJECT_NAME})
 
-# Include testing machinery.
-INCLUDE(CTest)
-
 # Settings.
-SET(ENABLE_TEST_TARGETS ON CACHE BOOL "Enable building individual unit test targets.")
+SET(BUILD_TESTING OFF CACHE BOOL "Enable building individual unit test targets.")
+SET(BUILD_MEMCHECK OFF CACHE BOOL "Enable running unit tests through valgrind memcheck.")
+SET(BUILD_COVERAGE OFF CACHE BOOL "Enable generation of unit test code coverage data.")
 
 # Print status.
 MESSAGE(STATUS "Configuring ${PROJECT_NAME}...")
+
+################################################################################
 
 # Require c11.
 SET(CMAKE_C_STANDARD 11)
@@ -44,6 +45,18 @@ SET(CMAKE_C_EXTENSIONS OFF)
 SET(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS OFF)
+
+# Position independent code.
+SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# Visual studio warning level.
+SET(CMAKE_CXX_WARNING_LEVEL 4)
+SET(CMAKE_C_WARNING_LEVEL 4)
+
+# Enable grouping by folder in an IDE.
+SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
+
+################################################################################
 
 # Set compiler build flags.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -100,9 +113,11 @@ ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_NONSTDC_NO_WARNINGS=1")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_WARNINGS=1")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
-ELSE("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+ELSE()
     MESSAGE(WARNING "Unsupported compiler.")
-ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+ENDIF()
+
+################################################################################
 
 # Set compiler linker flags.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -113,35 +128,96 @@ ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # None
 ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # None
-ELSE("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+ELSE()
     MESSAGE(WARNING "Unsupported compiler.")
-ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+ENDIF()
+
+################################################################################
+
+SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY   "${CMAKE_BINARY_DIR}/Runtime/${CMAKE_BUILD_TYPE}")
+SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY   "${CMAKE_BINARY_DIR}/Archive/${CMAKE_BUILD_TYPE}")
+SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY   "${CMAKE_BINARY_DIR}/Library/${CMAKE_BUILD_TYPE}")
+
+# Apply to all build types.
+FOREACH(BUILD_TYPE ${CMAKE_CONFIGURATION_TYPES})
+    STRING(TOUPPER "${BUILD_TYPE}" UPPER_BUILD_TYPE)
+    SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${UPPER_BUILD_TYPE}  "${CMAKE_BINARY_DIR}/Runtime/${BUILD_TYPE}")
+    SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${UPPER_BUILD_TYPE}  "${CMAKE_BINARY_DIR}/Archive/${BUILD_TYPE}")
+    SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${UPPER_BUILD_TYPE}  "${CMAKE_BINARY_DIR}/Library/${BUILD_TYPE}")
+ENDFOREACH()
+
+################################################################################
+
+# Set code coverage flags.
+IF(BUILD_COVERAGE)
+    IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-instr-generate")
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoverage-mapping")
+        
+        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-instr-generate")
+        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fcoverage-mapping")
+        
+        SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fprofile-instr-generate")
+        SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fcoverage-mapping")
+        
+        SET(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -fprofile-instr-generate")
+        SET(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -fcoverage-mapping")
+    
+    ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-instr-generate")
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoverage-mapping")
+
+        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-instr-generate")
+        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fcoverage-mapping")
+
+        SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fprofile-instr-generate")
+        SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fcoverage-mapping")
+
+        SET(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -fprofile-instr-generate")
+        SET(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -fcoverage-mapping")
+
+    ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        MESSAGE(WARNING "Unsupported compiler.")
+    ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        MESSAGE(WARNING "Unsupported compiler.")
+    ELSE()
+        MESSAGE(WARNING "Unsupported compiler.")
+    ENDIF()
+ENDIF(BUILD_COVERAGE)
+
+################################################################################
 
 # Add the source and test folder to the include path.
-INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/Source/")
-INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/Tests/")
+INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/Source/")
+INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/Tests/")
 
 # Find all library source files in the test directory recursively.
-FILE(GLOB HEADER_FILES "${PROJECT_SOURCE_DIR}/Source/*")
+FILE(GLOB HEADER_FILES "${CMAKE_SOURCE_DIR}/Source/*")
 
 # Find all test source files in the test directory recursively.
-FILE(GLOB TEST_SOURCE_FILES "${PROJECT_SOURCE_DIR}/Tests/*.test.cpp")
+FILE(GLOB TEST_SOURCE_FILES "${CMAKE_SOURCE_DIR}/Tests/*.test.cpp")
 
 # Get the main testbench files.
-SET(TESTS_MAIN_HEADER_FILE "${PROJECT_SOURCE_DIR}/Testbench/main.tests.hpp")
-SET(TESTS_MAIN_SOURCE_FILE "${PROJECT_SOURCE_DIR}/Testbench/main.tests.cpp")
+SET(TESTS_MAIN_HEADER_FILE "${CMAKE_SOURCE_DIR}/Testbench/main.tests.hpp")
+SET(TESTS_MAIN_SOURCE_FILE "${CMAKE_SOURCE_DIR}/Testbench/main.tests.cpp")
 
 # Get the auxiliary testbench files.
-FILE(GLOB TESTS_HEADER_FILES "${PROJECT_SOURCE_DIR}/Testbench/*.tests.hpp")
-FILE(GLOB TESTS_SOURCE_FILES "${PROJECT_SOURCE_DIR}/Testbench/*.tests.cpp")
+FILE(GLOB TESTS_HEADER_FILES "${CMAKE_SOURCE_DIR}/Testbench/*.tests.hpp")
+FILE(GLOB TESTS_SOURCE_FILES "${CMAKE_SOURCE_DIR}/Testbench/*.tests.cpp")
 
 # Remove the main test files from the auxiliary.
 LIST(REMOVE_ITEM TESTS_HEADER_FILES ${TESTS_MAIN_HEADER_FILE})
 LIST(REMOVE_ITEM TESTS_SOURCE_FILES ${TESTS_MAIN_SOURCE_FILE})
 
+################################################################################
+
 # Enable threading.
 SET(THREADS_PREFER_PTHREAD_FLAG ON)
 FIND_PACKAGE(Threads REQUIRED)
+
+################################################################################
 
 # Get cmake system name in UPPER form.
 STRING(TOUPPER ${CMAKE_SYSTEM_NAME} UPPER_CMAKE_SYSTEM_NAME)
@@ -172,56 +248,122 @@ FOREACH(HEADER_FILE ${HEADER_FILES})
     FOREACH(DETECTED_PRAGMA ${DETECTED_PRAGMAS})
         IF("${DETECTED_PRAGMA}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*[#][ \t]*pragma[ \t]*comment[ \t]*[\\(][ \t]*CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}[ \t]*[,][ \t]*[\"]((-l|-framework )[0-9a-zA-Z_]*)[\"][ \t]*[\\)]")
             LIST(APPEND CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME} ${CMAKE_MATCH_1})
-        ENDIF("${DETECTED_PRAGMA}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*[#][ \t]*pragma[ \t]*comment[ \t]*[\\(][ \t]*CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}[ \t]*[,][ \t]*[\"]((-l|-framework )[0-9a-zA-Z_]*)[\"][ \t]*[\\)]")
-    ENDFOREACH(DETECTED_PRAGMA ${DETECTED_PRAGMAS})
+        ENDIF()
+    ENDFOREACH()
 
-ENDFOREACH(HEADER_FILE ${HEADER_FILES})
+ENDFOREACH()
 
 IF(NOT "'${CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}}'" STREQUAL "''")
     MESSAGE(STATUS "Found additional linker flags: ${CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}}")
-ENDIF(NOT "'${CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}}'" STREQUAL "''")
+ENDIF()
 
-# Enable testing.
-ENABLE_TESTING()
+################################################################################
 
-# Add memcheck tests if valgrind is installed
-FIND_PROGRAM(VALGRIND_EXECUTABLE NAMES valgrind)
-IF(VALGRIND_EXECUTABLE)
-    # Set valgrind options.
-    SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "${PROJECT_SOURCE_DIR}/memcheck.supression")
-    
-    # Override the test command such that tests are built and ctest provides output on error.
-    CMAKE_POLICY(PUSH)
-    CMAKE_POLICY(SET CMP0037 OLD)
-    ADD_CUSTOM_TARGET(test
-        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Building tests..."
-        COMMAND "${CMAKE_COMMAND}" "--build" "." "--config" "$<CONFIG>"
+IF(BUILD_TESTING)
+    ENABLE_TESTING()
+ENDIF(BUILD_TESTING)
+
+# Add a build target.
+ADD_CUSTOM_TARGET(gtl_build
+    COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Building..."
+    COMMAND "${CMAKE_COMMAND}" "--build" "." "--config" "$<CONFIG>"
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+)
+
+IF(BUILD_TESTING)
+    # Add a test target.
+    ADD_CUSTOM_TARGET(gtl_test
         COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running tests..."
-        COMMAND "${CMAKE_CTEST_COMMAND}" "-C" "$<CONFIG>" "--output-on-failure" "--parallel" "4" "--timeout" "5"
-        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running tests under memcheck..."
-        COMMAND "${CMAKE_CTEST_COMMAND}" "-C" "$<CONFIG>" "--output-on-failure" "--parallel" "4" "--timeout" "10" "--force-new-ctest-process" "--test-action" "memcheck"
-        COMMAND "cat" "./Testing/Temporary/MemoryChecker.*.log"
+        COMMAND "${CMAKE_CTEST_COMMAND}" "-C" "$<CONFIG>" "--output-on-failure" "--parallel" "4" "--timeout" "10"
+        DEPENDS gtl_build
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     )
-    SET_TARGET_PROPERTIES(test PROPERTIES FOLDER CMakePredefinedTargets)
-    CMAKE_POLICY(POP)
 ELSE()
-    # Override the test command such that tests are built and ctest provides output on error.
+    ADD_CUSTOM_TARGET(gtl_test
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Testing not enabled."
+        DEPENDS gtl_build
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+ENDIF()
+
+IF(BUILD_TESTING AND BUILD_MEMCHECK)
+    # Add memcheck tests if valgrind is installed
+    FIND_PROGRAM(VALGRIND_EXECUTABLE NAMES valgrind)
+    IF(VALGRIND_EXECUTABLE)
+        # Set valgrind options.
+        SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "${CMAKE_SOURCE_DIR}/memcheck.supression")
+        
+        ADD_CUSTOM_TARGET(gtl_memcheck
+            COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running tests under memcheck..."
+            COMMAND "${CMAKE_CTEST_COMMAND}" "-C" "$<CONFIG>" "--output-on-failure" "--parallel" "4" "--timeout" "30" "--force-new-ctest-process" "--test-action" "memcheck"
+            COMMAND "cat" "./Testing/Temporary/MemoryChecker.*.log"
+            DEPENDS gtl_build gtl_test
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+        )
+    ELSE()
+        ADD_CUSTOM_TARGET(gtl_memcheck
+            COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Memcheck not available."
+            DEPENDS gtl_build gtl_test
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+        )
+    ENDIF()
+ELSE()
+    ADD_CUSTOM_TARGET(gtl_memcheck
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Memcheck not enabled."
+        DEPENDS gtl_build gtl_test
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+ENDIF()
+
+IF(BUILD_TESTING AND BUILD_COVERAGE)
+    FIND_PROGRAM(LLVM_PROFDATA_EXECUTABLE NAMES llvm-profdata)
+    FIND_PROGRAM(LLVM_COV_EXECUTABLE NAMES llvm-cov)
+    IF(LLVM_PROFDATA_EXECUTABLE AND LLVM_COV_EXECUTABLE)
+        ADD_CUSTOM_TARGET(gtl_coverage
+            COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Generating code coverage report..."
+            COMMAND "${LLVM_PROFDATA_EXECUTABLE}" "merge" "-output=./Coverage/Coverage.profdata" "./Coverage/*.profraw"
+            COMMAND "${CMAKE_COMMAND}" "-P" "./Coverage/GenerateReport.cmake"
+            DEPENDS gtl_build gtl_test
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+        )
+
+        # Create a coverage report script.
+        SET(COVERAGE_SCRIPT "# Auto generated by CMake.\n")
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}\n")
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}FIND_PROGRAM(LLVM_COV_EXECUTABLE NAMES llvm-cov)\n")
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}IF(NOT LLVM_COV_EXECUTABLE)\n")
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}    MESSAGE(FATAL_ERROR)\n")
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}ENDIF()\n")
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}\n")
+    ELSE()
+        ADD_CUSTOM_TARGET(gtl_coverage
+            COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Code coverage not available."
+            DEPENDS gtl_build gtl_test
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+        )
+    ENDIF()
+ELSE()
+    ADD_CUSTOM_TARGET(gtl_coverage
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Code coverage not enabled."
+        DEPENDS gtl_build gtl_test
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+ENDIF()
+
+# Override the test command such that tests are built and ctest provides output on error.
+IF(BUILD_TESTING)
     CMAKE_POLICY(PUSH)
     CMAKE_POLICY(SET CMP0037 OLD)
     ADD_CUSTOM_TARGET(test
-        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Building tests..."
-        COMMAND "${CMAKE_COMMAND}" "--build" "." "--config" "$<CONFIG>"
-        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running tests..."
-        COMMAND "${CMAKE_CTEST_COMMAND}" "-C" "$<CONFIG>" "--output-on-failure" "--parallel" "4" "--timeout" "1"
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running test pipeline..."
+        DEPENDS gtl_build gtl_test gtl_memcheck gtl_coverage
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     )
     SET_TARGET_PROPERTIES(test PROPERTIES FOLDER CMakePredefinedTargets)
     CMAKE_POLICY(POP)
 ENDIF()
 
-# Enable grouping by folder in an IDE.
-SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
+################################################################################
 
 # Count the number of tests found.
 LIST(LENGTH TEST_SOURCE_FILES TEST_SOURCE_FILES_COUNT)
@@ -264,9 +406,9 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
         IF("${DETECTED_TEST}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*TEST[ \t]*[\\(][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[,][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[\\)]")
             LIST(APPEND SUB_TEST_GROUPS ${CMAKE_MATCH_1})
             LIST(APPEND SUB_TEST_NAMES ${CMAKE_MATCH_2})
-        ENDIF("${DETECTED_TEST}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*TEST[ \t]*[\\(][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[,][ \t]*([a-zA-Z_][0-9a-zA-Z_]*)[ \t]*[\\)]")
+        ENDIF()
 
-    ENDFOREACH(DETECTED_TEST ${DETECTED_TESTS})
+    ENDFOREACH()
 
     # Count the number of tests found.
     LIST(LENGTH SUB_TEST_GROUPS SUB_TEST_COUNT)
@@ -284,13 +426,20 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
     # Set the folder for the test libraray equal to it's name.
     SET_TARGET_PROPERTIES(${TEST_FILE_NAME} PROPERTIES FOLDER ${TEST_FILE_NAME})
 
+    # Create a coverage report script.
+    IF(BUILD_TESTING AND BUILD_COVERAGE)
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}SET(TARGET_OBJECTS \"$<TARGET_OBJECTS:${TEST_FILE_NAME}>\")\n")
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}LIST(GET TARGET_OBJECTS 0 TARGET_OBJECT)\n")
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}EXECUTE_PROCESS(\n")
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}    COMMAND \"\${LLVM_COV_EXECUTABLE}\" \"show\" \"-format=html\" \"-instr-profile=./Coverage/Coverage.profdata\" \"\${TARGET_OBJECT}\" \"${CMAKE_SOURCE_DIR}/Source\"\n")
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}    OUTPUT_FILE ./Coverage/${TEST_FILE_NAME}.html\n")
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}\n")
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT})\n")
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}\n")
+    ENDIF()
+
     # Print status.
     MESSAGE(STATUS "Preparing tests for file '${TEST_FILE_NAME}'...")
-
-    # Skip producing the actual test executables.
-    IF(NOT ${ENABLE_TEST_TARGETS})
-        CONTINUE()
-    ENDIF(NOT ${ENABLE_TEST_TARGETS})
 
     # For each test found in the test file, create a test executable.
     WHILE(SUB_TEST_INDEX LESS ${SUB_TEST_COUNT})
@@ -312,8 +461,9 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
         MESSAGE(STATUS "Preparing test ${SUB_TEST_INDEX_PADDED} [Group: '${SUB_TEST_GROUP}', Test: '${SUB_TEST_NAME}']")
 
         # Create a name for this test from the parts.
-        SET(CURRENT_TEST_NAME ${TEST_FILE_NAME}_${SUB_TEST_INDEX_PADDED}_${SUB_TEST_GROUP}_${SUB_TEST_NAME})
-
+        #SET(CURRENT_TEST_NAME ${TEST_FILE_NAME}_${SUB_TEST_INDEX_PADDED}_${SUB_TEST_GROUP}_${SUB_TEST_NAME})
+        SET(CURRENT_TEST_NAME ${TEST_FILE_NAME}_${SUB_TEST_GROUP}_${SUB_TEST_NAME})
+        
         # Create the test executable.
         ADD_EXECUTABLE(${CURRENT_TEST_NAME} ${TESTS_MAIN_SOURCE_FILE} ${TESTS_MAIN_HEADER_FILE} ${TESTS_HEADER_FILES} ${HEADER_FILES})
 
@@ -336,19 +486,26 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
         ADD_TEST(NAME ${CURRENT_TEST_NAME} COMMAND $<TARGET_FILE:${CURRENT_TEST_NAME}>)
 
         # Set a timeout to prevent long running tests.
-        #SET_TESTS_PROPERTIES(${CURRENT_TEST_NAME} PROPERTIES TIMEOUT 1)
+        #SET_TESTS_PROPERTIES(${CURRENT_TEST_NAME} PROPERTIES TIMEOUT 10)
 
         # Set the working directory of the test.
         SET_TESTS_PROPERTIES(${CURRENT_TEST_NAME} PROPERTIES REQUIRED_FILES $<TARGET_FILE:${CURRENT_TEST_NAME}> WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-
+        
+        # Set the code coverage output path.
+        SET_TESTS_PROPERTIES(${CURRENT_TEST_NAME} PROPERTIES ENVIRONMENT "LLVM_PROFILE_FILE=${CMAKE_BINARY_DIR}/Coverage/%m.profraw")
+        
         # Increment the loop index.
         MATH(EXPR SUB_TEST_INDEX "${SUB_TEST_INDEX} + 1")
 
-    ENDWHILE(SUB_TEST_INDEX LESS ${SUB_TEST_COUNT})
+    ENDWHILE()
 
     MESSAGE(STATUS " ")
 
-ENDFOREACH(TEST_FILE ${TEST_SOURCE_FILES})
+ENDFOREACH()
+
+IF(BUILD_TESTING AND BUILD_COVERAGE)
+    FILE(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/Coverage/GenerateReport.cmake" CONTENT "${COVERAGE_SCRIPT}")
+ENDIF()
 
 # Print status.
 MESSAGE(STATUS "Finished configuring ${PROJECT_NAME}.")
