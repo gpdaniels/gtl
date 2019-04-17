@@ -30,6 +30,10 @@ PROJECT(${PROJECT_NAME})
 SET(BUILD_TESTING OFF CACHE BOOL "Enable building individual unit test targets.")
 SET(BUILD_MEMCHECK OFF CACHE BOOL "Enable running unit tests through valgrind memcheck.")
 SET(BUILD_COVERAGE OFF CACHE BOOL "Enable generation of unit test code coverage data.")
+SET(BUILD_SANITIZE_ADDRESS OFF CACHE BOOL "Enable building with clang sanitizer flags for address checking.")
+SET(BUILD_SANITIZE_MEMORY OFF CACHE BOOL "Enable building with clang sanitizer flags memory checking.")
+SET(BUILD_SANITIZE_THREAD OFF CACHE BOOL "Enable building with clang sanitizer flags thread checking.")
+SET(BUILD_SANITIZE_UNDEFINED_BEHAVIOR OFF CACHE BOOL "Enable building with clang sanitizer flags for undefined behavior checking.")
 
 # Print status.
 MESSAGE(STATUS "Configuring ${PROJECT_NAME}...")
@@ -159,6 +163,67 @@ FOREACH(BUILD_TYPE ${CMAKE_CONFIGURATION_TYPES})
     SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${UPPER_BUILD_TYPE}  "${CMAKE_BINARY_DIR}/Archive/${BUILD_TYPE}")
     SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${UPPER_BUILD_TYPE}  "${CMAKE_BINARY_DIR}/Library/${BUILD_TYPE}")
 ENDFOREACH()
+
+################################################################################
+
+# Set clang sanitizer flags.
+IF(BUILD_SANITIZE_ADDRESS OR BUILD_SANITIZE_MEMORY OR BUILD_SANITIZE_THREAD OR BUILD_SANITIZE_UNDEFINED_BEHAVIOR)
+    IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+
+        IF(BUILD_SANITIZE_ADDRESS)
+            SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -DGTL_HAS_SANITIZER_ADDRESS=1")
+            SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+        ENDIF()
+
+        IF(BUILD_SANITIZE_MEMORY)
+            SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory -DGTL_HAS_SANITIZER_MEMORY=1")
+            SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=memory")
+        ENDIF()
+
+        IF(BUILD_SANITIZE_THREAD)
+            SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread -DGTL_HAS_SANITIZER_THREAD=1")
+            SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=thread")
+        ENDIF()
+
+        IF(BUILD_SANITIZE_UNDEFINED_BEHAVIOR)
+            SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined -DGTL_HAS_SANITIZER_UNDEFINED_BEHAVIOR=1")
+            SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined")
+        ENDIF()
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
+
+    ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+
+        IF(BUILD_SANITIZE_ADDRESS)
+            SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -DGTL_HAS_SANITIZER_ADDRESS=1")
+            SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+        ENDIF()
+
+        IF(BUILD_SANITIZE_MEMORY)
+            SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory -DGTL_HAS_SANITIZER_MEMORY=1")
+            SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=memory")
+        ENDIF()
+
+        IF(BUILD_SANITIZE_THREAD)
+            SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread -DGTL_HAS_SANITIZER_THREAD=1")
+            SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=thread")
+        ENDIF()
+
+        IF(BUILD_SANITIZE_UNDEFINED_BEHAVIOR)
+            SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined -DGTL_HAS_SANITIZER_UNDEFINED_BEHAVIOR=1")
+            SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined")
+        ENDIF()
+
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
+
+    ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        MESSAGE(WARNING "Unsupported compiler.")
+    ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        MESSAGE(WARNING "Unsupported compiler.")
+    ELSE()
+        MESSAGE(WARNING "Unsupported compiler.")
+    ENDIF()
+ENDIF(BUILD_COVERAGE)
+
 
 ################################################################################
 

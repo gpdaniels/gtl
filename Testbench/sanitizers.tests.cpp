@@ -18,38 +18,4 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE
 */
 
-#include "main.tests.hpp"
-#include "print.tests.hpp"
-#include "require.tests.hpp"
 #include "sanitizers.tests.hpp"
-#include "unused.tests.hpp"
-
-TEST(SUB_TEST_GROUP, SUB_TEST_NAME);
-
-int main(int argument_count, char* arguments[]) {
-
-    UNUSED(argument_count);
-    UNUSED(arguments);
-
-    #if GTL_HAS_SANITIZER_ADDRESS
-        PRINT("Testing under address sanitizer.\n");
-    #endif
-
-    #if GTL_HAS_SANITIZER_MEMORY
-        PRINT("Testing under memory sanitizer.\n");
-    #endif
-
-    #if GTL_HAS_SANITIZER_THREAD
-        PRINT("Testing under thread sanitizer.\n");
-    #endif
-
-    #if GTL_HAS_SANITIZER_UNDEFINED_BEHAVIOR
-        PRINT("Testing under undefined behavior sanitizer.\n");
-    #endif
-
-    PRINT("Starting test...\n");
-    TEST_CALL(SUB_TEST_GROUP, SUB_TEST_NAME);
-    PRINT("Finished test. '%lld' assertions, detected '%lld' errors.\n", REQUIRE_COUNT, REQUIRE_FAILURE_COUNT);
-
-    return (REQUIRE_FAILURE_COUNT != 0);
-}
