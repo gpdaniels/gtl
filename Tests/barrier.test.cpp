@@ -28,6 +28,7 @@ THE SOFTWARE
 #   pragma warning(push, 0)
 #endif
 
+#include <atomic>
 #include <thread>
 #include <type_traits>
 
@@ -82,82 +83,82 @@ TEST(function, sync) {
 TEST(evaluation, set_trigger_count_with_two_threads) {
     gtl::barrier barrier(2);
 
-    int result = 0;
+    std::atomic<int> result = 0;
 
-    REQUIRE(result == 0, "Expected result to be set to 0 not '%d' before anything.", result);
+    REQUIRE(result == 0, "Expected result to be set to 0 not '%d' before anything.", result.load());
 
     std::thread thread([&barrier, &result](){
 
         result = 1;
 
-        REQUIRE(result == 1, "Expected result to be set to 1 not '%d' before thread sync.", result);
+        REQUIRE(result == 1, "Expected result to be set to 1 not '%d' before thread sync.", result.load());
 
         barrier.sync();
 
         result = 2;
 
-        REQUIRE(result == 2, "Expected result to be set to 2 not '%d' after thread sync.", result);
+        REQUIRE(result == 2, "Expected result to be set to 2 not '%d' after thread sync.", result.load());
     });
 
     barrier.set_trigger_count(1);
 
     thread.join();
 
-    REQUIRE(result == 2, "Expected result to be set to 1 not '%d' after join.", result);
+    REQUIRE(result == 2, "Expected result to be set to 1 not '%d' after join.", result.load());
 }
 
 TEST(evaluation, trigger_with_two_threads) {
     gtl::barrier barrier(2);
 
-    int result = 0;
+    std::atomic<int> result = 0;
 
-    REQUIRE(result == 0, "Expected result to be set to 0 not '%d' before anything.", result);
+    REQUIRE(result == 0, "Expected result to be set to 0 not '%d' before anything.", result.load());
 
     std::thread thread([&barrier, &result](){
 
         result = 1;
 
-        REQUIRE(result == 1, "Expected result to be set to 1 not '%d' before thread sync.", result);
+        REQUIRE(result == 1, "Expected result to be set to 1 not '%d' before thread sync.", result.load());
 
         barrier.sync();
 
         result = 2;
 
-        REQUIRE(result == 2, "Expected result to be set to 2 not '%d' after thread sync.", result);
+        REQUIRE(result == 2, "Expected result to be set to 2 not '%d' after thread sync.", result.load());
     });
 
     barrier.trigger();
 
     thread.join();
 
-    REQUIRE(result == 2, "Expected result to be set to 1 not '%d' after join.", result);
+    REQUIRE(result == 2, "Expected result to be set to 1 not '%d' after join.", result.load());
 }
 
 TEST(evaluation, sync_with_two_threads) {
     gtl::barrier barrier(2);
 
-    int result = 0;
+    std::atomic<int> result = 0;
 
-    REQUIRE(result == 0, "Expected result to be set to 0 not '%d' before anything.", result);
+    REQUIRE(result == 0, "Expected result to be set to 0 not '%d' before anything.", result.load());
 
     std::thread thread([&barrier, &result](){
 
         result = 1;
 
-        REQUIRE(result == 1, "Expected result to be set to 1 not '%d' before thread sync.", result);
+        REQUIRE(result == 1, "Expected result to be set to 1 not '%d' before thread sync.", result.load());
 
         barrier.sync();
 
         result = 2;
 
-        REQUIRE(result == 2, "Expected result to be set to 2 not '%d' after thread sync.", result);
+        REQUIRE(result == 2, "Expected result to be set to 2 not '%d' after thread sync.", result.load());
     });
 
     barrier.sync();
 
-    REQUIRE(result > 0, "Expected result to be greater than zero not '%d' after sync.", result);
+    REQUIRE(result > 0, "Expected result to be greater than zero not '%d' after sync.", result.load());
 
     thread.join();
 
-    REQUIRE(result == 2, "Expected result to be set to 1 not '%d' after join.", result);
+    REQUIRE(result == 2, "Expected result to be set to 1 not '%d' after join.", result.load());
 }
