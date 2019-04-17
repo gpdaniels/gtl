@@ -604,6 +604,9 @@ namespace gtl {
 
                 // Exit by jumping to the creator location.
                 siglongjmp(gtl::coroutine::current->parent_context, 1);
+
+                // Silence warning about function returning.
+                std::abort();
             }
 #       endif
 
