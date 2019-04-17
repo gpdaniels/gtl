@@ -58,6 +58,20 @@ SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
 ################################################################################
 
+# Check for the build type only.
+IF(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    SET(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
+    SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "" "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
+ENDIF()
+
+# Check for the configuration type.
+IF(NOT CMAKE_CONFIGURATION_TYPES)
+    # If there was no configuration type then set it to the build type.
+    SET(CMAKE_CONFIGURATION_TYPES ${CMAKE_BUILD_TYPE})
+ENDIF()
+
+################################################################################
+
 # Set compiler build flags.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
