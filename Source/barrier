@@ -105,6 +105,9 @@ namespace gtl {
                 // Trigger the barrier.
                 this->triggered = true;
 
+                // Unlock the lock so that the notification can be immediately used.
+                unique_lock.unlock();
+
                 // Notify a thread to continue, this will in turn notify another, et cetera.
                 this->all_present.notify_one();
             }
@@ -125,12 +128,14 @@ namespace gtl {
     public:
         /// @brief  Triggers the barrier unblocking all current blocked sync calls.
         void trigger() {
-            // Lock the barrier mutex
-            std::unique_lock<std::mutex> unique_lock(this->mutex);
-            static_cast<void>(unique_lock);
+            {
+                // Lock the barrier mutex
+                std::lock_guard<std::mutex> lock_guard(this->mutex);
+                static_cast<void>(lock_guard);
 
-            // Trigger the barrier.
-            this->triggered = true;
+                // Trigger the barrier.
+                this->triggered = true;
+            }
 
             // Notify a thread to continue, this will in turn notify another, et cetera.
             this->all_present.notify_one();
@@ -139,16 +144,16 @@ namespace gtl {
     public:
         /// @brief  Blocks the caller until the barrier is triggered.
         void sync() {
-            // Immediately return if the the trigger_count is zero.
-            if (this->trigger_count == 0) {
-                return;
-            }
-
             // Open a scope to contain the unique lock.
             {
                 // Lock the barrier mutex
                 std::unique_lock<std::mutex> unique_lock(this->mutex);
                 static_cast<void>(unique_lock);
+
+                // Immediately return if the the trigger_count is zero.
+                if (this->trigger_count == 0) {
+                    return;
+                }
 
                 // Increment the number of waiting threads and check if we have reached the trigger threshold.
                 if (++this->waiting_count >= this->trigger_count) {
