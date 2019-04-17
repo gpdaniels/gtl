@@ -284,18 +284,34 @@ ADD_CUSTOM_TARGET(gtl_build
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 
+IF(BUILD_TESTING AND BUILD_COVERAGE)
+    # Add a cleanup target.
+    ADD_CUSTOM_TARGET(gtl_cleanup
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running cleanup..."
+        COMMAND "${CMAKE_COMMAND}" "-E" "remove_directory" "${CMAKE_BINARY_DIR}/Coverage/Data"
+        DEPENDS gtl_build
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+ELSE()
+    ADD_CUSTOM_TARGET(gtl_cleanup
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Cleanup not required."
+        DEPENDS gtl_build
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+ENDIF()
+
 IF(BUILD_TESTING)
     # Add a test target.
     ADD_CUSTOM_TARGET(gtl_test
         COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running tests..."
         COMMAND "${CMAKE_CTEST_COMMAND}" "-C" "$<CONFIG>" "--output-on-failure" "--parallel" "4" "--timeout" "10"
-        DEPENDS gtl_build
+        DEPENDS gtl_build gtl_cleanup
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     )
 ELSE()
     ADD_CUSTOM_TARGET(gtl_test
         COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Testing not enabled."
-        DEPENDS gtl_build
+        DEPENDS gtl_build gtl_cleanup
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     )
 ENDIF()
@@ -335,7 +351,7 @@ IF(BUILD_TESTING AND BUILD_COVERAGE)
     IF(LLVM_PROFDATA_EXECUTABLE AND LLVM_COV_EXECUTABLE)
         ADD_CUSTOM_TARGET(gtl_coverage
             COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Generating code coverage report..."
-            COMMAND "${LLVM_PROFDATA_EXECUTABLE}" "merge" "-output=./Coverage/Coverage.profdata" "./Coverage/*.profraw"
+            COMMAND "${LLVM_PROFDATA_EXECUTABLE}" "merge" "-output=./Coverage/Coverage.profdata" "./Coverage/Data/*.profraw"
             COMMAND "${CMAKE_COMMAND}" "-P" "./Coverage/GenerateReport.cmake"
             DEPENDS gtl_build gtl_test
             WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -446,8 +462,8 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
         SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}LIST(GET TARGET_OBJECTS 0 TARGET_OBJECT)\n")
         SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}EXECUTE_PROCESS(\n")
         SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}    COMMAND \"\${LLVM_COV_EXECUTABLE}\" \"show\" \"-format=html\" \"-instr-profile=./Coverage/Coverage.profdata\" \"\${TARGET_OBJECT}\" \"${CMAKE_SOURCE_DIR}/Source\"\n")
-        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}    OUTPUT_FILE ./Coverage/${TEST_FILE_NAME}.html\n")
-        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}\n")
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}    OUTPUT_FILE \"./Coverage/${TEST_FILE_NAME}.html\"\n")
+        SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}    WORKING_DIRECTORY \"${CMAKE_BINARY_DIR}\"\n")
         SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT})\n")
         SET(COVERAGE_SCRIPT "${COVERAGE_SCRIPT}\n")
     ENDIF()
@@ -506,7 +522,7 @@ FOREACH(TEST_FILE ${TEST_SOURCE_FILES})
         SET_TESTS_PROPERTIES(${CURRENT_TEST_NAME} PROPERTIES REQUIRED_FILES $<TARGET_FILE:${CURRENT_TEST_NAME}> WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
         
         # Set the code coverage output path.
-        SET_TESTS_PROPERTIES(${CURRENT_TEST_NAME} PROPERTIES ENVIRONMENT "LLVM_PROFILE_FILE=${CMAKE_BINARY_DIR}/Coverage/%m.profraw")
+        SET_TESTS_PROPERTIES(${CURRENT_TEST_NAME} PROPERTIES ENVIRONMENT "LLVM_PROFILE_FILE=${CMAKE_BINARY_DIR}/Coverage/Data/%m.profraw")
         
         # Increment the loop index.
         MATH(EXPR SUB_TEST_INDEX "${SUB_TEST_INDEX} + 1")
