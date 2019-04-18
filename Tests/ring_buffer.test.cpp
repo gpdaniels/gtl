@@ -162,7 +162,7 @@ TEST(function, size_push_pop) {
     );
 }
 
-TEST(evaluation, threads) {
+TEST(evaluation, threads_x2) {
     constexpr static const unsigned int buffer_size = 5;
     constexpr static const unsigned int test_size = 1000;
 
@@ -197,5 +197,66 @@ TEST(evaluation, threads) {
     for (unsigned int i = 0; i < test_size; ++i) {
         REQUIRE(have_pushed[i]);
         REQUIRE(have_popped[i] == i, "Expected '%d' but got '%d'.", i, have_popped[i]);
+    }
+}
+
+TEST(evaluation, threads_x4) {
+    constexpr static const unsigned int buffer_size = 5;
+    constexpr static const unsigned int test_size1 = 1000;
+    constexpr static const unsigned int test_size2 = 1000;
+
+    gtl::ring_buffer<unsigned int, buffer_size> ring_buffer;
+    std::array<bool, test_size1 + test_size2> have_pushed = {};
+    std::array<bool, test_size1 + test_size2> have_popped = {};
+
+    std::thread pusher1 = std::thread([&](){
+        for (unsigned int i = 0; i < test_size1; ++i) {
+            while (!ring_buffer.try_push(i)) {
+                std::this_thread::yield();
+            }
+            have_pushed[i] = true;
+        }
+    });
+
+    std::thread pusher2 = std::thread([&](){
+        for (unsigned int i = test_size1; i < test_size1 + test_size2; ++i) {
+            while (!ring_buffer.try_push(i)) {
+                std::this_thread::yield();
+            }
+            have_pushed[i] = true;
+        }
+    });
+
+    std::thread popper1 = std::thread([&](){
+        for (unsigned int i = 0; i < test_size1; ++i) {
+            unsigned int value;
+            while (!ring_buffer.try_pop(value)) {
+                std::this_thread::yield();
+            }
+            have_popped[value] = true;
+        }
+    });
+
+
+    std::thread popper2 = std::thread([&](){
+        for (unsigned int i = test_size1; i < test_size1 + test_size2; ++i) {
+            unsigned int value;
+            while (!ring_buffer.try_pop(value)) {
+                std::this_thread::yield();
+            }
+            have_popped[value] = true;
+        }
+    });
+
+    while (pusher1.joinable() || pusher2.joinable() || popper1.joinable() || popper2.joinable() ) {
+        if (pusher1.joinable()) pusher1.join();
+        if (pusher2.joinable()) pusher2.join();
+        if (popper1.joinable()) popper1.join();
+        if (popper2.joinable()) popper2.join();
+    }
+
+    for (unsigned int i = 0; i < test_size1 + test_size2; ++i) {
+        REQUIRE(have_pushed[i], "Value '%d' was not pushed.", i);
+        REQUIRE(have_popped[i], "Value '%d' was not popped.", i);
     }
 }
