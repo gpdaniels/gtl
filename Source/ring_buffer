@@ -126,7 +126,7 @@ namespace gtl {
 
             // Create a new writer location to hold the assigned/allocated/reserved pending write index.
             index_type new_writer = { current_writer.read, (current_writer.write + 1) % (2 * this->data_size) };
-            
+
             // Attempt to assign/allocate/reserve an index for writing using atomic_compare_exchange_weak.
             // Remember the writer holds the current read and pending write locations, so this tries to increment the pending write location.
             // if (this->writer == current_writer) {  this->writer = new_writer; } else { current_writer = this->writer; }
@@ -167,7 +167,7 @@ namespace gtl {
 
             // Create a new reader location to hold the assigned/allocated/reserved pending read index.
             index_type new_reader = { (current_reader.read + 1) % (2 * this->data_size), current_reader.write };
-            
+
             // Attempt to assign/allocate/reserve an index for reading using atomic_compare_exchange_weak.
             // Remember the reader holds the current write and pending read locations, so this tries to increment the pending read location.
             // if (this->reader == current_reader) {  this->reader = new_reader; } else { current_reader = this->reader; }

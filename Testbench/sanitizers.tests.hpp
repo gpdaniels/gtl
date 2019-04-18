@@ -30,7 +30,7 @@ THE SOFTWARE
 #   endif
 #endif
 
-#if !defined( GTL_HAS_SANITIZER_MEMORY)
+#if !defined(GTL_HAS_SANITIZER_MEMORY)
 #   if defined(__has_feature)
 #      if __has_feature(memory_sanitizer)
 #          define GTL_HAS_SANITIZER_MEMORY 1
