@@ -135,7 +135,7 @@ namespace gtl {
             }
 
             // Write the value to the buffer at the pending write index.
-            this->data[new_writer.write % this->data_size] = value;
+            this->data[current_writer.write % this->data_size] = value;
 
             // Create a local copy of the reader.
             index_type current_reader = this->reader.load();
@@ -176,7 +176,7 @@ namespace gtl {
             }
 
             // Read the value from the buffer at the pending read index.
-            value = this->data[new_reader.read % this->data_size];
+            value = this->data[current_reader.read % this->data_size];
 
             // Create a local copy of the writer.
             index_type current_writer = this->writer.load();
