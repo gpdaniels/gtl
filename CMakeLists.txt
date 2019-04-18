@@ -132,7 +132,7 @@ ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_WARNINGS=1")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 ELSE()
-    MESSAGE(WARNING "Unsupported compiler.")
+    MESSAGE(FATAL_ERROR "Unsupported compiler.")
 ENDIF()
 
 ################################################################################
@@ -147,7 +147,7 @@ ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # None
 ELSE()
-    MESSAGE(WARNING "Unsupported compiler.")
+    MESSAGE(FATAL_ERROR "Unsupported compiler.")
 ENDIF()
 
 ################################################################################
@@ -273,9 +273,9 @@ IF(BUILD_SANITIZE_ADDRESS OR BUILD_SANITIZE_MEMORY OR BUILD_SANITIZE_THREAD OR B
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
 
     ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-        MESSAGE(WARNING "Unsupported compiler.")
+        MESSAGE(FATAL_ERROR "Unsupported compiler.")
     ELSE()
-        MESSAGE(WARNING "Unsupported compiler.")
+        MESSAGE(FATAL_ERROR "Unsupported compiler.")
     ENDIF()
 ENDIF(BUILD_COVERAGE)
 
@@ -313,11 +313,11 @@ IF(BUILD_COVERAGE)
         SET(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -fcoverage-mapping")
 
     ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        MESSAGE(WARNING "Unsupported compiler.")
+        MESSAGE(FATAL_ERROR "Unsupported compiler.")
     ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-        MESSAGE(WARNING "Unsupported compiler.")
+        MESSAGE(FATAL_ERROR "Unsupported compiler.")
     ELSE()
-        MESSAGE(WARNING "Unsupported compiler.")
+        MESSAGE(FATAL_ERROR "Unsupported compiler.")
     ENDIF()
 ENDIF(BUILD_COVERAGE)
 
