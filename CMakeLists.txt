@@ -415,7 +415,6 @@ IF(BUILD_TESTING AND BUILD_COVERAGE)
 ELSE()
     ADD_CUSTOM_TARGET(gtl_cleanup
         COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Cleanup not required."
-        DEPENDS gtl_build
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     )
 ENDIF()
@@ -431,7 +430,6 @@ IF(BUILD_TESTING)
 ELSE()
     ADD_CUSTOM_TARGET(gtl_test
         COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Testing not enabled."
-        DEPENDS gtl_build gtl_cleanup
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     )
 ENDIF()
@@ -462,14 +460,12 @@ IF(BUILD_TESTING AND BUILD_MEMCHECK)
     ELSE()
         ADD_CUSTOM_TARGET(gtl_memcheck
             COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Memcheck not available."
-            DEPENDS gtl_build gtl_test
             WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
         )
     ENDIF()
 ELSE()
     ADD_CUSTOM_TARGET(gtl_memcheck
         COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Memcheck not enabled."
-        DEPENDS gtl_build gtl_test
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     )
 ENDIF()
@@ -497,14 +493,12 @@ IF(BUILD_TESTING AND BUILD_COVERAGE)
     ELSE()
         ADD_CUSTOM_TARGET(gtl_coverage
             COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Code coverage not available."
-            DEPENDS gtl_build gtl_test
             WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
         )
     ENDIF()
 ELSE()
     ADD_CUSTOM_TARGET(gtl_coverage
         COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Code coverage not enabled."
-        DEPENDS gtl_build gtl_test
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     )
 ENDIF()
