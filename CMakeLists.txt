@@ -478,6 +478,7 @@ IF(BUILD_TESTING AND BUILD_COVERAGE)
             COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Generating code coverage report..."
             COMMAND "${LLVM_PROFDATA_EXECUTABLE}" "merge" "-output=./Coverage/Coverage.profdata" "./Coverage/Data/*.profraw"
             COMMAND "${CMAKE_COMMAND}" "-P" "./Coverage/GenerateReport.cmake"
+            COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Code coverage results are in '${CMAKE_BINARY_DIR}/Coverage/'."
             DEPENDS gtl_build gtl_test
             WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
         )
