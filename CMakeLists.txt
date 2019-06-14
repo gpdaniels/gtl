@@ -328,18 +328,18 @@ INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/Source/")
 INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/Tests/")
 
 # Find all library source files in the test directory recursively.
-FILE(GLOB HEADER_FILES "${CMAKE_SOURCE_DIR}/Source/*")
+FILE(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Source/*")
 
 # Find all test source files in the test directory recursively.
-FILE(GLOB TEST_SOURCE_FILES "${CMAKE_SOURCE_DIR}/Tests/*.test.cpp")
+FILE(GLOB_RECURSE TEST_SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Tests/*.test.cpp")
 
 # Get the main testbench files.
 SET(TESTS_MAIN_HEADER_FILE "${CMAKE_SOURCE_DIR}/Testbench/main.tests.hpp")
 SET(TESTS_MAIN_SOURCE_FILE "${CMAKE_SOURCE_DIR}/Testbench/main.tests.cpp")
 
 # Get the auxiliary testbench files.
-FILE(GLOB TESTS_HEADER_FILES "${CMAKE_SOURCE_DIR}/Testbench/*.tests.hpp")
-FILE(GLOB TESTS_SOURCE_FILES "${CMAKE_SOURCE_DIR}/Testbench/*.tests.cpp")
+FILE(GLOB_RECURSE TESTS_HEADER_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Testbench/*.tests.hpp")
+FILE(GLOB_RECURSE TESTS_SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Testbench/*.tests.cpp")
 
 # Remove the main test files from the auxiliary.
 LIST(REMOVE_ITEM TESTS_HEADER_FILES ${TESTS_MAIN_HEADER_FILE})
