@@ -25,7 +25,7 @@ THE SOFTWARE
 #include <require.tests.hpp>
 #include <template.tests.hpp>
 
-#include <container/triple_buffer>
+#include <execution/triple_buffer>
 
 #if defined(_MSC_VER)
 #   pragma warning(push, 0)

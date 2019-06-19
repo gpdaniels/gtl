@@ -9,7 +9,13 @@ This repository aims is a collection of useful cross-platform, well-commented, s
 
 The current classes are as described below:
 
-### Data Structures ###
+### Algorithm ###
+
+|               Class | Description                                                                             |
+|--------------------:|:----------------------------------------------------------------------------------------|
+| **simulation_loop** | Fixed time step helper class for creating game loops.                                   |
+
+### Container ###
 
 |               Class | Description                                                                             |
 |--------------------:|:----------------------------------------------------------------------------------------|
@@ -19,31 +25,31 @@ The current classes are as described below:
 | **static_array_nd** | N-dimensional statically sized array.                                                   |
 |   **static_lambda** | Lambda function class that uses the stack for storage.                                  |
 
-### Support ###
+### Debug ###
 
 |               Class | Description                                                                             |
 |--------------------:|:----------------------------------------------------------------------------------------|
 |          **access** | Classes and macros for accessing class private members.                                 |
 |          **assert** | Macros that define an assert macro that optionally takes a format string and parameters.|
-|             **cpu** | Class to extract cpuid information to determine supported instructions at runtime.      |
-|           **error** | Composable error class that can be returned down a call stack.                          |
-|           **paths** | Collection of cross platform functions to provide useful paths.                         |
-|           **pimpl** | Statically sized pointer to implementation wrapper.                                     |
-| **simulation_loop** | Fixed time step helper class for creating game loops.                                   |
 
-### Multi-Threading ###
+### Execution ###
 
 |               Class | Description                                                                             |
 |--------------------:|:----------------------------------------------------------------------------------------|
 |         **barrier** | Thread syncronisation barrier.                                                          |
 |       **coroutine** | Setjump/Longjump implementation of stackful coroutines.                                 |
-|           **event** | Thread safe multi-in/multi-out event/messaging system.                                  |
 |       **semaphore** | Semaphore made using a mutex and condition variable.                                    |
 |       **spin_lock** | Spin lock implemented using an atomic flag.                                             |
 |   **triple_buffer** | Lockless triple buffer interface to three buffers.                                      |
 |     **thread_pool** | Multi-queue thread-pool that performs jobs in priority order.                           |
 
-### Pseudorandom Number Generators ###
+### IO ###
+
+|               Class | Description                                                                             |
+|--------------------:|:----------------------------------------------------------------------------------------|
+|           **paths** | Collection of cross platform functions to provide useful paths.                         |
+
+### Random ###
 
 |               Class | Description                                                                             |
 |--------------------:|:----------------------------------------------------------------------------------------|
@@ -59,6 +65,15 @@ The current classes are as described below:
 |       **enum_name** | Compile-time enum value name as a string with -fno-rtti.                                |
 |         **type_id** | Simple run-time-type-information (rtti) with -fno-rtti.                                 |
 |       **type_name** | Compile-time type name as a string with -fno-rtti.                                      |
+
+### Utility ###
+
+|               Class | Description                                                                             |
+|--------------------:|:----------------------------------------------------------------------------------------|
+|             **cpu** | Class to extract cpuid information to determine supported instructions at runtime.      |
+|           **error** | Composable error class that can be returned down a call stack.                          |
+|           **event** | Thread safe multi-in/multi-out event/messaging system.                                  |
+|           **pimpl** | Statically sized pointer to implementation wrapper.                                     |
 
 ## Build matrix ##
 

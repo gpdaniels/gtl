@@ -23,7 +23,7 @@ THE SOFTWARE
 #include <data.tests.hpp>
 #include <require.tests.hpp>
 
-#include <debug/enum_name>
+#include <type/enum_name>
 
 #if defined(_MSC_VER)
 #   pragma warning(push, 0)
