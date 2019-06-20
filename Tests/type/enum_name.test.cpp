@@ -61,7 +61,10 @@ TEST(constructor, empty) {
 TEST(function, name) {
     #if defined(__clang__) || defined(_MSC_VER)
         auto strcmp = [](const char* LHS, const char* RHS) -> bool {
-            while (*LHS && (*LHS++==*RHS++));
+            while (*LHS && (*LHS == *RHS)) {
+                ++LHS;
+                ++RHS;
+            }
             return *LHS == *RHS;
         };
 
@@ -75,7 +78,10 @@ TEST(function, name) {
         REQUIRE(strcmp(enum_name3.name(), "test_enum::third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name(), "test_enum::third");
     #elif defined(__GNUC__)
         auto strcmp = [](const char* LHS, const char* RHS) -> bool {
-            while (*LHS && (*LHS++==*RHS++));
+            while (*LHS && (*LHS == *RHS)) {
+                ++LHS;
+                ++RHS;
+            }
             return *LHS == *RHS;
         };
 
@@ -92,7 +98,10 @@ TEST(function, name) {
 
 TEST(function, name_type) {
     auto strcmp = [](const char* LHS, const char* RHS) -> bool {
-        while (*LHS && (*LHS++==*RHS++));
+        while (*LHS && (*LHS == *RHS)) {
+            ++LHS;
+            ++RHS;
+        }
         return *LHS == *RHS;
     };
 
@@ -109,7 +118,10 @@ TEST(function, name_type) {
 TEST(function, name_value) {
     #if defined(__clang__) || defined(_MSC_VER)
         auto strcmp = [](const char* LHS, const char* RHS) -> bool {
-            while (*LHS && (*LHS++==*RHS++));
+            while (*LHS && (*LHS == *RHS)) {
+                ++LHS;
+                ++RHS;
+            }
             return *LHS == *RHS;
         };
 
@@ -123,7 +135,10 @@ TEST(function, name_value) {
         REQUIRE(strcmp(enum_name3.name_value(), "third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_value(), "third");
     #elif defined(__GNUC__)
         auto strcmp = [](const char* LHS, const char* RHS) -> bool {
-            while (*LHS && (*LHS++==*RHS++));
+            while (*LHS && (*LHS == *RHS)) {
+                ++LHS;
+                ++RHS;
+            }
             return *LHS == *RHS;
         };
 
@@ -149,7 +164,10 @@ namespace test_namespace {
 TEST(function, name_with_namespaces) {
     #if defined(__clang__) || defined(_MSC_VER)
         auto strcmp = [](const char* LHS, const char* RHS) -> bool {
-            while (*LHS && (*LHS++==*RHS++));
+            while (*LHS && (*LHS == *RHS)) {
+                ++LHS;
+                ++RHS;
+            }
             return *LHS == *RHS;
         };
 
@@ -163,7 +181,10 @@ TEST(function, name_with_namespaces) {
         REQUIRE(strcmp(enum_name3.name(), "test_namespace::test_enum::third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name(), "test_namespace::test_enum::third");
     #elif defined(__GNUC__)
         auto strcmp = [](const char* LHS, const char* RHS) -> bool {
-            while (*LHS && (*LHS++==*RHS++));
+            while (*LHS && (*LHS == *RHS)) {
+                ++LHS;
+                ++RHS;
+            }
             return *LHS == *RHS;
         };
 
@@ -180,7 +201,10 @@ TEST(function, name_with_namespaces) {
 
 TEST(function, name_type_with_namespaces) {
     auto strcmp = [](const char* LHS, const char* RHS) -> bool {
-        while (*LHS && (*LHS++==*RHS++));
+        while (*LHS && (*LHS == *RHS)) {
+            ++LHS;
+            ++RHS;
+        }
         return *LHS == *RHS;
     };
 
@@ -197,7 +221,10 @@ TEST(function, name_type_with_namespaces) {
 TEST(function, name_value_with_namespaces) {
     #if defined(__clang__) || defined(_MSC_VER)
         auto strcmp = [](const char* LHS, const char* RHS) -> bool {
-            while (*LHS && (*LHS++==*RHS++));
+            while (*LHS && (*LHS == *RHS)) {
+                ++LHS;
+                ++RHS;
+            }
             return *LHS == *RHS;
         };
 
@@ -211,7 +238,10 @@ TEST(function, name_value_with_namespaces) {
         REQUIRE(strcmp(enum_name3.name_value(), "third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_value(), "third");
     #elif defined(__GNUC__)
         auto strcmp = [](const char* LHS, const char* RHS) -> bool {
-            while (*LHS && (*LHS++==*RHS++));
+            while (*LHS && (*LHS == *RHS)) {
+                ++LHS;
+                ++RHS;
+            }
             return *LHS == *RHS;
         };
 

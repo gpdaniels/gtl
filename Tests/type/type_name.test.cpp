@@ -85,7 +85,10 @@ TEST(constructor, empty) {
 
 TEST(function, name) {
     auto strcmp = [](const char* LHS, const char* RHS) -> bool {
-        while (*LHS && (*LHS++==*RHS++));
+        while (*LHS && (*LHS == *RHS)) {
+            ++LHS;
+            ++RHS;
+        }
         return *LHS == *RHS;
     };
     test_template<test_types>(

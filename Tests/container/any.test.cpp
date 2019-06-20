@@ -67,7 +67,10 @@ TEST(evaluation, any) {
     REQUIRE(static_cast<double>(any) == 1.0,  "Unexpected value '%f' in any, expected %f.", static_cast<double>(any), 1.0);
 
     auto strcmp = [](const char* LHS, const char* RHS) -> bool {
-        while (*LHS && (*LHS++==*RHS++));
+        while (*LHS && (*LHS == *RHS)) {
+            ++LHS;
+            ++RHS;
+        }
         return *LHS == *RHS;
     };
 
