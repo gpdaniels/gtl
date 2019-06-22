@@ -339,7 +339,7 @@ namespace gtl {
         }
 
         /// @brief  Default constructor does nothing.
-        coroutine(void)
+        coroutine()
             : signal_raised(0)
             , stack(nullptr) {
         }

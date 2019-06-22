@@ -58,7 +58,7 @@ namespace gtl {
         ~random_pcg() = default;
 
         /// @brief  Empty constructor.
-        random_pcg(void)
+        random_pcg()
             : state(0x853C49E6748FEA9Bull)
             , increment(0xDA3E39CB94B95BDBull) {
         }

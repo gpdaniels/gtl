@@ -55,7 +55,7 @@ namespace gtl {
         ~random_splitmix() = default;
 
         /// @brief  Empty constructor.
-        random_splitmix(void)
+        random_splitmix()
             : state(1) {
         }
 

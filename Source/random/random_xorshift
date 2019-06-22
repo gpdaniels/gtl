@@ -55,7 +55,7 @@ namespace gtl {
         ~random_xorshift() = default;
 
         /// @brief  Empty constructor.
-        random_xorshift(void)
+        random_xorshift()
             : state(0xC1F651C67C62C6E0ull) {
         }
 
