@@ -34,7 +34,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(paths, traits, standard) {
     REQUIRE(sizeof(gtl::paths) > 0);
 
     #if defined(__clang__)
@@ -54,48 +54,48 @@ TEST(traits, standard) {
     REQUIRE((std::is_standard_layout<gtl::paths>::value == true));
 }
 
-TEST(function, get_executable_path) {
+TEST(paths, function, get_executable_path) {
     std::string executable_path;
     REQUIRE(gtl::paths::get_executable_path(executable_path));
     PRINT("executable_path: %s\n", executable_path.c_str());
 }
 
-TEST(function, get_executable_name) {
+TEST(paths, function, get_executable_name) {
     std::string executable_name;
     REQUIRE(gtl::paths::get_executable_name(executable_name));
     PRINT("executable_name: %s\n", executable_name.c_str());
 }
 
-TEST(function, get_executable_directory) {
+TEST(paths, function, get_executable_directory) {
     std::string executable_directory;
     REQUIRE(gtl::paths::get_executable_directory(executable_directory));
     PRINT("executable_directory: %s\n", executable_directory.c_str());
 }
 
-TEST(function, get_directory_contents) {
+TEST(paths, function, get_directory_contents) {
     std::vector<std::string> directory_contents = gtl::paths::get_directory_contents(".");
     PRINT("directory_contents size: %zu\n", directory_contents.size());
 }
 
-TEST(function, get_current_working_directory) {
+TEST(paths, function, get_current_working_directory) {
     std::string current_working_directory;
     REQUIRE(gtl::paths::get_current_working_directory(current_working_directory));
     PRINT("current_working_directory: %s\n", current_working_directory.c_str());
 }
 
-TEST(function, get_home_directory) {
+TEST(paths, function, get_home_directory) {
     std::string home_directory;
     REQUIRE(gtl::paths::get_home_directory(home_directory));
     PRINT("home_directory: %s\n", home_directory.c_str());
 }
 
-TEST(function, get_application_data_directory) {
+TEST(paths, function, get_application_data_directory) {
     std::string application_data_directory;
     REQUIRE(gtl::paths::get_application_data_directory(application_data_directory));
     PRINT("application_data_directory: %s\n", application_data_directory.c_str());
 }
 
-TEST(evaluation, print_all) {
+TEST(paths, evaluation, print_all) {
     std::string executable_path;
     REQUIRE(gtl::paths::get_executable_path(executable_path));
     PRINT("executable_path:             %s\n", executable_path.c_str());

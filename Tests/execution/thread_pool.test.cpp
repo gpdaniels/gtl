@@ -34,7 +34,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(thread_pool, traits, standard) {
 
 #if 0
     // 176, 168, 152, 144, or 112...
@@ -53,13 +53,13 @@ TEST(traits, standard) {
 #endif
 }
 
-TEST(constructor, empty) {
+TEST(thread_pool, constructor, empty) {
     gtl::thread_pool thread_pool;
     do_not_optimise_away(thread_pool);
     thread_pool.join();
 }
 
-TEST(constructor, number) {
+TEST(thread_pool, constructor, number) {
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(0);
         do_not_optimise_away(thread_pool);
@@ -81,7 +81,7 @@ TEST(constructor, number) {
     }
 }
 
-TEST(function, push_job) {
+TEST(thread_pool, function, push_job) {
     {
         gtl::thread_pool thread_pool = gtl::thread_pool();
 
@@ -126,7 +126,7 @@ TEST(function, push_job) {
     }
 }
 
-TEST(function, drain) {
+TEST(thread_pool, function, drain) {
     gtl::thread_pool thread_pool = gtl::thread_pool();
 
     gtl::thread_pool::queue queue(thread_pool);
@@ -166,7 +166,7 @@ TEST(function, drain) {
     }
 }
 
-TEST(function, joinable) {
+TEST(thread_pool, function, joinable) {
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(0);
         do_not_optimise_away(thread_pool);
@@ -198,7 +198,7 @@ TEST(function, joinable) {
     }
 }
 
-TEST(function, join) {
+TEST(thread_pool, function, join) {
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(0);
         do_not_optimise_away(thread_pool);
@@ -241,7 +241,7 @@ TEST(function, join) {
     }
 }
 
-TEST(evaluate, work) {
+TEST(thread_pool, evaluate, work) {
 
     gtl::thread_pool thread_pool = gtl::thread_pool();
 
@@ -264,7 +264,7 @@ TEST(evaluate, work) {
     }
 }
 
-TEST(evaluate, priority) {
+TEST(thread_pool, evaluate, priority) {
 
     gtl::thread_pool thread_pool = gtl::thread_pool(0);
 
@@ -293,7 +293,7 @@ TEST(evaluate, priority) {
 }
 
 
-TEST(evaluate, add_work_from_job) {
+TEST(thread_pool, evaluate, add_work_from_job) {
 
     gtl::thread_pool thread_pool = gtl::thread_pool();
 
@@ -325,7 +325,7 @@ TEST(evaluate, add_work_from_job) {
 #   include <dispatch/dispatch.h>
 #endif
 
-TEST(evaluate, benchmark) {
+TEST(thread_pool, evaluate, benchmark) {
 
     constexpr static const unsigned int flag_count = 1000;
     constexpr static const unsigned int sum_count = 10000;

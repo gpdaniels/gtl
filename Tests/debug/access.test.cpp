@@ -128,7 +128,7 @@ GTL_ACCESS_GENERATE(test_class_access, test_class,
     GTL_ACCESS_FUNC,  static, int(volatile const int),       function_svci
 );
 
-TEST(traits, standard) {
+TEST(access, traits, standard) {
     REQUIRE(sizeof(test_class) <= sizeof(test_class_access), "Expecting sizeof test_class (%ld) to smaller than or equal to the sizeof test_class_access (%ld)", sizeof(test_class), sizeof(test_class_access));
 
     REQUIRE(std::is_pod<test_class>::value == false);
@@ -151,7 +151,7 @@ TEST(traits, standard) {
     REQUIRE(std::is_standard_layout<test_class_access>::value == false);
 }
 
-TEST(evaluate, access) {
+TEST(access, evaluate, access) {
     test_class test;
     test_class_access access(test);
 

@@ -36,7 +36,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(coroutine, traits, standard) {
 
     #if defined(__APPLE__)
         REQUIRE(sizeof(gtl::coroutine) == 352, "sizeof(gtl::coroutine) = %ld, expected == %lld", sizeof(gtl::coroutine), 352ull);
@@ -55,19 +55,19 @@ TEST(traits, standard) {
     REQUIRE(std::is_standard_layout<gtl::coroutine>::value == true, "Expected std::is_standard_layout to be true.");
 }
 
-TEST(constructor, empty) {
+TEST(coroutine, constructor, empty) {
     gtl::coroutine coroutine;
     do_not_optimise_away(coroutine);
 }
 
 
-TEST(constructor, lambda) {
+TEST(coroutine, constructor, lambda) {
     gtl::coroutine coroutine([](){});
     // Ensure coroutine has run.
     coroutine.join();
 }
 
-TEST(constructor, lamda_argument) {
+TEST(coroutine, constructor, lamda_argument) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -80,14 +80,14 @@ TEST(constructor, lamda_argument) {
     );
 }
 
-TEST(constructor, move) {
+TEST(coroutine, constructor, move) {
     gtl::coroutine coroutine1([](){});
     gtl::coroutine coroutine2(std::move(coroutine1));
     // Ensure coroutine2 has run.
     coroutine2.join();
 }
 
-TEST(operator, move_assignment) {
+TEST(coroutine, operator, move_assignment) {
     gtl::coroutine coroutine1([](){});
     gtl::coroutine coroutine2;
     coroutine2 = std::move(coroutine1);
@@ -95,7 +95,7 @@ TEST(operator, move_assignment) {
     coroutine2.join();
 }
 
-TEST(function, get_id) {
+TEST(coroutine, function, get_id) {
     gtl::coroutine coroutine1;
     REQUIRE(coroutine1.get_id() == gtl::coroutine::id{}, "Extected get_id() to be null for an empty coroutine.");
     gtl::coroutine coroutine2 = gtl::coroutine([](){});
@@ -104,7 +104,7 @@ TEST(function, get_id) {
     coroutine2.join();
 }
 
-TEST(function, joinable) {
+TEST(coroutine, function, joinable) {
     gtl::coroutine coroutine1;
     REQUIRE(coroutine1.joinable() == false, "Extected joinable() to be false for an empty coroutine.");
     gtl::coroutine coroutine2([](){});
@@ -113,7 +113,7 @@ TEST(function, joinable) {
     coroutine2.join();
 }
 
-TEST(function, join) {
+TEST(coroutine, function, join) {
     bool result = false;
     gtl::coroutine coroutine([&result](){
         result = true;
@@ -123,7 +123,7 @@ TEST(function, join) {
     REQUIRE(result == true, "Expected result to be set to true after coroutine run.");
 }
 
-TEST(function, current_get_id) {
+TEST(coroutine, function, current_get_id) {
     gtl::coroutine::id id;
     gtl::coroutine coroutine([&id](){
         id = gtl::this_coroutine::get_id();
@@ -133,7 +133,7 @@ TEST(function, current_get_id) {
     REQUIRE(coroutine.get_id() == id, "Extected get_id() be the same as the global call.");
 }
 
-TEST(function, current_yield) {
+TEST(coroutine, function, current_yield) {
     int result = 0;
     gtl::coroutine coroutine([&result](){
         result = 1;
@@ -147,14 +147,14 @@ TEST(function, current_yield) {
     REQUIRE(result == 2, "Expected result to be set to 2 not '%d' after coroutine run.", result);
 }
 
-TEST(function, current_sleep_for) {
+TEST(coroutine, function, current_sleep_for) {
     gtl::coroutine coroutine([](){
         gtl::this_coroutine::sleep_for(std::chrono::milliseconds(100));
     });
     coroutine.join();
 }
 
-TEST(function, current_sleep_until) {
+TEST(coroutine, function, current_sleep_until) {
     gtl::coroutine coroutine([](){
         gtl::this_coroutine::sleep_until(std::chrono::steady_clock::now() + std::chrono::milliseconds(100));
     });

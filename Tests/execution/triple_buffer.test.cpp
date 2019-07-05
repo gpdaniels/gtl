@@ -38,7 +38,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(triple_buffer, traits, standard) {
     test_template<test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -62,7 +62,7 @@ TEST(traits, standard) {
     );
 }
 
-TEST(constructor, empty) {
+TEST(triple_buffer, constructor, empty) {
     test_template<test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -74,7 +74,7 @@ TEST(constructor, empty) {
     );
 }
 
-TEST(function, update_read) {
+TEST(triple_buffer, function, update_read) {
     test_template<test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -88,7 +88,7 @@ TEST(function, update_read) {
     );
 }
 
-TEST(function, get_read) {
+TEST(triple_buffer, function, get_read) {
     test_template<test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -102,7 +102,7 @@ TEST(function, get_read) {
     );
 }
 
-TEST(function, get_write) {
+TEST(triple_buffer, function, get_write) {
     test_template<test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -116,7 +116,7 @@ TEST(function, get_write) {
     );
 }
 
-TEST(function, update_write) {
+TEST(triple_buffer, function, update_write) {
     test_template<test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -130,7 +130,7 @@ TEST(function, update_write) {
     );
 }
 
-TEST(evaluation, buffer_progression) {
+TEST(triple_buffer, evaluation, buffer_progression) {
     test_template<test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -176,7 +176,7 @@ TEST(evaluation, buffer_progression) {
     );
 }
 
-TEST(evaluation, buffer_values) {
+TEST(triple_buffer, evaluation, buffer_values) {
     test_template<test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -221,7 +221,7 @@ TEST(evaluation, buffer_values) {
     );
 }
 #include <mutex>
-TEST(evaluation, threads) {
+TEST(triple_buffer, evaluation, threads) {
     constexpr static const unsigned int test_size = 100000;
 
     gtl::triple_buffer<unsigned int> triple_buffer;

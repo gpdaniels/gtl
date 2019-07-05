@@ -33,10 +33,10 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(assert, traits, standard) {
 }
 
-TEST(evaluate, assert) {
+TEST(assert, evaluate, assert) {
     // Asserting without a message.
     GTL_ASSERT(true);
     
@@ -163,7 +163,7 @@ namespace gtl_assert_test {
 // The assert uses std::abort to quit, this redefines the namespace of the abort function to the above.
 #define std gtl_assert_test
 
-TEST(trigger, assert) {
+TEST(assert, trigger, assert) {
     gtl_assert_test::triggered = false;
     GTL_ASSERT(false);
     REQUIRE(gtl_assert_test::triggered);

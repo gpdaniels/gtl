@@ -34,7 +34,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(error, traits, standard) {
     REQUIRE(sizeof(gtl::error) >= 24, "sizeof(gtl::error) = %ld, expected >= %lld", sizeof(gtl::error), 24ull);
 
     REQUIRE((std::is_pod<gtl::error>::value == false));
@@ -50,13 +50,13 @@ TEST(traits, standard) {
     REQUIRE((std::is_standard_layout<gtl::error>::value == true));
 }
 
-TEST(constructor, empty) {
+TEST(error, constructor, empty) {
     gtl::error error;
     REQUIRE(error);
 }
 
 
-TEST(constructor, enum_class) {
+TEST(error, constructor, enum_class) {
     enum class error_code {
         pass = 0,
         fail = 1
@@ -71,7 +71,7 @@ TEST(constructor, enum_class) {
     }
 }
 
-TEST(parameter, type) {
+TEST(error, parameter, type) {
     enum class error_code1 {
         pass = 0,
         fail = 1
@@ -94,7 +94,7 @@ TEST(parameter, type) {
     REQUIRE(error3.type == error4.type);
 }
 
-TEST(parameter, value) {
+TEST(error, parameter, value) {
     enum class error_code1 {
         pass = 0,
         fail = 1
@@ -120,7 +120,7 @@ TEST(parameter, value) {
     REQUIRE(error2.value == error4.value);
 }
 
-TEST(parameter, name) {
+TEST(error, parameter, name) {
     enum class error_code1 {
         pass = 0,
         fail = 1
@@ -152,19 +152,19 @@ TEST(parameter, name) {
         REQUIRE(strcmp(error3.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "error_code2");
         REQUIRE(strcmp(error4.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "error_code2");
     #elif defined(__GNUC__)
-        REQUIRE(strcmp(error1.name, "TEST_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "TEST_parameter_name()::error_code1");
-        REQUIRE(strcmp(error2.name, "TEST_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "TEST_parameter_name()::error_code1");
-        REQUIRE(strcmp(error3.name, "TEST_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "TEST_parameter_name()::error_code2");
-        REQUIRE(strcmp(error4.name, "TEST_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "TEST_parameter_name()::error_code2");
+        REQUIRE(strcmp(error1.name, "test_error_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "test_error_parameter_name()::error_code1");
+        REQUIRE(strcmp(error2.name, "test_error_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "test_error_parameter_name()::error_code1");
+        REQUIRE(strcmp(error3.name, "test_error_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "test_error_parameter_name()::error_code2");
+        REQUIRE(strcmp(error4.name, "test_error_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "test_error_parameter_name()::error_code2");
     #elif defined(_MSC_VER)
-        REQUIRE(strcmp(error1.name, "TEST_parameter_name::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "TEST_parameter_name::error_code1");
-        REQUIRE(strcmp(error2.name, "TEST_parameter_name::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "TEST_parameter_name::error_code1");
-        REQUIRE(strcmp(error3.name, "TEST_parameter_name::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "TEST_parameter_name::error_code2");
-        REQUIRE(strcmp(error4.name, "TEST_parameter_name::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "TEST_parameter_name::error_code2");
+        REQUIRE(strcmp(error1.name, "test_error_parameter_name::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "test_error_parameter_name::error_code1");
+        REQUIRE(strcmp(error2.name, "test_error_parameter_name::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "test_error_parameter_name::error_code1");
+        REQUIRE(strcmp(error3.name, "test_error_parameter_name::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "test_error_parameter_name::error_code2");
+        REQUIRE(strcmp(error4.name, "test_error_parameter_name::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "test_error_parameter_name::error_code2");
     #endif
 }
 
-TEST(evaluate, call_stack) {
+TEST(error, evaluate, call_stack) {
 
     enum class error_code1 {
         pass = 0,

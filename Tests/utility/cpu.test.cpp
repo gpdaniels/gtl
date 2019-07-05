@@ -34,7 +34,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(cpu, traits, standard) {
 
     #if defined(__clang__)
         REQUIRE(sizeof(gtl::cpu) == 48, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 48ull);
@@ -53,32 +53,32 @@ TEST(traits, standard) {
     REQUIRE(std::is_standard_layout<gtl::cpu>::value == true, "Expected std::is_standard_layout to be true.");
 }
 
-TEST(constructor, empty) {
+TEST(cpu, constructor, empty) {
     gtl::cpu cpu;
     do_not_optimise_away(cpu);
 }
 
-TEST(function, is_build_compatible) {
+TEST(cpu, function, is_build_compatible) {
     gtl::cpu cpu;
     REQUIRE(cpu.is_build_compatible());
 }
 
-TEST(function, get_max_leaf_id) {
+TEST(cpu, function, get_max_leaf_id) {
     gtl::cpu cpu;
     cpu.get_max_leaf_id();
 }
 
-TEST(function, get_manufacturer_id) {
+TEST(cpu, function, get_manufacturer_id) {
     gtl::cpu cpu;
     cpu.get_manufacturer_id();
 }
 
-TEST(function, get_brand_string) {
+TEST(cpu, function, get_brand_string) {
     gtl::cpu cpu;
     cpu.get_brand_string();
 }
 
-TEST(function, has_xxx) {
+TEST(cpu, function, has_xxx) {
     gtl::cpu cpu;
 
     cpu.has_mmx();
@@ -101,7 +101,7 @@ TEST(function, has_xxx) {
     cpu.has_bmi2();
 }
 
-TEST(evaluation, print_flags) {
+TEST(cpu, evaluation, print_flags) {
     gtl::cpu cpu;
     PRINT("get_max_leaf_id:             %d\n", cpu.get_max_leaf_id());
     PRINT("get_max_extended_leaf_id:    %d\n", cpu.get_max_extended_leaf_id());

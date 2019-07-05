@@ -34,7 +34,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(simulation_loop, traits, standard) {
     REQUIRE(sizeof(gtl::simulation_loop<100>) >= 24, "sizeof(gtl::simulation_loop) = %ld, expected >= %lld", sizeof(gtl::simulation_loop<100>), 24ull);
 
     REQUIRE((std::is_pod<gtl::simulation_loop<100>>::value == false), "Expected std::is_pod to be false.");
@@ -46,11 +46,11 @@ TEST(traits, standard) {
     REQUIRE((std::is_standard_layout<gtl::simulation_loop<100>>::value == true), "Expected std::is_standard_layout to be true.");
 }
 
-TEST(constructor, empty) {
+TEST(simulation_loop, constructor, empty) {
     gtl::simulation_loop<100> simulation_loop;
 }
 
-TEST(function, update) {
+TEST(simulation_loop, function, update) {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     gtl::simulation_loop<100> simulation_loop;
     REQUIRE(simulation_loop.update() == false);
@@ -59,17 +59,17 @@ TEST(function, update) {
     REQUIRE(std::chrono::nanoseconds(end - start).count() >= 1000000, "Failed %ld !>= %ld", (end - start).count(), 10000000l);
 }
 
-TEST(function, get_tick_rate) {
+TEST(simulation_loop, function, get_tick_rate) {
     gtl::simulation_loop<100> simulation_loop;
     REQUIRE(simulation_loop.get_tick_rate() == 100);
 }
 
-TEST(function, get_tick_step) {
+TEST(simulation_loop, function, get_tick_step) {
     gtl::simulation_loop<100> simulation_loop;
     REQUIRE(simulation_loop.get_tick_step() == std::chrono::milliseconds(10));
 }
 
-TEST(function, get_current_tick) {
+TEST(simulation_loop, function, get_current_tick) {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     gtl::simulation_loop<100> simulation_loop;
     REQUIRE(simulation_loop.update() == false);
@@ -80,17 +80,17 @@ TEST(function, get_current_tick) {
     REQUIRE(simulation_loop.get_current_tick() == 1);
 }
 
-TEST(function, get_lag_duration) {
+TEST(simulation_loop, function, get_lag_duration) {
     gtl::simulation_loop<100> simulation_loop;
     REQUIRE(simulation_loop.get_lag_duration() == std::chrono::milliseconds(0));
 }
 
-TEST(function, get_alpha) {
+TEST(simulation_loop, function, get_alpha) {
     gtl::simulation_loop<100> simulation_loop;
     REQUIRE(simulation_loop.get_alpha<float>() == 0.0f);
 }
 
-TEST(evaluation, game_loop) {
+TEST(simulation_loop, evaluation, game_loop) {
 
     gtl::simulation_loop<100> simulation_loop;
 

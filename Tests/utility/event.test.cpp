@@ -39,7 +39,7 @@ struct test_event {
     int value;
 };
 
-TEST(traits, standard) {
+TEST(event, traits, standard) {
     REQUIRE(sizeof(gtl::event_manager<test_event>) >= 4, "sizeof(gtl::event_manager) = %ld, expected >= %lld", sizeof(gtl::event_manager<test_event>), 1ull);
 
     REQUIRE(std::is_pod<gtl::event_manager<test_event>>::value == false, "Expected std::is_pod to be false.");
@@ -81,7 +81,7 @@ void test_class::process() {
     gtl::event_queue<std::function<void(void)>>::process_events();
 }
 
-TEST(evaluation, emit_and_process_event) {
+TEST(event, evaluation, emit_and_process_event) {
     test_class test;
 
     REQUIRE(test.value == 0, "Expected the value in the test_class to be initialised to zero.");
@@ -95,7 +95,7 @@ TEST(evaluation, emit_and_process_event) {
     REQUIRE(test.value == 1, "Expected the value of the event to have been propadated to the test class.");
 }
 
-TEST(evaluation, emit_and_process_invokable_event) {
+TEST(event, evaluation, emit_and_process_invokable_event) {
     test_class test;
 
     REQUIRE(test.value == 0, "Expected the value in the test_class to be initialised to zero.");

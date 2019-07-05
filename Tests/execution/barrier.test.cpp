@@ -36,7 +36,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(barrier, traits, standard) {
     REQUIRE(sizeof(gtl::barrier) >= 1, "sizeof(gtl::barrier) = %ld, expected >= %lld", sizeof(gtl::barrier), 1ull);
 
     REQUIRE(std::is_pod<gtl::barrier>::value == false, "Expected std::is_pod to be false.");
@@ -48,39 +48,39 @@ TEST(traits, standard) {
     REQUIRE(std::is_standard_layout<gtl::barrier>::value == true, "Expected std::is_standard_layout to be true.");
 }
 
-TEST(constructor, empty) {
+TEST(barrier, constructor, empty) {
     gtl::barrier barrier;
     do_not_optimise_away(barrier);
 }
 
-TEST(constructor, value) {
+TEST(barrier, constructor, value) {
     gtl::barrier barrier(1);
     do_not_optimise_away(barrier);
 }
 
-TEST(function, get_and_set_trigger_count) {
+TEST(barrier, function, get_and_set_trigger_count) {
     gtl::barrier barrier;
     REQUIRE(barrier.get_trigger_count() == 0, "Expected the trigger count of an empty barrier to be %d, not %lld", 0, barrier.get_trigger_count());
     barrier.set_trigger_count(1);
     REQUIRE(barrier.get_trigger_count() == 1, "Expected the trigger count of an empty barrier to be %d, not %lld", 1, barrier.get_trigger_count());
 }
 
-TEST(function, get_waiting_count) {
+TEST(barrier, function, get_waiting_count) {
     gtl::barrier barrier;
     REQUIRE(barrier.get_waiting_count() == 0, "Expected the waiting count of an empty barrier to be %d, not %lld", 0, barrier.get_waiting_count());
 }
 
-TEST(function, trigger) {
+TEST(barrier, function, trigger) {
     gtl::barrier barrier;
     barrier.trigger();
 }
 
-TEST(function, sync) {
+TEST(barrier, function, sync) {
     gtl::barrier barrier;
     barrier.sync();
 }
 
-TEST(evaluation, set_trigger_count_with_two_threads) {
+TEST(barrier, evaluation, set_trigger_count_with_two_threads) {
     gtl::barrier barrier(2);
 
     std::atomic<int> result = 0;
@@ -107,7 +107,7 @@ TEST(evaluation, set_trigger_count_with_two_threads) {
     REQUIRE(result == 2, "Expected result to be set to 1 not '%d' after join.", result.load());
 }
 
-TEST(evaluation, trigger_with_two_threads) {
+TEST(barrier, evaluation, trigger_with_two_threads) {
     gtl::barrier barrier(2);
 
     std::atomic<int> result = 0;
@@ -134,7 +134,7 @@ TEST(evaluation, trigger_with_two_threads) {
     REQUIRE(result == 2, "Expected result to be set to 1 not '%d' after join.", result.load());
 }
 
-TEST(evaluation, sync_with_two_threads) {
+TEST(barrier, evaluation, sync_with_two_threads) {
     gtl::barrier barrier(2);
 
     std::atomic<int> result = 0;

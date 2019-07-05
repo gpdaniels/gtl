@@ -39,7 +39,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(ring_buffer, traits, standard) {
     test_template<test_types, value_collection<1, 10, 100>>(
         [](auto test_type, auto value_type)->void {
             using type = typename decltype(test_type)::type;
@@ -63,7 +63,7 @@ TEST(traits, standard) {
     );
 }
 
-TEST(constructor, empty) {
+TEST(ring_buffer, constructor, empty) {
     test_template<test_types, value_collection<1, 10, 100>>(
         [](auto test_type, auto value_type)->void {
             using type = typename decltype(test_type)::type;
@@ -75,7 +75,7 @@ TEST(constructor, empty) {
     );
 }
 
-TEST(function, empty_push_pop) {
+TEST(ring_buffer, function, empty_push_pop) {
     test_template<test_types, value_collection<1, 10, 100>>(
         [](auto test_type, auto value_type)->void {
             using type = typename decltype(test_type)::type;
@@ -104,7 +104,7 @@ TEST(function, empty_push_pop) {
     );
 }
 
-TEST(function, full_push_pop) {
+TEST(ring_buffer, function, full_push_pop) {
     test_template<test_types, value_collection<1, 10, 100>>(
         [](auto test_type, auto value_type)->void {
             using type = typename decltype(test_type)::type;
@@ -133,7 +133,7 @@ TEST(function, full_push_pop) {
     );
 }
 
-TEST(function, size_push_pop) {
+TEST(ring_buffer, function, size_push_pop) {
     test_template<test_types, value_collection<1, 10, 100>>(
         [](auto test_type, auto value_type)->void {
             using type = typename decltype(test_type)::type;
@@ -162,7 +162,7 @@ TEST(function, size_push_pop) {
     );
 }
 
-TEST(evaluation, threads_x2) {
+TEST(ring_buffer, evaluation, threads_x2) {
     constexpr static const unsigned int buffer_size = 5;
     constexpr static const unsigned int test_size = 1000;
 
@@ -200,7 +200,7 @@ TEST(evaluation, threads_x2) {
     }
 }
 
-TEST(evaluation, threads_x4) {
+TEST(ring_buffer, evaluation, threads_x4) {
     constexpr static const unsigned int buffer_size = 5;
     constexpr static const unsigned int test_size1 = 1000;
     constexpr static const unsigned int test_size2 = 1000;

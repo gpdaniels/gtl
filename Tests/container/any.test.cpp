@@ -36,7 +36,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(any, traits, standard) {
     REQUIRE(sizeof(gtl::any) >= 1, "sizeof(gtl::any) = %ld, expected >= %lld", sizeof(gtl::any), 1ull);
 
     REQUIRE(std::is_pod<gtl::any>::value == false, "Expected std::is_pod to be false.");
@@ -48,17 +48,17 @@ TEST(traits, standard) {
     REQUIRE(std::is_standard_layout<gtl::any>::value == true, "Expected std::is_standard_layout to be true.");
 }
 
-TEST(constructor, empty) {
+TEST(any, constructor, empty) {
     gtl::any any;
     do_not_optimise_away(any);
 }
 
-TEST(constructor, value) {
+TEST(any, constructor, value) {
     gtl::any any(1);
     do_not_optimise_away(any);
 }
 
-TEST(evaluation, any) {
+TEST(any, evaluation, any) {
     gtl::any any(1);
     REQUIRE(static_cast<int>(any) == 1, "Unexpected value '%d' in any, expected %d.", static_cast<int>(any), 1);
 

@@ -34,7 +34,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(static_lambda, traits, standard) {
     REQUIRE(sizeof(gtl::static_lambda<void(), 128>) == 128 + sizeof(void*) * 3, "sizeof(gtl::static_lambda<void(), 128>) = %ld, expected == %lld", sizeof(gtl::static_lambda<void(), 128>), 128ull + sizeof(void*) * 3ull);
 
     REQUIRE((std::is_pod<gtl::static_lambda<void(), 128>>::value == false));
@@ -46,18 +46,18 @@ TEST(traits, standard) {
     REQUIRE((std::is_standard_layout<gtl::static_lambda<void(), 128>>::value == true));
 }
 
-TEST(constructor, empty) {
+TEST(static_lambda, constructor, empty) {
     gtl::static_lambda<void(), 128> static_lambda;
     do_not_optimise_away(static_lambda);
 }
 
-TEST(constructor, function)
+TEST(static_lambda, constructor, function)
 {
     gtl::static_lambda<void(), 128> static_lambda([](){});
     do_not_optimise_away(static_lambda);
 }
 
-TEST(constructor, capturing_function)
+TEST(static_lambda, constructor, capturing_function)
 {
     {
         int variable = 123;
@@ -97,7 +97,7 @@ TEST(constructor, capturing_function)
     }
 }
 
-TEST(constructor, copying)
+TEST(static_lambda, constructor, copying)
 {
     gtl::static_lambda<void(), 128> static_lambda1([](){});
     do_not_optimise_away(static_lambda1);
@@ -107,7 +107,7 @@ TEST(constructor, copying)
     do_not_optimise_away(static_lambda3);
 }
 
-TEST(constructor, moving)
+TEST(static_lambda, constructor, moving)
 {
     gtl::static_lambda<void(), 128> static_lambda1([](){});
     do_not_optimise_away(static_lambda1);
@@ -115,7 +115,7 @@ TEST(constructor, moving)
     do_not_optimise_away(static_lambda2);
 }
 
-TEST(operator, copying)
+TEST(static_lambda, operator, copying)
 {
     gtl::static_lambda<void(), 128> static_lambda1([](){});
     do_not_optimise_away(static_lambda1);
@@ -123,7 +123,7 @@ TEST(operator, copying)
     do_not_optimise_away(static_lambda2);
 }
 
-TEST(operator, moving)
+TEST(static_lambda, operator, moving)
 {
     gtl::static_lambda<void(), 128> static_lambda1([](){});
     do_not_optimise_away(static_lambda1);
@@ -131,7 +131,7 @@ TEST(operator, moving)
     do_not_optimise_away(static_lambda2);
 }
 
-TEST(operator, executing)
+TEST(static_lambda, operator, executing)
 {
     {
         gtl::static_lambda<void(), 128> static_lambda([](){});
@@ -195,7 +195,7 @@ TEST(operator, executing)
     }
 }
 
-TEST(operator, executing_with_arguments)
+TEST(static_lambda, operator, executing_with_arguments)
 {
     {
         bool flag = false;
@@ -291,7 +291,7 @@ TEST(operator, executing_with_arguments)
     }
 }
 
-TEST(operator, executing_with_return)
+TEST(static_lambda, operator, executing_with_return)
 {
     {
         gtl::static_lambda<bool(), 128> static_lambda([](){
@@ -363,7 +363,7 @@ TEST(operator, executing_with_return)
     }
 }
 
-TEST(evaluation, construction_and_destruction)
+TEST(static_lambda, evaluation, construction_and_destruction)
 {
     static int constructed = 0;
     static int copied = 0;

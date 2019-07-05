@@ -37,7 +37,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(static_array_nd, traits, standard) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -194,7 +194,7 @@ TEST(traits, standard) {
     );
 }
 
-TEST(constructor, empty) {
+TEST(static_array_nd, constructor, empty) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -231,7 +231,7 @@ TEST(constructor, empty) {
     );
 }
 
-TEST(function, dimensions) {
+TEST(static_array_nd, function, dimensions) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -268,7 +268,7 @@ TEST(function, dimensions) {
     );
 }
 
-TEST(function, size) {
+TEST(static_array_nd, function, size) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -311,7 +311,7 @@ TEST(function, size) {
     );
 }
 
-TEST(constructor, list_initialiser) {
+TEST(static_array_nd, constructor, list_initialiser) {
     test_template<test_types, value_collection<1, 10>>(
         [](auto test_type, auto value_1)->void {
             using type = typename decltype(test_type)::type;
@@ -348,7 +348,7 @@ TEST(constructor, list_initialiser) {
     );
 }
 
-TEST(operator, subscript) {
+TEST(static_array_nd, operator, subscript) {
     test_template<test_types, value_collection<1, 10>>(
         [](auto test_type, auto value_1)->void {
             using type = typename decltype(test_type)::type;
@@ -400,7 +400,7 @@ TEST(operator, subscript) {
     );
 }
 
-TEST(operator, parenthesis) {
+TEST(static_array_nd, operator, parenthesis) {
     test_template<test_types, value_collection<1, 10>>(
         [](auto test_type, auto value_1)->void {
             using type = typename decltype(test_type)::type;
