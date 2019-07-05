@@ -675,13 +675,13 @@ namespace gtl {
     namespace this_coroutine {
         /// @brief  Get a pointer to the currently running coroutine if there is one.
         /// @return A pointer to the currently running coroutine or a nullptr if there isn't one.
-        static coroutine* get_self() {
+        [[maybe_unused]] static coroutine* get_self() {
             return gtl::coroutine::current;
         }
 
         /// @brief  Get the unique identifier of the currently running coroutine if there is one.
         /// @return The unique identider of the currently running coroutine or a null id if there isn't one.
-        static gtl::coroutine::id get_id() {
+        [[maybe_unused]] static gtl::coroutine::id get_id() {
             if (get_self() == nullptr) {
                 return coroutine::id();
             }
@@ -689,7 +689,7 @@ namespace gtl {
         }
 
         /// @brief  Yield from the currently running coroutine, i.e. force a return to the parent execution context.
-        static void yield() {
+        [[maybe_unused]] static void yield() {
             GTL_COROUTINE_ASSERT(get_self() != nullptr, "A coroutine must be running to yield.");
             get_self()->yield();
         }
@@ -697,7 +697,7 @@ namespace gtl {
         /// @brief  Sleep a coroutine for an amount of time, provided to match the std::thread api.
         /// @param  duration Length of time to sleep for.
         template<typename number_of_ticks_type, typename period_type>
-        static void sleep_for(const std::chrono::duration<number_of_ticks_type, period_type>& duration) {
+        [[maybe_unused]] static void sleep_for(const std::chrono::duration<number_of_ticks_type, period_type>& duration) {
             GTL_COROUTINE_ASSERT(get_self() != nullptr, "A coroutine must be running to sleep.");
             std::this_thread::sleep_for(duration);
         }
@@ -705,7 +705,7 @@ namespace gtl {
         /// @brief  Sleep a coroutine until a specific time, provided to match the std::thread api.
         /// @param  time_point Time to sleep until.
         template<typename clock_type, typename duration_type>
-        static void sleep_until(const std::chrono::time_point<clock_type, duration_type>& time_point) {
+        [[maybe_unused]] static void sleep_until(const std::chrono::time_point<clock_type, duration_type>& time_point) {
             GTL_COROUTINE_ASSERT(get_self() != nullptr, "A coroutine must be running to sleep.");
             std::this_thread::sleep_until(time_point);
         }
