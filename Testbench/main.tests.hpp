@@ -22,11 +22,27 @@ THE SOFTWARE
 #ifndef MAIN_TESTS_HPP
 #define MAIN_TESTS_HPP
 
-// Macros to expand, call, and uniquely name all the tests in the test file.
-// These are defined in the main tests header as they are the minumum required to run tests.
-#define TEST_EXPAND(GROUP_NAME, TEST_NAME)  TEST_##GROUP_NAME##_##TEST_NAME
-#define TEST_CALL(GROUP_NAME, TEST_NAME)    TEST_EXPAND(GROUP_NAME, TEST_NAME)()
-#define TEST(GROUP_NAME, TEST_NAME)         void TEST_EXPAND(GROUP_NAME, TEST_NAME)(); void TEST_EXPAND(GROUP_NAME, TEST_NAME)()
+// These macros are defined in the main tests header as they are the minumum required to run tests.
+// They require the test_node type.
+
+#include "node.tests.hpp"
+
+// Macro to expand a test name.
+#define TEST_EXPAND_TEST(TEST_FILE, TEST_GROUP, TEST_NAME)  test_##TEST_FILE##_##TEST_GROUP##_##TEST_NAME
+#define TEST_EXPAND_NODE(TEST_FILE, TEST_GROUP, TEST_NAME)  node_##TEST_FILE##_##TEST_GROUP##_##TEST_NAME
+
+// Macro to declare a test.
+#define TEST(TEST_FILE, TEST_GROUP, TEST_NAME)                                                                                                     \
+    void TEST_EXPAND_TEST(TEST_FILE, TEST_GROUP, TEST_NAME)();                                                                                     \
+    static inline test_node TEST_EXPAND_NODE(TEST_FILE, TEST_GROUP, TEST_NAME)(#TEST_FILE, #TEST_GROUP, #TEST_NAME, TEST_EXPAND_TEST(TEST_FILE, TEST_GROUP, TEST_NAME));  \
+    void TEST_EXPAND_TEST(TEST_FILE, TEST_GROUP, TEST_NAME)()
+
+// This test macro can be disabled in a test file using the following:
+// #pragma push_macro("TEST")
+// #undef TEST
+// #define TEST(TEST_FILE, TEST_GROUP, TEST_NAME) void TEST_EXPAND_TEST(TEST_FILE, TEST_GROUP, TEST_NAME)()
+// ...
+// #pragma pop_macro("TEST")
 
 // Declare the main function.
 int main(int argument_count, char* arguments[]);
