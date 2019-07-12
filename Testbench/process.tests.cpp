@@ -142,8 +142,6 @@ int process(const char* executable, const char* arguments[])
         status = WEXITSTATUS(status);
     }
 
-    fprintf(stderr, "status: %d\n", status);
-
     // Return the status code.
     return status;
 
