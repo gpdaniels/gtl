@@ -57,6 +57,7 @@ THE SOFTWARE
 #   include <sys/types.h>
 #   include <sys/wait.h>
 #   include <unistd.h>
+    extern char** environ;
 #endif
 
 #if defined(_MSC_VER)
@@ -123,7 +124,7 @@ int process(const char* executable, const char* arguments[])
     if(process_id == 0) {
 
         // Execute self.
-        if (execvpe(executable, const_cast<char* const*>(arguments), const_cast<char* const*>(environ)) < 0) {
+        if (execve(executable, const_cast<char* const*>(arguments), const_cast<char* const*>(environ)) < 0) {
             std::abort();
         }
 
