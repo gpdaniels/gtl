@@ -36,7 +36,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(random_mt, traits, standard) {
     REQUIRE(sizeof(gtl::random_mt) >= 2500ull, "sizeof(gtl::random_mt) = %ld, expected >= %lld", sizeof(gtl::random_mt), 2500ull);
 
     REQUIRE(std::is_pod<gtl::random_mt>::value == true, "Expected std::is_pod to be true.");
@@ -48,34 +48,34 @@ TEST(traits, standard) {
     REQUIRE(std::is_standard_layout<gtl::random_mt>::value == true, "Expected std::is_standard_layout to be true.");
 }
 
-TEST(constructor, empty) {
+TEST(random_mt, constructor, empty) {
     gtl::random_mt random_mt;
     do_not_optimise_away(random_mt);
 }
 
-TEST(constructor, seed_value) {
+TEST(random_mt, constructor, seed_value) {
     gtl::random_mt random_mt(0x01234567);
     do_not_optimise_away(random_mt);
 }
 
-TEST(constructor, seed_array) {
+TEST(random_mt, constructor, seed_array) {
     std::uint32_t seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
     gtl::random_mt random_mt(&seed_values[0], 5);
     do_not_optimise_away(random_mt);
 }
 
-TEST(function, seed_value) {
+TEST(random_mt, function, seed_value) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
 }
 
-TEST(function, seed_array) {
+TEST(random_mt, function, seed_array) {
     std::uint32_t seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
     gtl::random_mt random_mt;
     random_mt.seed(&seed_values[0], 5);
 }
 
-TEST(function, get_random_raw) {
+TEST(random_mt, function, get_random_raw) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
     std::uint32_t random_raw = random_mt.get_random_raw();
@@ -90,7 +90,7 @@ TEST(function, get_random_raw) {
     REQUIRE(comparison::is_equal(random_raw, 1073351711u), "Pseudo-random number 5 was %u, expected %u", random_raw, 1073351711u);
 }
 
-TEST(function, get_random_exclusive) {
+TEST(random_mt, function, get_random_exclusive) {
     auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
@@ -106,7 +106,7 @@ TEST(function, get_random_exclusive) {
     REQUIRE(comparison::is_equal(random_exclusive, 0.249909), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive, 0.249909);
 }
 
-TEST(function, get_random_exclusive_top) {
+TEST(random_mt, function, get_random_exclusive_top) {
     auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
@@ -122,7 +122,7 @@ TEST(function, get_random_exclusive_top) {
     REQUIRE(comparison::is_equal(random_exclusive_top, 0.249909), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive_top, 0.249909);
 }
 
-TEST(function, get_random_inclusive) {
+TEST(random_mt, function, get_random_inclusive) {
     auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
@@ -138,7 +138,7 @@ TEST(function, get_random_inclusive) {
     REQUIRE(comparison::is_equal(random_inclusive, 0.249909), "Pseudo-random number 5 was %lf, expected %lf", random_inclusive, 0.249909);
 }
 
-TEST(function, get_random_bounded_long) {
+TEST(random_mt, function, get_random_bounded_long) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
     std::uint32_t random = random_mt.get_random(0u, 1u);
@@ -153,7 +153,7 @@ TEST(function, get_random_bounded_long) {
     REQUIRE(comparison::is_equal(random, 1u), "Pseudo-random number 5 was %u, expected %u", random, 1u);
 }
 
-TEST(function, get_random_bounded_double) {
+TEST(random_mt, function, get_random_bounded_double) {
     auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
@@ -169,7 +169,7 @@ TEST(function, get_random_bounded_double) {
     REQUIRE(comparison::is_equal(random, -0.750091), "Pseudo-random number 5 was %lf, expected %lf", random, -0.750091);
 }
 
-TEST(evaluation, random_numbers) {
+TEST(random_mt, evaluation, random_numbers) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
     int random_bias = 0;

@@ -35,7 +35,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(spin_lock, traits, standard) {
     REQUIRE(sizeof(gtl::spin_lock) >= 1, "sizeof(gtl::spin_lock) = %ld, expected >= %lld", sizeof(gtl::spin_lock), 1ull);
 
     REQUIRE(std::is_pod<gtl::spin_lock>::value == false, "Expected std::is_pod to be false.");
@@ -47,24 +47,24 @@ TEST(traits, standard) {
     REQUIRE(std::is_standard_layout<gtl::spin_lock>::value == true, "Expected std::is_standard_layout to be true.");
 }
 
-TEST(constructor, empty) {
+TEST(spin_lock, constructor, empty) {
     gtl::spin_lock spin_lock;
     do_not_optimise_away(spin_lock);
 }
 
-TEST(function, lock_and_unlock) {
+TEST(spin_lock, function, lock_and_unlock) {
     gtl::spin_lock spin_lock;
     spin_lock.lock();
     spin_lock.unlock();
 }
 
-TEST(function, try_lock_and_unlock) {
+TEST(spin_lock, function, try_lock_and_unlock) {
     gtl::spin_lock spin_lock;
     REQUIRE(spin_lock.try_lock() == true, "Expected the newly constructed spin_lock to be lockable.");
     spin_lock.unlock();
 }
 
-TEST(evaluation, lock_guard) {
+TEST(spin_lock, evaluation, lock_guard) {
     gtl::spin_lock spin_lock;
     {
         std::lock_guard<gtl::spin_lock> lock_guard(spin_lock);
@@ -75,7 +75,7 @@ TEST(evaluation, lock_guard) {
     spin_lock.unlock();
 }
 
-TEST(evaluation, unique_lock) {
+TEST(spin_lock, evaluation, unique_lock) {
     gtl::spin_lock spin_lock;
     {
         std::unique_lock<gtl::spin_lock> unique_lock(spin_lock);

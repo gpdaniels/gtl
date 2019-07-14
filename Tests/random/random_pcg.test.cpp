@@ -36,7 +36,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(random_pcg, traits, standard) {
     REQUIRE(sizeof(gtl::random_pcg) >= 16ull, "sizeof(gtl::random_pcg) = %ld, expected >= %lld", sizeof(gtl::random_pcg), 16ull);
 
     REQUIRE(std::is_pod<gtl::random_pcg>::value == false, "Expected std::is_pod to be false.");
@@ -48,22 +48,22 @@ TEST(traits, standard) {
     REQUIRE(std::is_standard_layout<gtl::random_pcg>::value == true, "Expected std::is_standard_layout to be true.");
 }
 
-TEST(constructor, empty) {
+TEST(random_pcg, constructor, empty) {
     gtl::random_pcg random_pcg;
     do_not_optimise_away(random_pcg);
 }
 
-TEST(constructor, seed) {
+TEST(random_pcg, constructor, seed) {
     gtl::random_pcg random_pcg(0x01234567);
     do_not_optimise_away(random_pcg);
 }
 
-TEST(function, seed) {
+TEST(random_pcg, function, seed) {
     gtl::random_pcg random_pcg;
     random_pcg.seed(0x01234567);
 }
 
-TEST(function, get_random_raw) {
+TEST(random_pcg, function, get_random_raw) {
     gtl::random_pcg random_pcg;
     random_pcg.seed(0x01234567);
     unsigned int random_raw = random_pcg.get_random_raw();
@@ -78,7 +78,7 @@ TEST(function, get_random_raw) {
     REQUIRE(comparison::is_equal(random_raw, 236503499u), "Pseudo-random number 5 was %u, expected %u", random_raw, 236503499u);
 }
 
-TEST(function, get_random_exclusive) {
+TEST(random_pcg, function, get_random_exclusive) {
     auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
     gtl::random_pcg random_pcg;
     random_pcg.seed(0x01234567);
@@ -94,7 +94,7 @@ TEST(function, get_random_exclusive) {
     REQUIRE(comparison::is_equal(random_exclusive, 0.055065), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive, 0.055065);
 }
 
-TEST(function, get_random_exclusive_top) {
+TEST(random_pcg, function, get_random_exclusive_top) {
     auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
     gtl::random_pcg random_pcg;
     random_pcg.seed(0x01234567);
@@ -110,7 +110,7 @@ TEST(function, get_random_exclusive_top) {
     REQUIRE(comparison::is_equal(random_exclusive_top, 0.055065), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive_top, 0.055065);
 }
 
-TEST(function, get_random_inclusive) {
+TEST(random_pcg, function, get_random_inclusive) {
     auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
     gtl::random_pcg random_pcg;
     random_pcg.seed(0x01234567);
@@ -126,7 +126,7 @@ TEST(function, get_random_inclusive) {
     REQUIRE(comparison::is_equal(random_inclusive, 0.055065), "Pseudo-random number 5 was %lf, expected %lf", random_inclusive, 0.055065);
 }
 
-TEST(function, get_random_bounded_long) {
+TEST(random_pcg, function, get_random_bounded_long) {
     gtl::random_pcg random_pcg;
     random_pcg.seed(0x01234567);
     unsigned int random = random_pcg.get_random(0u, 1u);
@@ -141,7 +141,7 @@ TEST(function, get_random_bounded_long) {
     REQUIRE(comparison::is_equal(random, 1u), "Pseudo-random number 5 was %u, expected %u", random, 1u);
 }
 
-TEST(function, get_random_bounded_double) {
+TEST(random_pcg, function, get_random_bounded_double) {
     auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
     gtl::random_pcg random_pcg;
     random_pcg.seed(0x01234567);
@@ -157,7 +157,7 @@ TEST(function, get_random_bounded_double) {
     REQUIRE(comparison::is_equal(random, -0.944935), "Pseudo-random number 5 was %lf, expected %lf", random, -0.944935);
 }
 
-TEST(evaluation, random_numbers) {
+TEST(random_pcg, evaluation, random_numbers) {
     gtl::random_pcg random_pcg;
     random_pcg.seed(0x01234567);
     int random_bias = 0;

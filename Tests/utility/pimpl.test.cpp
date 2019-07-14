@@ -58,7 +58,7 @@ int test_pimpl::return_value() const {
     return (*this)->value;
 }
 
-TEST(traits, standard) {
+TEST(pimpl, traits, standard) {
     REQUIRE(sizeof(test_pimpl) == 4, "sizeof(test_pimpl) = %ld, expected >= %lld", sizeof(test_pimpl), 1ull);
 
     REQUIRE(std::is_pod<test_pimpl>::value == false, "Expected std::is_pod to be false.");
@@ -70,7 +70,7 @@ TEST(traits, standard) {
     REQUIRE(std::is_standard_layout<test_pimpl>::value == true, "Expected std::is_standard_layout to be true.");
 }
 
-TEST(evaluation, return_value) {
+TEST(pimpl, evaluation, return_value) {
     test_pimpl pimpl(1);
     REQUIRE(pimpl.return_value() == 1);
 }

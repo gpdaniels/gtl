@@ -19,3 +19,65 @@ THE SOFTWARE
 */
 
 #include "print.tests.hpp"
+#include "unused.tests.hpp"
+
+#if defined(_WIN32)
+#   if defined(_MSC_VER)
+#      pragma warning(push, 0)
+#   endif
+#   define WIN32_LEAN_AND_MEAN
+#   define VC_EXTRALEAN
+#   define STRICT
+#   include <sdkddkver.h>
+#   if defined(_AFXDLL)
+#       include <afxwin.h>
+#   else
+#       include <Windows.h>
+#   endif
+#   if defined(_MSC_VER)
+#      pragma warning(pop)
+#   endif
+#endif
+
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
+#include <cstdarg>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
+
+PRINT_FORMAT_PRINT_DECORATION(1) int print(FILE* stream, PRINT_FORMAT_PRINT_ARGUMENT(const char* format), ...) {
+#if defined(_WIN32)
+
+    char outputString[1024] = {};
+
+    va_list formatArguments;
+    va_start(formatArguments, format);
+    int outputCountDebug = _vsnprintf(outputString, sizeof(outputString), format, formatArguments);
+    va_end(formatArguments);
+
+    ::OutputDebugStringA(outputString);
+
+    int outputCountStdOut = std::fprintf(stream, "%s", outputString);
+
+    std::fflush(stream);
+
+    UNUSED(outputCountStdOut);
+    return outputCountDebug;
+
+#else
+
+    va_list formatArguments;
+    va_start(formatArguments, format);
+    int outputCount = std::vfprintf(stream, format, formatArguments);
+    va_end(formatArguments);
+
+    std::fflush(stream);
+
+    return outputCount;
+
+#endif
+}

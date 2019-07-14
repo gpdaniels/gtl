@@ -41,7 +41,7 @@ enum class test_enum {
     third
 };
 
-TEST(traits, standard) {
+TEST(enum_name, traits, standard) {
     REQUIRE(sizeof(gtl::enum_name<test_enum, test_enum::first>) >= 1, "sizeof(gtl::enum_name<test_enum>) = %ld, expected >= %lld", sizeof(gtl::enum_name<test_enum, test_enum::first>), 1ull);
 
     REQUIRE((std::is_pod<gtl::enum_name<test_enum, test_enum::first> >::value == true), "Expected std::is_pod to be true.");
@@ -53,12 +53,12 @@ TEST(traits, standard) {
     REQUIRE((std::is_standard_layout<gtl::enum_name<test_enum, test_enum::first> >::value == true), "Expected std::is_standard_layout to be true.");
 }
 
-TEST(constructor, empty) {
+TEST(enum_name, constructor, empty) {
     gtl::enum_name<test_enum, test_enum::first> enum_name;
     do_not_optimise_away(enum_name);
 }
 
-TEST(function, name) {
+TEST(enum_name, function, name) {
     #if defined(__clang__) || defined(_MSC_VER)
         auto strcmp = [](const char* LHS, const char* RHS) -> bool {
             while (*LHS && (*LHS == *RHS)) {
@@ -96,7 +96,7 @@ TEST(function, name) {
     #endif
 }
 
-TEST(function, name_type) {
+TEST(enum_name, function, name_type) {
     auto strcmp = [](const char* LHS, const char* RHS) -> bool {
         while (*LHS && (*LHS == *RHS)) {
             ++LHS;
@@ -115,7 +115,7 @@ TEST(function, name_type) {
     REQUIRE(strcmp(enum_name3.name_type(), "test_enum") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_type(), "test_enum");
 }
 
-TEST(function, name_value) {
+TEST(enum_name, function, name_value) {
     #if defined(__clang__) || defined(_MSC_VER)
         auto strcmp = [](const char* LHS, const char* RHS) -> bool {
             while (*LHS && (*LHS == *RHS)) {
@@ -161,7 +161,7 @@ namespace test_namespace {
     };
 }
 
-TEST(function, name_with_namespaces) {
+TEST(enum_name, function, name_with_namespaces) {
     #if defined(__clang__) || defined(_MSC_VER)
         auto strcmp = [](const char* LHS, const char* RHS) -> bool {
             while (*LHS && (*LHS == *RHS)) {
@@ -199,7 +199,7 @@ TEST(function, name_with_namespaces) {
     #endif
 }
 
-TEST(function, name_type_with_namespaces) {
+TEST(enum_name, function, name_type_with_namespaces) {
     auto strcmp = [](const char* LHS, const char* RHS) -> bool {
         while (*LHS && (*LHS == *RHS)) {
             ++LHS;
@@ -218,7 +218,7 @@ TEST(function, name_type_with_namespaces) {
     REQUIRE(strcmp(enum_name3.name_type(), "test_namespace::test_enum") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_type(), "test_namespace::test_enum");
 }
 
-TEST(function, name_value_with_namespaces) {
+TEST(enum_name, function, name_value_with_namespaces) {
     #if defined(__clang__) || defined(_MSC_VER)
         auto strcmp = [](const char* LHS, const char* RHS) -> bool {
             while (*LHS && (*LHS == *RHS)) {

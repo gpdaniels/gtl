@@ -36,7 +36,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(semaphore, traits, standard) {
     REQUIRE((sizeof(gtl::semaphore<std::mutex, std::condition_variable>) >= 1), "sizeof(gtl::semaphore) = %ld, expected >= %lld", sizeof(gtl::semaphore<std::mutex, std::condition_variable>), 1ull);
 
     REQUIRE((std::is_pod<gtl::semaphore<std::mutex, std::condition_variable>>::value == false), "Expected std::is_pod to be false.");
@@ -48,38 +48,38 @@ TEST(traits, standard) {
     REQUIRE((std::is_standard_layout<gtl::semaphore<std::mutex, std::condition_variable>>::value == true), "Expected std::is_standard_layout to be true.");
 }
 
-TEST(constructor, empty) {
+TEST(semaphore, constructor, empty) {
     gtl::semaphore<std::mutex, std::condition_variable> semaphore;
     do_not_optimise_away(semaphore);
 }
 
-TEST(constructor, value) {
+TEST(semaphore, constructor, value) {
     gtl::semaphore<std::mutex, std::condition_variable> semaphore(1);
     semaphore.wait();
 }
 
-TEST(function, wait) {
+TEST(semaphore, function, wait) {
     gtl::semaphore<std::mutex, std::condition_variable> semaphore(1);
     semaphore.wait();
 }
 
-TEST(function, try_wait) {
+TEST(semaphore, function, try_wait) {
     gtl::semaphore<std::mutex, std::condition_variable> semaphore(1);
     REQUIRE(semaphore.try_wait() == true, "Expected try_wait to succeed on a semaphore with count 1.");
 }
 
-TEST(function, notify_and_wait) {
+TEST(semaphore, function, notify_and_wait) {
     gtl::semaphore<std::mutex, std::condition_variable> semaphore;
     semaphore.notify();
     semaphore.wait();
 }
 
-TEST(evaluation, mutex_and_condition_variable) {
+TEST(semaphore, evaluation, mutex_and_condition_variable) {
     gtl::semaphore<std::mutex, std::condition_variable> semaphore;
     do_not_optimise_away(semaphore);
 }
 
-TEST(evaluation, recursive_mutex_and_condition_variable_any) {
+TEST(semaphore, evaluation, recursive_mutex_and_condition_variable_any) {
     gtl::semaphore<std::recursive_mutex, std::condition_variable_any> semaphore;
     do_not_optimise_away(semaphore);
 }

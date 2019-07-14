@@ -62,7 +62,7 @@ void do_not_optimise_away(type&& value) {
 }
 
 template <typename type>
-void do_not_optimise_away(std::function<type(void)>&& function) {
+void do_not_optimise_away(std::function<type()>&& function) {
     // Call function and get returned value.
     volatile type value = function();
 
@@ -83,8 +83,8 @@ void do_not_optimise_away(std::function<type(void)>&& function) {
             putchar(character);
         }
         // Copy the raw data of the function.
-        char buffer_function[sizeof(std::function<type(void)>)] = {};
-        std::memcpy(&buffer_function[0], &function, sizeof(std::function<type(void)>));
+        char buffer_function[sizeof(std::function<type()>)] = {};
+        std::memcpy(&buffer_function[0], &function, sizeof(std::function<type()>));
         // Print it all out.
         for (const char character : buffer_function) {
             putchar(character);
@@ -95,13 +95,13 @@ void do_not_optimise_away(std::function<type(void)>&& function) {
 }
 
 template <>
-void do_not_optimise_away(std::function<void(void)>&& function);
+void do_not_optimise_away(std::function<void()>&& function);
 
 // Simple benchmarking function
 template <typename type = void>
-std::pair<double, unsigned long long int> benchmark(std::function<type(void)>&& testFunction, unsigned long long int minimum_iterations = 1, double minimum_runtime = 0.0) {
+std::pair<double, unsigned long long int> benchmark(std::function<type()>&& testFunction, unsigned long long int minimum_iterations = 1, double minimum_runtime = 0.0) {
     // Warmup
-    do_not_optimise_away(std::forward<std::function<type(void)>>(testFunction));
+    do_not_optimise_away(std::forward<std::function<type()>>(testFunction));
 
     // Monitoring variables.
     std::chrono::steady_clock::time_point Start = std::chrono::steady_clock::now();
@@ -111,7 +111,7 @@ std::pair<double, unsigned long long int> benchmark(std::function<type(void)>&& 
     // Testing
     while ((iterations < minimum_iterations) || (std::chrono::duration<double>(End - Start).count() < minimum_runtime)) {
 
-        do_not_optimise_away(std::forward<std::function<type(void)>>(testFunction));
+        do_not_optimise_away(std::forward<std::function<type()>>(testFunction));
 
         ++iterations;
         End = std::chrono::steady_clock::now();

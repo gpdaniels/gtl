@@ -36,7 +36,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(type_name, traits, standard) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -73,7 +73,7 @@ TEST(traits, standard) {
     );
 }
 
-TEST(constructor, empty) {
+TEST(type_name, constructor, empty) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -83,7 +83,7 @@ TEST(constructor, empty) {
     );
 }
 
-TEST(function, name) {
+TEST(type_name, function, name) {
     auto strcmp = [](const char* LHS, const char* RHS) -> bool {
         while (*LHS && (*LHS == *RHS)) {
             ++LHS;

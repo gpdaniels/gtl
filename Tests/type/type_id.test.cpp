@@ -35,7 +35,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(type_id, traits, standard) {
     REQUIRE(sizeof(gtl::type_id) >= 1, "sizeof(gtl::type_id) = %ld, expected >= %lld", sizeof(gtl::type_id), 1ull);
 
     REQUIRE(std::is_pod<gtl::type_id>::value == false, "Expected std::is_pod to be false.");
@@ -53,7 +53,7 @@ TEST(traits, standard) {
     REQUIRE(std::is_standard_layout<gtl::type_id>::value == true, "Expected std::is_standard_layout to be true.");
 }
 
-TEST(constructor, type) {
+TEST(type_id, constructor, type) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -63,7 +63,7 @@ TEST(constructor, type) {
     );
 }
 
-TEST(function, id) {
+TEST(type_id, function, id) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -74,7 +74,7 @@ TEST(function, id) {
     );
 }
 
-TEST(operator, unsigned_long_long_int) {
+TEST(type_id, operator, unsigned_long_long_int) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -85,7 +85,7 @@ TEST(operator, unsigned_long_long_int) {
     );
 }
 
-TEST(operator, equality) {
+TEST(type_id, operator, equality) {
     test_template<test_types>(
         [](auto test_type1)->void {
             using type1 = typename decltype(test_type1)::type;
@@ -104,7 +104,7 @@ TEST(operator, equality) {
     );
 }
 
-TEST(operator, inequality) {
+TEST(type_id, operator, inequality) {
     test_template<test_types>(
         [](auto test_type1)->void {
             using type1 = typename decltype(test_type1)::type;

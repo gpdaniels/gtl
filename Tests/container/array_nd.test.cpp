@@ -37,7 +37,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(array_nd, traits, standard) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -194,7 +194,7 @@ TEST(traits, standard) {
     );
 }
 
-TEST(constructor, static) {
+TEST(array_nd, constructor, static) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -231,7 +231,7 @@ TEST(constructor, static) {
     );
 }
 
-TEST(constructor, dynamic) {
+TEST(array_nd, constructor, dynamic) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -268,7 +268,7 @@ TEST(constructor, dynamic) {
     );
 }
 
-TEST(function, dimensions) {
+TEST(array_nd, function, dimensions) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -305,7 +305,7 @@ TEST(function, dimensions) {
     );
 }
 
-TEST(function, size) {
+TEST(array_nd, function, size) {
     test_template<test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
@@ -348,7 +348,7 @@ TEST(function, size) {
     );
 }
 
-TEST(operator, parenthesis) {
+TEST(array_nd, operator, parenthesis) {
     test_template<test_types, value_collection<1, 10>>(
         [](auto test_type, auto value_1)->void {
             using type = typename decltype(test_type)::type;

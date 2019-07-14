@@ -36,7 +36,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(traits, standard) {
+TEST(random_splitmix, traits, standard) {
     REQUIRE(sizeof(gtl::random_splitmix) >= 8ull, "sizeof(gtl::random_splitmix) = %ld, expected >= %lld", sizeof(gtl::random_splitmix), 8ull);
 
     REQUIRE(std::is_pod<gtl::random_splitmix>::value == false, "Expected std::is_pod to be false.");
@@ -48,22 +48,22 @@ TEST(traits, standard) {
     REQUIRE(std::is_standard_layout<gtl::random_splitmix>::value == true, "Expected std::is_standard_layout to be true.");
 }
 
-TEST(constructor, empty) {
+TEST(random_splitmix, constructor, empty) {
     gtl::random_splitmix random_splitmix;
     do_not_optimise_away(random_splitmix);
 }
 
-TEST(constructor, seed) {
+TEST(random_splitmix, constructor, seed) {
     gtl::random_splitmix random_splitmix(0x01234567);
     do_not_optimise_away(random_splitmix);
 }
 
-TEST(function, seed) {
+TEST(random_splitmix, function, seed) {
     gtl::random_splitmix random_splitmix;
     random_splitmix.seed(0x01234567);
 }
 
-TEST(function, get_random_raw) {
+TEST(random_splitmix, function, get_random_raw) {
     gtl::random_splitmix random_splitmix;
     random_splitmix.seed(0x01234567);
     unsigned int random_raw = random_splitmix.get_random_raw();
@@ -78,7 +78,7 @@ TEST(function, get_random_raw) {
     REQUIRE(comparison::is_equal(random_raw, 2004240380u), "Pseudo-random number 5 was %u, expected %u", random_raw, 2004240380u);
 }
 
-TEST(function, get_random_exclusive) {
+TEST(random_splitmix, function, get_random_exclusive) {
     auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
     gtl::random_splitmix random_splitmix;
     random_splitmix.seed(0x01234567);
@@ -94,7 +94,7 @@ TEST(function, get_random_exclusive) {
     REQUIRE(comparison::is_equal(random_exclusive, 0.466649), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive, 0.466649);
 }
 
-TEST(function, get_random_exclusive_top) {
+TEST(random_splitmix, function, get_random_exclusive_top) {
     auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
     gtl::random_splitmix random_splitmix;
     random_splitmix.seed(0x01234567);
@@ -110,7 +110,7 @@ TEST(function, get_random_exclusive_top) {
     REQUIRE(comparison::is_equal(random_exclusive_top, 0.466649), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive_top, 0.466649);
 }
 
-TEST(function, get_random_inclusive) {
+TEST(random_splitmix, function, get_random_inclusive) {
     auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
     gtl::random_splitmix random_splitmix;
     random_splitmix.seed(0x01234567);
@@ -126,7 +126,7 @@ TEST(function, get_random_inclusive) {
     REQUIRE(comparison::is_equal(random_inclusive, 0.466649), "Pseudo-random number 5 was %lf, expected %lf", random_inclusive, 0.466649);
 }
 
-TEST(function, get_random_bounded_long) {
+TEST(random_splitmix, function, get_random_bounded_long) {
     gtl::random_splitmix random_splitmix;
     random_splitmix.seed(0x01234567);
     unsigned int random = random_splitmix.get_random(0u, 1u);
@@ -141,7 +141,7 @@ TEST(function, get_random_bounded_long) {
     REQUIRE(comparison::is_equal(random, 0u), "Pseudo-random number 5 was %u, expected %u", random, 0u);
 }
 
-TEST(function, get_random_bounded_double) {
+TEST(random_splitmix, function, get_random_bounded_double) {
     auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
     gtl::random_splitmix random_splitmix;
     random_splitmix.seed(0x01234567);
@@ -157,7 +157,7 @@ TEST(function, get_random_bounded_double) {
     REQUIRE(comparison::is_equal(random, -0.533351), "Pseudo-random number 5 was %lf, expected %lf", random, -0.533351);
 }
 
-TEST(evaluation, random_numbers) {
+TEST(random_splitmix, evaluation, random_numbers) {
     gtl::random_splitmix random_splitmix;
     random_splitmix.seed(0x01234567);
     int random_bias = 0;
