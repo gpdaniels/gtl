@@ -292,7 +292,6 @@ namespace gtl {
                     return false;
                 }
                 // Convert the path components back into a path.
-                current_working_directory.clear();
                 for (std::vector<std::string>::reverse_iterator path_component = path_components.rbegin(); path_component != path_components.rend(); ++path_component)  {
                     current_working_directory += "/" + *path_component;
                 }
