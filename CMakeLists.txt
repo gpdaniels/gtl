@@ -409,6 +409,11 @@ IF(BUILD_TESTING)
     ADD_LIBRARY(testbench STATIC ${TESTBENCH_SOURCES} ${TESTBENCH_HEADERS})
     SET_TARGET_PROPERTIES(testbench PROPERTIES FOLDER CMakePredefinedTargets)
 
+    # The Xcode generator automatically adds extra warning suppression flags, clear these.
+    IF(CMAKE_GENERATOR STREQUAL Xcode)
+        SET_TARGET_PROPERTIES(testbench PROPERTIES XCODE_ATTRIBUTE_WARNING_CFLAGS "")
+    ENDIF()
+
     # Create an executable for each test test file.
     FOREACH(TEST_FILE ${TEST_FILES})
 
@@ -432,6 +437,11 @@ IF(BUILD_TESTING)
 
         # Set the folder for the test libraray equal to it's name.
         SET_TARGET_PROPERTIES(${TEST_TARGET_NAME} PROPERTIES FOLDER ${TEST_FILE_NAME})
+        
+        # The Xcode generator automatically adds extra warning suppression flags, clear these.
+        IF(CMAKE_GENERATOR STREQUAL Xcode)
+            SET_TARGET_PROPERTIES(${TEST_TARGET_NAME} PROPERTIES XCODE_ATTRIBUTE_WARNING_CFLAGS "")
+        ENDIF()
 
         # Link to the testbench library.
         TARGET_LINK_LIBRARIES(${TEST_TARGET_NAME} PRIVATE testbench)
