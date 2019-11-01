@@ -27,7 +27,7 @@ SET(PROJECT_NAME "gtl")
 PROJECT(${PROJECT_NAME})
 
 # Settings.
-SET(BUILD_TESTING OFF CACHE BOOL "Enable building individual unit test targets.")
+SET(BUILD_TESTING ON CACHE BOOL "Enable building individual unit test targets.")
 SET(BUILD_MEMCHECK OFF CACHE BOOL "Enable running unit tests through valgrind memcheck.")
 SET(BUILD_COVERAGE OFF CACHE BOOL "Enable generation of unit test code coverage data.")
 SET(BUILD_SANITIZE_ADDRESS OFF CACHE BOOL "Enable building with clang sanitizer flags for address checking.")
