@@ -1,0 +1,413 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_PATHS_HPP
+#define GTL_PATHS_HPP
+
+#if defined(linux) || defined(__linux) || defined(__linux__)
+#   include <cstring>
+#   include <dirent.h>
+#   include <linux/limits.h>
+#   include <pwd.h>
+#   include <sys/stat.h>
+#   include <unistd.h>
+#endif
+
+#if defined(_WIN32)
+
+#   if defined(_MSC_VER)
+#       pragma warning(push, 0) 
+#   endif
+
+#   define WIN32_LEAN_AND_MEAN
+#   define VC_EXTRALEAN
+#   define STRICT
+
+#   include <sdkddkver.h>
+
+#   if defined(_AFXDLL)
+#       include <afxwin.h>
+#   else
+#       include <Windows.h>
+#   endif
+
+#   include <direct.h>
+#   include <Shlobj.h>
+
+#   if defined(_MSC_VER)
+#       pragma warning(pop)
+#   endif
+
+#endif
+
+#if defined(__APPLE__)
+#   include <cstring>
+#   include <dirent.h>
+#   include <mach-o/dyld.h>
+#   include <pwd.h>
+#   include <sys/stat.h>
+#   include <sys/syslimits.h>
+#   include <unistd.h>
+#endif
+
+#if defined(_MSC_VER)
+#    pragma warning(push, 0)
+#endif
+
+#include <algorithm>
+#include <string>
+#include <vector>
+
+#if defined(_MSC_VER)
+#    pragma warning(pop)
+#endif
+
+namespace gtl {
+    class paths final {
+    private:
+        /// @brief  Deleted destructor.
+        ~paths() = delete;
+
+        /// @brief  Deleted constructor.
+        paths() = delete;
+
+        /// @brief  Deleted copy constructor.
+        paths(paths&) = delete;
+
+        /// @brief  Deleted move constructor.
+        paths(paths&&) = delete;
+
+        /// @brief  Deleted copy assignment operator.
+        paths& operator=(paths& other) = delete;
+
+        /// @brief  Deleted move assignment operator.
+        paths& operator=(paths&& other) = delete;
+
+    public:
+        /// @brief  Get the full path to the current executable.
+        /// @param[out] executable_path the full path to the current executable.
+        /// @return true if the executable path was successfully returned, false otherwise.
+        static bool get_executable_path(std::string& executable_path) {
+
+            executable_path.clear();
+
+            #if defined(linux) || defined(__linux) || defined(__linux__)
+
+                executable_path.resize(PATH_MAX + 1, '\0');
+                ssize_t executable_path_size = ::readlink("/proc/self/exe", &executable_path[0], PATH_MAX);
+                if (executable_path_size <= 0) {
+                    return false;
+                }
+                executable_path.resize(static_cast<std::size_t>(executable_path_size));
+                return true;
+
+            #elif defined(_WIN32)
+
+                executable_path.resize(MAX_PATH + 1, '\0');
+                GetModuleFileNameA(nullptr, &executable_path[0], MAX_PATH);
+                std::size_t executable_path_size = executable_path.find_last_not_of('\0');
+                if (executable_path_size == std::string::npos) {
+                    return false;
+                }
+                executable_path.resize(executable_path_size + 1);
+                return true;
+
+            #elif defined(__APPLE__)
+
+                uint32_t executable_path_size = 0;
+                if (_NSGetExecutablePath(nullptr, &executable_path_size) == 0) {
+                    return false;
+                }
+                if (executable_path_size == 0) {
+                    return false;
+                }
+                executable_path.resize(executable_path_size, '\0');
+                if (_NSGetExecutablePath(&executable_path[0], &executable_path_size) != 0) {
+                    return false;
+                }
+                executable_path.resize(executable_path_size - 1);
+                return true;
+
+            #else
+
+                return false;
+
+            #endif
+        }
+
+        /// @brief  Get the name of the current executable.
+        /// @param[out] executable_name the name of the current executable.
+        /// @return true if the executable name was successfully returned, false otherwise.
+        static bool get_executable_name(std::string& executable_name) {
+            executable_name.clear();
+            std::string executable_path;
+            if (!get_executable_path(executable_path)) {
+                return false;
+            }
+            std::string::size_type executable_name_start_index = executable_path.find_last_of("\\/");
+            if (executable_name_start_index == std::string::npos) {
+                return false;
+            }
+            executable_name = executable_path.substr(executable_name_start_index + 1);
+            executable_name = executable_name.substr(0, executable_name.find_last_of("."));
+            return true;
+        }
+
+        /// @brief  Get the directory of the current executable.
+        /// @param[out] executable_directory the directory of the current executable.
+        /// @return true if the executable directory was successfully returned, false otherwise.
+        static bool get_executable_directory(std::string& executable_directory) {
+            executable_directory.clear();
+            std::string executable_path;
+            if (!get_executable_path(executable_path)) {
+                return false;
+            }
+            std::string::size_type executable_directory_end_index = executable_path.find_last_of("\\/");
+            if (executable_directory_end_index == std::string::npos) {
+                return false;
+            }
+            executable_directory = executable_path.substr(0, executable_directory_end_index);
+            return true;
+        }
+
+        /// @brief  Get the directory of the current executable.
+        /// @param  directory_path The path to the directory to process.
+        /// @return An array of paths, one for each entry inside the specified directory.
+        static std::vector<std::string> get_directory_contents(const std::string& directory_path) {
+
+            #if (defined(linux) || defined(__linux) || defined(__linux__)) || defined(__APPLE__)
+
+                DIR* directory_handle;
+                if ((directory_handle = opendir(directory_path.c_str())) == nullptr) {
+                    return {};
+                }
+                std::vector<std::string> directory_contents;
+                struct dirent* directoryEntry;
+                while ((directoryEntry = readdir(directory_handle)) != nullptr) {
+                    if ((std::strcmp(directoryEntry->d_name, ".") == 0) || (std::strcmp(directoryEntry->d_name, "..") == 0)) {
+                        continue;
+                    }
+                    directory_contents.emplace_back(directory_path + "/" + std::string(&directoryEntry->d_name[0]));
+                }
+                closedir(directory_handle);
+                std::sort(directory_contents.begin(), directory_contents.end());
+                return directory_contents;
+
+            #elif defined(_WIN32)
+
+                HANDLE directory_handle;
+                WIN32_FIND_DATA directory_entry;
+                if ((directory_handle = FindFirstFileA((directory_path + "/*").c_str(), &directory_entry)) == INVALID_HANDLE_VALUE) {
+                    return {};
+                }
+                std::vector<std::string> directory_contents;
+                do {
+                    if ((std::strcmp(directory_entry.cFileName, ".") == 0) || (std::strcmp(directory_entry.cFileName, "..") == 0)) {
+                        continue;
+                    }
+                    directory_contents.push_back(directory_path + "/" + directory_entry.cFileName);
+                } while(FindNextFileA(directory_handle, &directory_entry));
+                FindClose(directory_handle);
+                std::sort(directory_contents.begin(), directory_contents.end());
+                return directory_contents;
+
+            #else
+
+                return {};
+
+            #endif
+        }
+
+        /// @brief  Get the current working directory.
+        /// @param[out] current_working_directory The current working directory.
+        /// @return true if the current working directory was successfully returned, false otherwise.
+        static bool get_current_working_directory(std::string& current_working_directory) {
+
+            current_working_directory.clear();
+
+            #if (defined(linux) || defined(__linux) || defined(__linux__)) || defined(__APPLE__)
+
+                // Get the current working directory status.
+                struct stat status_current_directory = {};
+                if (stat(".", &status_current_directory) != 0) {
+                    return false;
+                }
+                // Get the root directory status.
+                struct stat status_root_directory = {};
+                if (stat("/", &status_root_directory) != 0) {
+                    return false;
+                }
+                // Attempt to keep stepping up the directory tree until we find the root.
+                std::string parent_directory = "./..";
+                std::vector<std::string> path_components;
+                while ((status_current_directory.st_dev != status_root_directory.st_dev) || (status_current_directory.st_ino != status_root_directory.st_ino)) {
+                    // Get the status of the parent directory.
+                    struct stat status_parent_directory = {};
+                    if (stat(parent_directory.c_str(), &status_parent_directory) != 0) {
+                        return false;
+                    }
+                    bool pushed = false;
+                    // Check each directory in the parent until we find the current directory.
+                    std::vector<std::string> directory_contents = get_directory_contents(parent_directory);
+                    for (const std::string& directory : directory_contents) {
+                        // Get the potentially current directory status.
+                        struct stat status_potential_directory = {};
+                        if (!lstat(directory.c_str(), &status_potential_directory)) {
+                            // Compare the current directory and the potentially current directory.
+                            if ((status_current_directory.st_dev == status_potential_directory.st_dev) && (status_current_directory.st_ino == status_potential_directory.st_ino)) {
+                                // If we have successfully found the current directory update the current to the parent and continue the search.
+                                status_current_directory = status_parent_directory;
+                                parent_directory += "/..";
+                                path_components.emplace_back(directory.substr(directory.find_last_of("\\/") + 1));
+                                pushed = true;
+                                break;
+                            }
+                        }
+                    }
+                    // If we failed to find the current directory inside the parent directory exit the loop.
+                    if (!pushed) {
+                        break;
+                    }
+                }
+                // Double check we found managed to navigate all the way to the root directory.
+                if ((status_current_directory.st_dev != status_root_directory.st_dev) || (status_current_directory.st_ino != status_root_directory.st_ino)) {
+                    return false;
+                }
+                // Convert the path components back into a path.
+                for (std::vector<std::string>::reverse_iterator path_component = path_components.rbegin(); path_component != path_components.rend(); ++path_component)  {
+                    current_working_directory += "/" + *path_component;
+                }
+                return true;
+
+            #elif defined(_WIN32)
+
+                current_working_directory.resize(MAX_PATH + 1, '\0');
+                if (!_getcwd(&current_working_directory[0], MAX_PATH)) {
+                    return false;
+                }
+                size_t current_working_directory_size = current_working_directory.find_last_not_of('\0');
+                if (current_working_directory_size == std::string::npos) {
+                    return false;
+                }
+                current_working_directory.resize(current_working_directory_size + 1);
+                return true;
+
+            #else
+
+                return false;
+
+            #endif
+        }
+
+        /// @brief  Get the users home directory.
+        /// @param[out] home_directory The users home directory.
+        /// @return true if the users home directory was successfully returned, false otherwise.
+        static bool get_home_directory(std::string& home_directory) {
+
+            home_directory.clear();
+
+            #if defined(linux) || defined(__linux) || defined(__linux__)
+
+                passwd* user_information = getpwuid(getuid());
+                if (!user_information) {
+                    return false;
+                }
+                home_directory = std::string(user_information->pw_dir);
+                return true;
+
+            #elif defined(_WIN32)
+
+                home_directory.resize(MAX_PATH + 1, '\0');
+                if (SHGetFolderPathA(nullptr, CSIDL_MYDOCUMENTS, nullptr, 0, &home_directory[0]) < 0) {
+                    return false;
+                }
+                size_t home_path_size = home_directory.find_last_not_of('\0');
+                if (home_path_size == std::string::npos) {
+                    return false;
+                }
+                home_directory.resize(home_path_size + 1);
+                return true;
+
+            #elif defined(__APPLE__)
+
+                passwd* user_information = getpwuid(getuid());
+                if (!user_information) {
+                    return false;
+                }
+                home_directory = std::string(user_information->pw_dir);
+                return true;
+
+            #else
+
+                return false;
+
+            #endif
+        }
+
+        /// @brief  Get the users application data directory.
+        /// @param[out] application_data_directory The users application data directory.
+        /// @return true if the users application data directory was successfully returned, false otherwise.
+        static bool get_application_data_directory(std::string& application_data_directory) {
+
+            application_data_directory.clear();
+
+            #if defined(linux) || defined(__linux) || defined(__linux__)
+
+                std::string home_directory;
+                if (!get_home_directory(home_directory)) {
+                    return false;
+                }
+                application_data_directory = home_directory + "/.config";
+                return true;
+
+            #elif defined(_WIN32)
+
+                application_data_directory.resize(MAX_PATH + 1, '\0');
+                if (SHGetFolderPathA(nullptr, CSIDL_COMMON_APPDATA, nullptr, 0, &application_data_directory[0]) < 0) {
+                    return false;
+                }
+                size_t pathLength = application_data_directory.find_last_not_of('\0');
+                if (pathLength == std::string::npos) {
+                    return false;
+                }
+                application_data_directory.resize(pathLength + 1);
+                return true;
+
+            #elif defined(__APPLE__)
+
+                std::string home_directory;
+                if (!get_home_directory(home_directory)) {
+                    return false;
+                }
+                application_data_directory = home_directory + "/Library/Application Support";
+                return true;
+
+            #else
+
+                return false;
+
+            #endif
+        }
+    };
+}
+
+#endif // GTL_PATHS_HPP
+

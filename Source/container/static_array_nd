@@ -1,0 +1,215 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_STATIC_ARRAY_ND_HPP
+#define GTL_STATIC_ARRAY_ND_HPP
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the static_array_nd is misused.
+#   define GTL_STATIC_ARRAY_ND_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_STATIC_ARRAY_ND_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+namespace gtl {
+    /// @brief  The static_array_nd class holds a constant size multi-dimensional array of a template type.
+    template <typename data_type, unsigned long long... dimension_sizes>
+    class static_array_nd final {
+    public:
+        /// @brief  Make the data value type publically accessible.
+        using type = data_type;
+
+    private:
+        /// @brief  Type selection template that takes an unsigned index and returns one of three types for indexes of zero, one, and greater-than-one repectively.
+        template <unsigned long long index_parameter, typename zero_type, typename one_type, typename more_type>
+        struct switch_zero_one_or_more_type final {
+            using type = more_type;
+        };
+
+        /// @brief  Type selection specialisation for an index of 1.
+        template <typename zero_type, typename one_type, typename more_type>
+        struct switch_zero_one_or_more_type<1, zero_type, one_type, more_type> final {
+            using type = one_type;
+        };
+
+        /// @brief  Type selection specialisation for an index of 0.
+        template <typename zero_type, typename one_type, typename more_type>
+        struct switch_zero_one_or_more_type<0, zero_type, one_type, more_type> final {
+            using type = zero_type;
+        };
+
+    private:
+        /// @brief  Wrapper type for slice_type and array_type deferred generation of arrays of arrays, this avoids invalid type errors when using zero_one_or_more_switch.
+        template <template <typename, unsigned long long...> typename deferred_type>
+        struct deferred_array final {
+            /// @brief  The slice_type is the array_type of the next dimension of the static_array_nd.
+            template <unsigned long long first_deferred_dimension, unsigned long long... deferred_dimensions>
+            using slice_type = static_array_nd<type, deferred_dimensions...>;
+
+            /// @brief  The array_type is an array of slice_type the size of the dimension.
+            template <unsigned long long first_deferred_dimension, unsigned long long... deferred_dimensions>
+            struct array_type_validator final {
+                 using array_type = static_array_nd<type, deferred_dimensions...>[first_deferred_dimension];
+            };
+
+            /// @brief  When the size of the dimension is zero the array_type is not valid.
+            template <unsigned long long... deferred_dimensions>
+            struct array_type_validator<0, deferred_dimensions...> final {
+                struct array_type final { };
+            };
+        };
+
+        /// @brief  Wrapper type for slice_type and array_type deferred generation of arrays, this avoids invalid type errors when using zero_one_or_more_switch.
+        template <template <typename, unsigned long long...> typename deferred_type>
+        struct deferred_element final {
+            /// @brief  The final slice_type is just the data value type of the static_array_nd.
+            template <unsigned long long first_deferred_dimension>
+            using slice_type = type;
+
+            /// @brief  The final array_type is an array of slice_type the size of the dimension.
+            template <unsigned long long first_deferred_dimension, unsigned long long... deferred_dimensions>
+            struct array_type_validator final {
+                 using array_type = type[first_deferred_dimension];
+            };
+
+            /// @brief  When the size of the dimension is zero the array_type is not valid.
+            template <unsigned long long... deferred_dimensions>
+            struct array_type_validator<0, deferred_dimensions...> final {
+                struct array_type { };
+            };
+        };
+
+        /// @brief  Wrapper type for slice_type and array_type deferred generation of invalid types, this avoids invalid type errors when using zero_one_or_more_switch.
+        template <template <typename, unsigned long long...> typename deferred_type>
+        struct deferred_invalid final {
+            /// @brief  When the number of dimension_sizes is zero the slice_type is not valid.
+            template <unsigned long long... deferred_dimensions>
+            struct slice_type final { };
+
+            /// @brief  When the number of dimension_sizes is zero the array_type is not valid.
+            template <unsigned long long... deferred_dimensions>
+            struct array_type_validator final {
+                struct array_type final { };
+            };
+        };
+
+    public:
+        /// @brief  This is the type of the elements of the array at this dimension.
+        using slice_type = typename switch_zero_one_or_more_type<sizeof...(dimension_sizes), deferred_invalid<static_array_nd>, deferred_element<static_array_nd>, deferred_array<static_array_nd> >::type::template slice_type<dimension_sizes...>;
+
+        /// @brief  This is the type of data stored at this dimension.
+        using array_type = typename switch_zero_one_or_more_type<sizeof...(dimension_sizes), deferred_invalid<static_array_nd>, deferred_element<static_array_nd>, deferred_array<static_array_nd> >::type::template array_type_validator<dimension_sizes...>::array_type;
+
+    public:
+        /// @brief  The actual multi-dimensional array data.
+        array_type data;
+
+    public:
+        /// @brief  Get the number of dimensions of this static_array_nd.
+        /// @return The number of dimensions of this static_array_nd.
+        constexpr static unsigned long long dimensions() {
+            return sizeof...(dimension_sizes);
+        }
+
+        /// @brief  Get the size of a specified dimension in this static_array_nd.
+        /// @param  dimension_index The index of the dimension we want the size of.
+        /// @return The size of dimension in this static_array_nd specified by index.
+        constexpr static unsigned long long size(unsigned long long dimension_index = 0) {
+            if constexpr (sizeof...(dimension_sizes) == 0) {
+                static_cast<void>(dimension_index);
+                return 0;
+            }
+            else {
+                GTL_STATIC_ARRAY_ND_ASSERT(dimension_index < sizeof...(dimension_sizes), "Dimension index must be within number of dimensions of the array");
+                const unsigned long long dimension_sizes_array[sizeof...(dimension_sizes)] = { dimension_sizes... };
+                return dimension_sizes_array[dimension_index];
+            }
+        }
+
+    public:
+        /// @brief  Get a const reference to the slice_type of this level.
+        /// @param  index Used to specify the location to get within the current dimension size.
+        /// @return A const reference to the slice_type of this level.
+        constexpr const slice_type& operator[](unsigned long long index) const {
+            GTL_STATIC_ARRAY_ND_ASSERT(index < this->size(), "Array index must be less than the maximum size of the dimension.");
+            return this->data[index];
+        }
+
+        /// @brief  Get a non-const reference to the slice_type of this level.
+        /// @param  index Used to specify the location to get within the current dimension size.
+        /// @return A non-const reference to the slice_type of this level.
+        constexpr slice_type& operator[](unsigned long long index) {
+            GTL_STATIC_ARRAY_ND_ASSERT(index < this->size(), "Array index must be less than the maximum size of the dimension.");
+            return this->data[index];
+        }
+
+    public:
+        /// @brief  Get a const reference to the slice_type of the level argument-count below.
+        /// @param  first_index Used to specify the location to get within the current dimension size.
+        /// @param  remaining_indexes Used to specify the locations for the argument-count dimension sizes below.
+        /// @return A const reference to the slice_type of the level argument-count below.
+        template <typename... index_types>
+        constexpr const type& operator()(unsigned long long first_index, index_types... remaining_indexes) const {
+            static_assert(1 + sizeof...(remaining_indexes) == sizeof...(dimension_sizes), "Number of indexes must be equal to the number of dimensions.");
+            if constexpr (sizeof...(dimension_sizes) == 1) {
+                return this->operator[](first_index);
+            }
+            else {
+                return this->operator[](first_index)(remaining_indexes...);
+            }
+        }
+
+        /// @brief  Get a non-const reference to the slice_type of the level argument-count below.
+        /// @param  first_index Used to specify the location to get within the current dimension size.
+        /// @param  remaining_indexes Used to specify the locations for the argument-count dimension sizes below.
+        /// @return A non-const reference to the slice_type of the level argument-count below.
+        template <typename... index_types>
+        constexpr type& operator()(unsigned long long first_index, index_types... remaining_indexes) {
+            static_assert(1 + sizeof...(remaining_indexes) == sizeof...(dimension_sizes), "Number of indexes must be equal to the number of dimensions.");
+            if constexpr (sizeof...(dimension_sizes) == 1) {
+                return this->operator[](first_index);
+            }
+            else {
+                return this->operator[](first_index).operator()(remaining_indexes...);
+            }
+        }
+    };
+
+    /// @brief  static_array_1d is a helper type for creating a one dimensional array.
+    template <typename type, unsigned long long width>
+    using static_array_1d = static_array_nd<type, width>;
+
+    /// @brief  static_array_2d is a helper type for creating a two dimensional array.
+    template <typename type, unsigned long long width, unsigned long long height>
+    using static_array_2d = static_array_nd<type, width, height>;
+
+    /// @brief  static_array_3d is a helper type for creating a three dimensional array.
+    template <typename type, unsigned long long width, unsigned long long height, unsigned long long depth>
+    using static_array_3d = static_array_nd<type, width, height, depth>;
+}
+
+#undef GTL_STATIC_ARRAY_ND_ASSERT
+
+#endif // GTL_STATIC_ARRAY_ND_HPP

@@ -1,0 +1,94 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_SPIN_LOCK_HPP
+#define GTL_SPIN_LOCK_HPP
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the spin_lock is misused.
+#   define GTL_SPIN_LOCK_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_SPIN_LOCK_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
+#include <atomic>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
+
+namespace gtl {
+    /// @brief  The spin_lock is a simple mutex structure that doesn't put threads to sleep.
+    class spin_lock final {
+        /// @brief The lock flag determines if the spin_lock is locked or not.
+        std::atomic_flag flag = ATOMIC_FLAG_INIT;
+
+    public:
+        /// @brief  Destructor asserts that the spin_lock is unlocked.
+        ~spin_lock() {
+            GTL_SPIN_LOCK_ASSERT(this->try_lock(), "Ensure that the lock is lockable when it is destructed.");
+        }
+
+        /// @brief  Default constructor.
+        spin_lock() = default;
+
+        /// @brief  Deleted copy constructor.
+        spin_lock(spin_lock&) = delete;
+
+        /// @brief  Deleted move constructor.
+        spin_lock(spin_lock&&) = delete;
+
+        /// @brief  Deleted copy assignment operator.
+        spin_lock& operator=(const spin_lock&) = delete;
+
+        /// @brief  Deleted move assignment operator.
+        spin_lock& operator=(spin_lock&&) = delete;
+
+    public:
+        /// @brief  Block until the current thread has the lock.
+        void lock() {
+            while (!this->try_lock());
+        }
+
+        /// @brief  Unlock the lock.
+        void unlock() {
+            this->flag.clear(std::memory_order_release);
+        }
+
+        /// @brief  Try and lock the spin_lock.
+        /// @return True if the spin_lock is successfully locked, false otherwise.
+        bool try_lock() {
+            return !this->flag.test_and_set(std::memory_order_acquire);
+        }
+    };
+}
+
+#undef GTL_SPIN_LOCK_ASSERT
+
+#endif // GTL_SPIN_LOCK_HPP

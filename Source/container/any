@@ -1,0 +1,184 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_ANY_HPP
+#define GTL_ANY_HPP
+
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
+#include <memory>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
+
+#if defined(__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wweak-vtables"
+#endif
+
+namespace gtl {
+    /// @brief  The any class is a variant type that can hold anything.
+    class any final {
+    private:
+        /// @brief  This class is a pure virtual base class to hold any type.
+        class abstract_variable {
+        public:
+            /// @brief  Virtual destructor.
+            virtual ~abstract_variable() = default;
+
+        protected:
+            /// @brief Defaulted constructor.
+            abstract_variable() = default;
+
+        public:
+            /// @brief  Deleted copy constructor.
+            abstract_variable(const abstract_variable&) = delete;
+
+            /// @brief  Deleted move constructor.
+            abstract_variable(abstract_variable&&) = delete;
+
+            /// @brief  Deleted copy assignment operator.
+            abstract_variable& operator=(const abstract_variable&) = delete;
+
+            /// @brief  Deleted move assignment operator.
+            abstract_variable& operator=(abstract_variable&&) = delete;
+
+        public:
+            /// @brief  Pure virtual clone factory function to copy child class data.
+            /// @return A copy of the abstract_variable.
+            virtual std::unique_ptr<abstract_variable> clone() const = 0;
+        };
+
+        /// @brief  This template class implements the abstract_variable class to hold a variable of template type.
+        template <typename type>
+        class variable final
+            : public abstract_variable {
+
+        public:
+            /// @brief  The data of the type to be held in the variable.
+            type value;
+
+        public:
+            /// @brief  Virtual destructor will call the descrutor for abstract_variable.
+            virtual ~variable() override = default;
+
+            /// @brief  Explicit constructor that stores the provided value in this variable.
+            /// @param  any_value The value to be stored in the variable.
+            explicit variable(type any_value)
+                : value(any_value) {
+            }
+
+        private:
+            /// @brief  Deleted copy constructor.
+            variable(const variable&) = delete;
+
+            /// @brief  Deleted move constructor.
+            variable(variable&&) = delete;
+
+            /// @brief  Deleted copy assignment operator.
+            variable& operator=(const variable&) = delete;
+
+            /// @brief  Deleted move assignment operator.
+            variable& operator=(variable&&) = delete;
+
+        public:
+            /// @brief  Override of the base class clone function.
+            /// @return A copy of the variable.
+            virtual std::unique_ptr<abstract_variable> clone() const override {
+                return std::make_unique<variable>(this->value);
+            }
+        };
+
+    private:
+        /// @brief  value stores an AbstrctVariable which will be either null or hold the variant data.
+        std::unique_ptr<abstract_variable> value;
+
+    public:
+        /// @brief  Defaulted destructor.
+        ~any() = default;
+
+        /// @brief  Defaulted constructor.
+        any() = default;
+
+        /// @brief  Copy constructor.
+        /// @param  other The other any to be copied.
+        any(const any& other)
+            : value(other.value ? other.value->clone() : nullptr) {
+        }
+
+        /// @brief  Defaulted move constructor.
+        any(any&&) = default;
+
+        /// @brief  Copy assignment operator.
+        /// @param  other The other any to be copied.
+        any& operator=(const any& other) {
+            // Check the we are not self assigning
+            if (this != &other) {
+                // Clone the other value if it is not a null pointer.
+                this->value = other.value ? other.value->clone() : nullptr;
+            }
+
+            // Return this
+            return *this;
+        }
+
+        /// @brief  Defaulted move assignment operator.
+        any& operator=(any&&) = default;
+
+    public:
+        /// @brief  Templated copy assignment operator.
+        /// @param  any_value The value to store in the any.
+        template <typename type>
+        any& operator=(const type& any_value) {
+            // Allocate a variable to hold the value and store this in value
+            this->value = std::make_unique<variable<type > >(any_value);
+
+            // Return this
+            return *this;
+        }
+
+        /// @brief  Templated constructor taking any type.
+        /// @param  any_value The value to be stored in the any.
+        template <typename type>
+        any(const type& any_value)
+            : value(std::make_unique<variable<type> >(any_value)) {
+        }
+
+        /// @brief  Templated conversion operator will cast any to anything.
+        /// @return The value of the any as the requested type.
+        template <typename type>
+        operator type() {
+            if (!this->value) {
+                return type();
+            }
+            return static_cast<variable<type>*>(this->value.get())->value;
+        }
+    };
+}
+
+#if defined(__clang__)
+    #pragma clang diagnostic pop
+#endif
+
+#endif // GTL_ANY_HPP

@@ -1,0 +1,148 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_RANDOM_PCG_HPP
+#define GTL_RANDOM_PCG_HPP
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the random_pcg is misused.
+#   define GTL_RANDOM_PCG_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_RANDOM_PCG_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
+#include <cstdint>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
+
+namespace gtl {
+    /// @brief  The random_pcg class implements the pcg pseudo-random-number generator.
+    class random_pcg final {
+    private:
+        /// @brief  Current state of the random number generator.
+        uint64_t state;
+
+        /// @brief  Increment added to the state during pseudo-random-number generation.
+        uint64_t increment;
+
+    public:
+        /// @brief  Defaulted destructor.
+        ~random_pcg() = default;
+
+        /// @brief  Empty constructor.
+        random_pcg()
+            : state(0x853C49E6748FEA9Bull)
+            , increment(0xDA3E39CB94B95BDBull) {
+        }
+
+        /// @brief  Defaulted copy constructor.
+        random_pcg(const random_pcg&) = default;
+
+        /// @brief  Defaulted move constructor.
+        random_pcg(random_pcg&&) = default;
+
+        /// @brief  Defaulted copy assignment.
+        random_pcg& operator=(const random_pcg&) = default;
+
+        /// @brief  Defaulted move assignment.
+        random_pcg& operator=(random_pcg&&) = default;
+
+        /// @brief  Constructor with 64 bit seed.
+        /// @param  seed_value Seed value used to initialise the state.
+        random_pcg(std::uint64_t seed_value) {
+            this->seed(seed_value);
+        }
+
+        /// @brief  Initialise the state from a 64 bit seed.
+        /// @param  seed_value Seed value used to initialise the state.
+        void seed(std::uint64_t seed_value) {
+            this->state = 0;
+            this->increment = (seed_value << 1) | 1;
+            this->get_random_raw();
+            this->state += seed_value;
+            this->get_random_raw();
+        }
+
+        /// @brief  Get the next random number from the generator.
+        /// @return A pseudo-random number.
+        std::uint32_t get_random_raw() {
+            // Save current state.
+            std::uint64_t state_previous = this->state;
+            // Advance internal state.
+            this->state = state_previous * 0x5851F42D4C957F2Dull + this->increment;
+            // Calculate output function.
+            std::uint32_t state_shift_xor_shift = uint32_t(((state_previous >> 18u) ^ state_previous) >> 27u);
+            std::int32_t rotation = state_previous >> 59u;
+            return (state_shift_xor_shift >> rotation) | (state_shift_xor_shift << ((-rotation) & 31));
+        }
+
+    public:
+        /// @brief  Get a random number in the open interval 0 < value < 1.
+        /// @return A pseudo-random number.
+        double get_random_exclusive() {
+            return (static_cast<double>(this->get_random_raw()) + 0.5) * (1.0 / static_cast<double>(1ull << 32));
+        }
+
+        /// @brief  Get a random number in the half-open interval 0 <= x < 1.
+        /// @return A pseudo-random number.
+        double get_random_exclusive_top() {
+            return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>(1ull << 32));
+        }
+
+        /// @brief  Get a random number in the closed interval 0 <= x <= 1.
+        /// @return A pseudo-random number.
+        double get_random_inclusive() {
+            return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>((1ull << 32) - 1));
+        }
+
+        /// @brief  Get a random number between two bounds.
+        /// @param  inclusive_min Minimum number that can be returned.
+        /// @param  inclusive_max Max number than can be returned.
+        /// @return A pseudo-random number.
+        std::uint32_t get_random(std::uint32_t inclusive_min, std::uint32_t inclusive_max)  {
+            GTL_RANDOM_PCG_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");
+            return (this->get_random_raw() % (1 + inclusive_max - inclusive_min)) + inclusive_min;
+        }
+
+        /// @brief  Get a random number between two bounds.
+        /// @param  inclusive_min Minimum number that can be returned.
+        /// @param  inclusive_max Max number than can be returned.
+        /// @return A pseudo-random number.
+        double get_random(double inclusive_min, double inclusive_max) {
+            GTL_RANDOM_PCG_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");
+            return (this->get_random_inclusive() * (inclusive_max - inclusive_min)) + inclusive_min;
+        }
+    };
+}
+
+#undef GTL_RANDOM_PCG_ASSERT
+
+#endif // GTL_RANDOM_PCG_HPP

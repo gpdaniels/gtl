@@ -1,0 +1,329 @@
+/*
+The MIT License
+Copyright (c) 2019 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_THREAD_POOL_HPP
+#define GTL_THREAD_POOL_HPP
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the thread_pool is misused.
+#   define GTL_THREAD_POOL_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+///  @brief At release time the assert macro is implemented as a nop.
+#   define GTL_THREAD_POOL_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
+#include <atomic>
+#include <condition_variable>
+#include <functional>
+#include <mutex>
+#include <queue>
+#include <set>
+#include <thread>
+#include <vector>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
+
+namespace gtl {
+    /// @brief  The thread_pool class implements a pool of threads that process tasks from queues in priority order.
+    class thread_pool final {
+    public:
+        /// @brief  The queue class implements a queue of tasks that are processed by a thread_pool.
+        class queue final {
+        private:
+            friend class thread_pool;
+
+        private:
+            /// @brief  A comparison structure to enable standard containers to order queue objects by priority.
+            struct comparison final {
+                bool operator()(const queue* lhs, const queue* rhs) const {
+                    return lhs->priority < rhs->priority;
+                }
+            };
+
+        private:
+            /// @brief  Reference to the thread_pool that this queue is being processed by.
+            thread_pool& pool;
+
+            /// @brief  The priority of the tasks in this queue, lower value is higher priority.
+            int priority;
+
+            /// @brief  The number of tasks added to this queue.
+            unsigned int inserted;
+
+            /// @brief  The number of tasks completed from this queue.
+            std::atomic<unsigned int> completed;
+
+            /// @brief  Mutex to control access to the queue of tasks.
+            mutable std::mutex tasks_mutex;
+
+            /// @brief  The queue of tasks.
+            std::queue<std::function<void()>> tasks;
+
+        public:
+            /// @brief  Destructor performs debug checks to make sure the queue is not misused.
+            ~queue() {
+                GTL_THREAD_POOL_ASSERT(this->empty(), "Thread pool queue still contains pending tasks.");
+                GTL_THREAD_POOL_ASSERT(this->finished(), "Thread pool queue is still being processed.");
+            }
+
+            /// @brief  Constructor that sets the reference to the thread_pool and initialises internal variables.
+            /// @param  target_pool The thread_pool that will process the tasks in this queue.
+            /// @param  queue_priority The priority of the tasks in this queue, lower value is higher priority.
+            queue(thread_pool& target_pool, int queue_priority = 0)
+                : pool(target_pool)
+                , priority(queue_priority)
+                , inserted(0)
+                , completed(0) {
+            }
+
+        public:
+            /// @brief  Add a task to this queue.
+            /// @param  task The task to add.
+            void push(const std::function<void()>& task);
+
+            /// @brief  Block until all tasks in this queue have been completed by the thread_pool.
+            void drain();
+
+            /// @brief  Check if the queue is empty.
+            /// @return true if the queue of tasks is empty, false otherwise.
+            bool empty() const {
+                std::lock_guard<std::mutex> lock(this->tasks_mutex);
+                return this->tasks.empty();
+            }
+
+            /// @brief  Check if all tasks inserted into the queue have been completed.
+            /// @return true if all tasks have been completed, false otherwise.
+            bool finished() const {
+                std::lock_guard<std::mutex> lock(this->tasks_mutex);
+                return (this->inserted == this->completed);
+            }
+        };
+
+    private:
+        /// @brief  Flag that specifies if the interal threads should sleep or exit when there are no queues to process.
+        std::atomic<bool> running;
+
+        /// @brief  The array of internal threads.
+        std::vector<std::thread> threads;
+
+        /// @brief  Mutex to control access to the set of queues.
+        std::mutex queue_mutex;
+
+        /// @brief  Condition variable to allow the internal threads to sleep when no queues are available.
+        std::condition_variable queue_available;
+
+        /// @brief  Set of queues to process, queues are removed when empty of tasks.
+        std::set<queue*, queue::comparison> queues;
+
+    public:
+        /// @brief  Destructor performs debug checks to make sure the thread_pool is not misused.
+        ~thread_pool() {
+            // Ensure the thread_pool has been joined.
+            GTL_THREAD_POOL_ASSERT(!this->joinable(), "Thread pool is still joinable.");
+        }
+
+        /// @brief  Constructor that allocates the internal threads and starts them running.
+        /// @param  thread_count The number of threads to use.
+        thread_pool(unsigned int thread_count = (std::thread::hardware_concurrency() | 1u) - 1u)
+            : running(true) {
+            this->threads.reserve(thread_count);
+            for (unsigned int thread_index = 0; thread_index < thread_count; ++ thread_index) {
+                this->threads.emplace_back(&thread_pool::thread_loop, this);
+            }
+        }
+
+        /// @brief  Deleted copy constructor.
+        thread_pool(const thread_pool&) = delete;
+
+        /// @brief  Defaulted move constructor.
+        thread_pool(thread_pool&&) = default;
+
+        /// @brief  Deleted copy assignment operator.
+        thread_pool& operator=(const thread_pool&) = delete;
+
+        /// @brief  Defaulted move assignment operator.
+        thread_pool& operator=(thread_pool&&) = default;
+
+    private:
+        /// @brief  The core loop that is run on each thread_pool thread.
+        void thread_loop() {
+
+            queue* queue = nullptr;
+            std::function<void()> task;
+
+            for (;;) {
+                // Try and pop a task from the highest priority queue.
+                {
+                    // First check if there are any queues.
+                    std::lock_guard<std::mutex> lock(this->queue_mutex);
+                    if (!this->queues.empty()) {
+                        // Select the highest priority queue.
+                        queue = *this->queues.begin();
+                        {
+                            std::lock_guard<std::mutex> lock2(queue->tasks_mutex);
+
+                            // Try and get a task.
+                            if (!queue->tasks.empty()) {
+                                task = std::move(queue->tasks.front());
+                                queue->tasks.pop();
+                            }
+
+                            // If there's no tasks left on this queue, remove it.
+                            else {
+                                this->queues.erase(this->queues.begin());
+                            }
+                        }
+                    }
+                }
+
+                // If this thread got a job.
+                if (task) {
+                    task();
+                    ++queue->completed;
+                }
+
+                // Otherwise, wait for more work and potentially exit.
+                else {
+                    std::unique_lock<std::mutex> lock(this->queue_mutex);
+
+                    // Wait for more work, or exit signal.
+                    this->queue_available.wait(lock, [&]{ return !this->running || !this->queues.empty(); });
+
+                    // Check for exit.
+                    if (!this->running && this->queues.empty()) {
+                        break;
+                    }
+                }
+
+                // Clear the task.
+                task = nullptr;
+            }
+        }
+
+    public:
+        /// @brief  Block until all tasks in a queue have been completed by the thread_pool.
+        /// @param  queue The queue of tasks to empty.
+        void drain(queue& queue) {
+
+            std::function<void()> task;
+
+            for (;;) {
+                // Try and pop a task from the queue.
+                {
+                    std::lock_guard<std::mutex> lock(this->queue_mutex);
+                    {
+                        std::lock_guard<std::mutex> lock2(queue.tasks_mutex);
+                        if (!queue.tasks.empty()) {
+                            task = std::move(queue.tasks.front());
+                            queue.tasks.pop();
+                        }
+                    }
+                }
+
+                // If this thread got a task.
+                if (task) {
+                    task();
+                    ++queue.completed;
+
+                    // Clear the task.
+                    task = nullptr;
+                }
+
+                // Otherwise there are no tasks left, so break out of the loop.
+                else {
+                    break;
+                }
+            }
+
+            // Wait for all working threads to finish.
+            while (!queue.finished()) {
+                std::this_thread::yield();
+            }
+        }
+
+    public:
+        /// @brief  Check if the thread_pool threads are joinable.
+        /// @return true if the threads are joinable, false otherwise.
+        bool joinable() const {
+            // Check if any of the threads are joinable.
+            for (const std::thread& thread : this->threads) {
+                if (thread.joinable()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// @brief  Block until all queues in the thread_pool are empty, then join all threads.
+        void join() {
+            // Stop pool.
+            this->running = false;
+
+            // Wake threads.
+            this->queue_available.notify_all();
+
+            // Ensure work is finished.
+            this->thread_loop();
+
+            // Join threads.
+            for (std::thread& thread : this->threads) {
+                if (thread.joinable()) {
+                    thread.join();
+                }
+            }
+        }
+    };
+
+    // The push function for the queue class is implemented here as it needs to access the thread_pool class.
+    void thread_pool::queue::push(const std::function<void()>& task) {
+        {
+            // Add the task to the queue.
+            std::lock_guard<std::mutex> lock(this->tasks_mutex);
+            ++this->inserted;
+            this->tasks.push(task);
+        }
+        {
+            // Ensure the queue is live in the pool.
+            std::lock_guard<std::mutex> lock(this->pool.queue_mutex);
+            this->pool.queues.emplace(this);
+        }
+        // Notify a thread in the pool that there is a queue available.
+        this->pool.queue_available.notify_one();
+    }
+
+    // The drain function for the queue class is implemented here as it needs to access the thread_pool class.
+    void thread_pool::queue::drain() {
+        this->pool.drain(*this);
+    }
+}
+
+#undef GTL_THREAD_POOL_ASSERT
+
+#endif // GTL_THREAD_POOL_HPP

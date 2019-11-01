@@ -1,0 +1,144 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_TYPE_NAME_HPP
+#define GTL_TYPE_NAME_HPP
+
+namespace gtl {
+    /// @brief  The type_name class provides a name function for a given type.
+    template<typename type>
+    class type_name final {
+    private:
+        /// @brief  Template struct that holds a sequence of integers, derived from http://stackoverflow.com/a/32223343.
+        template <typename integer_type, integer_type... indexes>
+        struct integer_sequence {
+            using sequence_type = integer_sequence;
+        };
+
+        /// @brief  Template struct declaration that combines two sequences into one.
+        template <typename integer_type, class Sequence1, class Sequence2>
+        struct merge_sequences;
+
+        /// @brief  Template struct definition and partial specialisation for merging two interger_sequences.
+        template <typename integer_type, integer_type... indexes1, integer_type... indexes2>
+        struct merge_sequences<integer_type, integer_sequence<integer_type, indexes1...>, integer_sequence<integer_type, indexes2...>>
+            : integer_sequence<integer_type, indexes1..., (sizeof...(indexes1) + indexes2)...> {
+        };
+
+        /// @brief  Template struct to create an integer_sequence from zero to the given length.
+        template <typename integer_type, unsigned long long length>
+        struct make_integer_sequence final
+            : merge_sequences<integer_type, typename make_integer_sequence<integer_type, length / 2>::sequence_type, typename make_integer_sequence<integer_type, length - length / 2>::sequence_type> {
+        };
+
+        /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length zero.
+        template<typename integer_type>
+        struct make_integer_sequence<integer_type, 0> final
+            : integer_sequence<integer_type> {
+        };
+
+        /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length one.
+        template<typename integer_type>
+        struct make_integer_sequence<integer_type, 1> final
+             : integer_sequence<integer_type, 0> {
+        };
+
+    private:
+        /// @brief  The string_literal class holds a compile-time constant string and provides both substring and character finding operations.
+        template <unsigned long long length>
+        class string_literal final {
+        private:
+            /// @brief  The compile-time string is held in a constant sized array.
+            const char string[length];
+        public:
+            /// @brief  Compile-time string construction from a string array and an integer_sequence to index it.
+            /// @param  raw_string Input string to wrap.
+            /// @param  index_sequence Template holding the indexes of the string.
+            template<unsigned long long... indexes>
+            constexpr string_literal(const char(&raw_string)[sizeof...(indexes)], integer_sequence<unsigned long long, indexes...> index_sequence)
+                : string{ raw_string[indexes]... } {
+                static_cast<void>(index_sequence);
+            }
+        public:
+            /// @brief  Get a pointer to the string data.
+            /// @return Pointer to the string data stored in this class.
+            constexpr const char* c_str() const {
+                return this->string;
+            }
+        public:
+            /// @brief  Create a substring from this string by providing a template start position, length, and integer_sequence of indexes.
+            /// @param  substring_index_sequence Template holding the indexes of the new string.
+            /// @return A string_literal holding the requested substring.
+            template<unsigned long long substring_start, unsigned long long substring_length, unsigned long long... substring_indexes>
+            constexpr string_literal<substring_length + 1> substr(integer_sequence<unsigned long long, substring_indexes...> substring_index_sequence) const {
+                static_cast<void>(substring_index_sequence);
+                return string_literal<substring_length + 1>({ this->string[substring_start + substring_indexes]..., '\0' }, make_integer_sequence<unsigned long long, substring_length + 1>{});
+            }
+        public:
+            /// @brief  Search for a given character within this string.
+            /// @param  character The character to find.
+            /// @param  starting_index The index of the string to start searching from.
+            /// @return The index of the character if found, otherwise 0xFFFFFFFFFFFFFFFF.
+            constexpr unsigned long long find(const char character, const unsigned long long starting_index = 0) const {
+                return ((starting_index >= length) ? 0xFFFFFFFFFFFFFFFF : ((this->string[starting_index] == character) ? starting_index : this->find(character, starting_index + 1)));
+            }
+
+            /// @brief  Search for a given character within this string in reverse order starting from the end.
+            /// @param  character The character to find.
+            /// @param  starting_index The index of the string to start searching from.
+            /// @return The index of the character if found, otherwise 0xFFFFFFFFFFFFFFFF.
+            constexpr unsigned long long rfind(const char character, const unsigned long long starting_index = length - 1) const {
+                return ((starting_index == 0) ? ((this->string[starting_index] == character) ? starting_index : 0xFFFFFFFFFFFFFFFF) : ((this->string[starting_index] == character) ? starting_index : this->rfind(character, starting_index - 1)));
+            }
+        };
+
+    public:
+        /// @brief  Get the name of the classes template type as a string.
+        /// @return Pointer to the string representation of the classes template type.
+        static const char* name() {           
+            // Clang compiler format:   __PRETTY_FUNCTION__ = static const char *gtl::type_name<TYPE_NAME>::name() [template_type = TYPE_NAME]
+            // GNU compiler format:     __PRETTY_FUNCTION__ = static const char *gtl::type_name<template_type>::name() [with template_type = TYPE_NAME]
+            // MSVC compiler format:    __FUNCSIG__         = const char *__cdecl gtl::type_name<TYPE_NAME>::name(void)
+
+#           if defined(__PRETTY_FUNCTION__) || defined(__GNUC__) || defined(__clang__)
+                constexpr static const unsigned long long function_name_length = sizeof(__PRETTY_FUNCTION__);
+                constexpr static const string_literal<function_name_length> function_name(__PRETTY_FUNCTION__, make_integer_sequence<unsigned long long, function_name_length>{});
+                constexpr static const unsigned long long type_name_start  = function_name.rfind('=') + 2;
+                constexpr static const unsigned long long type_name_end    = function_name_length - 2;
+                constexpr static const unsigned long long type_name_length = type_name_end - type_name_start;
+                constexpr static const string_literal<type_name_length + 1> type_name_string = function_name.template substr<type_name_start, type_name_length>(make_integer_sequence<unsigned long long, type_name_length>{});
+                return type_name_string.c_str();
+#           elif defined(__FUNCSIG__) || defined(_MSC_VER)
+                constexpr static const unsigned long long function_name_length = sizeof(__FUNCSIG__);
+                constexpr static const string_literal<function_name_length> function_name(__FUNCSIG__, make_integer_sequence<unsigned long long, function_name_length>{});
+                constexpr static const unsigned long long type_name_start  = function_name.find('<') + 1;
+                constexpr static const unsigned long long type_name_end    = function_name.rfind('>');
+                constexpr static const unsigned long long type_name_length = type_name_end - type_name_start;
+                constexpr static const string_literal<type_name_length + 1> type_name_string = function_name.template substr<type_name_start, type_name_length>(make_integer_sequence<unsigned long long, type_name_length>{});
+                return type_name_string.c_str();
+#           else
+#               error "Unsupported compiler."
+#           endif
+        }
+    };
+}
+
+#endif // GTL_TYPE_NAME_HPP

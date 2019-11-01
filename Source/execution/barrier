@@ -1,0 +1,183 @@
+/*
+The MIT License
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_BARRIER_HPP
+#define GTL_BARRIER_HPP
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the barrier is misused.
+#   define GTL_BARRIER_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_BARRIER_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
+#include <condition_variable>
+#include <mutex>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
+
+namespace gtl {
+    /// @brief  The barrier class blocks a number of threads until they are syncronised.
+    class barrier final {
+    private:
+        /// @brief  A lockable object used to block threads.
+        std::mutex mutex;
+
+        /// @brief  A condition variable that is waited on to synchronise threads.
+        std::condition_variable all_present;
+
+        /// @brief  The number of threads required to be waiting before the barrier is triggered.
+        unsigned long long int trigger_count;
+
+        /// @brief  The number of threads currently waiting.
+        unsigned long long int waiting_count;
+
+        /// @brief  The state of the barrier.
+        bool triggered;
+
+    public:
+        /// @brief  Destructor asserts no threads are waiting on the barrier.
+        ~barrier() {
+            GTL_BARRIER_ASSERT(this->waiting_count == 0, "Ensure that there are no waiting threads when the barrier is destructed.");
+        }
+
+        /// @brief  Constructor sets the number of sync calls required before the barrier is triggered.
+        /// @param  required_trigger_count The number of sync calls required before the barrier is triggered.
+        barrier(unsigned long long int required_trigger_count = 0)
+            : trigger_count(required_trigger_count)
+            , waiting_count(0)
+            , triggered(false) {
+        }
+
+        /// @brief  Deleted copy constructor.
+        barrier(const barrier&) = delete;
+
+        /// @brief  Defaulted move constructor.
+        barrier(barrier&&) = default;
+
+        /// @brief  Deleted copy assignment.
+        barrier& operator=(const barrier&) = delete;
+
+        /// @brief  Defaulted move assignment.
+        barrier& operator=(barrier&&) = default;
+
+    public:
+        /// @brief  Set the number calls required before the barrier is triggered.
+        /// @param  new_trigger_count The number of sync calls required before the barrier is triggered.
+        void set_trigger_count(unsigned long long int new_trigger_count = 0) {
+            // Lock the barrier mutex
+            std::unique_lock<std::mutex> unique_lock(this->mutex);
+            static_cast<void>(unique_lock);
+
+            // Update the trigger count.
+            this->trigger_count = new_trigger_count;
+
+            // If there are already enough threads waiting.
+            if (this->waiting_count >= this->trigger_count) {
+                // Trigger the barrier.
+                this->triggered = true;
+
+                // Unlock the lock so that the notification can be immediately used.
+                unique_lock.unlock();
+
+                // Notify a thread to continue, this will in turn notify another, et cetera.
+                this->all_present.notify_one();
+            }
+        }
+
+        /// @brief  Get the number of sync calls required before the barrier is triggered.
+        /// @return The number of sync calls required before the barrier is triggered.
+        unsigned long long int get_trigger_count() const {
+            return this->trigger_count;
+        }
+
+        /// @brief  Get the number calls made to sync so far.
+        /// @return The number of calls made to sync so far.
+        unsigned long long int get_waiting_count() const {
+            return this->waiting_count;
+        }
+
+    public:
+        /// @brief  Triggers the barrier unblocking all current blocked sync calls.
+        void trigger() {
+            {
+                // Lock the barrier mutex
+                std::lock_guard<std::mutex> lock_guard(this->mutex);
+                static_cast<void>(lock_guard);
+
+                // Trigger the barrier.
+                this->triggered = true;
+            }
+
+            // Notify a thread to continue, this will in turn notify another, et cetera.
+            this->all_present.notify_one();
+        }
+
+    public:
+        /// @brief  Blocks the caller until the barrier is triggered.
+        void sync() {
+            // Open a scope to contain the unique lock.
+            {
+                // Lock the barrier mutex
+                std::unique_lock<std::mutex> unique_lock(this->mutex);
+                static_cast<void>(unique_lock);
+
+                // Immediately return if the the trigger_count is zero.
+                if (this->trigger_count == 0) {
+                    return;
+                }
+
+                // Increment the number of waiting threads and check if we have reached the trigger threshold.
+                if (++this->waiting_count >= this->trigger_count) {
+                    this->triggered = true;
+                }
+
+                if (!this->triggered) {
+                    // Block threads here until enough are waiting to satisfy the trigger_count.
+                    this->all_present.wait(unique_lock, [this] {
+                        // The predicate will keep the condition variable waiting until the barrier is triggered.
+                        return this->triggered;
+                    });
+                }
+
+                // Once waiting is over the each thread decrements the waiting count, when it reaches zero the barrer is primed.
+                this->triggered = (--this->waiting_count != 0);
+            }
+
+            // Once the mutex is unlocked a notification can be sent to the condition variable to unblock another thread.
+            this->all_present.notify_one();
+        }
+    };
+}
+
+#undef GTL_BARRIER_ASSERT
+
+#endif // GTL_BARRIER_HPP
