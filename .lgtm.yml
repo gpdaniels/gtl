@@ -1,0 +1,29 @@
+path_classifiers:
+  docs:
+    - '*.md'
+    - 'LICENSE'
+  test:
+    - 'Tests/*/*.hpp'
+    - 'Tests/*/*.cpp'
+    - 'Testbench/*.hpp'
+    - 'Testbench/*.cpp'
+  build-system:
+    - 'CMakeLists.txt'
+    - 'compile.sh'
+    - 'memcheck.supression'
+extraction:
+  cpp:
+    prepare:
+      packages:
+        - cmake
+    configure:
+      command:
+        - mkdir -p BUILD
+        - pushd BUILD
+        - cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON ..
+        - popd
+    index:
+      build_command:
+        - pushd BUILD
+        - cmake --build . --config Debug
+        - popd
