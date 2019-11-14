@@ -22,7 +22,7 @@ THE SOFTWARE
 #include <benchmark.tests.hpp>
 #include <require.tests.hpp>
 
-#include <utility/cpu>
+#include <platform/cpu>
 
 #if defined(_MSC_VER)
 #   pragma warning(push, 0)
@@ -36,13 +36,7 @@ THE SOFTWARE
 
 TEST(cpu, traits, standard) {
 
-    #if defined(__clang__)
-        REQUIRE(sizeof(gtl::cpu) == 48, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 48ull);
-    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
-        REQUIRE(sizeof(gtl::cpu) == 48, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 48ull);
-    #elif defined(_MSC_VER)
-        REQUIRE(sizeof(gtl::cpu) == 24, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 24ull);
-    #endif
+    REQUIRE(sizeof(gtl::cpu) == 16, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 16ull);
 
     REQUIRE(std::is_pod<gtl::cpu>::value == false, "Expected std::is_pod to be false.");
 
@@ -106,8 +100,8 @@ TEST(cpu, evaluation, print_flags) {
     PRINT("get_max_leaf_id:             %d\n", cpu.get_max_leaf_id());
     PRINT("get_max_extended_leaf_id:    %d\n", cpu.get_max_extended_leaf_id());
 
-    PRINT("get_manufacturer_id:         %s\n", cpu.get_manufacturer_id().c_str());
-    PRINT("get_brand_string:            %s\n", cpu.get_brand_string().c_str());
+    PRINT("get_manufacturer_id:         %s\n", cpu.get_manufacturer_id().data);
+    PRINT("get_brand_string:            %s\n", cpu.get_brand_string().data);
 
     PRINT("has_mmx:                     %d\n", cpu.has_mmx());
 
