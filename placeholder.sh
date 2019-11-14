@@ -8,7 +8,7 @@ fi
 
 if [ $# -eq 0 ]
   then
-    echo "Only one arguments supplied, require type of and name of placeholder."
+    echo "Only one argument supplied, require type of and name of placeholder."
 fi
 
 # Ensure we are in the correct directory.
