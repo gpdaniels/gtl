@@ -22,37 +22,39 @@ THE SOFTWARE
 #ifndef NODE_TESTS_HPP
 #define NODE_TESTS_HPP
 
-// Define the test_node type, used to create a linked list of tests at program startup.
-class test_node final {
-public:
-    using function_type = void(*)();
+namespace testbench {
+    // Define the test_node type, used to create a linked list of tests at program startup.
+    class test_node final {
+    public:
+        using function_type = void(*)();
 
-private:
-    static inline test_node* root = nullptr;
+    private:
+        static inline test_node* root = nullptr;
 
-    const char* const file;
-    const char* const group;
-    const char* const name;
+        const char* const file;
+        const char* const group;
+        const char* const name;
 
-    const function_type function;
+        const function_type function;
 
-    const test_node* next;
+        const test_node* next;
 
-public:
-    test_node(const char* const test_file, const char* const test_group, const char* const test_name, function_type test_function);
+    public:
+        test_node(const char* const test_file, const char* const test_group, const char* const test_name, function_type test_function);
 
-public:
-    static test_node* get_root();
+    public:
+        static test_node* get_root();
 
-    const char* get_file() const;
+        const char* get_file() const;
 
-    const char* get_group() const;
+        const char* get_group() const;
 
-    const char* get_name() const;
+        const char* get_name() const;
 
-    function_type get_function() const;
+        function_type get_function() const;
 
-    const test_node* get_next() const;
-};
+        const test_node* get_next() const;
+    };
+}
 
 #endif // NODE_TESTS_HPP

@@ -22,51 +22,53 @@ THE SOFTWARE
 #ifndef DATA_TESTS_HPP
 #define DATA_TESTS_HPP
 
-// Useful test data.
-template <typename template_type>
-struct test_data { };
+namespace testbench {
+    // Useful test data.
+    template <typename template_type>
+    struct test_data { };
 
-// Macro for generating test data structures.
-#define TEST_DATA_STRUCT(TYPE) \
-    template <> \
-    struct test_data<TYPE> { \
-        static const char* name; \
-        static const TYPE data[]; \
-        static const TYPE* begin(); \
-        static const TYPE* end(); \
-    }
+    // Macro for generating test data structures.
+    #define TEST_DATA_STRUCT(TYPE)          \
+        template <>                         \
+        struct test_data<TYPE> {            \
+            static const char* name;        \
+            static const TYPE data[];       \
+            static const TYPE* begin();     \
+            static const TYPE* end();       \
+        }
 
-// Boolean.
-TEST_DATA_STRUCT(bool);
+    // Boolean.
+    TEST_DATA_STRUCT(bool);
 
-// Character
-TEST_DATA_STRUCT(unsigned char);
-TEST_DATA_STRUCT(signed char);
-TEST_DATA_STRUCT(char);
+    // Character
+    TEST_DATA_STRUCT(unsigned char);
+    TEST_DATA_STRUCT(signed char);
+    TEST_DATA_STRUCT(char);
 
-// Extended characters.
-TEST_DATA_STRUCT(wchar_t);
-TEST_DATA_STRUCT(char16_t);
-TEST_DATA_STRUCT(char32_t);
+    // Extended characters.
+    TEST_DATA_STRUCT(wchar_t);
+    TEST_DATA_STRUCT(char16_t);
+    TEST_DATA_STRUCT(char32_t);
 
-// Fixed point.
-TEST_DATA_STRUCT(unsigned short int);
-TEST_DATA_STRUCT(signed short int);
-TEST_DATA_STRUCT(unsigned int);
-TEST_DATA_STRUCT(signed int);
-TEST_DATA_STRUCT(unsigned long int);
-TEST_DATA_STRUCT(signed long int);
-TEST_DATA_STRUCT(unsigned long long int);
-TEST_DATA_STRUCT(signed long long int);
+    // Fixed point.
+    TEST_DATA_STRUCT(unsigned short int);
+    TEST_DATA_STRUCT(signed short int);
+    TEST_DATA_STRUCT(unsigned int);
+    TEST_DATA_STRUCT(signed int);
+    TEST_DATA_STRUCT(unsigned long int);
+    TEST_DATA_STRUCT(signed long int);
+    TEST_DATA_STRUCT(unsigned long long int);
+    TEST_DATA_STRUCT(signed long long int);
 
-// Floating point.
-TEST_DATA_STRUCT(float);
-TEST_DATA_STRUCT(double);
-TEST_DATA_STRUCT(long double);
+    // Floating point.
+    TEST_DATA_STRUCT(float);
+    TEST_DATA_STRUCT(double);
+    TEST_DATA_STRUCT(long double);
 
-// Pointer type.
-TEST_DATA_STRUCT(decltype(nullptr));
+    // Pointer type.
+    TEST_DATA_STRUCT(decltype(nullptr));
 
-#undef TEST_DATA_STRUCT
+    #undef TEST_DATA_STRUCT
+}
 
 #endif // DATA_TESTS_HPP

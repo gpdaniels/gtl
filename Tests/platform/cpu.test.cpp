@@ -49,7 +49,7 @@ TEST(cpu, traits, standard) {
 
 TEST(cpu, constructor, empty) {
     gtl::cpu cpu;
-    do_not_optimise_away(cpu);
+    testbench::do_not_optimise_away(cpu);
 }
 
 TEST(cpu, function, is_build_compatible) {

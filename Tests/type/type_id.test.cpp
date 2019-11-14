@@ -54,43 +54,43 @@ TEST(type_id, traits, standard) {
 }
 
 TEST(type_id, constructor, type) {
-    test_template<test_types>(
+    testbench::test_template<testbench::test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
             gtl::type_id type_id(type{});
-            do_not_optimise_away(type_id);
+            testbench::do_not_optimise_away(type_id);
         }
     );
 }
 
 TEST(type_id, function, id) {
-    test_template<test_types>(
+    testbench::test_template<testbench::test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
             gtl::type_id type_id(type{});
             unsigned long long int id = type_id.id();
-            do_not_optimise_away(id);
+            testbench::do_not_optimise_away(id);
         }
     );
 }
 
 TEST(type_id, operator, unsigned_long_long_int) {
-    test_template<test_types>(
+    testbench::test_template<testbench::test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
             gtl::type_id type_id(type{});
             unsigned long long int id = type_id;
-            do_not_optimise_away(id);
+            testbench::do_not_optimise_away(id);
         }
     );
 }
 
 TEST(type_id, operator, equality) {
-    test_template<test_types>(
+    testbench::test_template<testbench::test_types>(
         [](auto test_type1)->void {
             using type1 = typename decltype(test_type1)::type;
             bool match_found = false;
-            test_template<test_types>(
+            testbench::test_template<testbench::test_types>(
                 [&match_found](auto test_type2)->void {
                     using type2 = typename decltype(test_type2)::type;
                     if (gtl::type_id(type1{}) == gtl::type_id(type2{})) {
@@ -105,11 +105,11 @@ TEST(type_id, operator, equality) {
 }
 
 TEST(type_id, operator, inequality) {
-    test_template<test_types>(
+    testbench::test_template<testbench::test_types>(
         [](auto test_type1)->void {
             using type1 = typename decltype(test_type1)::type;
             bool match_found = false;
-            test_template<test_types>(
+            testbench::test_template<testbench::test_types>(
                 [&match_found](auto test_type2)->void {
                     using type2 = typename decltype(test_type2)::type;
                     if (gtl::type_id(type1{}) == gtl::type_id(type2{})) {

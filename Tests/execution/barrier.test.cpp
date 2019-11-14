@@ -50,12 +50,12 @@ TEST(barrier, traits, standard) {
 
 TEST(barrier, constructor, empty) {
     gtl::barrier barrier;
-    do_not_optimise_away(barrier);
+    testbench::do_not_optimise_away(barrier);
 }
 
 TEST(barrier, constructor, value) {
     gtl::barrier barrier(1);
-    do_not_optimise_away(barrier);
+    testbench::do_not_optimise_away(barrier);
 }
 
 TEST(barrier, function, get_and_set_trigger_count) {

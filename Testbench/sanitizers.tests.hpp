@@ -18,6 +18,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE
 */
 
+namespace testbench {
+
+}
+
 #if !defined(GTL_HAS_SANITIZER_ADDRESS)
 #   if defined(__has_feature)
 #      if __has_feature(address_sanitizer)

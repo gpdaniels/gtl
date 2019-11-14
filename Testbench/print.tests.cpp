@@ -49,35 +49,37 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-PRINT_FORMAT_PRINT_DECORATION(1) int print(FILE* stream, PRINT_FORMAT_PRINT_ARGUMENT(const char* format), ...) {
-#if defined(_WIN32)
+namespace testbench {
+    PRINT_FORMAT_PRINT_DECORATION(1) int print(FILE* stream, PRINT_FORMAT_PRINT_ARGUMENT(const char* format), ...) {
+        #if defined(_WIN32)
 
-    char outputString[1024] = {};
+            char outputString[1024] = {};
 
-    va_list formatArguments;
-    va_start(formatArguments, format);
-    int outputCountDebug = _vsnprintf(outputString, sizeof(outputString), format, formatArguments);
-    va_end(formatArguments);
+            va_list formatArguments;
+            va_start(formatArguments, format);
+            int outputCountDebug = _vsnprintf(outputString, sizeof(outputString), format, formatArguments);
+            va_end(formatArguments);
 
-    ::OutputDebugStringA(outputString);
+            ::OutputDebugStringA(outputString);
 
-    int outputCountStdOut = std::fprintf(stream, "%s", outputString);
+            int outputCountStdOut = std::fprintf(stream, "%s", outputString);
 
-    std::fflush(stream);
+            std::fflush(stream);
 
-    UNUSED(outputCountStdOut);
-    return outputCountDebug;
+            UNUSED(outputCountStdOut);
+            return outputCountDebug;
 
-#else
+        #else
 
-    va_list formatArguments;
-    va_start(formatArguments, format);
-    int outputCount = std::vfprintf(stream, format, formatArguments);
-    va_end(formatArguments);
+            va_list formatArguments;
+            va_start(formatArguments, format);
+            int outputCount = std::vfprintf(stream, format, formatArguments);
+            va_end(formatArguments);
 
-    std::fflush(stream);
+            std::fflush(stream);
 
-    return outputCount;
+            return outputCount;
 
-#endif
+        #endif
+    }
 }

@@ -20,6 +20,7 @@ THE SOFTWARE
 
 #include <main.tests.hpp>
 #include <benchmark.tests.hpp>
+#include <comparison.tests.hpp>
 #include <data.tests.hpp>
 #include <require.tests.hpp>
 #include <template.tests.hpp>
@@ -50,12 +51,12 @@ TEST(any, traits, standard) {
 
 TEST(any, constructor, empty) {
     gtl::any any;
-    do_not_optimise_away(any);
+    testbench::do_not_optimise_away(any);
 }
 
 TEST(any, constructor, value) {
     gtl::any any(1);
-    do_not_optimise_away(any);
+    testbench::do_not_optimise_away(any);
 }
 
 TEST(any, evaluation, any) {
@@ -66,15 +67,7 @@ TEST(any, evaluation, any) {
     REQUIRE(static_cast<int>(any) != 1, "Unexpected value '%d' in any, expected %f.", static_cast<int>(any), 1.0);
     REQUIRE(static_cast<double>(any) == 1.0,  "Unexpected value '%f' in any, expected %f.", static_cast<double>(any), 1.0);
 
-    auto strcmp = [](const char* LHS, const char* RHS) -> bool {
-        while (*LHS && (*LHS == *RHS)) {
-            ++LHS;
-            ++RHS;
-        }
-        return *LHS == *RHS;
-    };
-
     const char* string = "Hello world!";
     any = string;
-    REQUIRE(strcmp(static_cast<const char*>(any), string) == true, "gtl::any = '%s', expected '%s'", static_cast<char*>(any), string);
+    REQUIRE(testbench::is_string_same(static_cast<const char*>(any), string) == true, "gtl::any = '%s', expected '%s'", static_cast<char*>(any), string);
 }

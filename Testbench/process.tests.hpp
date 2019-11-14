@@ -22,8 +22,10 @@ THE SOFTWARE
 #ifndef PROCESS_TESTS_HPP
 #define PROCESS_TESTS_HPP
 
-const char* get_executable();
+namespace testbench {
+    const char* get_executable();
 
-int process(const char* executable, const char* arguments[]);
+    int launch_process(const char* executable, const char* arguments[]);
+}
 
 #endif // PROCESS_TESTS_HPP

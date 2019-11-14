@@ -22,6 +22,10 @@ THE SOFTWARE
 #ifndef UNUSED_TESTS_HPP
 #define UNUSED_TESTS_HPP
 
+namespace testbench {
+
+}
+
 /// @brief  A helper macro to prevent compiler warnings about unused variables.
 #define UNUSED(VARIABLE) (static_cast<void>(VARIABLE))
 

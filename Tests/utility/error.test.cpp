@@ -20,6 +20,7 @@ THE SOFTWARE
 
 #include <main.tests.hpp>
 #include <benchmark.tests.hpp>
+#include <comparison.tests.hpp>
 #include <require.tests.hpp>
 
 #include <utility/error>
@@ -138,29 +139,21 @@ TEST(error, parameter, name) {
     gtl::error error4(error_code2::fail);
     REQUIRE(!error4);
 
-    auto strcmp = [](const char* LHS, const char* RHS) -> bool {
-        while (*LHS && (*LHS == *RHS)) {
-            ++LHS;
-            ++RHS;
-        }
-        return *LHS == *RHS;
-    };
-
     #if defined(__clang__)
-        REQUIRE(strcmp(error1.name, "error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "error_code1");
-        REQUIRE(strcmp(error2.name, "error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "error_code1");
-        REQUIRE(strcmp(error3.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "error_code2");
-        REQUIRE(strcmp(error4.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "error_code2");
+        REQUIRE(testbench::is_string_same(error1.name, "error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "error_code1");
+        REQUIRE(testbench::is_string_same(error2.name, "error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "error_code1");
+        REQUIRE(testbench::is_string_same(error3.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "error_code2");
+        REQUIRE(testbench::is_string_same(error4.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "error_code2");
     #elif defined(__GNUC__)
-        REQUIRE(strcmp(error1.name, "test_error_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "test_error_parameter_name()::error_code1");
-        REQUIRE(strcmp(error2.name, "test_error_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "test_error_parameter_name()::error_code1");
-        REQUIRE(strcmp(error3.name, "test_error_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "test_error_parameter_name()::error_code2");
-        REQUIRE(strcmp(error4.name, "test_error_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "test_error_parameter_name()::error_code2");
+        REQUIRE(testbench::is_string_same(error1.name, "test_error_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "test_error_parameter_name()::error_code1");
+        REQUIRE(testbench::is_string_same(error2.name, "test_error_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "test_error_parameter_name()::error_code1");
+        REQUIRE(testbench::is_string_same(error3.name, "test_error_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "test_error_parameter_name()::error_code2");
+        REQUIRE(testbench::is_string_same(error4.name, "test_error_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "test_error_parameter_name()::error_code2");
     #elif defined(_MSC_VER)
-        REQUIRE(strcmp(error1.name, "test_error_parameter_name::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "test_error_parameter_name::error_code1");
-        REQUIRE(strcmp(error2.name, "test_error_parameter_name::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "test_error_parameter_name::error_code1");
-        REQUIRE(strcmp(error3.name, "test_error_parameter_name::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "test_error_parameter_name::error_code2");
-        REQUIRE(strcmp(error4.name, "test_error_parameter_name::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "test_error_parameter_name::error_code2");
+        REQUIRE(testbench::is_string_same(error1.name, "test_error_parameter_name::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "test_error_parameter_name::error_code1");
+        REQUIRE(testbench::is_string_same(error2.name, "test_error_parameter_name::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "test_error_parameter_name::error_code1");
+        REQUIRE(testbench::is_string_same(error3.name, "test_error_parameter_name::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "test_error_parameter_name::error_code2");
+        REQUIRE(testbench::is_string_same(error4.name, "test_error_parameter_name::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "test_error_parameter_name::error_code2");
     #endif
 }
 

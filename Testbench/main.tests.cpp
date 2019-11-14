@@ -19,6 +19,7 @@ THE SOFTWARE
 */
 
 #include "main.tests.hpp"
+#include "comparison.tests.hpp"
 #include "print.tests.hpp"
 #include "process.tests.hpp"
 #include "require.tests.hpp"
@@ -27,14 +28,11 @@ THE SOFTWARE
 
 int main(int argument_count, char* arguments[]) {
 
-    // Check if the
-
     // Disable output buffering.
     setvbuf(stdout, nullptr, _IONBF, 0);
     setvbuf(stderr, nullptr, _IONBF, 0);
 
     // Notifiy if any sanitizers are running.
-
     #if GTL_HAS_SANITIZER_ADDRESS
         PRINT("Testing under address sanitizer.\n");
     #endif
@@ -51,15 +49,6 @@ int main(int argument_count, char* arguments[]) {
         PRINT("Testing under undefined behavior sanitizer.\n");
     #endif
 
-    // Handy string comparison function.
-    auto strcmp = [](const char* LHS, const char* RHS) -> bool {
-        while (*LHS && (*LHS == *RHS)) {
-            ++LHS;
-            ++RHS;
-        }
-        return *LHS == *RHS;
-    };
-
     const char* filter_file = nullptr;
     const char* filter_group = nullptr;
     const char* filter_name = nullptr;
@@ -71,7 +60,7 @@ int main(int argument_count, char* arguments[]) {
 
         // Extract a test group filter from the command line arguments.
         if (arguments_remaining >= 2) {
-            if (strcmp("-f", arguments[argument_index]) || strcmp("--file", arguments[argument_index])) {
+            if (testbench::is_string_same("-f", arguments[argument_index]) || testbench::is_string_same("--file", arguments[argument_index])) {
                 filter_file = arguments[++argument_index];
                 PRINT("Filtering tests by file: %s\n", filter_file);
                 continue;
@@ -80,7 +69,7 @@ int main(int argument_count, char* arguments[]) {
 
         // Extract a test group filter from the command line arguments.
         if (arguments_remaining >= 2) {
-            if (strcmp("-g", arguments[argument_index]) || strcmp("--group", arguments[argument_index])) {
+            if (testbench::is_string_same("-g", arguments[argument_index]) || testbench::is_string_same("--group", arguments[argument_index])) {
                 filter_group = arguments[++argument_index];
                 PRINT("Filtering tests by group: %s\n", filter_group);
                 continue;
@@ -89,7 +78,7 @@ int main(int argument_count, char* arguments[]) {
 
         // Extract a test name filter from the command line arguments.
         if (arguments_remaining >= 2) {
-            if (strcmp("-n", arguments[argument_index]) || strcmp("--name", arguments[argument_index])) {
+            if (testbench::is_string_same("-n", arguments[argument_index]) || testbench::is_string_same("--name", arguments[argument_index])) {
                 filter_name = arguments[++argument_index];
                 PRINT("Filtering tests by name: %s\n", filter_name);
                 continue;
@@ -98,7 +87,7 @@ int main(int argument_count, char* arguments[]) {
 
         // Extract a test name filter from the command line arguments.
         if (arguments_remaining >= 1) {
-            if (strcmp("-x", arguments[argument_index]) || strcmp("--execute", arguments[argument_index])) {
+            if (testbench::is_string_same("-x", arguments[argument_index]) || testbench::is_string_same("--execute", arguments[argument_index])) {
                 execute_in_process = false;
                 PRINT("Running tests in this process.\n");
                 continue;
@@ -111,14 +100,14 @@ int main(int argument_count, char* arguments[]) {
     unsigned long long TEST_COUNT = 0;
     unsigned long long TEST_FAILURE_COUNT = 0;
 
-    for (const test_node* current_test = test_node::get_root(); current_test != nullptr; current_test = current_test->get_next()) {
-        if (filter_file && !strcmp(filter_file, current_test->get_file())) {
+    for (const testbench::test_node* current_test = testbench::test_node::get_root(); current_test != nullptr; current_test = current_test->get_next()) {
+        if (filter_file && !testbench::is_string_same(filter_file, current_test->get_file())) {
             continue;
         }
-        if (filter_group && !strcmp(filter_group, current_test->get_group())) {
+        if (filter_group && !testbench::is_string_same(filter_group, current_test->get_group())) {
             continue;
         }
-        if (filter_name && !strcmp(filter_name, current_test->get_name())) {
+        if (filter_name && !testbench::is_string_same(filter_name, current_test->get_name())) {
             continue;
         }
 
@@ -126,15 +115,15 @@ int main(int argument_count, char* arguments[]) {
         ++TEST_COUNT;
         if (execute_in_process) {
             const char* test_arguments[] = { "--execute", "--file", current_test->get_file(), "--group", current_test->get_group(), "--name", current_test->get_name(), nullptr };
-            int result = process(get_executable(), test_arguments);
+            int result = testbench::launch_process(testbench::get_executable(), test_arguments);
             if (result != 0) {
                 ++TEST_FAILURE_COUNT;
             }
         }
         else {
-            REQUIRE_FAILURE_COUNT = 0;
+            testbench::REQUIRE_FAILURE_COUNT = 0;
             current_test->get_function()();
-            if (REQUIRE_FAILURE_COUNT > 0) {
+            if (testbench::REQUIRE_FAILURE_COUNT > 0) {
                 ++TEST_FAILURE_COUNT;
             }
         }

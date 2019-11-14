@@ -49,7 +49,7 @@ TEST(spin_lock, traits, standard) {
 
 TEST(spin_lock, constructor, empty) {
     gtl::spin_lock spin_lock;
-    do_not_optimise_away(spin_lock);
+    testbench::do_not_optimise_away(spin_lock);
 }
 
 TEST(spin_lock, function, lock_and_unlock) {
@@ -68,7 +68,7 @@ TEST(spin_lock, evaluation, lock_guard) {
     gtl::spin_lock spin_lock;
     {
         std::lock_guard<gtl::spin_lock> lock_guard(spin_lock);
-        do_not_optimise_away(lock_guard);
+        testbench::do_not_optimise_away(lock_guard);
         REQUIRE(spin_lock.try_lock() == false, "Expected the newly constructed lock_guard to lock the spin_lock.");
     }
     REQUIRE(spin_lock.try_lock() == true, "Expected the destructed lock_guard to unlock the spin_lock.");
@@ -79,7 +79,7 @@ TEST(spin_lock, evaluation, unique_lock) {
     gtl::spin_lock spin_lock;
     {
         std::unique_lock<gtl::spin_lock> unique_lock(spin_lock);
-        do_not_optimise_away(unique_lock);
+        testbench::do_not_optimise_away(unique_lock);
         REQUIRE(spin_lock.try_lock() == false, "Expected the newly constructed unique_lock to lock the spin_lock.");
         spin_lock.unlock();
         REQUIRE(spin_lock.try_lock() == true, "Expected the unique_lock be unlockable.");

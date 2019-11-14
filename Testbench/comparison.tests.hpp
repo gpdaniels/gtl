@@ -22,24 +22,51 @@ THE SOFTWARE
 #ifndef COMPARISON_TESTS_HPP
 #define COMPARISON_TESTS_HPP
 
-#if defined(_MSC_VER)
-#   pragma warning(push, 0)
-#endif
+namespace testbench {
+    bool is_memory_same(const void* lhs, const void* rhs, unsigned int length);
 
-#include <algorithm>
+    bool is_string_same(const char* lhs, const char* rhs);
 
-#if defined(_MSC_VER)
-#   pragma warning(pop)
-#endif
-
-struct comparison {
     template <typename type>
-    static bool is_equal(const type& lhs, const type& rhs);
-};
+    bool is_value_equal(const type& lhs, const type& rhs);
 
-template <typename type>
-bool comparison::is_equal(const type& lhs, const type& rhs) {
-    return std::equal(&lhs, &lhs + 1, &rhs, &rhs + 1);
+    // Macro for generating test functions.
+    #define TEST_IS_VALUE_EQUAL_FUNCTION(TYPE)                  \
+        template <>                                             \
+        bool is_value_equal(const TYPE& lhs, const TYPE& rhs)
+
+    // Boolean.
+    TEST_IS_VALUE_EQUAL_FUNCTION(bool);
+
+    // Character
+    TEST_IS_VALUE_EQUAL_FUNCTION(unsigned char);
+    TEST_IS_VALUE_EQUAL_FUNCTION(signed char);
+    TEST_IS_VALUE_EQUAL_FUNCTION(char);
+
+    // Extended characters.
+    TEST_IS_VALUE_EQUAL_FUNCTION(wchar_t);
+    TEST_IS_VALUE_EQUAL_FUNCTION(char16_t);
+    TEST_IS_VALUE_EQUAL_FUNCTION(char32_t);
+
+    // Fixed point.
+    TEST_IS_VALUE_EQUAL_FUNCTION(unsigned short int);
+    TEST_IS_VALUE_EQUAL_FUNCTION(signed short int);
+    TEST_IS_VALUE_EQUAL_FUNCTION(unsigned int);
+    TEST_IS_VALUE_EQUAL_FUNCTION(signed int);
+    TEST_IS_VALUE_EQUAL_FUNCTION(unsigned long int);
+    TEST_IS_VALUE_EQUAL_FUNCTION(signed long int);
+    TEST_IS_VALUE_EQUAL_FUNCTION(unsigned long long int);
+    TEST_IS_VALUE_EQUAL_FUNCTION(signed long long int);
+
+    // Floating point.
+    TEST_IS_VALUE_EQUAL_FUNCTION(float);
+    TEST_IS_VALUE_EQUAL_FUNCTION(double);
+    TEST_IS_VALUE_EQUAL_FUNCTION(long double);
+
+    // Pointer type.
+    TEST_IS_VALUE_EQUAL_FUNCTION(decltype(nullptr));
+
+    #undef TEST_IS_VALUE_EQUAL_FUNCTION
 }
 
 #endif // COMPARISON_TESTS_HPP

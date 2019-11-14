@@ -25,11 +25,13 @@ THE SOFTWARE
 #include "print.tests.hpp"
 #include "unused.tests.hpp"
 
-/// @brief  Variable to hold the number of "REQUIRE" calls.
-extern unsigned long long REQUIRE_COUNT;
+namespace testbench {
+    /// @brief  Variable to hold the number of "REQUIRE" calls.
+    extern unsigned long long REQUIRE_COUNT;
 
-/// @brief  Variable to hold the number of "REQUIRE" failures.
-extern unsigned long long REQUIRE_FAILURE_COUNT;
+    /// @brief  Variable to hold the number of "REQUIRE" failures.
+    extern unsigned long long REQUIRE_FAILURE_COUNT;
+}
 
 // Attempt to use a more detailed function macro if possible.
 #if defined(__clang__)
@@ -70,7 +72,7 @@ extern unsigned long long REQUIRE_FAILURE_COUNT;
 #define REQUIRE(...)                                                                                    \
     REQUIRE_IF(REQUIRE_HAS_TWO_ARGUMENTS(__VA_ARGS__))(                                                 \
         UNUSED((REQUIRE_EXPAND(REQUIRE_ARGUMENT_1(__VA_ARGS__))) || (                                   \
-            PRINT("Requirement failure:  #%lld\n",  ++REQUIRE_FAILURE_COUNT),                           \
+            PRINT("Requirement failure:  #%lld\n",  ++testbench::REQUIRE_FAILURE_COUNT),                \
             PRINT("  Requirement:        %s\n", REQUIRE_TO_STRING(REQUIRE_ARGUMENT_1(__VA_ARGS__,))),   \
             PRINT("  File:               %s\n", __FILE__),                                              \
             PRINT("  Line:               %d\n", __LINE__),                                              \
@@ -82,7 +84,7 @@ extern unsigned long long REQUIRE_FAILURE_COUNT;
         )                                                                                               \
     /*REQUIRE_ELSE*/,                                                                                   \
         UNUSED((__VA_ARGS__) || (                                                                       \
-            PRINT("Requirement failure:  #%lld\n",  ++REQUIRE_FAILURE_COUNT),                           \
+            PRINT("Requirement failure:  #%lld\n",  ++testbench::REQUIRE_FAILURE_COUNT),                \
             PRINT("  Requirement:        %s\n", REQUIRE_TO_STRING(REQUIRE_ARGUMENT_1(__VA_ARGS__,))),   \
             PRINT("  File:               %s\n", __FILE__),                                              \
             PRINT("  Line:               %d\n", __LINE__),                                              \

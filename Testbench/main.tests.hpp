@@ -28,13 +28,14 @@ THE SOFTWARE
 #include "node.tests.hpp"
 
 // Macro to expand a test name.
-#define TEST_EXPAND_TEST(TEST_FILE, TEST_GROUP, TEST_NAME)  test_##TEST_FILE##_##TEST_GROUP##_##TEST_NAME
-#define TEST_EXPAND_NODE(TEST_FILE, TEST_GROUP, TEST_NAME)  node_##TEST_FILE##_##TEST_GROUP##_##TEST_NAME
+#define TEST_EXPAND_TEST(TEST_FILE, TEST_GROUP, TEST_NAME) test_##TEST_FILE##_##TEST_GROUP##_##TEST_NAME
+#define TEST_EXPAND_NODE(TEST_FILE, TEST_GROUP, TEST_NAME) node_##TEST_FILE##_##TEST_GROUP##_##TEST_NAME
 
 // Macro to declare a test.
-#define TEST(TEST_FILE, TEST_GROUP, TEST_NAME)                                                                                                     \
-    void TEST_EXPAND_TEST(TEST_FILE, TEST_GROUP, TEST_NAME)();                                                                                     \
-    static inline test_node TEST_EXPAND_NODE(TEST_FILE, TEST_GROUP, TEST_NAME)(#TEST_FILE, #TEST_GROUP, #TEST_NAME, TEST_EXPAND_TEST(TEST_FILE, TEST_GROUP, TEST_NAME));  \
+#define TEST(TEST_FILE, TEST_GROUP, TEST_NAME)                                                      \
+    void TEST_EXPAND_TEST(TEST_FILE, TEST_GROUP, TEST_NAME)();                                      \
+    static inline testbench::test_node TEST_EXPAND_NODE(TEST_FILE, TEST_GROUP, TEST_NAME)           \
+        (#TEST_FILE, #TEST_GROUP, #TEST_NAME, TEST_EXPAND_TEST(TEST_FILE, TEST_GROUP, TEST_NAME));  \
     void TEST_EXPAND_TEST(TEST_FILE, TEST_GROUP, TEST_NAME)()
 
 // This test macro can be disabled in a test file using the following:
