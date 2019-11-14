@@ -55,28 +55,28 @@ TEST(thread_pool, traits, standard) {
 
 TEST(thread_pool, constructor, empty) {
     gtl::thread_pool thread_pool;
-    do_not_optimise_away(thread_pool);
+    testbench::do_not_optimise_away(thread_pool);
     thread_pool.join();
 }
 
 TEST(thread_pool, constructor, number) {
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(0);
-        do_not_optimise_away(thread_pool);
+        testbench::do_not_optimise_away(thread_pool);
     }
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(0);
-        do_not_optimise_away(thread_pool);
+        testbench::do_not_optimise_away(thread_pool);
         thread_pool.join();
     }
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(1);
-        do_not_optimise_away(thread_pool);
+        testbench::do_not_optimise_away(thread_pool);
         thread_pool.join();
     }
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(10);
-        do_not_optimise_away(thread_pool);
+        testbench::do_not_optimise_away(thread_pool);
         thread_pool.join();
     }
 }
@@ -169,18 +169,18 @@ TEST(thread_pool, function, drain) {
 TEST(thread_pool, function, joinable) {
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(0);
-        do_not_optimise_away(thread_pool);
+        testbench::do_not_optimise_away(thread_pool);
         REQUIRE(thread_pool.joinable() == false);
     }
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(0);
-        do_not_optimise_away(thread_pool);
+        testbench::do_not_optimise_away(thread_pool);
         thread_pool.join();
         REQUIRE(thread_pool.joinable() == false);
     }
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(1);
-        do_not_optimise_away(thread_pool);
+        testbench::do_not_optimise_away(thread_pool);
         REQUIRE(thread_pool.joinable() == true);
         thread_pool.join();
         REQUIRE(thread_pool.joinable() == false);
@@ -189,7 +189,7 @@ TEST(thread_pool, function, joinable) {
     }
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(10);
-        do_not_optimise_away(thread_pool);
+        testbench::do_not_optimise_away(thread_pool);
         REQUIRE(thread_pool.joinable() == true);
         thread_pool.join();
         REQUIRE(thread_pool.joinable() == false);
@@ -201,40 +201,40 @@ TEST(thread_pool, function, joinable) {
 TEST(thread_pool, function, join) {
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(0);
-        do_not_optimise_away(thread_pool);
+        testbench::do_not_optimise_away(thread_pool);
     }
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(0);
-        do_not_optimise_away(thread_pool);
+        testbench::do_not_optimise_away(thread_pool);
         thread_pool.join();
     }
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(0);
-        do_not_optimise_away(thread_pool);
+        testbench::do_not_optimise_away(thread_pool);
         thread_pool.join();
         thread_pool.join();
         thread_pool.join();
     }
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(1);
-        do_not_optimise_away(thread_pool);
+        testbench::do_not_optimise_away(thread_pool);
         thread_pool.join();
     }
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(1);
-        do_not_optimise_away(thread_pool);
+        testbench::do_not_optimise_away(thread_pool);
         thread_pool.join();
         thread_pool.join();
         thread_pool.join();
     }
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(10);
-        do_not_optimise_away(thread_pool);
+        testbench::do_not_optimise_away(thread_pool);
         thread_pool.join();
     }
     {
         gtl::thread_pool thread_pool = gtl::thread_pool(10);
-        do_not_optimise_away(thread_pool);
+        testbench::do_not_optimise_away(thread_pool);
         thread_pool.join();
         thread_pool.join();
         thread_pool.join();
@@ -336,7 +336,7 @@ TEST(thread_pool, evaluate, benchmark) {
             sum += 1;
         }
         unsigned long long int sum2 = sum;
-        do_not_optimise_away(sum2);
+        testbench::do_not_optimise_away(sum2);
 
         static_cast<unsigned long long int*>(values)[index] = sum2 - index;
     };

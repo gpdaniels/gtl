@@ -48,6 +48,6 @@ TEST(entropy, traits, standard) {
 
 TEST(entropy, constructor, empty) {
     gtl::entropy entropy;
-    do_not_optimise_away(entropy);
+    testbench::do_not_optimise_away(entropy);
 }
 

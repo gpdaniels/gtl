@@ -48,6 +48,6 @@ TEST(fundamental, traits, standard) {
 
 TEST(fundamental, constructor, empty) {
     gtl::fundamental fundamental;
-    do_not_optimise_away(fundamental);
+    testbench::do_not_optimise_away(fundamental);
 }
 

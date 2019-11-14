@@ -48,6 +48,6 @@ TEST(aes, traits, standard) {
 
 TEST(aes, constructor, empty) {
     gtl::aes aes;
-    do_not_optimise_away(aes);
+    testbench::do_not_optimise_away(aes);
 }
 

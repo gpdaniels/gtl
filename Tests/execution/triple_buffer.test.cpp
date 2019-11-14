@@ -39,7 +39,7 @@ THE SOFTWARE
 #endif
 
 TEST(triple_buffer, traits, standard) {
-    test_template<test_types>(
+    testbench::test_template<testbench::test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
 
@@ -63,19 +63,19 @@ TEST(triple_buffer, traits, standard) {
 }
 
 TEST(triple_buffer, constructor, empty) {
-    test_template<test_types>(
+    testbench::test_template<testbench::test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
 
             gtl::triple_buffer<type> triple_buffer;
 
-            do_not_optimise_away(triple_buffer);
+            testbench::do_not_optimise_away(triple_buffer);
         }
     );
 }
 
 TEST(triple_buffer, function, update_read) {
-    test_template<test_types>(
+    testbench::test_template<testbench::test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
 
@@ -89,7 +89,7 @@ TEST(triple_buffer, function, update_read) {
 }
 
 TEST(triple_buffer, function, get_read) {
-    test_template<test_types>(
+    testbench::test_template<testbench::test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
 
@@ -103,7 +103,7 @@ TEST(triple_buffer, function, get_read) {
 }
 
 TEST(triple_buffer, function, get_write) {
-    test_template<test_types>(
+    testbench::test_template<testbench::test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
 
@@ -117,7 +117,7 @@ TEST(triple_buffer, function, get_write) {
 }
 
 TEST(triple_buffer, function, update_write) {
-    test_template<test_types>(
+    testbench::test_template<testbench::test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
 
@@ -131,7 +131,7 @@ TEST(triple_buffer, function, update_write) {
 }
 
 TEST(triple_buffer, evaluation, buffer_progression) {
-    test_template<test_types>(
+    testbench::test_template<testbench::test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
 
@@ -177,7 +177,7 @@ TEST(triple_buffer, evaluation, buffer_progression) {
 }
 
 TEST(triple_buffer, evaluation, buffer_values) {
-    test_template<test_types>(
+    testbench::test_template<testbench::test_types>(
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
 
@@ -187,35 +187,35 @@ TEST(triple_buffer, evaluation, buffer_values) {
             REQUIRE(triple_buffer.update_read() == false);
             triple_buffer.update_write();
             REQUIRE(triple_buffer.update_read() == true);
-            REQUIRE(comparison::is_equal(triple_buffer.get_read(), type{}));
+            REQUIRE(testbench::is_value_equal(triple_buffer.get_read(), type{}));
 
-            triple_buffer.get_write() = test_data<type>::data[1];
-            REQUIRE(comparison::is_equal(triple_buffer.get_read(), type{}));
+            triple_buffer.get_write() = testbench::test_data<type>::data[1];
+            REQUIRE(testbench::is_value_equal(triple_buffer.get_read(), type{}));
             REQUIRE(triple_buffer.update_read() == false);
-            REQUIRE(comparison::is_equal(triple_buffer.get_read(), type{}));
+            REQUIRE(testbench::is_value_equal(triple_buffer.get_read(), type{}));
             triple_buffer.update_write();
-            REQUIRE(comparison::is_equal(triple_buffer.get_read(), type{}));
+            REQUIRE(testbench::is_value_equal(triple_buffer.get_read(), type{}));
             REQUIRE(triple_buffer.update_read() == true);
-            REQUIRE(comparison::is_equal(triple_buffer.get_read(), test_data<type>::data[1]));
+            REQUIRE(testbench::is_value_equal(triple_buffer.get_read(), testbench::test_data<type>::data[1]));
 
             for (unsigned int i = 0; i < 100; ++i) {
-                triple_buffer.get_write() = test_data<type>::data[0];
-                REQUIRE(comparison::is_equal(triple_buffer.get_read(), test_data<type>::data[1]));
+                triple_buffer.get_write() = testbench::test_data<type>::data[0];
+                REQUIRE(testbench::is_value_equal(triple_buffer.get_read(), testbench::test_data<type>::data[1]));
                 REQUIRE(triple_buffer.update_read() == false);
-                REQUIRE(comparison::is_equal(triple_buffer.get_read(), test_data<type>::data[1]));
+                REQUIRE(testbench::is_value_equal(triple_buffer.get_read(), testbench::test_data<type>::data[1]));
                 triple_buffer.update_write();
-                REQUIRE(comparison::is_equal(triple_buffer.get_read(), test_data<type>::data[1]));
+                REQUIRE(testbench::is_value_equal(triple_buffer.get_read(), testbench::test_data<type>::data[1]));
                 REQUIRE(triple_buffer.update_read() == true);
-                REQUIRE(comparison::is_equal(triple_buffer.get_read(), test_data<type>::data[0]));
+                REQUIRE(testbench::is_value_equal(triple_buffer.get_read(), testbench::test_data<type>::data[0]));
 
-                triple_buffer.get_write() = test_data<type>::data[1];
-                REQUIRE(comparison::is_equal(triple_buffer.get_read(), test_data<type>::data[0]));
+                triple_buffer.get_write() = testbench::test_data<type>::data[1];
+                REQUIRE(testbench::is_value_equal(triple_buffer.get_read(), testbench::test_data<type>::data[0]));
                 REQUIRE(triple_buffer.update_read() == false);
-                REQUIRE(comparison::is_equal(triple_buffer.get_read(), test_data<type>::data[0]));
+                REQUIRE(testbench::is_value_equal(triple_buffer.get_read(), testbench::test_data<type>::data[0]));
                 triple_buffer.update_write();
-                REQUIRE(comparison::is_equal(triple_buffer.get_read(), test_data<type>::data[0]));
+                REQUIRE(testbench::is_value_equal(triple_buffer.get_read(), testbench::test_data<type>::data[0]));
                 REQUIRE(triple_buffer.update_read() == true);
-                REQUIRE(comparison::is_equal(triple_buffer.get_read(), test_data<type>::data[1]));
+                REQUIRE(testbench::is_value_equal(triple_buffer.get_read(), testbench::test_data<type>::data[1]));
             }
         }
     );

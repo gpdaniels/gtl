@@ -48,13 +48,13 @@ TEST(static_lambda, traits, standard) {
 
 TEST(static_lambda, constructor, empty) {
     gtl::static_lambda<void(), 128> static_lambda;
-    do_not_optimise_away(static_lambda);
+    testbench::do_not_optimise_away(static_lambda);
 }
 
 TEST(static_lambda, constructor, function)
 {
     gtl::static_lambda<void(), 128> static_lambda([](){});
-    do_not_optimise_away(static_lambda);
+    testbench::do_not_optimise_away(static_lambda);
 }
 
 TEST(static_lambda, constructor, capturing_function)
@@ -64,7 +64,7 @@ TEST(static_lambda, constructor, capturing_function)
         gtl::static_lambda<void(), 128> static_lambda([=](){
             UNUSED(variable == 123);
         });
-        do_not_optimise_away(static_lambda);
+        testbench::do_not_optimise_away(static_lambda);
         REQUIRE(variable == 123);
     }
 
@@ -75,7 +75,7 @@ TEST(static_lambda, constructor, capturing_function)
             variable = 321;
             UNUSED(variable == 321);
         });
-        do_not_optimise_away(static_lambda);
+        testbench::do_not_optimise_away(static_lambda);
         REQUIRE(variable == 123);
     }
 
@@ -89,7 +89,7 @@ TEST(static_lambda, constructor, capturing_function)
             UNUSED(variable3 > 345.677f);
             UNUSED(variable3 < 345.679f);
         });
-        do_not_optimise_away(static_lambda);
+        testbench::do_not_optimise_away(static_lambda);
         REQUIRE(variable1 == 123);
         REQUIRE(variable2 == 234);
         REQUIRE(variable3 > 345.677f);
@@ -100,35 +100,35 @@ TEST(static_lambda, constructor, capturing_function)
 TEST(static_lambda, constructor, copying)
 {
     gtl::static_lambda<void(), 128> static_lambda1([](){});
-    do_not_optimise_away(static_lambda1);
+    testbench::do_not_optimise_away(static_lambda1);
     const gtl::static_lambda<void(), 128> static_lambda2(static_lambda1);
-    do_not_optimise_away(static_lambda2);
+    testbench::do_not_optimise_away(static_lambda2);
     const gtl::static_lambda<void(), 128> static_lambda3(static_lambda2);
-    do_not_optimise_away(static_lambda3);
+    testbench::do_not_optimise_away(static_lambda3);
 }
 
 TEST(static_lambda, constructor, moving)
 {
     gtl::static_lambda<void(), 128> static_lambda1([](){});
-    do_not_optimise_away(static_lambda1);
+    testbench::do_not_optimise_away(static_lambda1);
     gtl::static_lambda<void(), 128> static_lambda2(std::move(static_lambda1));
-    do_not_optimise_away(static_lambda2);
+    testbench::do_not_optimise_away(static_lambda2);
 }
 
 TEST(static_lambda, operator, copying)
 {
     gtl::static_lambda<void(), 128> static_lambda1([](){});
-    do_not_optimise_away(static_lambda1);
+    testbench::do_not_optimise_away(static_lambda1);
     gtl::static_lambda<void(), 128> static_lambda2 = static_lambda1;
-    do_not_optimise_away(static_lambda2);
+    testbench::do_not_optimise_away(static_lambda2);
 }
 
 TEST(static_lambda, operator, moving)
 {
     gtl::static_lambda<void(), 128> static_lambda1([](){});
-    do_not_optimise_away(static_lambda1);
+    testbench::do_not_optimise_away(static_lambda1);
     gtl::static_lambda<void(), 128> static_lambda2 = std::move(static_lambda1);
-    do_not_optimise_away(static_lambda2);
+    testbench::do_not_optimise_away(static_lambda2);
 }
 
 TEST(static_lambda, operator, executing)

@@ -48,6 +48,6 @@ TEST(big_float, traits, standard) {
 
 TEST(big_float, constructor, empty) {
     gtl::big_float big_float;
-    do_not_optimise_away(big_float);
+    testbench::do_not_optimise_away(big_float);
 }
 

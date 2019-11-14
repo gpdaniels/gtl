@@ -48,6 +48,6 @@ TEST(computer_time, traits, standard) {
 
 TEST(computer_time, constructor, empty) {
     gtl::computer_time computer_time;
-    do_not_optimise_away(computer_time);
+    testbench::do_not_optimise_away(computer_time);
 }
 

@@ -48,6 +48,6 @@ TEST(anti_inject, traits, standard) {
 
 TEST(anti_inject, constructor, empty) {
     gtl::anti_inject anti_inject;
-    do_not_optimise_away(anti_inject);
+    testbench::do_not_optimise_away(anti_inject);
 }
 

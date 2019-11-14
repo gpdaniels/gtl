@@ -48,6 +48,6 @@ TEST(big_unsigned, traits, standard) {
 
 TEST(big_unsigned, constructor, empty) {
     gtl::big_unsigned big_unsigned;
-    do_not_optimise_away(big_unsigned);
+    testbench::do_not_optimise_away(big_unsigned);
 }
 

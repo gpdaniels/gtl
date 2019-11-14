@@ -48,6 +48,6 @@ TEST(stacktrace, traits, standard) {
 
 TEST(stacktrace, constructor, empty) {
     gtl::stacktrace stacktrace;
-    do_not_optimise_away(stacktrace);
+    testbench::do_not_optimise_away(stacktrace);
 }
 

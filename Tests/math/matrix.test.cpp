@@ -48,6 +48,6 @@ TEST(matrix, traits, standard) {
 
 TEST(matrix, constructor, empty) {
     gtl::matrix matrix;
-    do_not_optimise_away(matrix);
+    testbench::do_not_optimise_away(matrix);
 }
 

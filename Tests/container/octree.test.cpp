@@ -48,6 +48,6 @@ TEST(octree, traits, standard) {
 
 TEST(octree, constructor, empty) {
     gtl::octree octree;
-    do_not_optimise_away(octree);
+    testbench::do_not_optimise_away(octree);
 }
 

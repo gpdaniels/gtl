@@ -48,6 +48,6 @@ TEST(serial_ttl, traits, standard) {
 
 TEST(serial_ttl, constructor, empty) {
     gtl::serial_ttl serial_ttl;
-    do_not_optimise_away(serial_ttl);
+    testbench::do_not_optimise_away(serial_ttl);
 }
 

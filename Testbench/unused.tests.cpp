@@ -19,3 +19,7 @@ THE SOFTWARE
 */
 
 #include "unused.tests.hpp"
+
+namespace testbench {
+
+}

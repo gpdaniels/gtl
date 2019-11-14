@@ -48,6 +48,6 @@ TEST(location, traits, standard) {
 
 TEST(location, constructor, empty) {
     gtl::location location;
-    do_not_optimise_away(location);
+    testbench::do_not_optimise_away(location);
 }
 

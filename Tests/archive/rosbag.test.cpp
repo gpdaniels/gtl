@@ -48,6 +48,6 @@ TEST(rosbag, traits, standard) {
 
 TEST(rosbag, constructor, empty) {
     gtl::rosbag rosbag;
-    do_not_optimise_away(rosbag);
+    testbench::do_not_optimise_away(rosbag);
 }
 

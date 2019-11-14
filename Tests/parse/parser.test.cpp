@@ -48,6 +48,6 @@ TEST(parser, traits, standard) {
 
 TEST(parser, constructor, empty) {
     gtl::parser parser;
-    do_not_optimise_away(parser);
+    testbench::do_not_optimise_away(parser);
 }
 

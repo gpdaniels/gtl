@@ -48,6 +48,6 @@ TEST(hmm, traits, standard) {
 
 TEST(hmm, constructor, empty) {
     gtl::hmm hmm;
-    do_not_optimise_away(hmm);
+    testbench::do_not_optimise_away(hmm);
 }
 

@@ -48,6 +48,6 @@ TEST(rsa, traits, standard) {
 
 TEST(rsa, constructor, empty) {
     gtl::rsa rsa;
-    do_not_optimise_away(rsa);
+    testbench::do_not_optimise_away(rsa);
 }
 

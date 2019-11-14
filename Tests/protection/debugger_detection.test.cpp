@@ -48,6 +48,6 @@ TEST(debugger_detection, traits, standard) {
 
 TEST(debugger_detection, constructor, empty) {
     gtl::debugger_detection debugger_detection;
-    do_not_optimise_away(debugger_detection);
+    testbench::do_not_optimise_away(debugger_detection);
 }
 

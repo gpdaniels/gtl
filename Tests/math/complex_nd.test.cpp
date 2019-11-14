@@ -48,6 +48,6 @@ TEST(complex_nd, traits, standard) {
 
 TEST(complex_nd, constructor, empty) {
     gtl::complex_nd complex_nd;
-    do_not_optimise_away(complex_nd);
+    testbench::do_not_optimise_away(complex_nd);
 }
 

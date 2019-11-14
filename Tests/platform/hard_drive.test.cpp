@@ -48,6 +48,6 @@ TEST(hard_drive, traits, standard) {
 
 TEST(hard_drive, constructor, empty) {
     gtl::hard_drive hard_drive;
-    do_not_optimise_away(hard_drive);
+    testbench::do_not_optimise_away(hard_drive);
 }
 

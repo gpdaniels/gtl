@@ -50,7 +50,7 @@ TEST(semaphore, traits, standard) {
 
 TEST(semaphore, constructor, empty) {
     gtl::semaphore<std::mutex, std::condition_variable> semaphore;
-    do_not_optimise_away(semaphore);
+    testbench::do_not_optimise_away(semaphore);
 }
 
 TEST(semaphore, constructor, value) {
@@ -76,10 +76,10 @@ TEST(semaphore, function, notify_and_wait) {
 
 TEST(semaphore, evaluation, mutex_and_condition_variable) {
     gtl::semaphore<std::mutex, std::condition_variable> semaphore;
-    do_not_optimise_away(semaphore);
+    testbench::do_not_optimise_away(semaphore);
 }
 
 TEST(semaphore, evaluation, recursive_mutex_and_condition_variable_any) {
     gtl::semaphore<std::recursive_mutex, std::condition_variable_any> semaphore;
-    do_not_optimise_away(semaphore);
+    testbench::do_not_optimise_away(semaphore);
 }

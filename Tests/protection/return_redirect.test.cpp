@@ -48,6 +48,6 @@ TEST(return_redirect, traits, standard) {
 
 TEST(return_redirect, constructor, empty) {
     gtl::return_redirect return_redirect;
-    do_not_optimise_away(return_redirect);
+    testbench::do_not_optimise_away(return_redirect);
 }
 

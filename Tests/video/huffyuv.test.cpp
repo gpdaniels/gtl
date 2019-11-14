@@ -48,6 +48,6 @@ TEST(huffyuv, traits, standard) {
 
 TEST(huffyuv, constructor, empty) {
     gtl::huffyuv huffyuv;
-    do_not_optimise_away(huffyuv);
+    testbench::do_not_optimise_away(huffyuv);
 }
 

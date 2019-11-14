@@ -48,6 +48,6 @@ TEST(user_name, traits, standard) {
 
 TEST(user_name, constructor, empty) {
     gtl::user_name user_name;
-    do_not_optimise_away(user_name);
+    testbench::do_not_optimise_away(user_name);
 }
 

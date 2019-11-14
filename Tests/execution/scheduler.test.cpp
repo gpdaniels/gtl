@@ -48,6 +48,6 @@ TEST(scheduler, traits, standard) {
 
 TEST(scheduler, constructor, empty) {
     gtl::scheduler scheduler;
-    do_not_optimise_away(scheduler);
+    testbench::do_not_optimise_away(scheduler);
 }
 

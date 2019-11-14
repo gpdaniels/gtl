@@ -48,6 +48,6 @@ TEST(socket, traits, standard) {
 
 TEST(socket, constructor, empty) {
     gtl::socket socket;
-    do_not_optimise_away(socket);
+    testbench::do_not_optimise_away(socket);
 }
 

@@ -48,6 +48,6 @@ TEST(detours, traits, standard) {
 
 TEST(detours, constructor, empty) {
     gtl::detours detours;
-    do_not_optimise_away(detours);
+    testbench::do_not_optimise_away(detours);
 }
 

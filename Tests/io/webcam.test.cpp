@@ -48,6 +48,6 @@ TEST(webcam, traits, standard) {
 
 TEST(webcam, constructor, empty) {
     gtl::webcam webcam;
-    do_not_optimise_away(webcam);
+    testbench::do_not_optimise_away(webcam);
 }
 

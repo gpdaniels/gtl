@@ -48,6 +48,6 @@ TEST(kalman_filter, traits, standard) {
 
 TEST(kalman_filter, constructor, empty) {
     gtl::kalman_filter kalman_filter;
-    do_not_optimise_away(kalman_filter);
+    testbench::do_not_optimise_away(kalman_filter);
 }
 

@@ -48,6 +48,6 @@ TEST(tts, traits, standard) {
 
 TEST(tts, constructor, empty) {
     gtl::tts tts;
-    do_not_optimise_away(tts);
+    testbench::do_not_optimise_away(tts);
 }
 

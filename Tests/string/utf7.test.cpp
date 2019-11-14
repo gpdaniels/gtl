@@ -48,6 +48,6 @@ TEST(utf7, traits, standard) {
 
 TEST(utf7, constructor, empty) {
     gtl::utf7 utf7;
-    do_not_optimise_away(utf7);
+    testbench::do_not_optimise_away(utf7);
 }
 

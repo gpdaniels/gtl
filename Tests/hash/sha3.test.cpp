@@ -48,6 +48,6 @@ TEST(sha3, traits, standard) {
 
 TEST(sha3, constructor, empty) {
     gtl::sha3 sha3;
-    do_not_optimise_away(sha3);
+    testbench::do_not_optimise_away(sha3);
 }
 

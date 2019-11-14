@@ -48,6 +48,6 @@ TEST(tensor, traits, standard) {
 
 TEST(tensor, constructor, empty) {
     gtl::tensor tensor;
-    do_not_optimise_away(tensor);
+    testbench::do_not_optimise_away(tensor);
 }
 

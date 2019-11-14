@@ -48,6 +48,6 @@ TEST(memory_consistency, traits, standard) {
 
 TEST(memory_consistency, constructor, empty) {
     gtl::memory_consistency memory_consistency;
-    do_not_optimise_away(memory_consistency);
+    testbench::do_not_optimise_away(memory_consistency);
 }
 

@@ -48,6 +48,6 @@ TEST(computer_name, traits, standard) {
 
 TEST(computer_name, constructor, empty) {
     gtl::computer_name computer_name;
-    do_not_optimise_away(computer_name);
+    testbench::do_not_optimise_away(computer_name);
 }
 

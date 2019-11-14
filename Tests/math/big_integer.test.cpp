@@ -48,6 +48,6 @@ TEST(big_integer, traits, standard) {
 
 TEST(big_integer, constructor, empty) {
     gtl::big_integer big_integer;
-    do_not_optimise_away(big_integer);
+    testbench::do_not_optimise_away(big_integer);
 }
 

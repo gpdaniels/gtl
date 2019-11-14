@@ -48,6 +48,6 @@ TEST(big_decimal, traits, standard) {
 
 TEST(big_decimal, constructor, empty) {
     gtl::big_decimal big_decimal;
-    do_not_optimise_away(big_decimal);
+    testbench::do_not_optimise_away(big_decimal);
 }
 

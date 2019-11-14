@@ -19,3 +19,7 @@ THE SOFTWARE
 */
 
 #include "template.tests.hpp"
+
+namespace testbench {
+
+}

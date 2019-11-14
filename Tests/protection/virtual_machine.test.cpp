@@ -48,6 +48,6 @@ TEST(virtual_machine, traits, standard) {
 
 TEST(virtual_machine, constructor, empty) {
     gtl::virtual_machine virtual_machine;
-    do_not_optimise_away(virtual_machine);
+    testbench::do_not_optimise_away(virtual_machine);
 }
 

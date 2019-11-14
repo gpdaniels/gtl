@@ -48,6 +48,6 @@ TEST(language, traits, standard) {
 
 TEST(language, constructor, empty) {
     gtl::language language;
-    do_not_optimise_away(language);
+    testbench::do_not_optimise_away(language);
 }
 

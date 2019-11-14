@@ -48,6 +48,6 @@ TEST(md5, traits, standard) {
 
 TEST(md5, constructor, empty) {
     gtl::md5 md5;
-    do_not_optimise_away(md5);
+    testbench::do_not_optimise_away(md5);
 }
 

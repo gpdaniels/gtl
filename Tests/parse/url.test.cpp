@@ -48,6 +48,6 @@ TEST(url, traits, standard) {
 
 TEST(url, constructor, empty) {
     gtl::url url;
-    do_not_optimise_away(url);
+    testbench::do_not_optimise_away(url);
 }
 

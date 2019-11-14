@@ -48,6 +48,6 @@ TEST(constant, traits, standard) {
 
 TEST(constant, constructor, empty) {
     gtl::constant constant;
-    do_not_optimise_away(constant);
+    testbench::do_not_optimise_away(constant);
 }
 

@@ -48,6 +48,6 @@ TEST(base_n, traits, standard) {
 
 TEST(base_n, constructor, empty) {
     gtl::base_n base_n;
-    do_not_optimise_away(base_n);
+    testbench::do_not_optimise_away(base_n);
 }
 

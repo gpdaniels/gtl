@@ -48,6 +48,6 @@ TEST(imgui, traits, standard) {
 
 TEST(imgui, constructor, empty) {
     gtl::imgui imgui;
-    do_not_optimise_away(imgui);
+    testbench::do_not_optimise_away(imgui);
 }
 

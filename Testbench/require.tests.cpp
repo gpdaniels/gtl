@@ -20,5 +20,7 @@ THE SOFTWARE
 
 #include "require.tests.hpp"
 
-unsigned long long REQUIRE_COUNT = 0;
-unsigned long long REQUIRE_FAILURE_COUNT = 0;
+namespace testbench {
+    unsigned long long REQUIRE_COUNT = 0;
+    unsigned long long REQUIRE_FAILURE_COUNT = 0;
+}

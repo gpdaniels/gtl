@@ -48,6 +48,6 @@ TEST(command_line, traits, standard) {
 
 TEST(command_line, constructor, empty) {
     gtl::command_line command_line;
-    do_not_optimise_away(command_line);
+    testbench::do_not_optimise_away(command_line);
 }
 

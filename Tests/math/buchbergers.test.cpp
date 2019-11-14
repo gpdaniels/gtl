@@ -48,6 +48,6 @@ TEST(buchbergers, traits, standard) {
 
 TEST(buchbergers, constructor, empty) {
     gtl::buchbergers buchbergers;
-    do_not_optimise_away(buchbergers);
+    testbench::do_not_optimise_away(buchbergers);
 }
 

@@ -48,6 +48,6 @@ TEST(processor, traits, standard) {
 
 TEST(processor, constructor, empty) {
     gtl::processor processor;
-    do_not_optimise_away(processor);
+    testbench::do_not_optimise_away(processor);
 }
 

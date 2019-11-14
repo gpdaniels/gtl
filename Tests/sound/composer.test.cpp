@@ -48,6 +48,6 @@ TEST(composer, traits, standard) {
 
 TEST(composer, constructor, empty) {
     gtl::composer composer;
-    do_not_optimise_away(composer);
+    testbench::do_not_optimise_away(composer);
 }
 

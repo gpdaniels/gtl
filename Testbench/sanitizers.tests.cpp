@@ -19,3 +19,7 @@ THE SOFTWARE
 */
 
 #include "sanitizers.tests.hpp"
+
+namespace testbench {
+
+}

@@ -48,6 +48,6 @@ TEST(process_instance, traits, standard) {
 
 TEST(process_instance, constructor, empty) {
     gtl::process_instance process_instance;
-    do_not_optimise_away(process_instance);
+    testbench::do_not_optimise_away(process_instance);
 }
 

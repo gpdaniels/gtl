@@ -48,6 +48,6 @@ TEST(short_file, traits, standard) {
 
 TEST(short_file, constructor, empty) {
     gtl::short_file short_file;
-    do_not_optimise_away(short_file);
+    testbench::do_not_optimise_away(short_file);
 }
 

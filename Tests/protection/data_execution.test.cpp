@@ -48,6 +48,6 @@ TEST(data_execution, traits, standard) {
 
 TEST(data_execution, constructor, empty) {
     gtl::data_execution data_execution;
-    do_not_optimise_away(data_execution);
+    testbench::do_not_optimise_away(data_execution);
 }
 

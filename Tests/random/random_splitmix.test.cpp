@@ -50,12 +50,12 @@ TEST(random_splitmix, traits, standard) {
 
 TEST(random_splitmix, constructor, empty) {
     gtl::random_splitmix random_splitmix;
-    do_not_optimise_away(random_splitmix);
+    testbench::do_not_optimise_away(random_splitmix);
 }
 
 TEST(random_splitmix, constructor, seed) {
     gtl::random_splitmix random_splitmix(0x01234567);
-    do_not_optimise_away(random_splitmix);
+    testbench::do_not_optimise_away(random_splitmix);
 }
 
 TEST(random_splitmix, function, seed) {
@@ -67,15 +67,15 @@ TEST(random_splitmix, function, get_random_raw) {
     gtl::random_splitmix random_splitmix;
     random_splitmix.seed(0x01234567);
     unsigned int random_raw = random_splitmix.get_random_raw();
-    REQUIRE(comparison::is_equal(random_raw, 1953078471u), "Pseudo-random number 1 was %u, expected %u", random_raw, 1953078471u);
+    REQUIRE(testbench::is_value_equal(random_raw, 1953078471u), "Pseudo-random number 1 was %u, expected %u", random_raw, 1953078471u);
     random_raw = random_splitmix.get_random_raw();
-    REQUIRE(comparison::is_equal(random_raw, 2159333104u), "Pseudo-random number 2 was %u, expected %u", random_raw, 2159333104u);
+    REQUIRE(testbench::is_value_equal(random_raw, 2159333104u), "Pseudo-random number 2 was %u, expected %u", random_raw, 2159333104u);
     random_raw = random_splitmix.get_random_raw();
-    REQUIRE(comparison::is_equal(random_raw, 1013292015u), "Pseudo-random number 3 was %u, expected %u", random_raw, 1013292015u);
+    REQUIRE(testbench::is_value_equal(random_raw, 1013292015u), "Pseudo-random number 3 was %u, expected %u", random_raw, 1013292015u);
     random_raw = random_splitmix.get_random_raw();
-    REQUIRE(comparison::is_equal(random_raw, 1324138226u), "Pseudo-random number 4 was %u, expected %u", random_raw, 1324138226u);
+    REQUIRE(testbench::is_value_equal(random_raw, 1324138226u), "Pseudo-random number 4 was %u, expected %u", random_raw, 1324138226u);
     random_raw = random_splitmix.get_random_raw();
-    REQUIRE(comparison::is_equal(random_raw, 2004240380u), "Pseudo-random number 5 was %u, expected %u", random_raw, 2004240380u);
+    REQUIRE(testbench::is_value_equal(random_raw, 2004240380u), "Pseudo-random number 5 was %u, expected %u", random_raw, 2004240380u);
 }
 
 TEST(random_splitmix, function, get_random_exclusive) {
@@ -83,15 +83,15 @@ TEST(random_splitmix, function, get_random_exclusive) {
     gtl::random_splitmix random_splitmix;
     random_splitmix.seed(0x01234567);
     double random_exclusive = round(random_splitmix.get_random_exclusive());
-    REQUIRE(comparison::is_equal(random_exclusive, 0.454737), "Pseudo-random number 1 was %lf, expected %lf", random_exclusive, 0.454737);
+    REQUIRE(testbench::is_value_equal(random_exclusive, 0.454737), "Pseudo-random number 1 was %lf, expected %lf", random_exclusive, 0.454737);
     random_exclusive = round(random_splitmix.get_random_exclusive());
-    REQUIRE(comparison::is_equal(random_exclusive, 0.502759), "Pseudo-random number 2 was %lf, expected %lf", random_exclusive, 0.502759);
+    REQUIRE(testbench::is_value_equal(random_exclusive, 0.502759), "Pseudo-random number 2 was %lf, expected %lf", random_exclusive, 0.502759);
     random_exclusive = round(random_splitmix.get_random_exclusive());
-    REQUIRE(comparison::is_equal(random_exclusive, 0.235925), "Pseudo-random number 3 was %lf, expected %lf", random_exclusive, 0.235925);
+    REQUIRE(testbench::is_value_equal(random_exclusive, 0.235925), "Pseudo-random number 3 was %lf, expected %lf", random_exclusive, 0.235925);
     random_exclusive = round(random_splitmix.get_random_exclusive());
-    REQUIRE(comparison::is_equal(random_exclusive, 0.308300), "Pseudo-random number 4 was %lf, expected %lf", random_exclusive, 0.308300);
+    REQUIRE(testbench::is_value_equal(random_exclusive, 0.308300), "Pseudo-random number 4 was %lf, expected %lf", random_exclusive, 0.308300);
     random_exclusive = round(random_splitmix.get_random_exclusive());
-    REQUIRE(comparison::is_equal(random_exclusive, 0.466649), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive, 0.466649);
+    REQUIRE(testbench::is_value_equal(random_exclusive, 0.466649), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive, 0.466649);
 }
 
 TEST(random_splitmix, function, get_random_exclusive_top) {
@@ -99,15 +99,15 @@ TEST(random_splitmix, function, get_random_exclusive_top) {
     gtl::random_splitmix random_splitmix;
     random_splitmix.seed(0x01234567);
     double random_exclusive_top = round(random_splitmix.get_random_exclusive_top());
-    REQUIRE(comparison::is_equal(random_exclusive_top, 0.454737), "Pseudo-random number 1 was %lf, expected %lf", random_exclusive_top, 0.454737);
+    REQUIRE(testbench::is_value_equal(random_exclusive_top, 0.454737), "Pseudo-random number 1 was %lf, expected %lf", random_exclusive_top, 0.454737);
     random_exclusive_top = round(random_splitmix.get_random_exclusive_top());
-    REQUIRE(comparison::is_equal(random_exclusive_top, 0.502759), "Pseudo-random number 2 was %lf, expected %lf", random_exclusive_top, 0.502759);
+    REQUIRE(testbench::is_value_equal(random_exclusive_top, 0.502759), "Pseudo-random number 2 was %lf, expected %lf", random_exclusive_top, 0.502759);
     random_exclusive_top = round(random_splitmix.get_random_exclusive_top());
-    REQUIRE(comparison::is_equal(random_exclusive_top, 0.235925), "Pseudo-random number 3 was %lf, expected %lf", random_exclusive_top, 0.235925);
+    REQUIRE(testbench::is_value_equal(random_exclusive_top, 0.235925), "Pseudo-random number 3 was %lf, expected %lf", random_exclusive_top, 0.235925);
     random_exclusive_top = round(random_splitmix.get_random_exclusive_top());
-    REQUIRE(comparison::is_equal(random_exclusive_top, 0.308300), "Pseudo-random number 4 was %lf, expected %lf", random_exclusive_top, 0.308300);
+    REQUIRE(testbench::is_value_equal(random_exclusive_top, 0.308300), "Pseudo-random number 4 was %lf, expected %lf", random_exclusive_top, 0.308300);
     random_exclusive_top = round(random_splitmix.get_random_exclusive_top());
-    REQUIRE(comparison::is_equal(random_exclusive_top, 0.466649), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive_top, 0.466649);
+    REQUIRE(testbench::is_value_equal(random_exclusive_top, 0.466649), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive_top, 0.466649);
 }
 
 TEST(random_splitmix, function, get_random_inclusive) {
@@ -115,30 +115,30 @@ TEST(random_splitmix, function, get_random_inclusive) {
     gtl::random_splitmix random_splitmix;
     random_splitmix.seed(0x01234567);
     double random_inclusive = round(random_splitmix.get_random_inclusive());
-    REQUIRE(comparison::is_equal(random_inclusive, 0.454737), "Pseudo-random number 1 was %lf, expected %lf", random_inclusive, 0.454737);
+    REQUIRE(testbench::is_value_equal(random_inclusive, 0.454737), "Pseudo-random number 1 was %lf, expected %lf", random_inclusive, 0.454737);
     random_inclusive = round(random_splitmix.get_random_inclusive());
-    REQUIRE(comparison::is_equal(random_inclusive, 0.502759), "Pseudo-random number 2 was %lf, expected %lf", random_inclusive, 0.502759);
+    REQUIRE(testbench::is_value_equal(random_inclusive, 0.502759), "Pseudo-random number 2 was %lf, expected %lf", random_inclusive, 0.502759);
     random_inclusive = round(random_splitmix.get_random_inclusive());
-    REQUIRE(comparison::is_equal(random_inclusive, 0.235925), "Pseudo-random number 3 was %lf, expected %lf", random_inclusive, 0.235925);
+    REQUIRE(testbench::is_value_equal(random_inclusive, 0.235925), "Pseudo-random number 3 was %lf, expected %lf", random_inclusive, 0.235925);
     random_inclusive = round(random_splitmix.get_random_inclusive());
-    REQUIRE(comparison::is_equal(random_inclusive, 0.308300), "Pseudo-random number 4 was %lf, expected %lf", random_inclusive, 0.308300);
+    REQUIRE(testbench::is_value_equal(random_inclusive, 0.308300), "Pseudo-random number 4 was %lf, expected %lf", random_inclusive, 0.308300);
     random_inclusive = round(random_splitmix.get_random_inclusive());
-    REQUIRE(comparison::is_equal(random_inclusive, 0.466649), "Pseudo-random number 5 was %lf, expected %lf", random_inclusive, 0.466649);
+    REQUIRE(testbench::is_value_equal(random_inclusive, 0.466649), "Pseudo-random number 5 was %lf, expected %lf", random_inclusive, 0.466649);
 }
 
 TEST(random_splitmix, function, get_random_bounded_long) {
     gtl::random_splitmix random_splitmix;
     random_splitmix.seed(0x01234567);
     unsigned int random = random_splitmix.get_random(0u, 1u);
-    REQUIRE(comparison::is_equal(random, 1u), "Pseudo-random number 1 was %u, expected %u", random, 1u);
+    REQUIRE(testbench::is_value_equal(random, 1u), "Pseudo-random number 1 was %u, expected %u", random, 1u);
     random = random_splitmix.get_random(0u, 1u);
-    REQUIRE(comparison::is_equal(random, 0u), "Pseudo-random number 2 was %u, expected %u", random, 0u);
+    REQUIRE(testbench::is_value_equal(random, 0u), "Pseudo-random number 2 was %u, expected %u", random, 0u);
     random = random_splitmix.get_random(0u, 1u);
-    REQUIRE(comparison::is_equal(random, 1u), "Pseudo-random number 3 was %u, expected %u", random, 1u);
+    REQUIRE(testbench::is_value_equal(random, 1u), "Pseudo-random number 3 was %u, expected %u", random, 1u);
     random = random_splitmix.get_random(0u, 1u);
-    REQUIRE(comparison::is_equal(random, 0u), "Pseudo-random number 4 was %u, expected %u", random, 0u);
+    REQUIRE(testbench::is_value_equal(random, 0u), "Pseudo-random number 4 was %u, expected %u", random, 0u);
     random = random_splitmix.get_random(0u, 1u);
-    REQUIRE(comparison::is_equal(random, 0u), "Pseudo-random number 5 was %u, expected %u", random, 0u);
+    REQUIRE(testbench::is_value_equal(random, 0u), "Pseudo-random number 5 was %u, expected %u", random, 0u);
 }
 
 TEST(random_splitmix, function, get_random_bounded_double) {
@@ -146,15 +146,15 @@ TEST(random_splitmix, function, get_random_bounded_double) {
     gtl::random_splitmix random_splitmix;
     random_splitmix.seed(0x01234567);
     double random = round(random_splitmix.get_random(-1.0, 0.0));
-    REQUIRE(comparison::is_equal(random, -0.545263), "Pseudo-random number 1 was %lf, expected %lf", random, -0.545263);
+    REQUIRE(testbench::is_value_equal(random, -0.545263), "Pseudo-random number 1 was %lf, expected %lf", random, -0.545263);
     random = round(random_splitmix.get_random(-1.0, 0.0));
-    REQUIRE(comparison::is_equal(random, -0.497241), "Pseudo-random number 2 was %lf, expected %lf", random, -0.497241);
+    REQUIRE(testbench::is_value_equal(random, -0.497241), "Pseudo-random number 2 was %lf, expected %lf", random, -0.497241);
     random = round(random_splitmix.get_random(-1.0, 0.0));
-    REQUIRE(comparison::is_equal(random, -0.764075), "Pseudo-random number 3 was %lf, expected %lf", random, -0.764075);
+    REQUIRE(testbench::is_value_equal(random, -0.764075), "Pseudo-random number 3 was %lf, expected %lf", random, -0.764075);
     random = round(random_splitmix.get_random(-1.0, 0.0));
-    REQUIRE(comparison::is_equal(random, -0.691700), "Pseudo-random number 4 was %lf, expected %lf", random, -0.691700);
+    REQUIRE(testbench::is_value_equal(random, -0.691700), "Pseudo-random number 4 was %lf, expected %lf", random, -0.691700);
     random = round(random_splitmix.get_random(-1.0, 0.0));
-    REQUIRE(comparison::is_equal(random, -0.533351), "Pseudo-random number 5 was %lf, expected %lf", random, -0.533351);
+    REQUIRE(testbench::is_value_equal(random, -0.533351), "Pseudo-random number 5 was %lf, expected %lf", random, -0.533351);
 }
 
 TEST(random_splitmix, evaluation, random_numbers) {
@@ -164,5 +164,5 @@ TEST(random_splitmix, evaluation, random_numbers) {
     for (unsigned int iteration = 0; iteration < 1000000; ++iteration) {
         random_bias += (random_splitmix.get_random(0u, 1u) == 0) ? +1 : -1;
     }
-    REQUIRE(comparison::is_equal(random_bias, -166), "Pseudo-random number generator bias was %d, expected %d", random_bias, -166);
+    REQUIRE(testbench::is_value_equal(random_bias, -166), "Pseudo-random number generator bias was %d, expected %d", random_bias, -166);
 }

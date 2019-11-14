@@ -48,6 +48,6 @@ TEST(gamepad, traits, standard) {
 
 TEST(gamepad, constructor, empty) {
     gtl::gamepad gamepad;
-    do_not_optimise_away(gamepad);
+    testbench::do_not_optimise_away(gamepad);
 }
 

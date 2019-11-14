@@ -48,6 +48,6 @@ TEST(zip, traits, standard) {
 
 TEST(zip, constructor, empty) {
     gtl::zip zip;
-    do_not_optimise_away(zip);
+    testbench::do_not_optimise_away(zip);
 }
 

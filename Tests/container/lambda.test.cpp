@@ -48,6 +48,6 @@ TEST(lambda, traits, standard) {
 
 TEST(lambda, constructor, empty) {
     gtl::lambda lambda;
-    do_not_optimise_away(lambda);
+    testbench::do_not_optimise_away(lambda);
 }
 

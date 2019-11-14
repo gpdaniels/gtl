@@ -20,35 +20,37 @@ THE SOFTWARE
 
 #include "node.tests.hpp"
 
-test_node::test_node(const char* const test_file, const char* const test_group, const char* const test_name, function_type test_function)
-    : file(test_file)
-    , group(test_group)
-    , name(test_name)
-    , function(test_function)
-    , next(test_node::root) {
-    test_node::root = this;
-}
+namespace testbench {
+    test_node::test_node(const char* const test_file, const char* const test_group, const char* const test_name, function_type test_function)
+        : file(test_file)
+        , group(test_group)
+        , name(test_name)
+        , function(test_function)
+        , next(test_node::root) {
+        test_node::root = this;
+    }
 
-test_node* test_node::get_root() {
-    return test_node::root;
-}
+    test_node* test_node::get_root() {
+        return test_node::root;
+    }
 
-const char* test_node::get_file() const {
-    return this->file;
-}
+    const char* test_node::get_file() const {
+        return this->file;
+    }
 
-const char* test_node::get_group() const {
-    return this->group;
-}
+    const char* test_node::get_group() const {
+        return this->group;
+    }
 
-const char* test_node::get_name() const {
-    return this->name;
-}
+    const char* test_node::get_name() const {
+        return this->name;
+    }
 
-test_node::function_type test_node::get_function() const {
-    return this->function;
-}
+    test_node::function_type test_node::get_function() const {
+        return this->function;
+    }
 
-const test_node* test_node::get_next() const {
-    return this->next;
+    const test_node* test_node::get_next() const {
+        return this->next;
+    }
 }

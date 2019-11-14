@@ -48,6 +48,6 @@ TEST(opengl, traits, standard) {
 
 TEST(opengl, constructor, empty) {
     gtl::opengl opengl;
-    do_not_optimise_away(opengl);
+    testbench::do_not_optimise_away(opengl);
 }
 

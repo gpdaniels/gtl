@@ -48,6 +48,6 @@ TEST(unused, traits, standard) {
 
 TEST(unused, constructor, empty) {
     gtl::unused unused;
-    do_not_optimise_away(unused);
+    testbench::do_not_optimise_away(unused);
 }
 

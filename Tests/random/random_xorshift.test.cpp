@@ -50,12 +50,12 @@ TEST(random_xorshift, traits, standard) {
 
 TEST(random_xorshift, constructor, empty) {
     gtl::random_xorshift random_xorshift;
-    do_not_optimise_away(random_xorshift);
+    testbench::do_not_optimise_away(random_xorshift);
 }
 
 TEST(random_xorshift, constructor, seed) {
     gtl::random_xorshift random_xorshift(0x01234567);
-    do_not_optimise_away(random_xorshift);
+    testbench::do_not_optimise_away(random_xorshift);
 }
 
 TEST(random_xorshift, function, seed) {
@@ -67,15 +67,15 @@ TEST(random_xorshift, function, get_random_raw) {
     gtl::random_xorshift random_xorshift;
     random_xorshift.seed(0x01234567);
     unsigned int random_raw = random_xorshift.get_random_raw();
-    REQUIRE(comparison::is_equal(random_raw, 514137109u), "Pseudo-random number 1 was %u, expected %u", random_raw, 514137109u);
+    REQUIRE(testbench::is_value_equal(random_raw, 514137109u), "Pseudo-random number 1 was %u, expected %u", random_raw, 514137109u);
     random_raw = random_xorshift.get_random_raw();
-    REQUIRE(comparison::is_equal(random_raw, 2827593414u), "Pseudo-random number 2 was %u, expected %u", random_raw, 2827593414u);
+    REQUIRE(testbench::is_value_equal(random_raw, 2827593414u), "Pseudo-random number 2 was %u, expected %u", random_raw, 2827593414u);
     random_raw = random_xorshift.get_random_raw();
-    REQUIRE(comparison::is_equal(random_raw, 416909229u), "Pseudo-random number 3 was %u, expected %u", random_raw, 416909229u);
+    REQUIRE(testbench::is_value_equal(random_raw, 416909229u), "Pseudo-random number 3 was %u, expected %u", random_raw, 416909229u);
     random_raw = random_xorshift.get_random_raw();
-    REQUIRE(comparison::is_equal(random_raw, 1502090661u), "Pseudo-random number 4 was %u, expected %u", random_raw, 1502090661u);
+    REQUIRE(testbench::is_value_equal(random_raw, 1502090661u), "Pseudo-random number 4 was %u, expected %u", random_raw, 1502090661u);
     random_raw = random_xorshift.get_random_raw();
-    REQUIRE(comparison::is_equal(random_raw, 367073627u), "Pseudo-random number 5 was %u, expected %u", random_raw, 367073627u);
+    REQUIRE(testbench::is_value_equal(random_raw, 367073627u), "Pseudo-random number 5 was %u, expected %u", random_raw, 367073627u);
 }
 
 TEST(random_xorshift, function, get_random_exclusive) {
@@ -83,15 +83,15 @@ TEST(random_xorshift, function, get_random_exclusive) {
     gtl::random_xorshift random_xorshift;
     random_xorshift.seed(0x01234567);
     double random_exclusive = round(random_xorshift.get_random_exclusive());
-    REQUIRE(comparison::is_equal(random_exclusive, 0.119707), "Pseudo-random number 1 was %lf, expected %lf", random_exclusive, 0.119707);
+    REQUIRE(testbench::is_value_equal(random_exclusive, 0.119707), "Pseudo-random number 1 was %lf, expected %lf", random_exclusive, 0.119707);
     random_exclusive = round(random_xorshift.get_random_exclusive());
-    REQUIRE(comparison::is_equal(random_exclusive, 0.658350), "Pseudo-random number 2 was %lf, expected %lf", random_exclusive, 0.658350);
+    REQUIRE(testbench::is_value_equal(random_exclusive, 0.658350), "Pseudo-random number 2 was %lf, expected %lf", random_exclusive, 0.658350);
     random_exclusive = round(random_xorshift.get_random_exclusive());
-    REQUIRE(comparison::is_equal(random_exclusive, 0.097069), "Pseudo-random number 3 was %lf, expected %lf", random_exclusive, 0.097069);
+    REQUIRE(testbench::is_value_equal(random_exclusive, 0.097069), "Pseudo-random number 3 was %lf, expected %lf", random_exclusive, 0.097069);
     random_exclusive = round(random_xorshift.get_random_exclusive());
-    REQUIRE(comparison::is_equal(random_exclusive, 0.349733), "Pseudo-random number 4 was %lf, expected %lf", random_exclusive, 0.349733);
+    REQUIRE(testbench::is_value_equal(random_exclusive, 0.349733), "Pseudo-random number 4 was %lf, expected %lf", random_exclusive, 0.349733);
     random_exclusive = round(random_xorshift.get_random_exclusive());
-    REQUIRE(comparison::is_equal(random_exclusive, 0.085466), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive, 0.085466);
+    REQUIRE(testbench::is_value_equal(random_exclusive, 0.085466), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive, 0.085466);
 }
 
 TEST(random_xorshift, function, get_random_exclusive_top) {
@@ -99,15 +99,15 @@ TEST(random_xorshift, function, get_random_exclusive_top) {
     gtl::random_xorshift random_xorshift;
     random_xorshift.seed(0x01234567);
     double random_exclusive_top = round(random_xorshift.get_random_exclusive_top());
-    REQUIRE(comparison::is_equal(random_exclusive_top, 0.119707), "Pseudo-random number 1 was %lf, expected %lf", random_exclusive_top, 0.119707);
+    REQUIRE(testbench::is_value_equal(random_exclusive_top, 0.119707), "Pseudo-random number 1 was %lf, expected %lf", random_exclusive_top, 0.119707);
     random_exclusive_top = round(random_xorshift.get_random_exclusive_top());
-    REQUIRE(comparison::is_equal(random_exclusive_top, 0.658350), "Pseudo-random number 2 was %lf, expected %lf", random_exclusive_top, 0.658350);
+    REQUIRE(testbench::is_value_equal(random_exclusive_top, 0.658350), "Pseudo-random number 2 was %lf, expected %lf", random_exclusive_top, 0.658350);
     random_exclusive_top = round(random_xorshift.get_random_exclusive_top());
-    REQUIRE(comparison::is_equal(random_exclusive_top, 0.097069), "Pseudo-random number 3 was %lf, expected %lf", random_exclusive_top, 0.097069);
+    REQUIRE(testbench::is_value_equal(random_exclusive_top, 0.097069), "Pseudo-random number 3 was %lf, expected %lf", random_exclusive_top, 0.097069);
     random_exclusive_top = round(random_xorshift.get_random_exclusive_top());
-    REQUIRE(comparison::is_equal(random_exclusive_top, 0.349733), "Pseudo-random number 4 was %lf, expected %lf", random_exclusive_top, 0.349733);
+    REQUIRE(testbench::is_value_equal(random_exclusive_top, 0.349733), "Pseudo-random number 4 was %lf, expected %lf", random_exclusive_top, 0.349733);
     random_exclusive_top = round(random_xorshift.get_random_exclusive_top());
-    REQUIRE(comparison::is_equal(random_exclusive_top, 0.085466), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive_top, 0.085466);
+    REQUIRE(testbench::is_value_equal(random_exclusive_top, 0.085466), "Pseudo-random number 5 was %lf, expected %lf", random_exclusive_top, 0.085466);
 }
 
 TEST(random_xorshift, function, get_random_inclusive) {
@@ -115,30 +115,30 @@ TEST(random_xorshift, function, get_random_inclusive) {
     gtl::random_xorshift random_xorshift;
     random_xorshift.seed(0x01234567);
     double random_inclusive = round(random_xorshift.get_random_inclusive());
-    REQUIRE(comparison::is_equal(random_inclusive, 0.119707), "Pseudo-random number 1 was %lf, expected %lf", random_inclusive, 0.119707);
+    REQUIRE(testbench::is_value_equal(random_inclusive, 0.119707), "Pseudo-random number 1 was %lf, expected %lf", random_inclusive, 0.119707);
     random_inclusive = round(random_xorshift.get_random_inclusive());
-    REQUIRE(comparison::is_equal(random_inclusive, 0.658350), "Pseudo-random number 2 was %lf, expected %lf", random_inclusive, 0.658350);
+    REQUIRE(testbench::is_value_equal(random_inclusive, 0.658350), "Pseudo-random number 2 was %lf, expected %lf", random_inclusive, 0.658350);
     random_inclusive = round(random_xorshift.get_random_inclusive());
-    REQUIRE(comparison::is_equal(random_inclusive, 0.097069), "Pseudo-random number 3 was %lf, expected %lf", random_inclusive, 0.097069);
+    REQUIRE(testbench::is_value_equal(random_inclusive, 0.097069), "Pseudo-random number 3 was %lf, expected %lf", random_inclusive, 0.097069);
     random_inclusive = round(random_xorshift.get_random_inclusive());
-    REQUIRE(comparison::is_equal(random_inclusive, 0.349733), "Pseudo-random number 4 was %lf, expected %lf", random_inclusive, 0.349733);
+    REQUIRE(testbench::is_value_equal(random_inclusive, 0.349733), "Pseudo-random number 4 was %lf, expected %lf", random_inclusive, 0.349733);
     random_inclusive = round(random_xorshift.get_random_inclusive());
-    REQUIRE(comparison::is_equal(random_inclusive, 0.085466), "Pseudo-random number 5 was %lf, expected %lf", random_inclusive, 0.085466);
+    REQUIRE(testbench::is_value_equal(random_inclusive, 0.085466), "Pseudo-random number 5 was %lf, expected %lf", random_inclusive, 0.085466);
 }
 
 TEST(random_xorshift, function, get_random_bounded_long) {
     gtl::random_xorshift random_xorshift;
     random_xorshift.seed(0x01234567);
     unsigned int random = random_xorshift.get_random(0u, 1u);
-    REQUIRE(comparison::is_equal(random, 1u), "Pseudo-random number 1 was %u, expected %u", random, 1u);
+    REQUIRE(testbench::is_value_equal(random, 1u), "Pseudo-random number 1 was %u, expected %u", random, 1u);
     random = random_xorshift.get_random(0u, 1u);
-    REQUIRE(comparison::is_equal(random, 0u), "Pseudo-random number 2 was %u, expected %u", random, 0u);
+    REQUIRE(testbench::is_value_equal(random, 0u), "Pseudo-random number 2 was %u, expected %u", random, 0u);
     random = random_xorshift.get_random(0u, 1u);
-    REQUIRE(comparison::is_equal(random, 1u), "Pseudo-random number 3 was %u, expected %u", random, 1u);
+    REQUIRE(testbench::is_value_equal(random, 1u), "Pseudo-random number 3 was %u, expected %u", random, 1u);
     random = random_xorshift.get_random(0u, 1u);
-    REQUIRE(comparison::is_equal(random, 1u), "Pseudo-random number 4 was %u, expected %u", random, 1u);
+    REQUIRE(testbench::is_value_equal(random, 1u), "Pseudo-random number 4 was %u, expected %u", random, 1u);
     random = random_xorshift.get_random(0u, 1u);
-    REQUIRE(comparison::is_equal(random, 1u), "Pseudo-random number 5 was %u, expected %u", random, 1u);
+    REQUIRE(testbench::is_value_equal(random, 1u), "Pseudo-random number 5 was %u, expected %u", random, 1u);
 }
 
 TEST(random_xorshift, function, get_random_bounded_double) {
@@ -146,15 +146,15 @@ TEST(random_xorshift, function, get_random_bounded_double) {
     gtl::random_xorshift random_xorshift;
     random_xorshift.seed(0x01234567);
     double random = round(random_xorshift.get_random(-1.0, 0.0));
-    REQUIRE(comparison::is_equal(random, -0.880293), "Pseudo-random number 1 was %lf, expected %lf", random, -0.880293);
+    REQUIRE(testbench::is_value_equal(random, -0.880293), "Pseudo-random number 1 was %lf, expected %lf", random, -0.880293);
     random = round(random_xorshift.get_random(-1.0, 0.0));
-    REQUIRE(comparison::is_equal(random, -0.341650), "Pseudo-random number 2 was %lf, expected %lf", random, -0.341650);
+    REQUIRE(testbench::is_value_equal(random, -0.341650), "Pseudo-random number 2 was %lf, expected %lf", random, -0.341650);
     random = round(random_xorshift.get_random(-1.0, 0.0));
-    REQUIRE(comparison::is_equal(random, -0.902931), "Pseudo-random number 3 was %lf, expected %lf", random, -0.902931);
+    REQUIRE(testbench::is_value_equal(random, -0.902931), "Pseudo-random number 3 was %lf, expected %lf", random, -0.902931);
     random = round(random_xorshift.get_random(-1.0, 0.0));
-    REQUIRE(comparison::is_equal(random, -0.650267), "Pseudo-random number 4 was %lf, expected %lf", random, -0.650267);
+    REQUIRE(testbench::is_value_equal(random, -0.650267), "Pseudo-random number 4 was %lf, expected %lf", random, -0.650267);
     random = round(random_xorshift.get_random(-1.0, 0.0));
-    REQUIRE(comparison::is_equal(random, -0.914534), "Pseudo-random number 5 was %lf, expected %lf", random, -0.914534);
+    REQUIRE(testbench::is_value_equal(random, -0.914534), "Pseudo-random number 5 was %lf, expected %lf", random, -0.914534);
 }
 
 TEST(random_xorshift, evaluation, random_numbers) {
@@ -164,5 +164,5 @@ TEST(random_xorshift, evaluation, random_numbers) {
     for (unsigned int iteration = 0; iteration < 1000000; ++iteration) {
         random_bias += (random_xorshift.get_random(0u, 1u) == 0) ? +1 : -1;
     }
-    REQUIRE(comparison::is_equal(random_bias, 736), "Pseudo-random number generator bias was %d, expected %d", random_bias, 736);
+    REQUIRE(testbench::is_value_equal(random_bias, 736), "Pseudo-random number generator bias was %d, expected %d", random_bias, 736);
 }

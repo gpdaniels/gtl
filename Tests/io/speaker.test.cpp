@@ -48,6 +48,6 @@ TEST(speaker, traits, standard) {
 
 TEST(speaker, constructor, empty) {
     gtl::speaker speaker;
-    do_not_optimise_away(speaker);
+    testbench::do_not_optimise_away(speaker);
 }
 

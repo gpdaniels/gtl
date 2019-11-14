@@ -48,6 +48,6 @@ TEST(serial_usb, traits, standard) {
 
 TEST(serial_usb, constructor, empty) {
     gtl::serial_usb serial_usb;
-    do_not_optimise_away(serial_usb);
+    testbench::do_not_optimise_away(serial_usb);
 }
 

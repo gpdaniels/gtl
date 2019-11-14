@@ -57,7 +57,7 @@ TEST(coroutine, traits, standard) {
 
 TEST(coroutine, constructor, empty) {
     gtl::coroutine coroutine;
-    do_not_optimise_away(coroutine);
+    testbench::do_not_optimise_away(coroutine);
 }
 
 
@@ -68,10 +68,10 @@ TEST(coroutine, constructor, lambda) {
 }
 
 TEST(coroutine, constructor, lamda_argument) {
-    test_template<test_types>(
+    testbench::test_template<testbench::test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
-            for (const type& value : test_data<type>()) {
+            for (const type& value : testbench::test_data<type>()) {
                 gtl::coroutine coroutine([](type){}, value);
                 // Ensure coroutine has run.
                 coroutine.join();

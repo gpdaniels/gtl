@@ -48,6 +48,6 @@ TEST(string_literal, traits, standard) {
 
 TEST(string_literal, constructor, empty) {
     gtl::string_literal string_literal;
-    do_not_optimise_away(string_literal);
+    testbench::do_not_optimise_away(string_literal);
 }
 

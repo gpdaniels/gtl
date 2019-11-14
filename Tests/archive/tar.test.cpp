@@ -48,6 +48,6 @@ TEST(tar, traits, standard) {
 
 TEST(tar, constructor, empty) {
     gtl::tar tar;
-    do_not_optimise_away(tar);
+    testbench::do_not_optimise_away(tar);
 }
 

@@ -48,6 +48,6 @@ TEST(window, traits, standard) {
 
 TEST(window, constructor, empty) {
     gtl::window window;
-    do_not_optimise_away(window);
+    testbench::do_not_optimise_away(window);
 }
 

@@ -48,6 +48,6 @@ TEST(half, traits, standard) {
 
 TEST(half, constructor, empty) {
     gtl::half half;
-    do_not_optimise_away(half);
+    testbench::do_not_optimise_away(half);
 }
 

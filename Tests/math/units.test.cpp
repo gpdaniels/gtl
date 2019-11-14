@@ -48,6 +48,6 @@ TEST(units, traits, standard) {
 
 TEST(units, constructor, empty) {
     gtl::units units;
-    do_not_optimise_away(units);
+    testbench::do_not_optimise_away(units);
 }
 

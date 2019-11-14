@@ -48,6 +48,6 @@ TEST(assume, traits, standard) {
 
 TEST(assume, constructor, empty) {
     gtl::assume assume;
-    do_not_optimise_away(assume);
+    testbench::do_not_optimise_away(assume);
 }
 

@@ -78,9 +78,11 @@ THE SOFTWARE
 
 #endif
 
-PRINT_FORMAT_PRINT_DECORATION(1) int print(FILE* stream, PRINT_FORMAT_PRINT_ARGUMENT(const char* format), ...);
+namespace testbench {
+    PRINT_FORMAT_PRINT_DECORATION(1) int print(FILE* stream, PRINT_FORMAT_PRINT_ARGUMENT(const char* format), ...);
+}
 
 /// @brief  Print the output format.
-#define PRINT(...) (print(stderr, __VA_ARGS__))
+#define PRINT(...) (testbench::print(stderr, __VA_ARGS__))
 
 #endif // PRINT_TESTS_HPP

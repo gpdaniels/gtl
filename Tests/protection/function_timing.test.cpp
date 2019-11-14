@@ -48,6 +48,6 @@ TEST(function_timing, traits, standard) {
 
 TEST(function_timing, constructor, empty) {
     gtl::function_timing function_timing;
-    do_not_optimise_away(function_timing);
+    testbench::do_not_optimise_away(function_timing);
 }
 

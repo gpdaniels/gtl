@@ -48,6 +48,6 @@ TEST(string_literal_encryption, traits, standard) {
 
 TEST(string_literal_encryption, constructor, empty) {
     gtl::string_literal_encryption string_literal_encryption;
-    do_not_optimise_away(string_literal_encryption);
+    testbench::do_not_optimise_away(string_literal_encryption);
 }
 

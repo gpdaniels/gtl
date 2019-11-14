@@ -48,6 +48,6 @@ TEST(console, traits, standard) {
 
 TEST(console, constructor, empty) {
     gtl::console console;
-    do_not_optimise_away(console);
+    testbench::do_not_optimise_away(console);
 }
 

@@ -48,6 +48,6 @@ TEST(clifford, traits, standard) {
 
 TEST(clifford, constructor, empty) {
     gtl::clifford clifford;
-    do_not_optimise_away(clifford);
+    testbench::do_not_optimise_away(clifford);
 }
 

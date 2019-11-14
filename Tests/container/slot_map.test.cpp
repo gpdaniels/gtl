@@ -48,6 +48,6 @@ TEST(slot_map, traits, standard) {
 
 TEST(slot_map, constructor, empty) {
     gtl::slot_map slot_map;
-    do_not_optimise_away(slot_map);
+    testbench::do_not_optimise_away(slot_map);
 }
 

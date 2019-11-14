@@ -48,6 +48,6 @@ TEST(dual, traits, standard) {
 
 TEST(dual, constructor, empty) {
     gtl::dual dual;
-    do_not_optimise_away(dual);
+    testbench::do_not_optimise_away(dual);
 }
 

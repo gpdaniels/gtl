@@ -48,6 +48,6 @@ TEST(ann, traits, standard) {
 
 TEST(ann, constructor, empty) {
     gtl::ann ann;
-    do_not_optimise_away(ann);
+    testbench::do_not_optimise_away(ann);
 }
 

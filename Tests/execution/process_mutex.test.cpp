@@ -48,6 +48,6 @@ TEST(process_mutex, traits, standard) {
 
 TEST(process_mutex, constructor, empty) {
     gtl::process_mutex process_mutex;
-    do_not_optimise_away(process_mutex);
+    testbench::do_not_optimise_away(process_mutex);
 }
 

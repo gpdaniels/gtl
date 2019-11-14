@@ -48,6 +48,6 @@ TEST(camera_trackball, traits, standard) {
 
 TEST(camera_trackball, constructor, empty) {
     gtl::camera_trackball camera_trackball;
-    do_not_optimise_away(camera_trackball);
+    testbench::do_not_optimise_away(camera_trackball);
 }
 

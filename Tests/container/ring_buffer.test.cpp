@@ -40,7 +40,7 @@ THE SOFTWARE
 #endif
 
 TEST(ring_buffer, traits, standard) {
-    test_template<test_types, value_collection<1, 10, 100>>(
+    testbench::test_template<testbench::test_types, testbench::value_collection<1, 10, 100>>(
         [](auto test_type, auto value_type)->void {
             using type = typename decltype(test_type)::type;
             using type_value = decltype(value_type);
@@ -64,26 +64,26 @@ TEST(ring_buffer, traits, standard) {
 }
 
 TEST(ring_buffer, constructor, empty) {
-    test_template<test_types, value_collection<1, 10, 100>>(
+    testbench::test_template<testbench::test_types, testbench::value_collection<1, 10, 100>>(
         [](auto test_type, auto value_type)->void {
             using type = typename decltype(test_type)::type;
             using type_value = decltype(value_type);
             constexpr static const unsigned long long value = type_value::value;
             gtl::ring_buffer<type, value> ring_buffer;
-            do_not_optimise_away(ring_buffer);
+            testbench::do_not_optimise_away(ring_buffer);
         }
     );
 }
 
 TEST(ring_buffer, function, empty_push_pop) {
-    test_template<test_types, value_collection<1, 10, 100>>(
+    testbench::test_template<testbench::test_types, testbench::value_collection<1, 10, 100>>(
         [](auto test_type, auto value_type)->void {
             using type = typename decltype(test_type)::type;
             using type_value = decltype(value_type);
             constexpr static const unsigned long long value = type_value::value;
             gtl::ring_buffer<type, value> ring_buffer;
             REQUIRE(ring_buffer.empty());
-            for (const type& data_value : test_data<type>()) {
+            for (const type& data_value : testbench::test_data<type>()) {
                 gtl::ring_buffer<type, value> ring_buffer_nd2;
                 REQUIRE(ring_buffer_nd2.empty());
                 for (unsigned long long i = 0; i < value - 1; ++i) {
@@ -105,14 +105,14 @@ TEST(ring_buffer, function, empty_push_pop) {
 }
 
 TEST(ring_buffer, function, full_push_pop) {
-    test_template<test_types, value_collection<1, 10, 100>>(
+    testbench::test_template<testbench::test_types, testbench::value_collection<1, 10, 100>>(
         [](auto test_type, auto value_type)->void {
             using type = typename decltype(test_type)::type;
             using type_value = decltype(value_type);
             constexpr static const unsigned long long value = type_value::value;
             gtl::ring_buffer<type, value> ring_buffer;
             REQUIRE(!ring_buffer.full());
-            for (const type& data_value : test_data<type>()) {
+            for (const type& data_value : testbench::test_data<type>()) {
                 gtl::ring_buffer<type, value> ring_buffer_nd2;
                 REQUIRE(!ring_buffer_nd2.full());
                 for (unsigned long long i = 0; i < value - 1; ++i) {
@@ -134,14 +134,14 @@ TEST(ring_buffer, function, full_push_pop) {
 }
 
 TEST(ring_buffer, function, size_push_pop) {
-    test_template<test_types, value_collection<1, 10, 100>>(
+    testbench::test_template<testbench::test_types, testbench::value_collection<1, 10, 100>>(
         [](auto test_type, auto value_type)->void {
             using type = typename decltype(test_type)::type;
             using type_value = decltype(value_type);
             constexpr static const unsigned long long value = type_value::value;
             gtl::ring_buffer<type, value> ring_buffer;
             REQUIRE(ring_buffer.size() == 0);
-            for (const type& data_value : test_data<type>()) {
+            for (const type& data_value : testbench::test_data<type>()) {
                 gtl::ring_buffer<type, value> ring_buffer_nd2;
                 REQUIRE(ring_buffer_nd2.size() == 0);
                 for (unsigned long long i = 0; i < value - 1; ++i) {

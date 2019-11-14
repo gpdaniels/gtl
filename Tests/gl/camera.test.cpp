@@ -48,6 +48,6 @@ TEST(camera, traits, standard) {
 
 TEST(camera, constructor, empty) {
     gtl::camera camera;
-    do_not_optimise_away(camera);
+    testbench::do_not_optimise_away(camera);
 }
 

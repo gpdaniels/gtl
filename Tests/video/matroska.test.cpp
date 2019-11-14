@@ -48,6 +48,6 @@ TEST(matroska, traits, standard) {
 
 TEST(matroska, constructor, empty) {
     gtl::matroska matroska;
-    do_not_optimise_away(matroska);
+    testbench::do_not_optimise_away(matroska);
 }
 

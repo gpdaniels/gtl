@@ -48,6 +48,6 @@ TEST(quadtree, traits, standard) {
 
 TEST(quadtree, constructor, empty) {
     gtl::quadtree quadtree;
-    do_not_optimise_away(quadtree);
+    testbench::do_not_optimise_away(quadtree);
 }
 
