@@ -84,7 +84,7 @@ namespace gtl {
             cpuid_registers leaf_data;
             #if defined(_MSC_VER)
                 __cpuidex(
-                    reinterpret_cast<int*>(&leaf_data.registers[0]),
+                    reinterpret_cast<int*>(&leaf_data[cpuid_registers::index::eax]),
                     leaf_id,
                     0u
                 );
