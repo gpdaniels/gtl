@@ -34,6 +34,13 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
+#if !defined(SIGUSR1)
+    #define SIGUSR1 10
+#endif
+#if !defined(SIGUSR2)
+    #define SIGUSR2 12
+#endif
+
 TEST(signal, traits, standard) {
     REQUIRE(sizeof(gtl::signal<SIGUSR1>) >= 0);
 
