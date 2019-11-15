@@ -36,7 +36,11 @@ THE SOFTWARE
 
 TEST(cpu, traits, standard) {
 
-    REQUIRE(sizeof(gtl::cpu) == 16, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 16ull);
+    #if defined(_WIN32) && !defined(_WIN64)
+        REQUIRE(sizeof(gtl::cpu) == 16, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 16ull);
+    #else
+        REQUIRE(sizeof(gtl::cpu) == 16, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 16ull);
+    #endif
 
     REQUIRE(std::is_pod<gtl::cpu>::value == false, "Expected std::is_pod to be false.");
 
