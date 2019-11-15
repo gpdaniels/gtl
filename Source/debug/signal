@@ -1,0 +1,116 @@
+/*
+The MIT License
+Copyright (c) 2019 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_SIGNAL_HPP
+#define GTL_SIGNAL_HPP
+
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
+#include <csignal>
+#include <functional>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
+
+namespace gtl {
+    /// @brief  The signal class implements a wrapper around signal handling allowing the use of lambdas with scope.
+    /// @tparam signal_number The signal number, e.g. SIGABRT, SIGFPE, SIGILL, SIGINT, SIGSEGV, SIGTERM, etc...
+    template <int signal_number>
+    class signal {
+    private:
+        /// @brief  The manager class is a singleton as there can only be one handler for each signal in a program.
+        class manager {
+        private:
+            /// @brief  Each signal manager singleton holds a lambda function to call.
+            std::function<void(int)> function = nullptr;
+
+        public:
+            /// @brief  Defaulted destructor.
+            ~manager() = default;
+
+        private:
+            /// @brief  Defaulted constructor, made private as this is a singleton.
+            manager() = default;
+
+        public:
+            /// @brief  Singleton instance accessor function.
+            /// @return Returns the static instance of this class.
+            static manager& get_instance() {
+                static manager instance;
+                return instance;
+            }
+
+            /// @brief  Set the function to call when the signal is raised.
+            /// @param  new_function The signal handler lambda function that raised signals are forwarded to.
+            /// @return Returns the previously attached signal handling lambda function.
+            std::function<void(int)> set_function(const std::function<void(int)> new_function) {
+                std::function<void(int)> old_function = this->function;
+                this->function = new_function;
+                return old_function;
+            }
+
+            /// @brief  Clear the function to call when the signal is raised.
+            /// @return Returns the previously attached signal handling function.
+            std::function<void(int)> clear_function() {
+                std::function<void(int)> old_function = this->function;
+                this->function = nullptr;
+                return old_function;
+            }
+
+        public:
+            /// @brief  Static signal handler function that gets the singleton instance and attempts to call the contained handler.
+            static void handler(int signal_id) {
+                if (manager::get_instance().function) {
+                    manager::get_instance().function(signal_id);
+                }
+            }
+        };
+
+    private:
+        /// @brief  The function specification of a signal handler.
+        using function_type = void (*)(int);
+
+        /// @brief  Variable that holds any previously attached signal handler function to be restored upon destruction.
+        function_type old_signal_function;
+
+        /// @brief  Variable that holds any previously attached single handler lambda function to be restored upon destruction.
+        std::function<void(int)> old_signal_lambda;
+
+    public:
+        /// @brief  The destructor resets the signal handlers to their previous values.
+        ~signal() {
+            std::signal(signal_number, this->old_signal_function);
+            manager::get_instance().set_function(this->old_signal_lambda);
+        }
+
+        /// @brief  The constructor sets the signal handlers to new functions and stores their old values.
+        /// @param  new_function The signal handler lambda function that raised signals are forwarded to.
+        signal(const std::function<void(int)>& new_function) {
+            this->old_signal_lambda = manager::get_instance().set_function(new_function);
+            this->old_signal_function = std::signal(signal_number, &manager::handler);
+        }
+    };
+}
+
+#endif // GTL_SIGNAL_HPP
