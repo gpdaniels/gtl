@@ -50,6 +50,7 @@ The current classes are as described below:
 |               Class | Description                                                                             |
 |--------------------:|:----------------------------------------------------------------------------------------|
 |             **crc** | An implementation of the crc hashing function for 8, 16, 32, and 64 bits.               |
+|             **md5** | An implementation of the md5 hashing function.                                          |
 
 
 ### IO ###
