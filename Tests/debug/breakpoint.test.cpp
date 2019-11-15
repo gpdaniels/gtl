@@ -38,7 +38,7 @@ THE SOFTWARE
 #endif
 
 #if !defined(SIGTRAP)
-    #define	SIGTRAP 5
+    #define SIGTRAP 5
 #endif
 
 TEST(breakpoint, evaluate, breakpoint) {
