@@ -33,9 +33,6 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(assert, traits, standard) {
-}
-
 TEST(assert, evaluate, assert) {
     // Asserting without a message.
     GTL_ASSERT(true);
