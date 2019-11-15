@@ -4,11 +4,13 @@ set -e
 if [ $# -eq 0 ]
   then
     echo "No arguments supplied, require target branch and source branch."
+    exit 1
 fi
 
-if [ $# -eq 0 ]
-  then
+if [ $# -eq 1 ]
+then
     echo "Only one argument supplied, require target branch and source branch."
+    exit 1
 fi
 
 # Ensure we are in the correct directory.

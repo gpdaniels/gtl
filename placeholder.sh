@@ -2,13 +2,15 @@
 set -e
 
 if [ $# -eq 0 ]
-  then
+then
     echo "No arguments supplied, require type of and name of placeholder."
+    exit 1
 fi
 
-if [ $# -eq 0 ]
-  then
+if [ $# -eq 1 ]
+then
     echo "Only one argument supplied, require type of and name of placeholder."
+    exit 1
 fi
 
 # Ensure we are in the correct directory.
