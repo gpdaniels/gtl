@@ -1,0 +1,566 @@
+/*
+The MIT License
+Copyright (c) 2019 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_CRC_HPP
+#define GTL_CRC_HPP
+
+namespace gtl {
+    /// @brief  Different sizes available for the crc class.
+    enum class crc_size {
+        bits_8,
+        bits_16,
+        bits_32,
+        bits_64
+    };
+
+    /// @brief  The crc class computes and CRC hash of a sequence of data.
+    /// @tparam size The size parameter allows for the selection of different hash lengths.
+    template <crc_size size>
+    class crc;
+
+    /// @brief  CRC hash with a size of 8 bits.
+    template <>
+    class crc<crc_size::bits_8> {
+    public:
+        /// @brief  Handy variable for accessing the crc size.
+        constexpr static const crc_size type = crc_size::bits_8;
+
+        /// @brief  Internal size of each processed block of data in bytes.
+        constexpr static const unsigned int block_size = 8 / 8;
+
+        /// @brief  Size of the hash in bytes.
+        constexpr static const unsigned int hash_size = 1;
+
+    public:
+        /// @brief  Simple type to hold the hash data.
+        struct hash_type {
+            unsigned char data[crc::hash_size / sizeof(unsigned char)];
+        };
+
+        /// @brief  A collection of settings used to configure the crc algorithm.
+        struct settings_type {
+            unsigned char polynomial_value = 0x07;
+            unsigned char initial_value = 0x00;
+            bool reflect_input = false;
+            bool reflect_output = false;
+            unsigned char output_xor_value = 0x00;
+            constexpr settings_type() noexcept {}
+        };
+
+    private:
+        /// @brief  The settings used to configure the crc hash at construction.
+        const settings_type settings;
+
+        /// @brief  The current hash.
+        hash_type hash;
+
+    public:
+        /// @brief  Construct and configure the crc hashing class using a set of settings.
+        /// @param  parameters The settings used to configure the crc algorithm.
+        crc(settings_type parameters = {})
+            : settings(parameters) {
+        }
+
+    private:
+        /// @brief  Reflect the bits of a value about the middle, so the MSB becomes the LSB etc.
+        /// @param  value The value to reflect.
+        /// @return The value after all its bits have been reflected.
+        constexpr static unsigned char reflect(unsigned char value) {
+            value = static_cast<unsigned char>(((value & 0x0F) << 4) | ((value & 0xF0) >> 4));
+            value = static_cast<unsigned char>(((value & 0x33) << 2) | ((value & 0xCC) >> 2));
+            value = static_cast<unsigned char>(((value & 0x55) << 1) | ((value & 0xAA) >> 1));
+            return value;
+        }
+
+    public:
+        /// @brief  Clear the state of the CRC hash class back to its initial values.
+        void clear() {
+            this->hash = {{ this->settings.initial_value }};
+        }
+
+        /// @brief  Add data that is processed by the hash function, this can be repeatedly called.
+        /// @param  data A pointer to an array of bytes to process.
+        /// @param  length The length of the data array.
+        void insert(const char* data, unsigned long long int length) {
+            while (length--) {
+                unsigned char input = static_cast<unsigned char>(*data++);
+                if (this->settings.reflect_input) {
+                    input = reflect(input);
+                }
+
+                this->hash.data[0] ^= input;
+                for (unsigned int i = 0; i < 8; ++i) {
+                    if ((this->hash.data[0] & 0x80) != 0) {
+                        this->hash.data[0] = static_cast<unsigned char>((this->hash.data[0] << 1) ^ this->settings.polynomial_value);
+                    }
+                    else {
+                        this->hash.data[0] <<= 1;
+                    }
+                }
+            }
+        }
+
+        /// @brief  Finish consuming any cached data and return the hash before clearing the class.
+        /// @return The hash of all the inserted data.
+        hash_type finalise() {
+            // Optionally reflect the output.
+            if (this->settings.reflect_output) {
+                this->hash.data[0] = reflect(this->hash.data[0]);
+            }
+
+            // XOR the output.
+            this->hash.data[0] = this->hash.data[0] ^ this->settings.output_xor_value;
+
+            // Get a copy of the hash so the class can be reset.
+            hash_type temp_hash = this->hash;
+
+            // Reset the class to a valid state.
+            this->clear();
+
+            // Return the hash
+            return temp_hash;
+        }
+
+    public:
+        /// @brief  Simple type to hold the string representation of the hash.
+        struct hash_string_type {
+            char hash[(crc::hash_size * 2) + 1] = {};
+        };
+
+        /// @brief  Convert a hash into its string representation.
+        /// @param  hash The hash to convert.
+        /// @return The string representation of the hash, with null termination.
+        constexpr static hash_string_type hash_to_string(const hash_type& hash) {
+            hash_string_type output;
+            constexpr const char* hex_characters = "0123456789ABCDEF";
+            for (unsigned int index = 0u; index < (crc::hash_size * 2); ++index) {
+                output.hash[index] = hex_characters[(hash.data[index / (sizeof(unsigned char) * 2)] >> ((((sizeof(unsigned char) * 2) - 1) - (index % (sizeof(unsigned char) * 2))) * 4)) & 0xF];
+            }
+            output.hash[crc::hash_size * 2] = 0;
+            return output;
+        }
+    };
+
+    /// @brief  CRC hash with a size of 16 bits.
+    template <>
+    class crc<crc_size::bits_16> {
+    public:
+        /// @brief  Handy variable for accessing the crc size.
+        constexpr static const crc_size type = crc_size::bits_16;
+
+        /// @brief  Internal size of each processed block of data in bytes.
+        constexpr static const unsigned int block_size = 8 / 8;
+
+        /// @brief  Size of the hash in bytes.
+        constexpr static const unsigned int hash_size = 2;
+
+    public:
+        /// @brief  Simple type to hold the hash data.
+        struct hash_type {
+            unsigned short data[crc::hash_size / sizeof(unsigned short)];
+        };
+
+        /// @brief  A collection of settings used to configure the crc algorithm.
+        struct settings_type {
+            unsigned short polynomial_value = 0x8005;
+            unsigned short initial_value = 0x0000;
+            bool reflect_input = false;
+            bool reflect_output = false;
+            unsigned short output_xor_value = 0x0000;
+            constexpr settings_type() noexcept {}
+        };
+
+    private:
+        /// @brief  The settings used to configure the crc hash at construction.
+        const settings_type settings;
+
+        /// @brief  The current hash.
+        hash_type hash;
+
+    public:
+        /// @brief  Construct and configure the crc hashing class using a set of settings.
+        /// @param  parameters The settings used to configure the crc algorithm.
+        crc(settings_type parameters = {})
+            : settings(parameters) {
+        }
+
+    private:
+        /// @brief  Reflect the bits of a value about the middle, so the MSB becomes the LSB etc.
+        /// @param  value The value to reflect.
+        /// @return The value after all its bits have been reflected.
+        constexpr static unsigned char reflect(unsigned char value) {
+            value = static_cast<unsigned char>(((value & 0x0F) << 4) | ((value & 0xF0) >> 4));
+            value = static_cast<unsigned char>(((value & 0x33) << 2) | ((value & 0xCC) >> 2));
+            value = static_cast<unsigned char>(((value & 0x55) << 1) | ((value & 0xAA) >> 1));
+            return value;
+        }
+
+        /// @brief  Reflect the bits of a value about the middle, so the MSB becomes the LSB etc.
+        /// @param  value The value to reflect.
+        /// @return The value after all its bits have been reflected.
+        constexpr static unsigned short reflect(unsigned short value) {
+            value = static_cast<unsigned short>((value & 0x00FF) << 8) | ((value & 0xFF00) >> 8);
+            value = static_cast<unsigned short>((value & 0x0F0F) << 4) | ((value & 0xF0F0) >> 4);
+            value = static_cast<unsigned short>((value & 0x3333) << 2) | ((value & 0xCCCC) >> 2);
+            value = static_cast<unsigned short>((value & 0x5555) << 1) | ((value & 0xAAAA) >> 1);
+            return value;
+        }
+
+    public:
+        /// @brief  Clear the state of the CRC hash class back to its initial values.
+        void clear() {
+            this->hash = {{ this->settings.initial_value }};
+        }
+
+        /// @brief  Add data that is processed by the hash function, this can be repeatedly called.
+        /// @param  data A pointer to an array of bytes to process.
+        /// @param  length The length of the data array.
+        void insert(const char* data, unsigned long long int length) {
+            while (length--) {
+                unsigned char input = static_cast<unsigned char>(*data++);
+                if (this->settings.reflect_input) {
+                    input = reflect(input);
+                }
+
+                this->hash.data[0] ^= static_cast<unsigned short>(input) << 8;
+                for (unsigned int i = 0; i < 8; ++i) {
+                    if ((this->hash.data[0] & 0x8000) != 0) {
+                        this->hash.data[0] = static_cast<unsigned short>((this->hash.data[0] << 1) ^ this->settings.polynomial_value);
+                    }
+                    else {
+                        this->hash.data[0] <<= 1;
+                    }
+                }
+            }
+        }
+
+        /// @brief  Finish consuming any cached data and return the hash before clearing the class.
+        /// @return The hash of all the inserted data.
+        hash_type finalise() {
+            // Optionally reflect the output.
+            if (this->settings.reflect_output) {
+                this->hash.data[0] = reflect(this->hash.data[0]);
+            }
+
+            // XOR the output.
+            this->hash.data[0] = this->hash.data[0] ^ this->settings.output_xor_value;
+
+            // Get a copy of the hash so the class can be reset.
+            hash_type temp_hash = this->hash;
+
+            // Reset the class to a valid state.
+            this->clear();
+
+            // Return the hash
+            return temp_hash;
+        }
+
+    public:
+        /// @brief  Simple type to hold the string representation of the hash.
+        struct hash_string_type {
+            char hash[(crc::hash_size * 2) + 1] = {};
+        };
+
+        /// @brief  Convert a hash into its string representation.
+        /// @param  hash The hash to convert.
+        /// @return The string representation of the hash, with null termination.
+        constexpr static hash_string_type hash_to_string(const hash_type& hash) {
+            hash_string_type output;
+            constexpr const char* hex_characters = "0123456789ABCDEF";
+            for (unsigned int index = 0u; index < (crc::hash_size * 2); ++index) {
+                output.hash[index] = hex_characters[(hash.data[index / (sizeof(unsigned short) * 2)] >> ((((sizeof(unsigned short) * 2) - 1) - (index % (sizeof(unsigned short) * 2))) * 4)) & 0xF];
+            }
+            output.hash[crc::hash_size * 2] = 0;
+            return output;
+        }
+    };
+
+    /// @brief  CRC hash with a size of 32 bits.
+    template <>
+    class crc<crc_size::bits_32> {
+    public:
+        /// @brief  Handy variable for accessing the crc size.
+        constexpr static const crc_size type = crc_size::bits_8;
+
+        /// @brief  Internal size of each processed block of data in bytes.
+        constexpr static const unsigned int block_size = 8 / 8;
+
+        /// @brief  Size of the hash in bytes.
+        constexpr static const unsigned int hash_size = 4;
+
+    public:
+        /// @brief  Simple type to hold the hash data.
+        struct hash_type {
+            unsigned int data[crc::hash_size / sizeof(unsigned int)];
+        };
+
+        /// @brief  A collection of settings used to configure the crc algorithm.
+        struct settings_type {
+            unsigned int polynomial_value = 0x04C11DB7;
+            unsigned int initial_value = 0xFFFFFFFF;
+            bool reflect_input = true;
+            bool reflect_output = true;
+            unsigned int output_xor_value = 0xFFFFFFFF;
+            constexpr settings_type() noexcept {}
+        };
+
+    private:
+        /// @brief  The settings used to configure the crc hash at construction.
+        const settings_type settings;
+
+        /// @brief  The current hash.
+        hash_type hash;
+
+    public:
+        /// @brief  Construct and configure the crc hashing class using a set of settings.
+        /// @param  parameters The settings used to configure the crc algorithm.
+        crc(settings_type parameters = {})
+            : settings(parameters) {
+        }
+
+    private:
+        /// @brief  Reflect the bits of a value about the middle, so the MSB becomes the LSB etc.
+        /// @param  value The value to reflect.
+        /// @return The value after all its bits have been reflected.
+        constexpr static unsigned char reflect(unsigned char value) {
+            value = static_cast<unsigned char>(((value & 0x0F) << 4) | ((value & 0xF0) >> 4));
+            value = static_cast<unsigned char>(((value & 0x33) << 2) | ((value & 0xCC) >> 2));
+            value = static_cast<unsigned char>(((value & 0x55) << 1) | ((value & 0xAA) >> 1));
+            return value;
+        }
+
+        /// @brief  Reflect the bits of a value about the middle, so the MSB becomes the LSB etc.
+        /// @param  value The value to reflect.
+        /// @return The value after all its bits have been reflected.
+        constexpr static unsigned int reflect(unsigned int value) {
+            value = ((value & 0x0000FFFF) << 16) | ((value & 0xFFFF0000) >> 16);
+            value = ((value & 0x00FF00FF) << 8) | ((value & 0xFF00FF00) >> 8);
+            value = ((value & 0x0F0F0F0F) << 4) | ((value & 0xF0F0F0F0) >> 4);
+            value = ((value & 0x33333333) << 2) | ((value & 0xCCCCCCCC) >> 2);
+            value = ((value & 0x55555555) << 1) | ((value & 0xAAAAAAAA) >> 1);
+            return value;
+        }
+
+    public:
+        /// @brief  Clear the state of the CRC hash class back to its initial values.
+        void clear() {
+            this->hash = {{ this->settings.initial_value }};
+        }
+
+        /// @brief  Add data that is processed by the hash function, this can be repeatedly called.
+        /// @param  data A pointer to an array of bytes to process.
+        /// @param  length The length of the data array.
+        void insert(const char* data, unsigned long long int length) {
+            while (length--) {
+                unsigned char input = static_cast<unsigned char>(*data++);
+                if (this->settings.reflect_input) {
+                    input = reflect(input);
+                }
+
+                this->hash.data[0] ^= static_cast<unsigned int>(input) << 24;
+                for (unsigned int i = 0; i < 8; ++i) {
+                    if ((this->hash.data[0] & 0x80000000) != 0) {
+                        this->hash.data[0] = static_cast<unsigned int>((this->hash.data[0] << 1) ^ this->settings.polynomial_value);
+                    }
+                    else {
+                        this->hash.data[0] <<= 1;
+                    }
+                }
+            }
+        }
+
+        /// @brief  Finish consuming any cached data and return the hash before clearing the class.
+        /// @return The hash of all the inserted data.
+        hash_type finalise() {
+            // Optionally reflect the output.
+            if (this->settings.reflect_output) {
+                this->hash.data[0] = reflect(this->hash.data[0]);
+            }
+
+            // XOR the output.
+            this->hash.data[0] = this->hash.data[0] ^ this->settings.output_xor_value;
+
+            // Get a copy of the hash so the class can be reset.
+            hash_type temp_hash = this->hash;
+
+            // Reset the class to a valid state.
+            this->clear();
+
+            // Return the hash
+            return temp_hash;
+        }
+
+    public:
+        /// @brief  Simple type to hold the string representation of the hash.
+        struct hash_string_type {
+            char hash[(crc::hash_size * 2) + 1] = {};
+        };
+
+        /// @brief  Convert a hash into its string representation.
+        /// @param  hash The hash to convert.
+        /// @return The string representation of the hash, with null termination.
+        constexpr static hash_string_type hash_to_string(const hash_type& hash) {
+            hash_string_type output;
+            constexpr const char* hex_characters = "0123456789ABCDEF";
+            for (unsigned int index = 0u; index < (crc::hash_size * 2); ++index) {
+                output.hash[index] = hex_characters[(hash.data[index / (sizeof(unsigned int) * 2)] >> ((((sizeof(unsigned int) * 2) - 1) - (index % (sizeof(unsigned int) * 2))) * 4)) & 0xF];
+            }
+            output.hash[crc::hash_size * 2] = 0;
+            return output;
+        }
+    };
+
+    /// @brief  CRC hash with a size of 64 bits.
+    template <>
+    class crc<crc_size::bits_64> {
+    public:
+        /// @brief  Handy variable for accessing the crc size.
+        constexpr static const crc_size type = crc_size::bits_64;
+
+        /// @brief  Internal size of each processed block of data in bytes.
+        constexpr static const unsigned int block_size = 8 / 8;
+
+        /// @brief  Size of the hash in bytes.
+        constexpr static const unsigned int hash_size = 8;
+
+    public:
+        /// @brief  Simple type to hold the hash data.
+        struct hash_type {
+            unsigned long long int data[crc::hash_size / sizeof(unsigned long long int)];
+        };
+
+        /// @brief  A collection of settings used to configure the crc algorithm.
+        struct settings_type {
+            unsigned long long int polynomial_value = 0x42F0E1EBA9EA3693;
+            unsigned long long int initial_value = 0x0000000000000000;
+            bool reflect_input = false;
+            bool reflect_output = false;
+            unsigned long long int output_xor_value = 0x0000000000000000;
+            constexpr settings_type() noexcept {}
+        };
+
+    private:
+        /// @brief  The settings used to configure the crc hash at construction.
+        const settings_type settings;
+
+        /// @brief  The current hash.
+        hash_type hash;
+
+    public:
+        /// @brief  Construct and configure the crc hashing class using a set of settings.
+        /// @param  parameters The settings used to configure the crc algorithm.
+        crc(settings_type parameters = {})
+            : settings(parameters) {
+        }
+
+    private:
+        /// @brief  Reflect the bits of a value about the middle, so the MSB becomes the LSB etc.
+        /// @param  value The value to reflect.
+        /// @return The value after all its bits have been reflected.
+        constexpr static unsigned char reflect(unsigned char value) {
+            value = static_cast<unsigned char>(((value & 0x0F) << 4) | ((value & 0xF0) >> 4));
+            value = static_cast<unsigned char>(((value & 0x33) << 2) | ((value & 0xCC) >> 2));
+            value = static_cast<unsigned char>(((value & 0x55) << 1) | ((value & 0xAA) >> 1));
+            return value;
+        }
+
+        /// @brief  Reflect the bits of a value about the middle, so the MSB becomes the LSB etc.
+        /// @param  value The value to reflect.
+        /// @return The value after all its bits have been reflected.
+        constexpr static unsigned long long int reflect(unsigned long long int value) {
+            value = static_cast<unsigned long long int>((value & 0x00FF) << 8) | ((value & 0xFF00) >> 8);
+            value = static_cast<unsigned long long int>((value & 0x0F0F) << 4) | ((value & 0xF0F0) >> 4);
+            value = static_cast<unsigned long long int>((value & 0x3333) << 2) | ((value & 0xCCCC) >> 2);
+            value = static_cast<unsigned long long int>((value & 0x5555) << 1) | ((value & 0xAAAA) >> 1);
+            return value;
+        }
+
+    public:
+        /// @brief  Clear the state of the CRC hash class back to its initial values.
+        void clear() {
+            this->hash = {{ this->settings.initial_value }};
+        }
+
+        /// @brief  Add data that is processed by the hash function, this can be repeatedly called.
+        /// @param  data A pointer to an array of bytes to process.
+        /// @param  length The length of the data array.
+        void insert(const char* data, unsigned long long int length) {
+            while (length--) {
+                unsigned char input = static_cast<unsigned char>(*data++);
+                if (this->settings.reflect_input) {
+                    input = reflect(input);
+                }
+
+                this->hash.data[0] ^= static_cast<unsigned long long int>(input) << 56;
+                for (unsigned int i = 0; i < 8; ++i) {
+                    if ((this->hash.data[0] & 0x8000000000000000) != 0) {
+                        this->hash.data[0] = static_cast<unsigned long long int>((this->hash.data[0] << 1) ^ this->settings.polynomial_value);
+                    }
+                    else {
+                        this->hash.data[0] <<= 1;
+                    }
+                }
+            }
+        }
+
+        /// @brief  Finish consuming any cached data and return the hash before clearing the class.
+        /// @return The hash of all the inserted data.
+        hash_type finalise() {
+            // Optionally reflect the output.
+            if (this->settings.reflect_output) {
+                this->hash.data[0] = reflect(this->hash.data[0]);
+            }
+
+            // XOR the output.
+            this->hash.data[0] = this->hash.data[0] ^ this->settings.output_xor_value;
+
+            // Get a copy of the hash so the class can be reset.
+            hash_type temp_hash = this->hash;
+
+            // Reset the class to a valid state.
+            this->clear();
+
+            // Return the hash
+            return temp_hash;
+        }
+
+    public:
+        /// @brief  Simple type to hold the string representation of the hash.
+        struct hash_string_type {
+            char hash[(crc::hash_size * 2) + 1] = {};
+        };
+
+        /// @brief  Convert a hash into its string representation.
+        /// @param  hash The hash to convert.
+        /// @return The string representation of the hash, with null termination.
+        constexpr static hash_string_type hash_to_string(const hash_type& hash) {
+            hash_string_type output;
+            constexpr const char* hex_characters = "0123456789ABCDEF";
+            for (unsigned int index = 0u; index < (crc::hash_size * 2); ++index) {
+                output.hash[index] = hex_characters[(hash.data[index / (sizeof(unsigned long long int) * 2)] >> ((((sizeof(unsigned long long int) * 2) - 1) - (index % (sizeof(unsigned long long int) * 2))) * 4)) & 0xF];
+            }
+            output.hash[crc::hash_size * 2] = 0;
+            return output;
+        }
+    };
+}
+
+#endif // GTL_CRC_HPP
