@@ -37,6 +37,10 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
+#if !defined(SIGTRAP)
+    #define	SIGTRAP 5
+#endif
+
 TEST(breakpoint, evaluate, breakpoint) {
     bool caught = false;
     gtl::signal<SIGTRAP> handler([&caught](int signal_number){

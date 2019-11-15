@@ -35,19 +35,23 @@ THE SOFTWARE
 #endif
 
 TEST(signal, traits, standard) {
-    REQUIRE(sizeof(gtl::signal<SIGTRAP>) >= 0);
+    REQUIRE(sizeof(gtl::signal<SIGUSR1>) >= 0);
 
-    REQUIRE((std::is_pod<gtl::signal<SIGTRAP>>::value == false));
+    REQUIRE((std::is_pod<gtl::signal<SIGUSR1>>::value == false));
 
-    REQUIRE((std::is_trivial<gtl::signal<SIGTRAP>>::value == false));
+    REQUIRE((std::is_trivial<gtl::signal<SIGUSR1>>::value == false));
 
-    REQUIRE((std::is_trivially_copyable<gtl::signal<SIGTRAP>>::value == false));
+    REQUIRE((std::is_trivially_copyable<gtl::signal<SIGUSR1>>::value == false));
 
-    REQUIRE((std::is_standard_layout<gtl::signal<SIGTRAP>>::value == false));
+#if defined(__clang__)
+    REQUIRE((std::is_standard_layout<gtl::signal<SIGUSR1>>::value == true));
+#else
+    REQUIRE((std::is_standard_layout<gtl::signal<SIGUSR1>>::value == false));
+#endif
 }
 
 TEST(signal, constructor, empty) {
-    gtl::signal<SIGTRAP> signal([](int){});
+    gtl::signal<SIGUSR1> signal([](int){});
     testbench::do_not_optimise_away(signal);
 }
 
