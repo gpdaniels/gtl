@@ -25,8 +25,6 @@ THE SOFTWARE
 
 #include <debug/breakpoint>
 
-#include <debug/signal>
-
 #if defined(_MSC_VER)
 #   pragma warning(push, 0)
 #endif
@@ -37,13 +35,67 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
+#if defined(_WIN32)
+    #define WIN32_LEAN_AND_MEAN
+    #define VC_EXTRALEAN
+    #define STRICT
+
+    #include <sdkddkver.h>
+
+    #if defined(_AFXDLL)
+        #include <afxwin.h>
+    #else
+        #include <Windows.h>
+    #endif
+
+    // AddVectoredExceptionHandler constants:
+    // CALL_FIRST means call this exception handler first.
+    // CALL_LAST means call this exception handler last.
+    #define CALL_FIRST 1
+    #define CALL_LAST 0
+#else
+    #include <csignal>
+
+    #if !defined(SIGTRAP)
+        #define SIGTRAP 5
+    #endif
+#endif
+
 TEST(breakpoint, evaluate, breakpoint) {
-    bool caught = false;
-    gtl::signal<SIGTRAP> handler([&caught](int signal_number){
-        if (signal_number == SIGTRAP) {
-            caught = true;
-        }
-    });
+    static bool caught = false;
+
+    #if defined(_WIN32)
+        constexpr static auto handler = [](EXCEPTION_POINTERS* exception) -> LONG {
+            if (exception->ExceptionRecord->ExceptionCode == EXCEPTION_BREAKPOINT) {
+                PRINT("Breakpoint at 0x%x skipped.\n", exception->ExceptionRecord->ExceptionAddress);
+
+                PCONTEXT context = exception->ContextRecord;
+
+                // The breakpoint instruction is 0xCC (int 3), just one byte in size.
+                #ifdef _AMD64_
+                     context->Rip++;
+                #else
+                     context->Eip++;
+                #endif
+
+                caught = true;
+
+                return EXCEPTION_CONTINUE_EXECUTION;
+            }
+            return EXCEPTION_CONTINUE_SEARCH;
+        };
+
+        REQUIRE(AddVectoredExceptionHandler(CALL_FIRST, handler) != nullptr);
+    #else
+        constexpr static auto handler =  [](int signal_number) {
+            if (signal_number == SIGTRAP) {
+                PRINT("Breakpoint skipped.\n");
+                caught = true;
+            }
+        };
+        REQUIRE(std::signal(SIGTRAP, handler) != SIG_ERR);
+    #endif
+
     GTL_BREAKPOINT();
     REQUIRE(caught);
 }

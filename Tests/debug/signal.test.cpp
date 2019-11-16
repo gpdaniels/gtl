@@ -34,101 +34,132 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
+#if !defined(SIGUSR1)
+    #define SIGUSR1 10
+#endif
+#if !defined(SIGUSR2)
+    #define SIGUSR2 12
+#endif
+
 TEST(signal, traits, standard) {
-    REQUIRE(sizeof(gtl::signal<SIGTRAP>) >= 0);
+    REQUIRE(sizeof(gtl::signal<SIGUSR1>) >= 0);
 
-    REQUIRE((std::is_pod<gtl::signal<SIGTRAP>>::value == false));
+    REQUIRE((std::is_pod<gtl::signal<SIGUSR1>>::value == false));
 
-    REQUIRE((std::is_trivial<gtl::signal<SIGTRAP>>::value == false));
+    REQUIRE((std::is_trivial<gtl::signal<SIGUSR1>>::value == false));
 
-    REQUIRE((std::is_trivially_copyable<gtl::signal<SIGTRAP>>::value == false));
+    REQUIRE((std::is_trivially_copyable<gtl::signal<SIGUSR1>>::value == false));
 
-    REQUIRE((std::is_standard_layout<gtl::signal<SIGTRAP>>::value == false));
+    #if defined(__clang__) || defined(_WIN32)
+        REQUIRE((std::is_standard_layout<gtl::signal<SIGUSR1>>::value == true));
+    #else
+        REQUIRE((std::is_standard_layout<gtl::signal<SIGUSR1>>::value == false));
+    #endif
 }
 
 TEST(signal, constructor, empty) {
-    gtl::signal<SIGTRAP> signal([](int){});
+    gtl::signal<SIGUSR1> signal([](int){});
     testbench::do_not_optimise_away(signal);
 }
 
 TEST(signal, evaluate, raise) {
-    bool caught_usr1 = false;
-    bool caught_usr2 = false;
+    bool caught = false;
 
-    gtl::signal<SIGUSR1> handler1([&caught_usr1, &caught_usr2](int signal_number){
-        if (signal_number == SIGUSR1) {
-            caught_usr1 = true;
-        }
-        if (signal_number == SIGUSR2) {
-            caught_usr2 = true;
+    gtl::signal<SIGTERM> handler1([&caught](int signal_number){
+        if (signal_number == SIGTERM) {
+            caught = true;
         }
     });
 
-    REQUIRE(!caught_usr1);
-    REQUIRE(!caught_usr2);
+    REQUIRE(!caught);
 
-    gtl::signal<SIGUSR2> handler2([&caught_usr1, &caught_usr2](int signal_number){
-        if (signal_number == SIGUSR1) {
-            caught_usr1 = true;
-        }
-        if (signal_number == SIGUSR2) {
-            caught_usr2 = true;
-        }
-    });
+    std::raise(SIGTERM);
 
-    REQUIRE(!caught_usr1);
-    REQUIRE(!caught_usr2);
-
-    std::raise(SIGUSR1);
-
-    REQUIRE(caught_usr1);
-    REQUIRE(!caught_usr2);
-
-    std::raise(SIGUSR2);
-
-    REQUIRE(caught_usr1);
-    REQUIRE(caught_usr2);
+    REQUIRE(caught);
 }
 
-TEST(signal, evaluate, chain) {
-    bool caught_handler1 = false;
-    bool caught_handler2 = false;
+TEST(signal, evaluate, raise_two) {
+    #if !defined(_WIN32)
+        bool caught_usr1 = false;
+        bool caught_usr2 = false;
 
-    gtl::signal<SIGUSR1> handler1([&caught_handler1](int signal_number){
-        if (signal_number == SIGUSR1) {
-            caught_handler1 = true;
-        }
-    });
-
-    REQUIRE(!caught_handler1);
-    REQUIRE(!caught_handler2);
-
-    std::raise(SIGUSR1);
-
-    REQUIRE(caught_handler1);
-    REQUIRE(!caught_handler2);
-
-    {
-        gtl::signal<SIGUSR1> handler2([&caught_handler2](int signal_number){
+        gtl::signal<SIGUSR1> handler1([&caught_usr1, &caught_usr2](int signal_number){
             if (signal_number == SIGUSR1) {
-                caught_handler2 = true;
+                caught_usr1 = true;
+            }
+            if (signal_number == SIGUSR2) {
+                caught_usr2 = true;
             }
         });
 
-        REQUIRE(caught_handler1);
+        REQUIRE(!caught_usr1);
+        REQUIRE(!caught_usr2);
+
+        gtl::signal<SIGUSR2> handler2([&caught_usr1, &caught_usr2](int signal_number){
+            if (signal_number == SIGUSR1) {
+                caught_usr1 = true;
+            }
+            if (signal_number == SIGUSR2) {
+                caught_usr2 = true;
+            }
+        });
+
+        REQUIRE(!caught_usr1);
+        REQUIRE(!caught_usr2);
+
+        std::raise(SIGUSR1);
+
+        REQUIRE(caught_usr1);
+        REQUIRE(!caught_usr2);
+
+        std::raise(SIGUSR2);
+
+        REQUIRE(caught_usr1);
+        REQUIRE(caught_usr2);
+    #endif
+}
+
+TEST(signal, evaluate, chain) {
+    #if !defined(_WIN32)
+        bool caught_handler1 = false;
+        bool caught_handler2 = false;
+
+        gtl::signal<SIGUSR1> handler1([&caught_handler1](int signal_number){
+            if (signal_number == SIGUSR1) {
+                caught_handler1 = true;
+            }
+        });
+
+        REQUIRE(!caught_handler1);
         REQUIRE(!caught_handler2);
 
         std::raise(SIGUSR1);
 
         REQUIRE(caught_handler1);
-        REQUIRE(caught_handler2);
-    }
+        REQUIRE(!caught_handler2);
 
-    caught_handler1 = false;
-    caught_handler2 = false;
+        {
+            gtl::signal<SIGUSR1> handler2([&caught_handler2](int signal_number){
+                if (signal_number == SIGUSR1) {
+                    caught_handler2 = true;
+                }
+            });
 
-    std::raise(SIGUSR1);
+            REQUIRE(caught_handler1);
+            REQUIRE(!caught_handler2);
 
-    REQUIRE(caught_handler1);
-    REQUIRE(!caught_handler2);
+            std::raise(SIGUSR1);
+
+            REQUIRE(caught_handler1);
+            REQUIRE(caught_handler2);
+        }
+
+        caught_handler1 = false;
+        caught_handler2 = false;
+
+        std::raise(SIGUSR1);
+
+        REQUIRE(caught_handler1);
+        REQUIRE(!caught_handler2);
+    #endif
 }
