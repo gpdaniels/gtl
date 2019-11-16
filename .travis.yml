@@ -18,49 +18,65 @@ matrix:
     # Clang 3.5
     #- os: linux
     #  dist: trusty
-    #  env: COMPILER=clang++-3.5
+    #  env:
+    #  - OS=trusty
+    #  - COMPILER=clang++-3.5
     #  addons: { apt: { packages: ["clang-3.5"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.5"] } }
     
     # Clang 3.6
     #- os: linux
     #  dist: trusty
-    #  env: COMPILER=clang++-3.6
+    #  env:
+    #  - OS=trusty
+    #  - COMPILER=clang++-3.6
     #  addons: { apt: { packages: ["clang-3.6"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.6"] } }
     
     # Clang 3.7
     #- os: linux
     #  dist: trusty
-    #  env: COMPILER=clang++-3.7
+    #  env:
+    #  - OS=trusty
+    #  - COMPILER=clang++-3.7
     #  addons: { apt: { packages: ["clang-3.7"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.7"] } }
     
     # Clang 3.8
     #- os: linux
     #  dist: trusty
-    #  env: COMPILER=clang++-3.8
+    #  env:
+    #  - OS=trusty
+    #  - COMPILER=clang++-3.8
     #  addons: { apt: { packages: ["clang-3.8"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.8"] } }
     
     # Clang 3.9
     #- os: linux
     #  dist: trusty
-    #  env: COMPILER=clang++-3.9
+    #  env:
+    #  - OS=trusty
+    #  - COMPILER=clang++-3.9
     #  addons: { apt: { packages: ["clang-3.9"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-3.9"] } }
     
     # Clang 4.0
     #- os: linux
     #  dist: trusty
-    #  env: COMPILER=clang++-4.0
+    #  env:
+    #  - OS=trusty
+    #  - COMPILER=clang++-4.0
     #  addons: { apt: { packages: ["clang-4.0"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-4.0"] } }
     
     # Clang 5.0
     #- os: linux
     #  dist: trusty
-    #  env: COMPILER=clang++-5.0
+    #  env:
+    #  - OS=trusty
+    #  - COMPILER=clang++-5.0
     #  addons: { apt: { packages: ["clang-5.0"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-5.0"] } }
     
     # Clang 6.0
     - os: linux
       dist: trusty
-      env: COMPILER=clang++-6.0
+      env:
+      - OS=trusty
+      - COMPILER=clang++-6.0
       addons: { apt: { packages: ["clang-6.0"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-6.0"] } }
     
     ############################################################################
@@ -70,13 +86,17 @@ matrix:
     # GCC 6
     #- os: linux
     #  dist: trusty
-    #  env: COMPILER=g++-6
+    #  env:
+    #  - OS=trusty
+    #  - COMPILER=g++-6
     #  addons: { apt: { packages: ["g++-6"], sources: ["ubuntu-toolchain-r-test"] } }
     
     # GCC 7
     - os: linux
       dist: trusty
-      env: COMPILER=g++-7
+      env:
+      - OS=trusty
+      - COMPILER=g++-7
       addons: { apt: { packages: ["g++-7"], sources: ["ubuntu-toolchain-r-test"] } }
     
     ############################################################################
@@ -86,8 +106,10 @@ matrix:
     # Clang 6.0
     #- os: linux
     #  dist: xenial
-    #  env: COMPILER=clang++-6.0
-    #  addons: { apt: { packages: ["clang-6.0"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-6.0"] } }
+    #  env:
+    #  - OS=xenial
+    #  - COMPILER=clang++-6.0
+    #  addons: { apt: { packages: ["clang-6.0"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-xenial-6.0"] } }
     
     ############################################################################
     # Linux xenial with gcc
@@ -96,13 +118,49 @@ matrix:
     # GCC 6
     #- os: linux
     #  dist: xenial
-    #  env: COMPILER=g++-6
+    #  env:
+    #  - OS=xenial
+    #  - COMPILER=g++-6
     #  addons: { apt: { packages: ["g++-6"], sources: ["ubuntu-toolchain-r-test"] } }
     
     # GCC 7
     - os: linux
       dist: xenial
-      env: COMPILER=g++-7
+      env:
+      - OS=xenial
+      - COMPILER=g++-7
+      addons: { apt: { packages: ["g++-7"], sources: ["ubuntu-toolchain-r-test"] } }
+    
+    ############################################################################
+    # Linux bionic with clang
+    ############################################################################
+    
+    # Clang 6.0
+    #- os: linux
+    #  dist: bionic
+    #  env:
+    #  - OS=bionic
+    #  - COMPILER=clang++-6.0
+    #  addons: { apt: { packages: ["clang-6.0"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-bionic-6.0"] } }
+    
+    ############################################################################
+    # Linux bionic with gcc
+    ############################################################################
+    
+    # GCC 6
+    #- os: linux
+    #  dist: bionic
+    #  env:
+    #  - OS=bionic
+    #  - COMPILER=g++-6
+    #  addons: { apt: { packages: ["g++-6"], sources: ["ubuntu-toolchain-r-test"] } }
+    
+    # GCC 7
+    - os: linux
+      dist: bionic
+      env:
+      - OS=bionic
+      - COMPILER=g++-7
       addons: { apt: { packages: ["g++-7"], sources: ["ubuntu-toolchain-r-test"] } }
     
     ############################################################################
@@ -112,36 +170,123 @@ matrix:
     # Xcode 6.4
     #- os: osx
     #  osx_image: xcode6.4
+    #  env:
+    #  - OS=macOS-10.10
+    #  - COMPILER=clang++
     
     # Xcode 7.3
     #- os: osx
     #  osx_image: xcode7.3
+    #  env:
+    #  - OS=macOS-10.11
+    #  - COMPILER=clang++
+    
+    # Xcode 8.0
+    #- os: osx
+    #  osx_image: xcode8
+    #  env:
+    #  - OS=macOS-10.11
+    #  - COMPILER=clang++
     
     # Xcode 8.3
     #- os: osx
     #  osx_image: xcode8.3
+    #  env:
+    #  - OS=macOS-10.12
+    #  - COMPILER=clang++
+    
+    # Xcode 9.0
+    #- os: osx
+    #  osx_image: xcode9
+    #  env:
+    #  - OS=macOS-10.12
+    #  - COMPILER=clang++
     
     # Xcode 9.1
     #- os: osx
     #  osx_image: xcode9.1
+    #  env:
+    #  - OS=macOS-10.12
+    #  - COMPILER=clang++
     
     # Xcode 9.2
     #- os: osx
     #  osx_image: xcode9.2
+    #  env:
+    #  - OS=macOS-10.12
+    #  - COMPILER=clang++
     
     # Xcode 9.3
     - os: osx
       osx_image: xcode9.3
+      env:
+      - OS=macOS-10.13
+      - COMPILER=clang++
     
     # Xcode 9.4
-    - os: osx
-      osx_image: xcode9.4
+    #- os: osx
+    #  osx_image: xcode9.4
+    #  env:
+    #  - OS=macOS-10.13
+    #  - COMPILER=clang++
     
+    # Xcode 10.0
+    #- os: osx
+    #  osx_image: xcode10
+    #  env:
+    #  - OS=macOS-10.13
+    #  - COMPILER=clang++
+    
+    # Xcode 10.1
+    #- os: osx
+    #  osx_image: xcode10.1
+    #  env:
+    #  - OS=macOS-10.13
+    #  - COMPILER=clang++
+    
+    # Xcode 10.2.1
+    #- os: osx
+    #  osx_image: xcode10.2
+    #  env:
+    #  - OS=macOS-10.14
+    #  - COMPILER=clang++
+    
+    # Xcode 10.3
+    #- os: osx
+    #  osx_image: xcode10.3
+    #  env:
+    #  - OS=macOS-10.14.4
+    #  - COMPILER=clang++
+    
+    # Xcode 11.0
+    #- os: osx
+    #  osx_image: xcode11
+    #  env:
+    #  - OS=macOS-10.14
+    #  - COMPILER=clang++
+    
+    # Xcode 11.1
+    #- os: osx
+    #  osx_image: xcode11.1
+    #  env:
+    #  - OS=macOS-10.14
+    #  - COMPILER=clang++
+    
+    # Xcode 11.2
+    - os: osx
+      osx_image: xcode11.2
+      env:
+      - OS=macOS-10.14
+      - COMPILER=clang++
+      
     ############################################################################
     # Windows server with Visual Studio 2017
     ############################################################################
     
     - os: windows
+      env:
+      - OS=win-server-1803
+      - COMPILER=visual-studio-2017
     
 before_install:
   - echo "Running before_install..." 
@@ -159,9 +304,16 @@ install:
   ############################################################################
   # Override CXX set by Travis.
   ############################################################################
-  - if [[ "${COMPILER}" != "" ]]; then export CXX=${COMPILER}; fi
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
+      if [[ "${COMPILER}" != "" ]]; then export CXX=${COMPILER}; fi
+    elif [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
+      if [[ "${COMPILER}" != "" ]]; then echo "Overriding compiler disabled."; fi
+    elif [[ "${TRAVIS_OS_NAME}" == "windows" ]]; then
+      if [[ "${COMPILER}" != "" ]]; then echo "Overriding compiler disabled."; fi
+    fi
   - ${CXX} --version
-  
+
   ############################################################################
   # Install a recent CMake.
   ############################################################################
