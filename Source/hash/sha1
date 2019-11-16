@@ -146,13 +146,13 @@ namespace gtl {
                 A = next_A;
             }
 
-            return {
+            return {{
                 initial_state.data[0] + A,
                 initial_state.data[1] + B,
                 initial_state.data[2] + C,
                 initial_state.data[3] + D,
                 initial_state.data[4] + E
-            };
+            }};
         }
 
     public:

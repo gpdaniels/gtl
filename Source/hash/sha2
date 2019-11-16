@@ -171,8 +171,7 @@ namespace gtl {
                 A = TEMP1 + TEMP2;
             }
 
-            return {
-                {
+            return {{
                     initial_state.data[0] + A,
                     initial_state.data[1] + B,
                     initial_state.data[2] + C,
@@ -400,7 +399,7 @@ namespace gtl {
                 A = TEMP1 + TEMP2;
             }
 
-            return {
+            return {{
                 initial_state.data[0] + A,
                 initial_state.data[1] + B,
                 initial_state.data[2] + C,
@@ -409,7 +408,7 @@ namespace gtl {
                 initial_state.data[5] + F,
                 initial_state.data[6] + G,
                 initial_state.data[7] + H
-            };
+            }};
         }
 
     public:
@@ -876,7 +875,7 @@ namespace gtl {
                 A = TEMP1 + TEMP2;
             }
 
-            return {
+            return {{
                 initial_state.data[0] + A,
                 initial_state.data[1] + B,
                 initial_state.data[2] + C,
@@ -885,7 +884,7 @@ namespace gtl {
                 initial_state.data[5] + F,
                 initial_state.data[6] + G,
                 initial_state.data[7] + H
-            };
+            }};
         }
 
     public:
