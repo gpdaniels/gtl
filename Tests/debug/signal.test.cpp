@@ -50,11 +50,11 @@ TEST(signal, traits, standard) {
 
     REQUIRE((std::is_trivially_copyable<gtl::signal<SIGUSR1>>::value == false));
 
-#if defined(__clang__)
-    REQUIRE((std::is_standard_layout<gtl::signal<SIGUSR1>>::value == true));
-#else
-    REQUIRE((std::is_standard_layout<gtl::signal<SIGUSR1>>::value == false));
-#endif
+    #if defined(__clang__) || defined(_WIN32)
+        REQUIRE((std::is_standard_layout<gtl::signal<SIGUSR1>>::value == true));
+    #else
+        REQUIRE((std::is_standard_layout<gtl::signal<SIGUSR1>>::value == false));
+    #endif
 }
 
 TEST(signal, constructor, empty) {

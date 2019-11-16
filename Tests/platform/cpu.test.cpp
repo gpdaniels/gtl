@@ -37,7 +37,7 @@ THE SOFTWARE
 TEST(cpu, traits, standard) {
 
     #if defined(_WIN32) && !defined(_WIN64)
-        REQUIRE(sizeof(gtl::cpu) == 16, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 16ull);
+        REQUIRE(sizeof(gtl::cpu) == 8, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 8ull);
     #else
         REQUIRE(sizeof(gtl::cpu) == 16, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 16ull);
     #endif
