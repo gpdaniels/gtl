@@ -53,7 +53,7 @@ The current classes are as described below:
 |             **md5** | An implementation of the md5 hashing function.                                          |
 |            **sha0** | An implementation of the sha0 hashing function.                                         |
 |            **sha1** | An implementation of the sha1 hashing function.                                         |
-|            **sha2** | An implementation of the sha2 hashing function.                                         |
+|            **sha2** | An implementation of the sha2 hashing function for 224, 256, 384, and 512 bits.         |
 
 
 ### IO ###
