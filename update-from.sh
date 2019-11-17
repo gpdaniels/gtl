@@ -35,6 +35,9 @@ git checkout ${current_branch}
 # Try and checkout the CMakesList.txt to ensure the build system is up to date.
 git checkout $2 CMakeLists.txt
 
+# Try and checkout the README.md.
+git checkout $2 README.md
+
 # Try and checkout all files found in the target branch from the source branch.
 for file in ${source}
 do
