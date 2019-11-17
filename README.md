@@ -45,6 +45,17 @@ The current classes are as described below:
 |   **triple_buffer** | Lockless triple buffer interface to three buffers.                                      |
 |     **thread_pool** | Multi-queue thread-pool that performs jobs in priority order.                           |
 
+### Hash ###
+
+|               Class | Description                                                                             |
+|--------------------:|:----------------------------------------------------------------------------------------|
+|             **crc** | An implementation of the crc hashing function for 8, 16, 32, and 64 bits.               |
+|             **md5** | An implementation of the md5 hashing function.                                          |
+|            **sha0** | An implementation of the sha0 hashing function.                                         |
+|            **sha1** | An implementation of the sha1 hashing function.                                         |
+|            **sha2** | An implementation of the sha2 hashing function for 224, 256, 384, and 512 bits.         |
+
+
 ### IO ###
 
 |               Class | Description                                                                             |
