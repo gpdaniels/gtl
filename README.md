@@ -62,6 +62,12 @@ The current classes are as described below:
 |--------------------:|:----------------------------------------------------------------------------------------|
 |           **paths** | Collection of cross platform functions to provide useful paths.                         |
 
+### Protection ###
+
+|               Class | Description                                                                             |
+|--------------------:|:----------------------------------------------------------------------------------------|
+| **virtual_machine** | A simple stack based virtual machine allowing easy creation of custom operands.         |
+
 ### Random ###
 
 |               Class | Description                                                                             |

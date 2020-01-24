@@ -22,10 +22,334 @@ THE SOFTWARE
 #ifndef GTL_VIRTUAL_MACHINE_HPP
 #define GTL_VIRTUAL_MACHINE_HPP
 
-namespace gtl {
-    class virtual_machine {
+// Forward declare to allow the syscall functions for input and output to work.
+int getchar(void);
+int putchar(int);
 
+namespace gtl {
+    class virtual_machine final {
+    public:
+        enum class register_names : unsigned char {
+            program_counter = 0,
+            stack_pointer   = 1,
+            flags           = 2,
+            general_a       = 3,
+            general_b       = 4,
+            general_c       = 5,
+            general_d       = 6,
+            general_e       = 7
+        };
+        using rn = register_names;
+
+        enum class flag_values : unsigned char {
+            fault           = 1,   // true if there was a fault.
+            zero            = 2,   // true if the last ALU result was zero.
+            sign_positive   = 4,   // true if the last ALU result was positive.
+            parity_even     = 8,   // true if the last ALU result was even.
+            overflow        = 16,  // true if the last ALU result required a carry or borrow.
+            reserved_0      = 32,  // Unused.
+            reserved_1      = 64,  // Unused.
+            reserved_2      = 128  // Unused.
+        };
+        using fv = flag_values;
+
+    public:
+        template <register_names register_name>
+        struct using_register {
+            static unsigned char get(virtual_machine& vm) {
+                return vm.registers[static_cast<unsigned char>(register_name)];
+            }
+            static void set(virtual_machine& vm, unsigned char value) {
+                vm.registers[static_cast<unsigned char>(register_name)] = value;
+            }
+        };
+        template <rn r> using reg = using_register<r>;
+
+        template <register_names register_name>
+        struct using_memory {
+            static unsigned char get(virtual_machine& vm) {
+                return vm.memory[using_register<register_name>::get(vm)];
+            }
+            static void set(virtual_machine& vm, unsigned char value) {
+                vm.memory[using_register<register_name>::get(vm)] = value;
+            }
+        };
+        template <rn r> using mem = using_memory<r>;
+
+    public:
+        using function_type = void(*)(virtual_machine&);
+
+    private:
+        function_type opcodes[256] = {};
+        unsigned char registers[8] = {};
+        unsigned char memory[256] = {};
+
+    public:
+        virtual_machine() = default;
+
+        virtual_machine(const unsigned char* program, unsigned char length) {
+            // Load a program from memory.
+            for (unsigned int i = 0; i < length; ++i) {
+                this->memory[i] = program[i];
+            }
+        }
+
+    public:
+        // Register an opcode with the virtual machine.
+        template <unsigned char code, function_type function>
+        constexpr void register_opcode() {
+            this->opcodes[code] = function;
+        }
+
+        void reset() {
+            // Clear registers.
+            this->registers[static_cast<unsigned char>(register_names::program_counter)] = 0;
+            this->registers[static_cast<unsigned char>(register_names::stack_pointer)] = 255;
+            this->registers[static_cast<unsigned char>(register_names::flags)] = 0;
+            this->registers[static_cast<unsigned char>(register_names::general_a)] = 0;
+            this->registers[static_cast<unsigned char>(register_names::general_b)] = 0;
+            this->registers[static_cast<unsigned char>(register_names::general_c)] = 0;
+            this->registers[static_cast<unsigned char>(register_names::general_d)] = 0;
+            this->registers[static_cast<unsigned char>(register_names::general_e)] = 0;
+
+            // Clear memory.
+            for (unsigned int i = 0; i < 255; ++i) {
+                this->memory[i] = 0;
+            }
+        }
+
+        bool tick() {
+            // Check for faults.
+            if (this->registers[static_cast<unsigned char>(register_names::flags)] & static_cast<unsigned char>(flag_values::fault)) {
+                return false;
+            }
+
+            // Get the opcode.
+            const function_type function = this->opcodes[this->memory[this->registers[static_cast<unsigned char>(register_names::program_counter)]]];
+
+            // Verify the opcode.
+            if (function == nullptr) {
+                // If the opcode was invalid, set the fault flag and bail out.
+                this->registers[static_cast<unsigned char>(register_names::flags)] |= static_cast<unsigned char>(flag_values::fault);
+                return false;
+            }
+
+            // Process the opcode.
+            function(*this);
+
+            // Increment the program counter.
+            ++this->registers[static_cast<unsigned char>(register_names::program_counter)];
+
+            return true;
+        }
     };
+    using vm = virtual_machine;
+
+    // Overload for program counter, as this is incremented before being used as the memory index.
+    template <>
+    struct virtual_machine::using_memory<virtual_machine::register_names::program_counter> {
+        static unsigned char get(virtual_machine& vm) {
+            // Increment program counter.
+            using_register<virtual_machine::register_names::program_counter>::set(vm, virtual_machine::using_register<virtual_machine::register_names::program_counter>::get(vm) + 1);
+            // Return value in memory.
+            return vm.memory[virtual_machine::using_register<virtual_machine::register_names::program_counter>::get(vm)];
+        }
+        static void set(virtual_machine& vm, unsigned char value) {
+            // Increment program counter.
+            using_register<virtual_machine::register_names::program_counter>::set(vm, virtual_machine::using_register<virtual_machine::register_names::program_counter>::get(vm) + 1);
+            // Set value in memory.
+            vm.memory[virtual_machine::using_register<virtual_machine::register_names::program_counter>::get(vm)] = value;
+        }
+    };
+
+    namespace virtual_machine_opcodes {
+        inline void nop(virtual_machine& vm) {
+            static_cast<void>(vm);
+        }
+
+        template <typename operand_lhs, typename operand_rhs>
+        inline void copy(virtual_machine& vm) {
+            const unsigned char value = operand_lhs::get(vm);
+            operand_rhs::set(vm, value);
+        }
+
+        template <typename operand_lhs, typename operand_rhs, typename operand_result>
+        inline void add(virtual_machine& vm) {
+            const unsigned char lhs = operand_lhs::get(vm);
+            const unsigned char rhs = operand_rhs::get(vm);
+
+            const signed int result_large = *reinterpret_cast<const signed char*>(&lhs) + *reinterpret_cast<const signed char*>(&rhs);
+            const signed char result = static_cast<signed char>(result_large);
+
+            unsigned char flags = virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm);
+            flags &= ~(static_cast<unsigned char>(virtual_machine::flag_values::zero) |
+                       static_cast<unsigned char>(virtual_machine::flag_values::sign_positive) |
+                       static_cast<unsigned char>(virtual_machine::flag_values::parity_even) |
+                       static_cast<unsigned char>(virtual_machine::flag_values::overflow));
+            flags |= (result == 0)          ? static_cast<unsigned char>(virtual_machine::flag_values::zero) : 0;
+            flags |= (result & 0x80)        ? 0 : static_cast<unsigned char>(virtual_machine::flag_values::sign_positive);
+            flags |= (result & 0x01)        ? 0 : static_cast<unsigned char>(virtual_machine::flag_values::parity_even);
+            flags |= (result_large > 127)   ? static_cast<unsigned char>(virtual_machine::flag_values::overflow) : 0;
+
+            virtual_machine::using_register<virtual_machine::register_names::flags>::set(vm, flags);
+            operand_result::set(vm, *reinterpret_cast<const unsigned char*>(&result));
+        }
+
+        template <typename operand_lhs, typename operand_rhs, typename operand_result>
+        inline void sub(virtual_machine& vm) {
+            const unsigned char lhs = operand_lhs::get(vm);
+            const unsigned char rhs = operand_rhs::get(vm);
+
+            const signed int result_large = *reinterpret_cast<const signed char*>(&lhs) - *reinterpret_cast<const signed char*>(&rhs);
+            const signed char result = static_cast<signed char>(result_large);
+
+            unsigned char flags = virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm);
+            flags &= ~(static_cast<unsigned char>(virtual_machine::flag_values::zero) |
+                       static_cast<unsigned char>(virtual_machine::flag_values::sign_positive) |
+                       static_cast<unsigned char>(virtual_machine::flag_values::parity_even) |
+                       static_cast<unsigned char>(virtual_machine::flag_values::overflow));
+            flags |= (result == 0)          ? static_cast<unsigned char>(virtual_machine::flag_values::zero) : 0;
+            flags |= (result & 0x80)        ? 0 : static_cast<unsigned char>(virtual_machine::flag_values::sign_positive);
+            flags |= (result & 0x01)        ? 0 : static_cast<unsigned char>(virtual_machine::flag_values::parity_even);
+            flags |= (result_large < -128)  ? static_cast<unsigned char>(virtual_machine::flag_values::overflow) : 0;
+
+            virtual_machine::using_register<virtual_machine::register_names::flags>::set(vm, flags);
+            operand_result::set(vm, *reinterpret_cast<const unsigned char*>(&result));
+        }
+
+        template <typename operand>
+        inline void push(virtual_machine& vm) {
+            // Get the value and write it to the stack.
+            const unsigned char value = operand::get(vm);
+            virtual_machine::using_memory<virtual_machine::register_names::stack_pointer>::set(vm, value);
+            // The stack grows from the bottom, so it is decremented here.
+            virtual_machine::using_register<virtual_machine::register_names::stack_pointer>::set(vm, virtual_machine::using_register<virtual_machine::register_names::stack_pointer>::get(vm) - 1);
+        }
+
+        template <typename operand>
+        inline void pop(virtual_machine& vm) {
+            // The stack grows from the bottom, so it is incremented here.
+            virtual_machine::using_register<virtual_machine::register_names::stack_pointer>::set(vm, virtual_machine::using_register<virtual_machine::register_names::stack_pointer>::get(vm) + 1);
+            // Get the value from the stack and store it in the operand.
+            const unsigned char value = virtual_machine::using_memory<virtual_machine::register_names::stack_pointer>::get(vm);
+            operand::set(vm, value);
+        }
+
+        template <typename operand>
+        inline void jump(virtual_machine& vm) {
+            // Calculate the destination, the tick of the cpu will increment the program counter so one must be subtracted here.
+            const unsigned char destination = operand::get(vm) - 1;
+            virtual_machine::using_register<virtual_machine::register_names::program_counter>::set(vm, destination);
+        }
+
+        template <typename operand>
+        inline void jump_if_zero(virtual_machine& vm) {
+            if ((virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm) & static_cast<unsigned char>(virtual_machine::flag_values::zero)) != 0) {
+                jump<operand>(vm);
+            }
+            else {
+                operand::get(vm);
+            }
+        }
+
+        template <typename operand>
+        inline void jump_if_not_zero(virtual_machine& vm) {
+            if ((virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm) & static_cast<unsigned char>(virtual_machine::flag_values::zero)) == 0) {
+                jump<operand>(vm);
+            }
+            else {
+                operand::get(vm);
+            }
+        }
+
+        template <typename operand>
+        inline void jump_if_less_than_zero(virtual_machine& vm) {
+            if ((virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm) & static_cast<unsigned char>(virtual_machine::flag_values::sign_positive)) == 0) {
+                jump<operand>(vm);
+            }
+            else {
+                operand::get(vm);
+            }
+        }
+
+        template <typename operand>
+        inline void call(virtual_machine& vm) {
+            const unsigned char destination = operand::get(vm) - 1;
+            push<virtual_machine::using_register<virtual_machine::register_names::program_counter>>(vm);
+            virtual_machine::using_register<virtual_machine::register_names::program_counter>::set(vm, destination);
+        }
+
+        template <typename operand>
+        inline void call_if_zero(virtual_machine& vm) {
+            if ((virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm) & static_cast<unsigned char>(virtual_machine::flag_values::zero)) != 0) {
+                call<operand>(vm);
+            }
+            else {
+                operand::get(vm);
+            }
+        }
+
+        template <typename operand>
+        inline void call_if_not_zero(virtual_machine& vm) {
+            if ((virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm) & static_cast<unsigned char>(virtual_machine::flag_values::zero)) == 0) {
+                call<operand>(vm);
+            }
+            else {
+                operand::get(vm);
+            }
+        }
+
+        template <typename operand>
+        inline void call_if_less_than_zero(virtual_machine& vm) {
+            if ((virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm) & static_cast<unsigned char>(virtual_machine::flag_values::sign_positive)) == 0) {
+                call<operand>(vm);
+            }
+            else {
+                operand::get(vm);
+            }
+        }
+
+        inline void call_return(virtual_machine& vm) {
+            // Just pop the program counter from the stack, it will be incremented by the tick function to the correct next instruction.
+            pop<virtual_machine::using_register<virtual_machine::register_names::program_counter>>(vm);
+        }
+
+        inline void call_return_if_zero(virtual_machine& vm) {
+            if ((virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm) & static_cast<unsigned char>(virtual_machine::flag_values::zero)) != 0) {
+                call_return(vm);
+            }
+        }
+
+        inline void call_return_if_not_zero(virtual_machine& vm) {
+            if ((virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm) & static_cast<unsigned char>(virtual_machine::flag_values::zero)) == 0) {
+                call_return(vm);
+            }
+        }
+
+        inline void call_return_if_less_than_zero(virtual_machine& vm) {
+            if ((virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm) & static_cast<unsigned char>(virtual_machine::flag_values::sign_positive)) == 0) {
+                call_return(vm);
+            }
+        }
+
+        template <typename operand_call, typename operand_input_or_output>
+        inline void syscall(virtual_machine& vm) {
+            const unsigned char call_id = operand_call::get(vm);
+            switch (call_id) {
+            case 0:
+                operand_input_or_output::set(vm, getchar());
+                break;
+            case 1:
+                putchar(operand_input_or_output::get(vm));
+                break;
+            default:
+                unsigned char flags = virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm);
+                flags |= static_cast<unsigned char>(virtual_machine::flag_values::fault);
+                virtual_machine::using_register<virtual_machine::register_names::flags>::set(vm, flags);
+            }
+        }
+    }
+    namespace vmo = virtual_machine_opcodes;
 }
 
 #endif // GTL_VIRTUAL_MACHINE_HPP
