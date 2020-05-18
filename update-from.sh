@@ -32,7 +32,9 @@ tests=$(find "Tests" -type f -print)
 # Checkout back to the current branch.
 git checkout ${current_branch}
 
-# Try and checkout the CMakesList.txt to ensure the build system is up to date.
+# Try and checkout the build system files to ensure they are up to date.
+git checkout $2 compile.sh
+git checkout $2 memcheck.supression
 git checkout $2 CMakeLists.txt
 
 # Try and checkout the README.md.
