@@ -67,6 +67,13 @@ namespace testbench {
     TEST_IS_VALUE_EQUAL_FUNCTION(decltype(nullptr));
 
     #undef TEST_IS_VALUE_EQUAL_FUNCTION
+
+    template <typename type>
+    bool is_value_approx(const type& lhs, const type& rhs, const type& epsilon) {
+        const type difference = lhs - rhs;
+        return ((difference >= 0) && (difference <= epsilon)) || ((difference <= 0) && (difference >= -epsilon));
+    }
+
 }
 
 #endif // COMPARISON_TESTS_HPP
