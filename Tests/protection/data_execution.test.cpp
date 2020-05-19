@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(data_execution, traits, standard) {
-    REQUIRE(sizeof(gtl::data_execution) >= 0);
-
     REQUIRE((std::is_pod<gtl::data_execution>::value == true));
 
     REQUIRE((std::is_trivial<gtl::data_execution>::value == true));

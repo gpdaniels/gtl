@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(tar, traits, standard) {
-    REQUIRE(sizeof(gtl::tar) >= 0);
-
     REQUIRE((std::is_pod<gtl::tar>::value == true));
 
     REQUIRE((std::is_trivial<gtl::tar>::value == true));

@@ -36,8 +36,6 @@ THE SOFTWARE
 #endif
 
 TEST(spin_lock, traits, standard) {
-    REQUIRE(sizeof(gtl::spin_lock) >= 1, "sizeof(gtl::spin_lock) = %ld, expected >= %lld", sizeof(gtl::spin_lock), 1ull);
-
     REQUIRE(std::is_pod<gtl::spin_lock>::value == false, "Expected std::is_pod to be false.");
 
     REQUIRE(std::is_trivial<gtl::spin_lock>::value == false, "Expected std::is_trivial to be false.");

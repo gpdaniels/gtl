@@ -42,8 +42,6 @@ THE SOFTWARE
 #endif
 
 TEST(signal, traits, standard) {
-    REQUIRE(sizeof(gtl::signal<SIGUSR1>) >= 0);
-
     REQUIRE((std::is_pod<gtl::signal<SIGUSR1>>::value == false));
 
     REQUIRE((std::is_trivial<gtl::signal<SIGUSR1>>::value == false));

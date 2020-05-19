@@ -43,8 +43,6 @@ TEST(triple_buffer, traits, standard) {
        [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
 
-            REQUIRE(sizeof(gtl::triple_buffer<type>) >= (sizeof(std::atomic<unsigned char>) + sizeof(type) * 3), "sizeof(gtl::triple_buffer<type>) = %ld, expected >= %ld", sizeof(gtl::triple_buffer<type>), (sizeof(std::atomic<unsigned char>) + sizeof(type) * 3));
-
             REQUIRE(std::is_pod<gtl::triple_buffer<type>>::value == false, "Expected std::is_pod to be false.");
 
             REQUIRE(std::is_trivial<gtl::triple_buffer<type>>::value == false, "Expected std::is_trivial to be false.");

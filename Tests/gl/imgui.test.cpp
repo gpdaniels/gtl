@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(imgui, traits, standard) {
-    REQUIRE(sizeof(gtl::imgui) >= 0);
-
     REQUIRE((std::is_pod<gtl::imgui>::value == true));
 
     REQUIRE((std::is_trivial<gtl::imgui>::value == true));

@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(detours, traits, standard) {
-    REQUIRE(sizeof(gtl::detours) >= 0);
-
     REQUIRE((std::is_pod<gtl::detours>::value == true));
 
     REQUIRE((std::is_trivial<gtl::detours>::value == true));

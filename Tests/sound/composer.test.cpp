@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(composer, traits, standard) {
-    REQUIRE(sizeof(gtl::composer) >= 0);
-
     REQUIRE((std::is_pod<gtl::composer>::value == true));
 
     REQUIRE((std::is_trivial<gtl::composer>::value == true));

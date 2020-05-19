@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(return_redirect, traits, standard) {
-    REQUIRE(sizeof(gtl::return_redirect) >= 0);
-
     REQUIRE((std::is_pod<gtl::return_redirect>::value == true));
 
     REQUIRE((std::is_trivial<gtl::return_redirect>::value == true));

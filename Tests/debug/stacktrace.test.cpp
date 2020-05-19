@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(stacktrace, traits, standard) {
-    REQUIRE(sizeof(gtl::stacktrace) >= 0);
-
     REQUIRE((std::is_pod<gtl::stacktrace>::value == true));
 
     REQUIRE((std::is_trivial<gtl::stacktrace>::value == true));

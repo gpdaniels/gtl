@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(simulation_loop, traits, standard) {
-    REQUIRE(sizeof(gtl::simulation_loop<100>) >= 24, "sizeof(gtl::simulation_loop) = %ld, expected >= %lld", sizeof(gtl::simulation_loop<100>), 24ull);
-
     REQUIRE((std::is_pod<gtl::simulation_loop<100>>::value == false), "Expected std::is_pod to be false.");
 
     REQUIRE((std::is_trivial<gtl::simulation_loop<100>>::value == false), "Expected std::is_trivial to be false.");

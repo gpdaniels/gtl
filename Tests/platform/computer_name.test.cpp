@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(computer_name, traits, standard) {
-    REQUIRE(sizeof(gtl::computer_name) >= 0);
-
     REQUIRE((std::is_pod<gtl::computer_name>::value == true));
 
     REQUIRE((std::is_trivial<gtl::computer_name>::value == true));

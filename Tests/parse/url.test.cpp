@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(url, traits, standard) {
-    REQUIRE(sizeof(gtl::url) >= 0);
-
     REQUIRE((std::is_pod<gtl::url>::value == true));
 
     REQUIRE((std::is_trivial<gtl::url>::value == true));

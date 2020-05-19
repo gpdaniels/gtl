@@ -41,13 +41,6 @@ TEST(type_name, traits, standard) {
     testbench::test_template<testbench::test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
-            REQUIRE(sizeof(gtl::type_name<type>) >= 1, "sizeof(gtl::type_name<type>) = %ld, expected >= %lld", sizeof(gtl::type_name<type>), 1ull);
-        }
-    );
-
-    testbench::test_template<testbench::test_types>(
-        [](auto test_type)->void {
-            using type = typename decltype(test_type)::type;
             REQUIRE(std::is_pod<gtl::type_name<type> >::value == true, "Expected std::is_pod to be true.");
         }
     );

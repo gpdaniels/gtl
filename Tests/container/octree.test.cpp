@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(octree, traits, standard) {
-    REQUIRE(sizeof(gtl::octree) >= 0);
-
     REQUIRE((std::is_pod<gtl::octree>::value == true));
 
     REQUIRE((std::is_trivial<gtl::octree>::value == true));

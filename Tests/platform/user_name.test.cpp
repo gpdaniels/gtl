@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(user_name, traits, standard) {
-    REQUIRE(sizeof(gtl::user_name) >= 0);
-
     REQUIRE((std::is_pod<gtl::user_name>::value == true));
 
     REQUIRE((std::is_trivial<gtl::user_name>::value == true));

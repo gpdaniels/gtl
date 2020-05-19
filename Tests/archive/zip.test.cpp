@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(zip, traits, standard) {
-    REQUIRE(sizeof(gtl::zip) >= 0);
-
     REQUIRE((std::is_pod<gtl::zip>::value == true));
 
     REQUIRE((std::is_trivial<gtl::zip>::value == true));

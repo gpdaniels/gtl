@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(clifford, traits, standard) {
-    REQUIRE(sizeof(gtl::clifford) >= 0);
-
     REQUIRE((std::is_pod<gtl::clifford>::value == true));
 
     REQUIRE((std::is_trivial<gtl::clifford>::value == true));

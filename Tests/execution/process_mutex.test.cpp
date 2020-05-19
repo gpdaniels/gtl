@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(process_mutex, traits, standard) {
-    REQUIRE(sizeof(gtl::process_mutex) >= 0);
-
     REQUIRE((std::is_pod<gtl::process_mutex>::value == true));
 
     REQUIRE((std::is_trivial<gtl::process_mutex>::value == true));

@@ -36,8 +36,6 @@ THE SOFTWARE
 #endif
 
 TEST(type_id, traits, standard) {
-    REQUIRE(sizeof(gtl::type_id) >= 1, "sizeof(gtl::type_id) = %ld, expected >= %lld", sizeof(gtl::type_id), 1ull);
-
     REQUIRE(std::is_pod<gtl::type_id>::value == false, "Expected std::is_pod to be false.");
 
     REQUIRE(std::is_trivial<gtl::type_id>::value == false, "Expected std::is_trivial to be false.");

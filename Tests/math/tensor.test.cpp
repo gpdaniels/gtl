@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(tensor, traits, standard) {
-    REQUIRE(sizeof(gtl::tensor) >= 0);
-
     REQUIRE((std::is_pod<gtl::tensor>::value == true));
 
     REQUIRE((std::is_trivial<gtl::tensor>::value == true));

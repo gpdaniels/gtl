@@ -35,12 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(thread_pool, traits, standard) {
-
-#if 0
-    // 176, 168, 152, 144, or 112...
-    REQUIRE(sizeof(gtl::thread_pool) == 176, "sizeof(gtl::thread_pool) = %ld, expected == %lld", sizeof(gtl::thread_pool), 176ull);
-#endif
-
     REQUIRE((std::is_pod<gtl::thread_pool>::value == false));
 
     REQUIRE((std::is_trivial<gtl::thread_pool>::value == false));

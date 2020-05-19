@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(scheduler, traits, standard) {
-    REQUIRE(sizeof(gtl::scheduler) >= 0);
-
     REQUIRE((std::is_pod<gtl::scheduler>::value == true));
 
     REQUIRE((std::is_trivial<gtl::scheduler>::value == true));

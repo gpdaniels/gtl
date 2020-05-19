@@ -59,8 +59,6 @@ int test_pimpl::return_value() const {
 }
 
 TEST(pimpl, traits, standard) {
-    REQUIRE(sizeof(test_pimpl) == 4, "sizeof(test_pimpl) = %ld, expected >= %lld", sizeof(test_pimpl), 1ull);
-
     REQUIRE(std::is_pod<test_pimpl>::value == false, "Expected std::is_pod to be false.");
 
     REQUIRE(std::is_trivial<test_pimpl>::value == false, "Expected std::is_trivial to be false.");

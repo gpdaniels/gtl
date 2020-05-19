@@ -36,8 +36,6 @@ THE SOFTWARE
 #endif
 
 TEST(error, traits, standard) {
-    REQUIRE(sizeof(gtl::error) >= 24, "sizeof(gtl::error) = %ld, expected >= %lld", sizeof(gtl::error), 24ull);
-
     REQUIRE((std::is_pod<gtl::error>::value == false));
 
     REQUIRE((std::is_trivial<gtl::error>::value == false));

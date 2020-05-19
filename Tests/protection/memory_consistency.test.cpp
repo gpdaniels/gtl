@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(memory_consistency, traits, standard) {
-    REQUIRE(sizeof(gtl::memory_consistency) >= 0);
-
     REQUIRE((std::is_pod<gtl::memory_consistency>::value == true));
 
     REQUIRE((std::is_trivial<gtl::memory_consistency>::value == true));

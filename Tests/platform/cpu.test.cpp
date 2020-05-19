@@ -35,13 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(cpu, traits, standard) {
-
-    #if defined(_WIN32) && !defined(_WIN64)
-        REQUIRE(sizeof(gtl::cpu) == 8, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 8ull);
-    #else
-        REQUIRE(sizeof(gtl::cpu) == 16, "sizeof(gtl::cpu) = %ld, expected == %lld", sizeof(gtl::cpu), 16ull);
-    #endif
-
     REQUIRE(std::is_pod<gtl::cpu>::value == false, "Expected std::is_pod to be false.");
 
     REQUIRE(std::is_trivial<gtl::cpu>::value == false, "Expected std::is_trivial to be false.");

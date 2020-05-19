@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(opengl, traits, standard) {
-    REQUIRE(sizeof(gtl::opengl) >= 0);
-
     REQUIRE((std::is_pod<gtl::opengl>::value == true));
 
     REQUIRE((std::is_trivial<gtl::opengl>::value == true));

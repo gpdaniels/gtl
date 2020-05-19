@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(rosbag, traits, standard) {
-    REQUIRE(sizeof(gtl::rosbag) >= 0);
-
     REQUIRE((std::is_pod<gtl::rosbag>::value == true));
 
     REQUIRE((std::is_trivial<gtl::rosbag>::value == true));

@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(function_timing, traits, standard) {
-    REQUIRE(sizeof(gtl::function_timing) >= 0);
-
     REQUIRE((std::is_pod<gtl::function_timing>::value == true));
 
     REQUIRE((std::is_trivial<gtl::function_timing>::value == true));

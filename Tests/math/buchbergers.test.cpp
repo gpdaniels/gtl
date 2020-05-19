@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(buchbergers, traits, standard) {
-    REQUIRE(sizeof(gtl::buchbergers) >= 0);
-
     REQUIRE((std::is_pod<gtl::buchbergers>::value == true));
 
     REQUIRE((std::is_trivial<gtl::buchbergers>::value == true));

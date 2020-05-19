@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(processor, traits, standard) {
-    REQUIRE(sizeof(gtl::processor) >= 0);
-
     REQUIRE((std::is_pod<gtl::processor>::value == true));
 
     REQUIRE((std::is_trivial<gtl::processor>::value == true));

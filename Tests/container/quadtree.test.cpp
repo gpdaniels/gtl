@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(quadtree, traits, standard) {
-    REQUIRE(sizeof(gtl::quadtree) >= 0);
-
     REQUIRE((std::is_pod<gtl::quadtree>::value == true));
 
     REQUIRE((std::is_trivial<gtl::quadtree>::value == true));

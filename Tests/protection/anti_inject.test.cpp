@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(anti_inject, traits, standard) {
-    REQUIRE(sizeof(gtl::anti_inject) >= 0);
-
     REQUIRE((std::is_pod<gtl::anti_inject>::value == true));
 
     REQUIRE((std::is_trivial<gtl::anti_inject>::value == true));

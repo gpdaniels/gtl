@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(tts, traits, standard) {
-    REQUIRE(sizeof(gtl::tts) >= 0);
-
     REQUIRE((std::is_pod<gtl::tts>::value == true));
 
     REQUIRE((std::is_trivial<gtl::tts>::value == true));

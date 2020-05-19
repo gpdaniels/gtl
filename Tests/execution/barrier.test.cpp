@@ -37,8 +37,6 @@ THE SOFTWARE
 #endif
 
 TEST(barrier, traits, standard) {
-    REQUIRE(sizeof(gtl::barrier) >= 1, "sizeof(gtl::barrier) = %ld, expected >= %lld", sizeof(gtl::barrier), 1ull);
-
     REQUIRE(std::is_pod<gtl::barrier>::value == false, "Expected std::is_pod to be false.");
 
     REQUIRE(std::is_trivial<gtl::barrier>::value == false, "Expected std::is_trivial to be false.");

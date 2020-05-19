@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(location, traits, standard) {
-    REQUIRE(sizeof(gtl::location) >= 0);
-
     REQUIRE((std::is_pod<gtl::location>::value == true));
 
     REQUIRE((std::is_trivial<gtl::location>::value == true));

@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(virtual_machine, traits, standard) {
-    REQUIRE(sizeof(gtl::virtual_machine) == 2312);
-
     REQUIRE((std::is_pod<gtl::virtual_machine>::value == false));
 
     REQUIRE((std::is_trivial<gtl::virtual_machine>::value == false));

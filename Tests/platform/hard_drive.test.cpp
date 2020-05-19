@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(hard_drive, traits, standard) {
-    REQUIRE(sizeof(gtl::hard_drive) >= 0);
-
     REQUIRE((std::is_pod<gtl::hard_drive>::value == true));
 
     REQUIRE((std::is_trivial<gtl::hard_drive>::value == true));
