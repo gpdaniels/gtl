@@ -19,8 +19,8 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef GTL_LAMBDA_HPP
-#define GTL_LAMBDA_HPP
+#ifndef GTL_STATIC_LAMBDA_HPP
+#define GTL_STATIC_LAMBDA_HPP
 
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
@@ -46,6 +46,9 @@ namespace gtl {
     /// @tparam size The reserved stack buffer size.
     template <typename return_type, typename... argument_types, unsigned long long int size>
     class static_lambda<return_type(argument_types...), size> final {
+    private:
+        static_assert(size > 0, "Size of static_lambda storage must be greater than zero.");
+
     private:
         /// @brief  A template to remove referenced from types.
         template<typename, typename type>
@@ -205,7 +208,7 @@ namespace gtl {
             , destructor([](erased_type function_pointer) -> void {
                 static_cast<function_type*>(function_pointer)->~function_type();
             }) {
-            static_assert(sizeof(function_type) < size, "Functional object is larger than static_lambda size.");
+            static_assert(sizeof(function_type) <= size, "Functional object is larger than static_lambda size.");
             this->copier(&raw_function, this->function);
         }
 
@@ -228,7 +231,7 @@ namespace gtl {
                 static_cast<function_type_unreferenced*>(function_pointer)->~function_type_unreferenced();
             }) {
             using function_type_unreferenced = typename remove_reference<function_type, function_type>::type_unreferenced;
-            static_assert(sizeof(function_type_unreferenced) < size, "Functional object is larger than static_lambda size.");
+            static_assert(sizeof(function_type_unreferenced) <= size, "Functional object is larger than static_lambda size.");
             this->copier(&raw_function, this->function);
         }
 
@@ -262,7 +265,7 @@ namespace gtl {
     public:
         /// @brief  Boolean operator to check if the internal lambda is valid.
         constexpr operator bool() const {
-            return this->copier != nullptr;
+            return (this->executor != nullptr);
         }
 
     public:
@@ -277,4 +280,4 @@ namespace gtl {
 
 #undef GTL_STATIC_LAMBDA_ASSERT
 
-#endif // GTL_LAMBDA_HPP
+#endif // GTL_STATIC_LAMBDA_HPP
