@@ -1,0 +1,470 @@
+/*
+The MIT License
+Copyright (c) 2019 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_SHA2_HPP
+#define GTL_SHA2_HPP
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the hash is misused.
+#   define GTL_SHA2_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_SHA2_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+namespace gtl {
+
+    /// @brief  The sha2 class computes a SHA2 hash of a sequence of data.
+    /// @tparam sha2_size The size parameter allows for the selection of different hash lengths.
+    template <unsigned long long int sha2_size>
+    class sha2 final {
+    private:
+        static_assert (sha2_size % 8 == 0, "Size of sha2 hash must be a multiple of eight.");
+        static_assert (sha2_size == 224 || sha2_size == 256 || sha2_size == 384 || sha2_size == 512, "Currently only sizes 224, 256, 384, and 512 bits are supported.");
+
+    public:
+        /// @brief  Handy variable for accessing the size in bits.
+        constexpr static const unsigned long long int size = sha2_size;
+
+        /// @brief  Size of the hash in bytes.
+        constexpr static const unsigned long long int hash_size = sha2::size / 8;
+
+        /// @brief  Size of each processed block of data in bytes.
+        constexpr static const unsigned long long int block_size = 0 +
+           ((sha2::size == 224) * 64) +
+           ((sha2::size == 256) * 64) +
+           ((sha2::size == 384) * 128) +
+           ((sha2::size == 512) * 128);
+
+        /// @brief  Number of rounds used to process each block of data.
+        constexpr static const unsigned long long int processing_rounds = 0 +
+            ((sha2::size == 224) * 64) +
+            ((sha2::size == 256) * 64) +
+            ((sha2::size == 384) * 80) +
+            ((sha2::size == 512) * 80);
+
+    private:
+        /// @brief  Internal sha2 traits class for the different sizes.
+        /// @tparam size The size of the sha2 hash.
+        /// @tparam inexplicit_specialisation Dummy template param so spectialisation is partial and can be done inside the sha2 class.
+        template <unsigned long long int size, typename inexplicit_specialisation = void>
+        struct internals;
+
+        /// @brief  Internal sha2 traits class sha2-224.
+        template <typename inexplicit_specialisation>
+        struct internals<224, inexplicit_specialisation> final {
+            using base_type = unsigned int;
+
+            /// @brief  Type to hold the hash data.
+            struct hash_type final {
+                base_type data[sha2::hash_size / sizeof(base_type)] = {
+                    0xC1059ED8, 0x367CD507, 0x3070DD17, 0xF70E5939,
+                    0xFFC00B31, 0x68581511, 0x64F98FA7
+                };
+            };
+
+            /// @brief  Type to hold the additional hash state data.
+            struct additional_type final {
+                base_type data[1] = {
+                    0xBEFA4FA4
+                };
+            };
+
+            /// @brief  The first 32-bits of the fractional parts of the cube roots of the first 64 primes.
+            constexpr static const unsigned int constants[sha2::processing_rounds] = {
+                0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5, 0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5,
+                0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3, 0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174,
+                0xE49B69C1, 0xEFBE4786, 0x0FC19DC6, 0x240CA1CC, 0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA,
+                0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7, 0xC6E00BF3, 0xD5A79147, 0x06CA6351, 0x14292967,
+                0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13, 0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85,
+                0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3, 0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070,
+                0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5, 0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3,
+                0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208, 0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2
+            };
+
+            constexpr static const unsigned int shifts[] = {
+                7, 18, 3, 17, 19, 10, 6, 11, 25, 2, 13, 22
+            };
+        };
+
+        /// @brief  Internal sha2 traits class sha2-256.
+        template <typename inexplicit_specialisation>
+        struct internals<256, inexplicit_specialisation> final {
+            using base_type = unsigned int;
+
+            /// @brief  Type to hold the hash data.
+            struct hash_type final {
+                base_type data[sha2::hash_size / sizeof(base_type)] = {
+                    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
+                    0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19
+                };
+            };
+
+            /// @brief  Type to hold the additional hash state data.
+            struct additional_type final {
+            };
+
+            /// @brief  The first 32-bits of the fractional parts of the cube roots of the first 64 primes.
+            constexpr static const unsigned int constants[sha2::processing_rounds] = {
+                0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5, 0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5,
+                0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3, 0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174,
+                0xE49B69C1, 0xEFBE4786, 0x0FC19DC6, 0x240CA1CC, 0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA,
+                0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7, 0xC6E00BF3, 0xD5A79147, 0x06CA6351, 0x14292967,
+                0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13, 0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85,
+                0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3, 0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070,
+                0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5, 0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3,
+                0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208, 0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2
+            };
+
+            constexpr static const unsigned int shifts[] = {
+                7, 18, 3, 17, 19, 10, 6, 11, 25, 2, 13, 22
+            };
+        };
+
+        /// @brief  Internal sha2 traits class sha2-384.
+        template <typename inexplicit_specialisation>
+        struct internals<384, inexplicit_specialisation> final {
+            using base_type = unsigned long long int;
+
+            /// @brief  Type to hold the hash data.
+            struct hash_type final {
+                base_type data[sha2::hash_size / sizeof(base_type)] = {
+                    0xCBBB9D5DC1059ED8, 0x629A292A367CD507, 0x9159015A3070DD17, 0x152FECD8F70E5939,
+                    0x67332667FFC00B31, 0x8EB44A8768581511
+                };
+            };
+
+            /// @brief  Type to hold the additional hash state data.
+            struct additional_type final {
+                base_type data[2] = {
+                    0xDB0C2E0D64F98FA7, 0x47B5481DBEFA4FA4
+                };
+            };
+
+            /// @brief  The first 64-bits of the fractional parts of the cube roots of the first 80 primes.
+            constexpr static const unsigned long long int constants[sha2::processing_rounds] = {
+                0x428A2F98D728AE22, 0x7137449123EF65CD, 0xB5C0FBCFEC4D3B2F, 0xE9B5DBA58189DBBC, 0x3956C25BF348B538,
+                0x59F111F1B605D019, 0x923F82A4AF194F9B, 0xAB1C5ED5DA6D8118, 0xD807AA98A3030242, 0x12835B0145706FBE,
+                0x243185BE4EE4B28C, 0x550C7DC3D5FFB4E2, 0x72BE5D74F27B896F, 0x80DEB1FE3B1696B1, 0x9BDC06A725C71235,
+                0xC19BF174CF692694, 0xE49B69C19EF14AD2, 0xEFBE4786384F25E3, 0x0FC19DC68B8CD5B5, 0x240CA1CC77AC9C65,
+                0x2DE92C6F592B0275, 0x4A7484AA6EA6E483, 0x5CB0A9DCBD41FBD4, 0x76F988DA831153B5, 0x983E5152EE66DFAB,
+                0xA831C66D2DB43210, 0xB00327C898FB213F, 0xBF597FC7BEEF0EE4, 0xC6E00BF33DA88FC2, 0xD5A79147930AA725,
+                0x06CA6351E003826F, 0x142929670A0E6E70, 0x27B70A8546D22FFC, 0x2E1B21385C26C926, 0x4D2C6DFC5AC42AED,
+                0x53380D139D95B3DF, 0x650A73548BAF63DE, 0x766A0ABB3C77B2A8, 0x81C2C92E47EDAEE6, 0x92722C851482353B,
+                0xA2BFE8A14CF10364, 0xA81A664BBC423001, 0xC24B8B70D0F89791, 0xC76C51A30654BE30, 0xD192E819D6EF5218,
+                0xD69906245565A910, 0xF40E35855771202A, 0x106AA07032BBD1B8, 0x19A4C116B8D2D0C8, 0x1E376C085141AB53,
+                0x2748774CDF8EEB99, 0x34B0BCB5E19B48A8, 0x391C0CB3C5C95A63, 0x4ED8AA4AE3418ACB, 0x5B9CCA4F7763E373,
+                0x682E6FF3D6B2B8A3, 0x748F82EE5DEFB2FC, 0x78A5636F43172F60, 0x84C87814A1F0AB72, 0x8CC702081A6439EC,
+                0x90BEFFFA23631E28, 0xA4506CEBDE82BDE9, 0xBEF9A3F7B2C67915, 0xC67178F2E372532B, 0xCA273ECEEA26619C,
+                0xD186B8C721C0C207, 0xEADA7DD6CDE0EB1E, 0xF57D4F7FEE6ED178, 0x06F067AA72176FBA, 0x0A637DC5A2C898A6,
+                0x113F9804BEF90DAE, 0x1B710B35131C471B, 0x28DB77F523047D84, 0x32CAAB7B40C72493, 0x3C9EBE0A15C9BEBC,
+                0x431D67C49C100D4C, 0x4CC5D4BECB3E42B6, 0x597F299CFC657E2A, 0x5FCB6FAB3AD6FAEC, 0x6C44198C4A475817
+            };
+
+            constexpr static const unsigned long long int shifts[] = {
+                1, 8, 7, 19, 61, 6, 14, 18, 41, 28, 34, 39
+            };
+        };
+
+        /// @brief  Internal sha2 traits class sha2-512.
+        template <typename inexplicit_specialisation>
+        struct internals<512, inexplicit_specialisation> final {
+            using base_type = unsigned long long int;
+
+            /// @brief  Type to hold the hash data.
+            struct hash_type final {
+                base_type data[sha2::hash_size / sizeof(base_type)] = {
+                    0x6A09E667F3BCC908, 0xBB67AE8584CAA73B, 0x3C6EF372FE94F82B, 0xA54FF53A5F1D36F1,
+                    0x510E527FADE682D1, 0x9B05688C2B3E6C1F, 0x1F83D9ABFB41BD6B, 0x5BE0CD19137E2179
+                };
+            };
+
+            /// @brief  Type to hold the additional hash state data.
+            struct additional_type final {
+            };
+
+            /// @brief  The first 64-bits of the fractional parts of the cube roots of the first 80 primes.
+            constexpr static const unsigned long long int constants[sha2::processing_rounds] = {
+                0x428A2F98D728AE22, 0x7137449123EF65CD, 0xB5C0FBCFEC4D3B2F, 0xE9B5DBA58189DBBC, 0x3956C25BF348B538,
+                0x59F111F1B605D019, 0x923F82A4AF194F9B, 0xAB1C5ED5DA6D8118, 0xD807AA98A3030242, 0x12835B0145706FBE,
+                0x243185BE4EE4B28C, 0x550C7DC3D5FFB4E2, 0x72BE5D74F27B896F, 0x80DEB1FE3B1696B1, 0x9BDC06A725C71235,
+                0xC19BF174CF692694, 0xE49B69C19EF14AD2, 0xEFBE4786384F25E3, 0x0FC19DC68B8CD5B5, 0x240CA1CC77AC9C65,
+                0x2DE92C6F592B0275, 0x4A7484AA6EA6E483, 0x5CB0A9DCBD41FBD4, 0x76F988DA831153B5, 0x983E5152EE66DFAB,
+                0xA831C66D2DB43210, 0xB00327C898FB213F, 0xBF597FC7BEEF0EE4, 0xC6E00BF33DA88FC2, 0xD5A79147930AA725,
+                0x06CA6351E003826F, 0x142929670A0E6E70, 0x27B70A8546D22FFC, 0x2E1B21385C26C926, 0x4D2C6DFC5AC42AED,
+                0x53380D139D95B3DF, 0x650A73548BAF63DE, 0x766A0ABB3C77B2A8, 0x81C2C92E47EDAEE6, 0x92722C851482353B,
+                0xA2BFE8A14CF10364, 0xA81A664BBC423001, 0xC24B8B70D0F89791, 0xC76C51A30654BE30, 0xD192E819D6EF5218,
+                0xD69906245565A910, 0xF40E35855771202A, 0x106AA07032BBD1B8, 0x19A4C116B8D2D0C8, 0x1E376C085141AB53,
+                0x2748774CDF8EEB99, 0x34B0BCB5E19B48A8, 0x391C0CB3C5C95A63, 0x4ED8AA4AE3418ACB, 0x5B9CCA4F7763E373,
+                0x682E6FF3D6B2B8A3, 0x748F82EE5DEFB2FC, 0x78A5636F43172F60, 0x84C87814A1F0AB72, 0x8CC702081A6439EC,
+                0x90BEFFFA23631E28, 0xA4506CEBDE82BDE9, 0xBEF9A3F7B2C67915, 0xC67178F2E372532B, 0xCA273ECEEA26619C,
+                0xD186B8C721C0C207, 0xEADA7DD6CDE0EB1E, 0xF57D4F7FEE6ED178, 0x06F067AA72176FBA, 0x0A637DC5A2C898A6,
+                0x113F9804BEF90DAE, 0x1B710B35131C471B, 0x28DB77F523047D84, 0x32CAAB7B40C72493, 0x3C9EBE0A15C9BEBC,
+                0x431D67C49C100D4C, 0x4CC5D4BECB3E42B6, 0x597F299CFC657E2A, 0x5FCB6FAB3AD6FAEC, 0x6C44198C4A475817
+            };
+
+            constexpr static const unsigned long long int shifts[] = {
+                1, 8, 7, 19, 61, 6, 14, 18, 41, 28, 34, 39
+            };
+        };
+
+    public:
+        using hash_type = typename internals<sha2::size>::hash_type;
+
+    private:
+        using additional_type = typename internals<sha2::size>::additional_type;
+
+    private:
+        /// @brief  Internal type used to construct blocks of data for processing.
+        struct block_type final {
+            unsigned long long int length_bytes = 0;
+            typename internals<sha2::size>::base_type data[sha2::block_size] = {};
+        };
+
+    private:
+        /// @brief  The number of bytes of data that have been hashed.
+        unsigned long long int hashed_length = 0;
+
+        /// @brief  The current block of data being filled.
+        block_type block = {};
+
+        /// @brief  The current hash.
+        hash_type hash = {};
+
+        /// @brief  The current additional hash information.
+        additional_type additional = {};
+
+        /// @brief  Flag showing whether the hash has been finalised.
+        bool finalised = false;
+
+    private:
+        /// @brief  Rotate a 32 bit value right by a shift amount.
+        /// @param  value The value to rotate.
+        /// @param  shift The number of bits to rotate by.
+        /// @return The value after it has been rotated right by shift bits.
+        constexpr static unsigned int rotate_right(unsigned int value, unsigned int shift) {
+            constexpr const unsigned int mask = (8 * sizeof(unsigned int) - 1);
+            shift &= mask;
+            return (value >> shift) | (value << ((-shift) & mask));
+        }
+
+        /// @brief  Rotate a 64 bit value right by a shift amount.
+        /// @param  value The value to rotate.
+        /// @param  shift The number of bits to rotate by.
+        /// @return The value after it has been rotated right by shift bits.
+        constexpr static unsigned long long int rotate_right(unsigned long long int value, unsigned long long int shift) {
+            constexpr const unsigned long long int mask = (8 * sizeof(unsigned long long int) - 1);
+            shift &= mask;
+            return (value >> shift) | (value << ((-shift) & mask));
+        }
+
+    private:
+        /// @brief  Perform the hashing algorithm on a block of data.
+        constexpr void hash_block() {
+            typename internals<sha2::size>::base_type A = this->hash.data[0];
+            typename internals<sha2::size>::base_type B = this->hash.data[1];
+            typename internals<sha2::size>::base_type C = this->hash.data[2];
+            typename internals<sha2::size>::base_type D = this->hash.data[3];
+            typename internals<sha2::size>::base_type E = this->hash.data[4];
+            typename internals<sha2::size>::base_type F = this->hash.data[5];
+            typename internals<sha2::size>::base_type G = 0;
+            typename internals<sha2::size>::base_type H = 0;
+
+            if constexpr (sha2::size == 224) {
+                G = this->hash.data[6];
+                H = this->additional.data[0];
+            }
+            else if constexpr (sha2::size == 256) {
+                G = this->hash.data[6];
+                H = this->hash.data[7];
+            }
+            else if constexpr (sha2::size == 384) {
+                G = this->additional.data[0];
+                H = this->additional.data[1];
+            }
+            else if constexpr (sha2::size == 512) {
+                G = this->hash.data[6];
+                H = this->hash.data[7];
+            }
+
+            // Fill the working block from the current.
+            typename internals<sha2::size>::base_type working_block[sha2::processing_rounds] = {};
+            for (unsigned int index = 0; index < sha2::block_size / sizeof(typename internals<sha2::size>::base_type); ++index) {
+                working_block[index] = this->block.data[index];
+            }
+
+
+            // Mix to fill the remainder of the working block.
+            for (unsigned int index = sha2::block_size / sizeof(typename internals<sha2::size>::base_type); index < sha2::processing_rounds; ++index) {
+                const typename internals<sha2::size>::base_type S0 = rotate_right(working_block[index - 15], internals<sha2::size>::shifts[0]) ^ rotate_right(working_block[index - 15], internals<sha2::size>::shifts[1]) ^ (working_block[index - 15] >> internals<sha2::size>::shifts[2]);
+                const typename internals<sha2::size>::base_type S1 = rotate_right(working_block[index - 2], internals<sha2::size>::shifts[3]) ^ rotate_right(working_block[index - 2], internals<sha2::size>::shifts[4]) ^ (working_block[index - 2] >> internals<sha2::size>::shifts[5]);
+                working_block[index] = working_block[index - 16] + S0 + working_block[index - 7] + S1;
+            }
+
+            // Do the hash iterations.
+            for (unsigned int iteration = 0; iteration < sha2::processing_rounds; ++iteration) {
+                const typename internals<sha2::size>::base_type S1 = rotate_right(E, internals<sha2::size>::shifts[6]) ^ rotate_right(E, internals<sha2::size>::shifts[7]) ^ rotate_right(E, internals<sha2::size>::shifts[8]);
+                const typename internals<sha2::size>::base_type CH = (E & F) ^ ((~E) & G);
+                const typename internals<sha2::size>::base_type TEMP1 = H + S1 + CH + internals<sha2::size>::constants[iteration] + working_block[iteration];
+                const typename internals<sha2::size>::base_type S0 = rotate_right(A, internals<sha2::size>::shifts[9]) ^ rotate_right(A, internals<sha2::size>::shifts[10]) ^ rotate_right(A, internals<sha2::size>::shifts[11]);
+                const typename internals<sha2::size>::base_type MAJ = (A & B) ^ (A & C) ^ (B & C);
+                const typename internals<sha2::size>::base_type TEMP2 = S0 + MAJ;
+
+                H = G;
+                G = F;
+                F = E;
+                E = D + TEMP1;
+                D = C;
+                C = B;
+                B = A;
+                A = TEMP1 + TEMP2;
+            }
+
+            this->hash.data[0] += A;
+            this->hash.data[1] += B;
+            this->hash.data[2] += C;
+            this->hash.data[3] += D;
+            this->hash.data[4] += E;
+            this->hash.data[5] += F;
+
+            if constexpr (sha2::size == 224) {
+                this->hash.data[6] += G;
+                this->additional.data[0] += H;
+            }
+            else if constexpr (sha2::size == 256) {
+                this->hash.data[6] += G;
+                this->hash.data[7] += H;
+            }
+            else if constexpr (sha2::size == 384) {
+                this->additional.data[0] += G;
+                this->additional.data[1] += H;
+            }
+            else if constexpr (sha2::size == 512) {
+                this->hash.data[6] += G;
+                this->hash.data[7] += H;
+            }
+        }
+
+    public:
+        /// @brief  Reset the internal state of the hash.
+        constexpr void reset() {
+            this->hashed_length = 0;
+            this->block = {};
+            this->hash = {};
+            this->additional = {};
+            this->finalised = false;
+        }
+
+        /// @brief  Consume data, constructing blocks and hashing as needed.
+        /// @param  data Input data pointer.
+        /// @param  length Valid length of the input data pointer.
+        constexpr void consume(const char* data, unsigned long long int length) {
+            GTL_SHA2_ASSERT(this->finalised == false, "Finalise must not be called before consume().");
+
+            // Count how much data has been consumed.
+            this->hashed_length += length;
+
+            // Block construction and processing.
+            while (length--) {
+                // Append data to the current block.
+                this->block.data[this->block.length_bytes / sizeof(typename internals<sha2::size>::base_type)] |= static_cast<typename internals<sha2::size>::base_type>(static_cast<unsigned char>(*data++)) << (((sizeof(typename internals<sha2::size>::base_type) - 1) - (this->block.length_bytes % sizeof(typename internals<sha2::size>::base_type))) * 8);
+                ++this->block.length_bytes;
+
+                // If full, hash.
+                if (this->block.length_bytes == sha2::block_size) {
+                    this->hash_block();
+                    this->block = {};
+                }
+            }
+        }
+
+        /// @brief  Finishes processing any remaining buffered data.
+        constexpr void finalise() {
+            GTL_SHA2_ASSERT(this->finalised == false, "Finalise must not be called before finalise().");
+
+            // Pad the data with a single 0x80 on the end.
+            this->block.data[this->block.length_bytes / sizeof(typename internals<sha2::size>::base_type)] |= static_cast<typename internals<sha2::size>::base_type>(static_cast<unsigned char>(0x80)) << (((sizeof(typename internals<sha2::size>::base_type) - 1) - (this->block.length_bytes % sizeof(typename internals<sha2::size>::base_type))) * 8);
+            ++this->block.length_bytes;
+
+            // Check if there is enough space in the final chunk for the data length.
+            if (this->block.length_bytes > (sha2::block_size - (sizeof(typename internals<sha2::size>::base_type) * 2))) {
+                this->hash_block();
+                this->block = {};
+            }
+
+            if constexpr ((sha2::size == 224) || (sha2::size == 256)) {
+                // Add the data length to the chunk.
+                const unsigned long long int hashed_length_bits = this->hashed_length * 8;
+                this->block.data[14] = (hashed_length_bits & 0xFFFFFFFF00000000ull) >> 32u;
+                this->block.data[15] = (hashed_length_bits & 0x00000000FFFFFFFFull) >> 0u;
+            }
+            else if constexpr ((sha2::size == 384) || (sha2::size == 512)) {
+                // Add the data length to the chunk.
+                const unsigned long long int hashed_length_bits = this->hashed_length * 8;
+                this->block.data[14] = 0ull; // The upper 64 bits of the 128 bit length value.
+                this->block.data[15] = hashed_length_bits;
+            }
+
+            // Hash the block.
+            this->hash_block();
+
+            this->finalised = true;
+        }
+
+        /// @brief  Calculate the final hash from the state and return it.
+        /// @return The resultant hash.
+        constexpr const hash_type& get_hash() const {
+            GTL_SHA2_ASSERT(this->finalised == true, "Finalise must be called before get_hash().");
+            return this->hash;
+        }
+
+    public:
+        /// @brief  Simple type to hold the string representation of the hash.
+        struct hash_string_type final {
+            char hash[(sha2::hash_size * 2) + 1] = {};
+        };
+
+        /// @brief  Convert a hash into its string representation.
+        /// @param  hash The hash to convert.
+        /// @return The string representation of the hash, with null termination.
+        constexpr static hash_string_type hash_to_string(const hash_type& hash) {
+            hash_string_type output;
+            constexpr const char* hex_characters = "0123456789ABCDEF";
+            for (unsigned int index = 0u; index < (sha2::hash_size * 2); ++index) {
+                output.hash[index] = hex_characters[(hash.data[index / (sizeof(typename internals<sha2::size>::base_type) * 2)] >> ((((sizeof(typename internals<sha2::size>::base_type) * 2) - 1) - (index % (sizeof(typename internals<sha2::size>::base_type) * 2))) * 4)) & 0xF];
+            }
+            output.hash[sha2::hash_size * 2] = 0;
+            return output;
+        }
+    };
+
+    using sha2_224 = sha2<224>;
+    using sha2_256 = sha2<256>;
+    using sha2_384 = sha2<384>;
+    using sha2_512 = sha2<512>;
+}
+
+#undef GTL_SHA2_ASSERT
+
+#endif // GTL_SHA2_HPP
