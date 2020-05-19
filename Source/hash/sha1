@@ -1,0 +1,237 @@
+/*
+The MIT License
+Copyright (c) 2019 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_SHA0_HPP
+#define GTL_SHA0_HPP
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the hash is misused.
+#   define GTL_SHA1_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_SHA1_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+namespace gtl {
+    /// @brief  The sha1 class computes and SHA1 hash of a sequence of data.
+    class sha1 final {
+    public:
+        /// @brief  Handy variable for accessing the size in bits.
+        constexpr static const unsigned long long int size = 160;
+
+        /// @brief  Size of the hash in bytes.
+        constexpr static const unsigned long long int hash_size = sha1::size / 8;
+
+        /// @brief  Internal size of each processed block of data in bytes.
+        constexpr static const unsigned long long int block_size = 64;
+
+        /// @brief  Number of rounds used to process each block of data.
+        constexpr static const unsigned long long int processing_rounds = 80;
+
+    public:
+        /// @brief  Simple type to hold the hash data.
+        struct hash_type final {
+            unsigned int data[sha1::hash_size / sizeof(unsigned int)] = {
+                0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0
+            };
+        };
+
+    private:
+        /// @brief  Internal type used to construct blocks of data for processing.
+        struct block_type final {
+            unsigned long long int length_bytes = 0;
+            unsigned int data[sha1::block_size / sizeof(unsigned int)] = {};
+        };
+
+    private:
+        /// @brief  The number of bytes of data that have been hashed.
+        unsigned long long int hashed_length = 0;
+
+        /// @brief  The current block of data being filled.
+        block_type block = {};
+
+        /// @brief  The current hash.
+        hash_type hash = {};
+
+        /// @brief  Flag showing whether the hash has been finalised.
+        bool finalised = false;
+
+    private:
+        /// @brief  Rotate a 32 bit value left by a shift amount.
+        /// @param  value The value to rotate.
+        /// @param  shift The number of bits to rotate by.
+        /// @return The value after it has been rotated left by shift bits.
+        constexpr static unsigned int rotate_left(unsigned int value, unsigned int shift) {
+            constexpr const unsigned int mask = (8 * sizeof(unsigned int ) - 1);
+            shift &= mask;
+            return (value << shift) | (value >> ((-shift) & mask));
+        }
+
+    private:
+        /// @brief  Perform the hashing algorithm on a block of data.
+        constexpr void hash_block() {
+            unsigned int A = this->hash.data[0];
+            unsigned int B = this->hash.data[1];
+            unsigned int C = this->hash.data[2];
+            unsigned int D = this->hash.data[3];
+            unsigned int E = this->hash.data[4];
+
+            // Fill the start of the working block from the current block.
+            unsigned int working_block[80] = {};
+            for (unsigned int index = 0; index < sha1::block_size / sizeof(unsigned int); ++index) {
+                working_block[index] = this->block.data[index];
+            }
+
+            // Mix to fill the remainder of the working block.
+            for (unsigned int index = sha1::block_size / sizeof(unsigned int); index < 80; ++index) {
+                // This line's addition of a 1 bit left rotate is the only change from sha0.
+                working_block[index] = rotate_left((working_block[index - 3] ^ working_block[index - 8] ^ working_block[index - 14] ^ working_block[index - 16]), 1);
+            }
+
+            // Do the hash iterations.
+            for (unsigned int iteration = 0; iteration < this->processing_rounds; ++iteration) {
+                unsigned int F = 0;
+                unsigned int K = 0;
+
+                if (iteration < 20) {
+                    F = (B & C) | (~B & D);
+                    K = 0x5A827999;
+                }
+                else if (iteration < 40) {
+                    F = B ^ C ^ D;
+                    K = 0x6ED9EBA1;
+                }
+                else if (iteration < 60) {
+                    F = (B & C) | (B & D) | (C & D);
+                    K = 0x8F1BBCDC;
+                }
+                else {
+                    F = B ^ C ^ D;
+                    K = 0xCA62C1D6;
+                }
+
+                unsigned int next_A = rotate_left(A, 5) + F + E + K + working_block[iteration];
+                E = D;
+                D = C;
+                C = rotate_left(B, 30);
+                B = A;
+                A = next_A;
+            }
+
+            this->hash.data[0] += A;
+            this->hash.data[1] += B;
+            this->hash.data[2] += C;
+            this->hash.data[3] += D;
+            this->hash.data[4] += E;
+        }
+
+    public:
+        /// @brief  Reset the internal state of the hash.
+        constexpr void reset() {
+            this->hashed_length = 0;
+            this->block = {};
+            this->hash = {};
+            this->finalised = false;
+        }
+
+        /// @brief  Consume data, constructing blocks and hashing as needed.
+        /// @param  data Input data pointer.
+        /// @param  length Valid length of the input data pointer.
+        constexpr void consume(const char* data, unsigned long long int length) {
+            GTL_SHA1_ASSERT(this->finalised == false, "Finalise must not be called before consume().");
+
+            // Count how much data has been consumed.
+            this->hashed_length += length;
+
+            // Block construction and processing.
+            while (length--) {
+                // Append data to the current block.
+                this->block.data[this->block.length_bytes / sizeof(unsigned int)] |= static_cast<unsigned int>(static_cast<unsigned char>(*data++)) << (((sizeof(unsigned int) - 1) - (this->block.length_bytes % sizeof(unsigned int))) * 8);
+
+                ++this->block.length_bytes;
+
+                // If full, hash.
+                if (this->block.length_bytes == sha1::block_size) {
+                    this->hash_block();
+                    this->block = {};
+                }
+            }
+        }
+
+        /// @brief  Finishes processing any remaining buffered data.
+        constexpr void finalise() {
+            GTL_SHA1_ASSERT(this->finalised == false, "Finalise must not be called before finalise().");
+
+            // Pad the data with a single 0x80 on the end.
+            this->block.data[this->block.length_bytes / sizeof(unsigned int)] |= static_cast<unsigned int>(static_cast<unsigned char>(0x80)) << (((sizeof(unsigned int) - 1) - (this->block.length_bytes % sizeof(unsigned int))) * 8);
+            ++this->block.length_bytes;
+
+            // Check if there is enough space in the final chunk for the data length.
+            if (this->block.length_bytes > (sha1::block_size - sizeof(unsigned long long int))) {
+                this->hash_block();
+                this->block = {};
+            }
+
+            // Add the data length to the chunk.
+            const unsigned long long int hashed_length_bits = this->hashed_length * 8;
+            this->block.data[14] = (hashed_length_bits & 0xFFFFFFFF00000000ull) >> 32u;
+            this->block.data[15] = (hashed_length_bits & 0x00000000FFFFFFFFull) >> 0u;
+
+            // Hash the block.
+            this->hash_block();
+
+            this->finalised = true;
+        }
+
+        /// @brief  Calculate the final hash from the state and return it.
+        /// @return The resultant hash.
+        constexpr const hash_type& get_hash() const {
+            GTL_SHA1_ASSERT(this->finalised == true, "Finalise must be called before get_hash().");
+            return this->hash;
+        }
+
+    public:
+        /// @brief  Simple type to hold the string representation of the hash.
+        struct hash_string_type final {
+            char hash[(sha1::hash_size * 2) + 1] = {};
+        };
+
+        /// @brief  Convert a hash into its string representation.
+        /// @param  hash The hash to convert.
+        /// @return The string representation of the hash, with null termination.
+        constexpr static hash_string_type hash_to_string(const hash_type& hash) {
+            hash_string_type output;
+            constexpr const char* hex_characters = "0123456789ABCDEF";
+            for (unsigned int index = 0u; index < (sha1::hash_size * 2); ++index) {
+                output.hash[index] = hex_characters[(hash.data[index / (sizeof(unsigned int) * 2)] >> ((((sizeof(unsigned int) * 2) - 1) - (index % (sizeof(unsigned int) * 2))) * 4)) & 0xF];
+            }
+            output.hash[sha1::hash_size * 2] = 0;
+            return output;
+        }
+    };
+}
+
+#undef GTL_SHA1_ASSERT
+
+#endif // GTL_SHA0_HPP
