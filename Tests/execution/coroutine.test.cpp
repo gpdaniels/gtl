@@ -38,13 +38,7 @@ THE SOFTWARE
 
 TEST(coroutine, traits, standard) {
 
-    #if defined(__APPLE__)
-        REQUIRE(sizeof(gtl::coroutine) == 352, "sizeof(gtl::coroutine) = %ld, expected == %lld", sizeof(gtl::coroutine), 352ull);
-    #elif defined(__linux__)
-        REQUIRE(sizeof(gtl::coroutine) == 576 || sizeof(gtl::coroutine) == 584, "sizeof(gtl::coroutine) = %ld, expected == %lld", sizeof(gtl::coroutine), 576ull);
-    #elif defined(_WIN32)
-        REQUIRE(sizeof(gtl::coroutine) == 28, "sizeof(gtl::coroutine) = %ld, expected == %lld", sizeof(gtl::coroutine), 28ull);
-    #endif
+    //REQUIRE(sizeof(gtl::coroutine) == ???);
 
     REQUIRE(std::is_pod<gtl::coroutine>::value == false, "Expected std::is_pod to be false.");
 
