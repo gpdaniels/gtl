@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_ANTI_INJECT_HPP
 
 namespace gtl {
-    class anti_inject {
+    class anti_inject final {
 
     };
 }

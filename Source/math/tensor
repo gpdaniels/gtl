@@ -23,8 +23,7 @@ THE SOFTWARE
 #define GTL_TENSOR_HPP
 
 namespace gtl {
-    class tensor {
-
+    class tensor final {
     };
 }
 

@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_COMPOSER_HPP
 
 namespace gtl {
-    class composer {
+    class composer final {
 
     };
 }

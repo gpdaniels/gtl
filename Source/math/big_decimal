@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_BIG_DECIMAL_HPP
 
 namespace gtl {
-    class big_decimal {
+    class big_decimal final {
 
     };
 }

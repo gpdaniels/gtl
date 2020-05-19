@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_TAR_HPP
 
 namespace gtl {
-    class tar {
+    class tar final {
 
     };
 }

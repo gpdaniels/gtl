@@ -23,8 +23,7 @@ THE SOFTWARE
 #define GTL_OCTREE_HPP
 
 namespace gtl {
-    class octree {
-
+    class octree final {
     };
 }
 

@@ -49,7 +49,7 @@ namespace gtl {
         constexpr static const unsigned int extended_leaf_raw_size         = 0x80000008u;
 
     private:
-        struct cpuid_registers {
+        struct cpuid_registers final {
         public:
             enum class index : unsigned int {
                 eax = 0,

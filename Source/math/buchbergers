@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_BUCHBERGERS_HPP
 
 namespace gtl {
-    class buchbergers {
+    class buchbergers final {
 
     };
 }

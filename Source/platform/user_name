@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_USER_NAME_HPP
 
 namespace gtl {
-    class user_name {
+    class user_name final {
 
     };
 }

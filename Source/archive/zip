@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_ZIP_HPP
 
 namespace gtl {
-    class zip {
+    class zip final {
 
     };
 }

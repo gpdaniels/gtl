@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_MEMORY_CONSISTENCY_HPP
 
 namespace gtl {
-    class memory_consistency {
+    class memory_consistency final {
 
     };
 }

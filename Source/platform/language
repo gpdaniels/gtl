@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_LANGUAGE_HPP
 
 namespace gtl {
-    class language {
+    class language final {
 
     };
 }

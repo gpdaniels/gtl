@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_IMGUI_HPP
 
 namespace gtl {
-    class imgui {
+    class imgui final {
 
     };
 }

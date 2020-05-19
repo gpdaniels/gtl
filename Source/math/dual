@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_DUAL_HPP
 
 namespace gtl {
-    class dual {
+    class dual final {
 
     };
 }

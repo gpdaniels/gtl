@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_DATA_EXECUTION_HPP
 
 namespace gtl {
-    class data_execution {
+    class data_execution final {
 
     };
 }

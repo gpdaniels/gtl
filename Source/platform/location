@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_LOCATION_HPP
 
 namespace gtl {
-    class location {
+    class location final {
 
     };
 }

@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_FUNCTION_TIMING_HPP
 
 namespace gtl {
-    class function_timing {
+    class function_timing final {
 
     };
 }

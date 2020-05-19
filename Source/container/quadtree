@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_QUADTREE_HPP
 
 namespace gtl {
-    class quadtree {
+    class quadtree final {
 
     };
 }

@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_TTS_HPP
 
 namespace gtl {
-    class tts {
+    class tts final {
 
     };
 }

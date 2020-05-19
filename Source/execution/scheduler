@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_SCHEDULER_HPP
 
 namespace gtl {
-    class scheduler {
+    class scheduler final {
 
     };
 }

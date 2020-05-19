@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_RETURN_REDIRECT_HPP
 
 namespace gtl {
-    class return_redirect {
+    class return_redirect final {
 
     };
 }

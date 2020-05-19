@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_HARD_DRIVE_HPP
 
 namespace gtl {
-    class hard_drive {
+    class hard_drive final {
 
     };
 }

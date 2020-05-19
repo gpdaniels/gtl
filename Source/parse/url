@@ -23,8 +23,7 @@ THE SOFTWARE
 #define GTL_URL_HPP
 
 namespace gtl {
-    class url {
-
+    class url final {
     };
 }
 

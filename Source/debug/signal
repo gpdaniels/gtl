@@ -37,10 +37,10 @@ namespace gtl {
     /// @brief  The signal class implements a wrapper around signal handling allowing the use of lambdas with scope.
     /// @tparam signal_number The signal number, e.g. SIGABRT, SIGFPE, SIGILL, SIGINT, SIGSEGV, SIGTERM, etc...
     template <int signal_number>
-    class signal {
+    class signal final {
     private:
         /// @brief  The manager class is a singleton as there can only be one handler for each signal in a program.
-        class manager {
+        class manager final {
         private:
             /// @brief  Each signal manager singleton holds a lambda function to call.
             std::function<void(int)> function = nullptr;

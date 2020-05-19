@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_DETOURS_HPP
 
 namespace gtl {
-    class detours {
+    class detours final {
 
     };
 }

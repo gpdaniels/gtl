@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_PROCESSOR_HPP
 
 namespace gtl {
-    class processor {
+    class processor final {
 
     };
 }

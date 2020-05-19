@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_COMPUTER_NAME_HPP
 
 namespace gtl {
-    class computer_name {
+    class computer_name final {
 
     };
 }

@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_CLIFFORD_HPP
 
 namespace gtl {
-    class clifford {
+    class clifford final {
 
     };
 }

@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_PROCESS_MUTEX_HPP
 
 namespace gtl {
-    class process_mutex {
+    class process_mutex final {
 
     };
 }

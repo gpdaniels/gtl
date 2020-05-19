@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_STACKTRACE_HPP
 
 namespace gtl {
-    class stacktrace {
+    class stacktrace final {
 
     };
 }

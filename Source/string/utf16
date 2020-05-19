@@ -23,8 +23,7 @@ THE SOFTWARE
 #define GTL_UTF16_HPP
 
 namespace gtl {
-    class utf16 {
-
+    class utf16 final {
     };
 }
 

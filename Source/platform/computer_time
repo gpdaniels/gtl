@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_COMPUTER_TIME_HPP
 
 namespace gtl {
-    class computer_time {
+    class computer_time final {
 
     };
 }

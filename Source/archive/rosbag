@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_ROSBAG_HPP
 
 namespace gtl {
-    class rosbag {
+    class rosbag final {
 
     };
 }
