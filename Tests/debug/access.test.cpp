@@ -33,7 +33,7 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-class test_class {
+class test_class final {
 private:
     /*         storage */ /*volatile*/ /*const*/ /*type*/ /*name*/
     /*            auto */ /*volatile*/ /*const*/    int   variable__a__i = 1;
