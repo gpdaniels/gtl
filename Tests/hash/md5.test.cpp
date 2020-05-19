@@ -36,8 +36,6 @@ THE SOFTWARE
 #endif
 
 TEST(md5, traits, standard) {
-    REQUIRE(sizeof(gtl::md5) >= 0);
-
     REQUIRE((std::is_pod<gtl::md5>::value == false));
 
     REQUIRE((std::is_trivial<gtl::md5>::value == false));
@@ -52,22 +50,28 @@ TEST(md5, constructor, empty) {
     testbench::do_not_optimise_away(md5);
 }
 
-TEST(md5, function, clear) {
+TEST(md5, function, reset) {
     gtl::md5 md5;
-    md5.clear();
+    md5.reset();
 }
 
-TEST(md5, function, insert) {
+TEST(md5, function, consume) {
     gtl::md5 md5;
-    md5.insert("", 0);
-    md5.insert("123456781234567812345678123456781234567812345678123456781234567", 63);
-    md5.insert("1234567812345678123456781234567812345678123456781234567812345678", 64);
-    md5.insert("12345678123456781234567812345678123456781234567812345678123456781", 65);
+    md5.consume("", 0);
+    md5.consume("123456781234567812345678123456781234567812345678123456781234567", 63);
+    md5.consume("1234567812345678123456781234567812345678123456781234567812345678", 64);
+    md5.consume("12345678123456781234567812345678123456781234567812345678123456781", 65);
 }
 
 TEST(md5, function, finalise) {
     gtl::md5 md5;
     md5.finalise();
+}
+
+TEST(md5, function, get_hash) {
+    gtl::md5 md5;
+    md5.finalise();
+    md5.get_hash();
 }
 
 TEST(md5, evaluate, hash_as_integer) {
@@ -95,11 +99,12 @@ TEST(md5, evaluate, hash_as_integer) {
     };
 
     gtl::md5 md5;
-
     for (unsigned int i = 0; i < data_count; ++i) {
-        md5.clear();
-        md5.insert(data[i], strlen(data[i]));
-        gtl::md5::hash_type hash = md5.finalise();
+        md5.reset();
+        md5.consume(&data[i][0], strlen(&data[i][0]));
+        md5.finalise();
+
+        gtl::md5::hash_type hash = md5.get_hash();
 
         char hash_string[32 + 4 + 32 + 1] = {};
         snprintf(hash_string, 32 + 4 + 32 + 1, "%08X%08X%08X%08X == %08X%08X%08X%08X", hash.data[0], hash.data[1], hash.data[2], hash.data[3], result[i][0], result[i][1], result[i][2], result[i][3]);
@@ -134,11 +139,13 @@ TEST(md5, evaluate, hash_as_string) {
     };
 
     gtl::md5 md5;
-
     for (unsigned int i = 0; i < data_count; ++i) {
-        md5.clear();
-        md5.insert(data[i], strlen(data[i]));
-        gtl::md5::hash_type hash = md5.finalise();
+        md5.reset();
+        md5.consume(&data[i][0], strlen(&data[i][0]));
+        md5.finalise();
+
+        gtl::md5::hash_type hash = md5.get_hash();
+
         PRINT("%s == %s\n", gtl::md5::hash_to_string(hash).hash, result[i]);
         REQUIRE(testbench::is_string_same(gtl::md5::hash_to_string(hash).hash, result[i]) == true);
     }
@@ -180,12 +187,13 @@ TEST(md5, evaluate, partial_insert) {
     };
 
     gtl::md5 md5;
-
     for (unsigned int i = 0; i < data_count; ++i) {
-        md5.clear();
-        md5.insert(data1[i], strlen(data1[i]));
-        md5.insert(data2[i], strlen(data2[i]));
-        gtl::md5::hash_type hash = md5.finalise();
+        md5.reset();
+        md5.consume(&data1[i][0], strlen(&data1[i][0]));
+        md5.consume(&data2[i][0], strlen(&data2[i][0]));
+        md5.finalise();
+
+        gtl::md5::hash_type hash = md5.get_hash();
 
         char hash_string[32 + 4 + 32 + 1] = {};
         snprintf(hash_string, 32 + 4 + 32 + 1, "%08X%08X%08X%08X == %08X%08X%08X%08X", hash.data[0], hash.data[1], hash.data[2], hash.data[3], result[i][0], result[i][1], result[i][2], result[i][3]);

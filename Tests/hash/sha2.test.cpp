@@ -36,74 +36,79 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-using sha2_types = testbench::enum_collection<gtl::sha2_size, gtl::sha2_size::bits_224, gtl::sha2_size::bits_256, gtl::sha2_size::bits_384, gtl::sha2_size::bits_512>;
+using sha2_types = testbench::value_collection<224, 256, 384, 512>;
 
 TEST(sha2, traits, standard) {
     testbench::test_template<sha2_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
 
-            REQUIRE(sizeof(gtl::sha2<value_enum>) >= 0);
+            REQUIRE((std::is_pod<gtl::sha2<value>>::value == false));
 
-            REQUIRE((std::is_pod<gtl::sha2<value_enum>>::value == false));
+            REQUIRE((std::is_trivial<gtl::sha2<value>>::value == false));
 
-            REQUIRE((std::is_trivial<gtl::sha2<value_enum>>::value == false));
+            REQUIRE((std::is_trivially_copyable<gtl::sha2<value>>::value == true));
 
-            REQUIRE((std::is_trivially_copyable<gtl::sha2<value_enum>>::value == true));
-
-            REQUIRE((std::is_standard_layout<gtl::sha2<value_enum>>::value == true));
+            REQUIRE((std::is_standard_layout<gtl::sha2<value>>::value == true));
         }
     );
 }
 
 TEST(sha2, constructor, empty) {
     testbench::test_template<sha2_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
 
-            gtl::sha2<value_enum> sha2;
+            gtl::sha2<value> sha2;
             testbench::do_not_optimise_away(sha2);
         }
     );
 }
 
-TEST(sha2, function, clear) {
+TEST(sha2, function, reset) {
     testbench::test_template<sha2_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
 
-            gtl::sha2<value_enum> sha2;
-            sha2.clear();
+            gtl::sha2<value> sha2;
+            sha2.reset();
         }
     );
 }
 
-TEST(sha2, function, insert) {
+TEST(sha2, function, consume) {
     testbench::test_template<sha2_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
 
-            gtl::sha2<value_enum> sha2;
-            sha2.insert("", 0);
-            sha2.insert("123456781234567812345678123456781234567812345678123456781234567", 63);
-            sha2.insert("1234567812345678123456781234567812345678123456781234567812345678", 64);
-            sha2.insert("12345678123456781234567812345678123456781234567812345678123456781", 65);
+            gtl::sha2<value> sha2;
+            sha2.consume("", 0);
+            sha2.consume("123456781234567812345678123456781234567812345678123456781234567", 63);
+            sha2.consume("1234567812345678123456781234567812345678123456781234567812345678", 64);
+            sha2.consume("12345678123456781234567812345678123456781234567812345678123456781", 65);
         }
     );
 }
 
 TEST(sha2, function, finalise) {
     testbench::test_template<sha2_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
 
-            gtl::sha2<value_enum> sha2;
+            gtl::sha2<value> sha2;
             sha2.finalise();
+        }
+    );
+}
+
+TEST(sha2, function, get_hash) {
+    testbench::test_template<sha2_types>(
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
+
+            gtl::sha2<value> sha2;
+            sha2.finalise();
+            sha2.get_hash();
         }
     );
 }
@@ -123,7 +128,7 @@ TEST(sha2, evaluate, hash_as_integer) {
     };
     UNUSED(data);
 
-    constexpr static const unsigned int result_sha2_224[data_count][gtl::sha2<gtl::sha2_size::bits_224>::hash_size / sizeof(unsigned int)] = {
+    constexpr static const unsigned int result_sha2_224[data_count][gtl::sha2<224>::hash_size / sizeof(unsigned int)] = {
          { 0xD14A028C, 0x2A3A2BC9, 0x476102BB, 0x288234C4, 0x15A2B01F, 0x828EA62A, 0xC5B3E42F },
          { 0xABD37534, 0xC7D9A2EF, 0xB9465DE9, 0x31CD7055, 0xFFDB8879, 0x563AE980, 0x78D6D6D5 },
          { 0x23097D22, 0x3405D822, 0x8642A477, 0xBDA255B3, 0x2AADBCE4, 0xBDA0B3F7, 0xE36C9DA7 },
@@ -134,7 +139,7 @@ TEST(sha2, evaluate, hash_as_integer) {
     };
     UNUSED(result_sha2_224);
 
-    constexpr static const unsigned int result_sha2_256[data_count][gtl::sha2<gtl::sha2_size::bits_256>::hash_size / sizeof(unsigned int)] = {
+    constexpr static const unsigned int result_sha2_256[data_count][gtl::sha2<256>::hash_size / sizeof(unsigned int)] = {
          { 0xE3B0C442, 0x98FC1C14, 0x9AFBF4C8, 0x996FB924, 0x27AE41E4, 0x649B934C, 0xA495991B, 0x7852B855 },
          { 0xCA978112, 0xCA1BBDCA, 0xFAC231B3, 0x9A23DC4D, 0xA786EFF8, 0x147C4E72, 0xB9807785, 0xAFEE48BB },
          { 0xBA7816BF, 0x8F01CFEA, 0x414140DE, 0x5DAE2223, 0xB00361A3, 0x96177A9C, 0xB410FF61, 0xF20015AD },
@@ -145,7 +150,7 @@ TEST(sha2, evaluate, hash_as_integer) {
     };
     UNUSED(result_sha2_256);
 
-    constexpr static const unsigned long long int result_sha2_384[data_count][gtl::sha2<gtl::sha2_size::bits_384>::hash_size / sizeof(unsigned long long int)] = {
+    constexpr static const unsigned long long int result_sha2_384[data_count][gtl::sha2<384>::hash_size / sizeof(unsigned long long int)] = {
         { 0x38B060A751AC9638, 0x4CD9327EB1B1E36A, 0x21FDB71114BE0743, 0x4C0CC7BF63F6E1DA, 0x274EDEBFE76F65FB, 0xD51AD2F14898B95B },
         { 0x54A59B9F22B0B808, 0x80D8427E548B7C23, 0xABD873486E1F035D, 0xCE9CD697E8517503, 0x3CAA88E6D57BC35E, 0xFAE0B5AFD3145F31 },
         { 0xCB00753F45A35E8B, 0xB5A03D699AC65007, 0x272C32AB0EDED163, 0x1A8B605A43FF5BED, 0x8086072BA1E7CC23, 0x58BAECA134C825A7 },
@@ -156,7 +161,7 @@ TEST(sha2, evaluate, hash_as_integer) {
     };
     UNUSED(result_sha2_384);
 
-    constexpr static const unsigned long long int result_sha2_512[data_count][gtl::sha2<gtl::sha2_size::bits_512>::hash_size / sizeof(unsigned long long int)] = {
+    constexpr static const unsigned long long int result_sha2_512[data_count][gtl::sha2<512>::hash_size / sizeof(unsigned long long int)] = {
         { 0xCF83E1357EEFB8BD, 0xF1542850D66D8007, 0xD620E4050B5715DC, 0x83F4A921D36CE9CE, 0x47D0D13C5D85F2B0, 0xFF8318D2877EEC2F, 0x63B931BD47417A81, 0xA538327AF927DA3E },
         { 0x1F40FC92DA241694, 0x750979EE6CF582F2, 0xD5D7D28E18335DE0, 0x5ABC54D0560E0F53, 0x02860C652BF08D56, 0x0252AA5E74210546, 0xF369FBBBCE8C12CF, 0xC7957B2652FE9A75 },
         { 0xDDAF35A193617ABA, 0xCC417349AE204131, 0x12E6FA4E89A97EA2, 0x0A9EEEE64B55D39A, 0x2192992A274FC1A8, 0x36BA3C23A3FEEBBD, 0x454D4423643CE80E, 0x2A9AC94FA54CA49F },
@@ -168,18 +173,18 @@ TEST(sha2, evaluate, hash_as_integer) {
     UNUSED(result_sha2_512);
 
     testbench::test_template<sha2_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
 
-            gtl::sha2<value_enum> sha2;
+            gtl::sha2<value> sha2;
 
             for (unsigned int i = 0; i < data_count; ++i) {
-                sha2.clear();
-                sha2.insert(data[i], strlen(data[i]));
-                typename gtl::sha2<value_enum>::hash_type hash = sha2.finalise();
+                sha2.reset();
+                sha2.consume(data[i], strlen(data[i]));
+                sha2.finalise();
+                typename gtl::sha2<value>::hash_type hash = sha2.get_hash();
 
-                if constexpr (value_enum == gtl::sha2_size::bits_224) {
+                if constexpr (value == 224) {
                     char hash_string[56 + 4 + 56 + 1] = {};
                     snprintf(
                         hash_string,
@@ -191,9 +196,9 @@ TEST(sha2, evaluate, hash_as_integer) {
                         result_sha2_224[i][4], result_sha2_224[i][5], result_sha2_224[i][6]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_224[i], gtl::sha2<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_224[i], gtl::sha2<value>::hash_size) == true);
                 }
-                if constexpr (value_enum == gtl::sha2_size::bits_256) {
+                if constexpr (value == 256) {
                     char hash_string[64 + 4 + 64 + 1] = {};
                     snprintf(
                         hash_string,
@@ -205,9 +210,9 @@ TEST(sha2, evaluate, hash_as_integer) {
                         result_sha2_256[i][4], result_sha2_256[i][5], result_sha2_256[i][6], result_sha2_256[i][7]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_256[i], gtl::sha2<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_256[i], gtl::sha2<value>::hash_size) == true);
                 }
-                if constexpr (value_enum == gtl::sha2_size::bits_384) {
+                if constexpr (value == 384) {
                     char hash_string[96 + 4 + 96 + 1] = {};
                     snprintf(
                         hash_string,
@@ -219,9 +224,9 @@ TEST(sha2, evaluate, hash_as_integer) {
                         result_sha2_384[i][4], result_sha2_384[i][5]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_384[i], gtl::sha2<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_384[i], gtl::sha2<value>::hash_size) == true);
                 }
-                if constexpr (value_enum == gtl::sha2_size::bits_512) {
+                if constexpr (value == 512) {
                     char hash_string[128 + 4 + 128 + 1] = {};
                     snprintf(
                         hash_string,
@@ -233,7 +238,7 @@ TEST(sha2, evaluate, hash_as_integer) {
                         result_sha2_512[i][4], result_sha2_512[i][5], result_sha2_512[i][6], result_sha2_512[i][7]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_512[i], gtl::sha2<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_512[i], gtl::sha2<value>::hash_size) == true);
                 }
             }
         }
@@ -297,17 +302,20 @@ TEST(sha2, evaluate, hash_as_string) {
     UNUSED(result);
 
     testbench::test_template<sha2_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
 
-            gtl::sha2<value_enum> sha2;
+            gtl::sha2<value> sha2;
             for (unsigned int i = 0; i < data_count; ++i) {
-                sha2.clear();
-                sha2.insert(data[i], strlen(data[i]));
-                typename gtl::sha2<value_enum>::hash_type hash = sha2.finalise();
-                PRINT("%s == %s\n", gtl::sha2<value_enum>::hash_to_string(hash).hash, result[static_cast<unsigned int>(value_enum)][i]);
-                REQUIRE(testbench::is_string_same(gtl::sha2<value_enum>::hash_to_string(hash).hash, result[static_cast<unsigned int>(value_enum)][i]) == true);
+                sha2.reset();
+                sha2.consume(data[i], strlen(data[i]));
+                sha2.finalise();
+                typename gtl::sha2<value>::hash_type hash = sha2.get_hash();
+
+                unsigned long long int result_index = value == 512 ? 3 : value == 384 ? 2 : value == 256 ? 1 : 0;
+
+                PRINT("%s == %s\n", gtl::sha2<value>::hash_to_string(hash).hash, result[result_index][i]);
+                REQUIRE(testbench::is_string_same(gtl::sha2<value>::hash_to_string(hash).hash, result[result_index][i]) == true);
             }
         }
     );
@@ -340,7 +348,7 @@ TEST(sha2, evaluate, partial_insert) {
     };
     UNUSED(data2);
 
-    constexpr static const unsigned int result_sha2_224[data_count][gtl::sha2<gtl::sha2_size::bits_224>::hash_size / sizeof(unsigned int)] = {
+    constexpr static const unsigned int result_sha2_224[data_count][gtl::sha2<224>::hash_size / sizeof(unsigned int)] = {
         { 0xD14A028C, 0x2A3A2BC9, 0x476102BB, 0x288234C4, 0x15A2B01F, 0x828EA62A, 0xC5B3E42F },
         { 0xABD37534, 0xC7D9A2EF, 0xB9465DE9, 0x31CD7055, 0xFFDB8879, 0x563AE980, 0x78D6D6D5 },
         { 0x23097D22, 0x3405D822, 0x8642A477, 0xBDA255B3, 0x2AADBCE4, 0xBDA0B3F7, 0xE36C9DA7 },
@@ -349,8 +357,9 @@ TEST(sha2, evaluate, partial_insert) {
         { 0xBFF72B4F, 0xCB7D75E5, 0x632900AC, 0x5F90D219, 0xE05E97A7, 0xBDE72E74, 0x0DB393D9 },
         { 0xB50AECBE, 0x4E9BB0B5, 0x7BC5F3AE, 0x760A8E01, 0xDB24F203, 0xFB3CDCD1, 0x3148046E }
     };
+    UNUSED(result_sha2_224);
 
-    constexpr static const unsigned int result_sha2_256[data_count][gtl::sha2<gtl::sha2_size::bits_256>::hash_size / sizeof(unsigned int)] = {
+    constexpr static const unsigned int result_sha2_256[data_count][gtl::sha2<256>::hash_size / sizeof(unsigned int)] = {
         { 0xE3B0C442, 0x98FC1C14, 0x9AFBF4C8, 0x996FB924, 0x27AE41E4, 0x649B934C, 0xA495991B, 0x7852B855 },
         { 0xCA978112, 0xCA1BBDCA, 0xFAC231B3, 0x9A23DC4D, 0xA786EFF8, 0x147C4E72, 0xB9807785, 0xAFEE48BB },
         { 0xBA7816BF, 0x8F01CFEA, 0x414140DE, 0x5DAE2223, 0xB00361A3, 0x96177A9C, 0xB410FF61, 0xF20015AD },
@@ -359,8 +368,9 @@ TEST(sha2, evaluate, partial_insert) {
         { 0xDB4BFCBD, 0x4DA0CD85, 0xA60C3C37, 0xD3FBD880, 0x5C77F15F, 0xC6B1FDFE, 0x614EE0A7, 0xC8FDB4C0 },
         { 0xF371BC4A, 0x311F2B00, 0x9EEF952D, 0xD83CA80E, 0x2B60026C, 0x8E935592, 0xD0F9C308, 0x453C813E }
     };
+    UNUSED(result_sha2_256);
 
-    constexpr static const unsigned long long int result_sha2_384[data_count][gtl::sha2<gtl::sha2_size::bits_384>::hash_size / sizeof(unsigned long long int)] = {
+    constexpr static const unsigned long long int result_sha2_384[data_count][gtl::sha2<384>::hash_size / sizeof(unsigned long long int)] = {
         { 0x38B060A751AC9638, 0x4CD9327EB1B1E36A, 0x21FDB71114BE0743, 0x4C0CC7BF63F6E1DA, 0x274EDEBFE76F65FB, 0xD51AD2F14898B95B },
         { 0x54A59B9F22B0B808, 0x80D8427E548B7C23, 0xABD873486E1F035D, 0xCE9CD697E8517503, 0x3CAA88E6D57BC35E, 0xFAE0B5AFD3145F31 },
         { 0xCB00753F45A35E8B, 0xB5A03D699AC65007, 0x272C32AB0EDED163, 0x1A8B605A43FF5BED, 0x8086072BA1E7CC23, 0x58BAECA134C825A7 },
@@ -369,8 +379,9 @@ TEST(sha2, evaluate, partial_insert) {
         { 0x1761336E3F7CBFE5, 0x1DEB137F026F89E0, 0x1A448E3B1FAFA640, 0x39C1464EE8732F11, 0xA5341A6F41E0C202, 0x294736ED64DB1A84 },
         { 0xB12932B0627D1C06, 0x0942F54477641556, 0x55BD4DA0C9AFA6DD, 0x9B9EF53129AF1B8F, 0xB0195996D2DE9CA0, 0xDF9D821FFEE67026 }
     };
+    UNUSED(result_sha2_384);
 
-    constexpr static const unsigned long long int result_sha2_512[data_count][gtl::sha2<gtl::sha2_size::bits_512>::hash_size / sizeof(unsigned long long int)] = {
+    constexpr static const unsigned long long int result_sha2_512[data_count][gtl::sha2<512>::hash_size / sizeof(unsigned long long int)] = {
         { 0xCF83E1357EEFB8BD, 0xF1542850D66D8007, 0xD620E4050B5715DC, 0x83F4A921D36CE9CE, 0x47D0D13C5D85F2B0, 0xFF8318D2877EEC2F, 0x63B931BD47417A81, 0xA538327AF927DA3E },
         { 0x1F40FC92DA241694, 0x750979EE6CF582F2, 0xD5D7D28E18335DE0, 0x5ABC54D0560E0F53, 0x02860C652BF08D56, 0x0252AA5E74210546, 0xF369FBBBCE8C12CF, 0xC7957B2652FE9A75 },
         { 0xDDAF35A193617ABA, 0xCC417349AE204131, 0x12E6FA4E89A97EA2, 0x0A9EEEE64B55D39A, 0x2192992A274FC1A8, 0x36BA3C23A3FEEBBD, 0x454D4423643CE80E, 0x2A9AC94FA54CA49F },
@@ -379,21 +390,22 @@ TEST(sha2, evaluate, partial_insert) {
         { 0x1E07BE23C26A86EA, 0x37EA810C8EC78093, 0x52515A970E9253C2, 0x6F536CFC7A9996C4, 0x5C8370583E0A78FA, 0x4A90041D71A4CEAB, 0x7423F19C71B9D5A3, 0xE01249F0BEBD5894 },
         { 0x72EC1EF1124A45B0, 0x47E8B7C75A932195, 0x135BB61DE24EC0D1, 0x914042246E0AEC3A, 0x2354E093D76F3048, 0xB456764346900CB1, 0x30D2A4FD5DD16ABB, 0x5E30BCB850DEE843 }
     };
+    UNUSED(result_sha2_512);
 
     testbench::test_template<sha2_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
 
-            gtl::sha2<value_enum> sha2;
+            gtl::sha2<value> sha2;
 
             for (unsigned int i = 0; i < data_count; ++i) {
-                sha2.clear();
-                sha2.insert(data1[i], strlen(data1[i]));
-                sha2.insert(data2[i], strlen(data2[i]));
-                typename gtl::sha2<value_enum>::hash_type hash = sha2.finalise();
+                sha2.reset();
+                sha2.consume(data1[i], strlen(data1[i]));
+                sha2.consume(data2[i], strlen(data2[i]));
+                sha2.finalise();
+                typename gtl::sha2<value>::hash_type hash = sha2.get_hash();
 
-                if constexpr (value_enum == gtl::sha2_size::bits_224) {
+                if constexpr (value == 224) {
                     char hash_string[56 + 4 + 56 + 1] = {};
                     snprintf(
                         hash_string,
@@ -405,9 +417,9 @@ TEST(sha2, evaluate, partial_insert) {
                         result_sha2_224[i][4], result_sha2_224[i][5], result_sha2_224[i][6]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_224[i], gtl::sha2<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_224[i], gtl::sha2<value>::hash_size) == true);
                 }
-                if constexpr (value_enum == gtl::sha2_size::bits_256) {
+                if constexpr (value == 256) {
                     char hash_string[64 + 4 + 64 + 1] = {};
                     snprintf(
                         hash_string,
@@ -419,9 +431,9 @@ TEST(sha2, evaluate, partial_insert) {
                         result_sha2_256[i][4], result_sha2_256[i][5], result_sha2_256[i][6], result_sha2_256[i][7]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_256[i], gtl::sha2<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_256[i], gtl::sha2<value>::hash_size) == true);
                 }
-                if constexpr (value_enum == gtl::sha2_size::bits_384) {
+                if constexpr (value == 384) {
                     char hash_string[96 + 4 + 96 + 1] = {};
                     snprintf(
                         hash_string,
@@ -433,9 +445,9 @@ TEST(sha2, evaluate, partial_insert) {
                         result_sha2_384[i][4], result_sha2_384[i][5]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_384[i], gtl::sha2<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_384[i], gtl::sha2<value>::hash_size) == true);
                 }
-                if constexpr (value_enum == gtl::sha2_size::bits_512) {
+                if constexpr (value == 512) {
                     char hash_string[128 + 4 + 128 + 1] = {};
                     snprintf(
                         hash_string,
@@ -447,7 +459,7 @@ TEST(sha2, evaluate, partial_insert) {
                         result_sha2_512[i][4], result_sha2_512[i][5], result_sha2_512[i][6], result_sha2_512[i][7]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_512[i], gtl::sha2<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, result_sha2_512[i], gtl::sha2<value>::hash_size) == true);
                 }
             }
         }

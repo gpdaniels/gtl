@@ -56,7 +56,7 @@ The current classes are as described below:
 |            **sha0** | An implementation of the sha0 hashing function.                                         |
 |            **sha1** | An implementation of the sha1 hashing function.                                         |
 |            **sha2** | An implementation of the sha2 hashing function for 224, 256, 384, and 512 bits.         |
-
+|            **sha3** | An implementation of the sha3 hashing function for 224, 256, 384, and 512 bits.         |
 
 ### IO ###
 

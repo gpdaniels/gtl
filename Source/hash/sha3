@@ -22,10 +22,313 @@ THE SOFTWARE
 #ifndef GTL_SHA3_HPP
 #define GTL_SHA3_HPP
 
-namespace gtl {
-    class sha3 {
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the hash is misused.
+#   define GTL_SHA3_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_SHA3_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
 
+namespace gtl {
+    /// @brief  The sha3 class computes a SHA3 hash of a sequence of data.
+    /// @tparam sha3_size The size parameter allows for the selection of different hash lengths.
+    template <unsigned long long int sha3_size>
+    class sha3 final {
+    private:
+        static_assert (sha3_size % 8 == 0, "Size of sha3 hash must be a multiple of eight.");
+        static_assert (sha3_size == 224 || sha3_size == 256 || sha3_size == 384 || sha3_size == 512, "Currently only sizes 224, 256, 384, and 512 bits are supported.");
+
+    public:
+        /// @brief  Handy variable for accessing the size in bits.
+        constexpr static const unsigned long long int size = sha3_size;
+
+        /// @brief  Size of the hash in bytes.
+        constexpr static const unsigned long long int hash_size = sha3::size / 8;
+
+        /// @brief  Size of the sponge state used for processing blocks.
+        constexpr static const unsigned int state_size = (5 * 5 * 64) / 8;
+
+        /// @brief  Size of each processed block of data in bytes.
+        constexpr static const unsigned long long int block_size = sha3::state_size - (2 * sha3::size) / 8;
+
+        /// @brief  Number of rounds used to process each block of data.
+        constexpr static const unsigned long long int processing_rounds = 24;
+
+    private:
+        /// @brief  Internal sha3 traits class for the different sizes.
+        /// @tparam size The size of the sha3 hash.
+        /// @tparam inexplicit_specialisation Dummy template param so spectialisation is partial and can be done inside the sha3 class.
+        template <unsigned long long int size, typename inexplicit_specialisation = void>
+        struct internals;
+
+        /// @brief  Internal sha3 traits class sha3-224.
+        template <typename inexplicit_specialisation>
+        struct internals<224, inexplicit_specialisation> final {
+            using base_type = unsigned int;
+        };
+
+        /// @brief  Internal sha3 traits class sha3-256.
+        template <typename inexplicit_specialisation>
+        struct internals<256, inexplicit_specialisation> final {
+            using base_type = unsigned int;
+        };
+
+        /// @brief  Internal sha3 traits class sha3-384.
+        template <typename inexplicit_specialisation>
+        struct internals<384, inexplicit_specialisation> final {
+            using base_type = unsigned long long int;
+        };
+
+        /// @brief  Internal sha3 traits class sha3-512.
+        template <typename inexplicit_specialisation>
+        struct internals<512, inexplicit_specialisation> final {
+            using base_type = unsigned long long int;
+        };
+
+    public:
+        struct hash_type final {
+            typename internals<sha3::size>::base_type data[sha3::hash_size / sizeof(typename internals<sha3::size>::base_type)] = {};
+        };
+
+    private:
+        /// @brief  Internal type used to construct blocks of data for processing.
+        struct block_type final {
+            unsigned long long int length_bytes = 0;
+            unsigned long long int data[sha3::block_size] = {};
+        };
+
+        struct state_type final {
+            unsigned long long int data[sha3::state_size / sizeof(unsigned long long int)] = {};
+        };
+
+    private:
+        constexpr static const unsigned long long int round_constants[sha3::processing_rounds] = {
+            0x0000000000000001ull, 0x0000000000008082ull, 0x800000000000808Aull, 0x8000000080008000ull, 0x000000000000808Bull, 0x0000000080000001ull,
+            0x8000000080008081ull, 0x8000000000008009ull, 0x000000000000008Aull, 0x0000000000000088ull, 0x0000000080008009ull, 0x000000008000000Aull,
+            0x000000008000808Bull, 0x800000000000008Bull, 0x8000000000008089ull, 0x8000000000008003ull, 0x8000000000008002ull, 0x8000000000000080ull,
+            0x000000000000800Aull, 0x800000008000000Aull, 0x8000000080008081ull, 0x8000000000008080ull, 0x0000000080000001ull, 0x8000000080008008ull
+        };
+
+    private:
+        /// @brief  The current block of data being filled.
+        block_type block = {};
+
+        /// @brief  The current state.
+        state_type state = {};
+
+        /// @brief  The current hash.
+        hash_type hash = {};
+
+        /// @brief  Flag showing whether the hash has been finalised.
+        bool finalised = false;
+
+    private:
+        /// @brief  Rotate a 64 bit value left by a shift amount.
+        /// @param  value The value to rotate.
+        /// @param  shift The number of bits to rotate by.
+        /// @return The value after it has been rotated left by shift bits.
+        constexpr static unsigned long long int rotate_left(unsigned long long int value, unsigned long long int shift) {
+            const unsigned long long int mask = (8 * sizeof(unsigned long long int ) - 1);
+            shift &= mask;
+            return (value << shift) | (value >> ((-shift) & mask));
+        }
+
+        /// @brief  Perform the hashing algorithm on a block of data.
+        constexpr void hash_block() {
+            // Mix input data into the state.
+            for (unsigned int i = 0; i < sha3::block_size / sizeof(unsigned long long int); ++i) {
+                this->state.data[i] ^= this->block.data[i];
+            }
+
+            // Re-compute state.
+            for (unsigned int round = 0; round < sha3::processing_rounds; ++round) {
+
+                // Theta (Compute and apply parity).
+                const unsigned long long int coefficients[5] = {
+                    this->state.data[0] ^ this->state.data[0 + 5] ^ this->state.data[0 + 10] ^ this->state.data[0 + 15] ^ this->state.data[0 + 20],
+                    this->state.data[1] ^ this->state.data[1 + 5] ^ this->state.data[1 + 10] ^ this->state.data[1 + 15] ^ this->state.data[1 + 20],
+                    this->state.data[2] ^ this->state.data[2 + 5] ^ this->state.data[2 + 10] ^ this->state.data[2 + 15] ^ this->state.data[2 + 20],
+                    this->state.data[3] ^ this->state.data[3 + 5] ^ this->state.data[3 + 10] ^ this->state.data[3 + 15] ^ this->state.data[3 + 20],
+                    this->state.data[4] ^ this->state.data[4 + 5] ^ this->state.data[4 + 10] ^ this->state.data[4 + 15] ^ this->state.data[4 + 20]
+                };
+                for (unsigned int i = 0; i < 5; ++i) {
+                    const unsigned long long int parity = coefficients[(i + 4) % 5] ^ rotate_left(coefficients[(i + 1) % 5], 1);
+                    for (unsigned int j = 0; j < 5; ++j) {
+                        this->state.data[i + (5 * j)] ^= parity;
+                    }
+                }
+
+                // Rho (Bitwise rotation).
+                unsigned int index_2d[2] = {};
+                index_2d[0] = 0;
+                index_2d[1] = 1;
+                for (unsigned int i = 0; i < 24; ++i) {
+                    // Calculate triangular number to rotate by.
+                    const unsigned long long int triangular_number = (((i + 1) * (i + 2)) / 2) % (sizeof(unsigned long long int) * 8);
+
+                    // Calculate index of data to rotate.
+                    const unsigned int index = 5 * index_2d[0] + index_2d[1];
+
+                    // Rotate data.
+                    this->state.data[index] = rotate_left(this->state.data[index], triangular_number);
+
+                    // Update index.
+                    unsigned int index_temp = 3 * index_2d[0] + 2 * index_2d[1];
+                    index_2d[1] = index_2d[0] % 5;
+                    index_2d[0] = index_temp % 5;
+                }
+
+                // Pi (Permute).
+                index_2d[0] = 0;
+                index_2d[1] = 1;
+                unsigned long long int stored_data = this->state.data[5 * index_2d[0] + index_2d[1]];
+                for(unsigned int i = 0; i < 24; ++i) {
+                    // Update index.
+                    unsigned int index_temp = 3 * index_2d[0] + 2 * index_2d[1];
+                    index_2d[1] = index_2d[0] % 5;
+                    index_2d[0] = index_temp % 5;
+
+                    // Calculate index of data to replace.
+                    const unsigned int index = 5 * index_2d[0] + index_2d[1];
+
+                    // Store current data temporarily.
+                    const unsigned long long int temp = this->state.data[index];
+
+                    // Replace data with stored data from last iteration.
+                    this->state.data[index] = stored_data;
+
+                    // Store current data out side of loop for next iteration
+                    stored_data = temp;
+                }
+
+                // Chi (Bitwise combine).
+                for(unsigned int i = 0; i < 25; i += 5) {
+                    unsigned long long int temp5[5] = {
+                        this->state.data[i + 0],
+                        this->state.data[i + 1],
+                        this->state.data[i + 2],
+                        this->state.data[i + 3],
+                        this->state.data[i + 4]
+                    };
+                    for(unsigned int j = 0; j < 5; ++j) {
+                        this->state.data[i + j] ^= (~temp5[(j + 1) % 5]) & temp5[(j + 2) % 5];
+                    }
+                }
+
+                // Iota (Xor).
+                this->state.data[0] ^= sha3::round_constants[round];
+            }
+        }
+
+    public:
+        /// @brief  Reset the internal state of the hash.
+        constexpr void reset() {
+            this->block = {};
+            this->state = {};
+            this->hash = {};
+            this->finalised = false;
+        }
+
+        /// @brief  Consume data, constructing blocks and hashing as needed.
+        /// @param  data Input data pointer.
+        /// @param  length Valid length of the input data pointer.
+        constexpr void consume(const char* data, unsigned long long int length) {
+            GTL_SHA3_ASSERT(this->finalised == false, "Finalise must not be called before consume().");
+
+            // Block construction and processing.
+            while (length--) {
+                // Append data to the current block.
+                this->block.data[this->block.length_bytes / sizeof(unsigned long long int)] |= static_cast<unsigned long long int>(static_cast<unsigned char>(*data++)) << ((this->block.length_bytes % sizeof(unsigned long long int)) * 8);
+                ++this->block.length_bytes;
+
+                // If full, hash.
+                if (this->block.length_bytes == sha3::block_size) {
+                    this->hash_block();
+                    this->block = {};
+                }
+            }
+        }
+
+        /// @brief  Finishes processing any remaining buffered data.
+        constexpr void finalise() {
+            GTL_SHA3_ASSERT(this->finalised == false, "Finalise must not be called before finalise().");
+
+            // Pad as is required by the sha3 specification.
+            this->block.data[this->block.length_bytes / sizeof(unsigned long long int)] |= static_cast<unsigned long long int>(static_cast<unsigned char>(0x02 | (1 << 2))) << ((this->block.length_bytes % sizeof(unsigned long long int)) * 8);
+            ++this->block.length_bytes;
+
+            // Pad the data with another single bit at the end.
+            this->block.data[(sha3::block_size / sizeof(unsigned long long int)) - 1] |= 0x8000000000000000ull;
+
+            // Hash the block.
+            this->hash_block();
+
+            // Consume state into hash.
+            if constexpr ((sha3::size == 224) || (sha3::size == 256)) {
+                for (unsigned int i = 0; i < sha3::hash_size / sizeof(unsigned long long int); ++i) {
+                    this->hash.data[i * 2 + 0] = (this->state.data[i] & 0x00000000FFFFFFFFull) >> 0;
+                    this->hash.data[i * 2 + 1] = (this->state.data[i] & 0xFFFFFFFF00000000ull) >> 32;
+                }
+                if constexpr (sha3::size == 224) {
+                    this->hash.data[(sha3::hash_size / sizeof(unsigned long long int)) * 2] = static_cast<unsigned int>(this->state.data[sha3::hash_size / sizeof(unsigned long long int)] & 0xFFFFFFFF00000000ull >> 32);
+                }
+            }
+            else if constexpr ((sha3::size == 384) || (sha3::size == 512)) {
+                for (unsigned int i = 0; i < sha3::hash_size / sizeof(unsigned long long int); ++i) {
+                    this->hash.data[i] = this->state.data[i];
+                }
+            }
+
+            // Process the hash to fix it's endianness.
+            if constexpr ((sha3::size == 224) || (sha3::size == 256)) {
+                for (unsigned int index = 0; index < (sha3::hash_size / sizeof(unsigned int)); ++index) {
+                    this->hash.data[index] = (this->hash.data[index] & 0x0000FFFF) << 16 | (this->hash.data[index] & 0xFFFF0000) >> 16;
+                    this->hash.data[index] = (this->hash.data[index] & 0x00FF00FF) << 8  | (this->hash.data[index] & 0xFF00FF00) >> 8;
+                }
+            }
+            else if constexpr ((sha3::size == 384) || (sha3::size == 512)) {
+                for (unsigned int index = 0; index < (sha3::hash_size / sizeof(unsigned long long int)); ++index) {
+                    this->hash.data[index] = (this->hash.data[index] & 0x00000000FFFFFFFFull) << 32 | (this->hash.data[index] & 0xFFFFFFFF00000000ull) >> 32;
+                    this->hash.data[index] = (this->hash.data[index] & 0x0000FFFF0000FFFFull) << 16 | (this->hash.data[index] & 0xFFFF0000FFFF0000ull) >> 16;
+                    this->hash.data[index] = (this->hash.data[index] & 0x00FF00FF00FF00FFull) << 8  | (this->hash.data[index] & 0xFF00FF00FF00FF00ull) >> 8;
+                }
+            }
+
+            this->finalised = true;
+        }
+
+        /// @brief  Calculate the final hash from the state and return it.
+        /// @return The resultant hash.
+        constexpr const hash_type& get_hash() const {
+            GTL_SHA3_ASSERT(this->finalised == true, "Finalise must be called before get_hash().");
+            return this->hash;
+        }
+
+    public:
+        /// @brief  Simple type to hold the string representation of the hash.
+        struct hash_string_type final {
+            char hash[(sha3::hash_size * 2) + 1] = {};
+        };
+
+        /// @brief  Convert a hash into its string representation.
+        /// @param  hash The hash to convert.
+        /// @return The string representation of the hash, with null termination.
+        constexpr static hash_string_type hash_to_string(const hash_type& hash) {
+            hash_string_type output;
+            constexpr const char* hex_characters = "0123456789ABCDEF";
+            for (unsigned int index = 0u; index < (sha3::hash_size * 2); ++index) {
+                output.hash[index] = hex_characters[(hash.data[index / (sizeof(typename internals<sha3::size>::base_type) * 2)] >> ((((sizeof(typename internals<sha3::size>::base_type) * 2) - 1) - (index % (sizeof(typename internals<sha3::size>::base_type) * 2))) * 4)) & 0xF];
+            }
+            output.hash[sha3::hash_size * 2] = 0;
+            return output;
+        }
     };
 }
+
+#undef GTL_SHA3_ASSERT
 
 #endif // GTL_SHA3_HPP

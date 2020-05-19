@@ -36,8 +36,6 @@ THE SOFTWARE
 #endif
 
 TEST(sha1, traits, standard) {
-    REQUIRE(sizeof(gtl::sha1) >= 0);
-
     REQUIRE((std::is_pod<gtl::sha1>::value == false));
 
     REQUIRE((std::is_trivial<gtl::sha1>::value == false));
@@ -52,22 +50,28 @@ TEST(sha1, constructor, empty) {
     testbench::do_not_optimise_away(sha1);
 }
 
-TEST(sha1, function, clear) {
+TEST(sha1, function, reset) {
     gtl::sha1 sha1;
-    sha1.clear();
+    sha1.reset();
 }
 
-TEST(sha1, function, insert) {
+TEST(sha1, function, consume) {
     gtl::sha1 sha1;
-    sha1.insert("", 0);
-    sha1.insert("123456781234567812345678123456781234567812345678123456781234567", 63);
-    sha1.insert("1234567812345678123456781234567812345678123456781234567812345678", 64);
-    sha1.insert("12345678123456781234567812345678123456781234567812345678123456781", 65);
+    sha1.consume("", 0);
+    sha1.consume("123456781234567812345678123456781234567812345678123456781234567", 63);
+    sha1.consume("1234567812345678123456781234567812345678123456781234567812345678", 64);
+    sha1.consume("12345678123456781234567812345678123456781234567812345678123456781", 65);
 }
 
 TEST(sha1, function, finalise) {
     gtl::sha1 sha1;
     sha1.finalise();
+}
+
+TEST(sha1, function, get_hash) {
+    gtl::sha1 sha1;
+    sha1.finalise();
+    sha1.get_hash();
 }
 
 TEST(sha1, evaluate, hash_as_integer) {
@@ -97,9 +101,10 @@ TEST(sha1, evaluate, hash_as_integer) {
     gtl::sha1 sha1;
 
     for (unsigned int i = 0; i < data_count; ++i) {
-        sha1.clear();
-        sha1.insert(data[i], strlen(data[i]));
-        gtl::sha1::hash_type hash = sha1.finalise();
+        sha1.reset();
+        sha1.consume(data[i], strlen(data[i]));
+        sha1.finalise();
+        gtl::sha1::hash_type hash = sha1.get_hash();
 
         char hash_string[40 + 4 + 40 + 1] = {};
         snprintf(hash_string, 40 + 4 + 40 + 1, "%08X%08X%08X%08X%08X == %08X%08X%08X%08X%08X", hash.data[0], hash.data[1], hash.data[2], hash.data[3], hash.data[4], result[i][0], result[i][1], result[i][2], result[i][3], result[i][4]);
@@ -134,11 +139,12 @@ TEST(sha1, evaluate, hash_as_string) {
     };
 
     gtl::sha1 sha1;
-
     for (unsigned int i = 0; i < data_count; ++i) {
-        sha1.clear();
-        sha1.insert(data[i], strlen(data[i]));
-        gtl::sha1::hash_type hash = sha1.finalise();
+        sha1.reset();
+        sha1.consume(data[i], strlen(data[i]));
+        sha1.finalise();
+        gtl::sha1::hash_type hash = sha1.get_hash();
+
         PRINT("%s == %s\n", gtl::sha1::hash_to_string(hash).hash, result[i]);
         REQUIRE(testbench::is_string_same(gtl::sha1::hash_to_string(hash).hash, result[i]) == true);
     }
@@ -180,12 +186,12 @@ TEST(sha1, evaluate, partial_insert) {
     };
 
     gtl::sha1 sha1;
-
     for (unsigned int i = 0; i < data_count; ++i) {
-        sha1.clear();
-        sha1.insert(data1[i], strlen(data1[i]));
-        sha1.insert(data2[i], strlen(data2[i]));
-        gtl::sha1::hash_type hash = sha1.finalise();
+        sha1.reset();
+        sha1.consume(data1[i], strlen(data1[i]));
+        sha1.consume(data2[i], strlen(data2[i]));
+        sha1.finalise();
+        gtl::sha1::hash_type hash = sha1.get_hash();
 
         char hash_string[40 + 4 + 40 + 1] = {};
         snprintf(hash_string, 40 + 4 + 40 + 1, "%08X%08X%08X%08X%08X == %08X%08X%08X%08X%08X", hash.data[0], hash.data[1], hash.data[2], hash.data[3], hash.data[4], result[i][0], result[i][1], result[i][2], result[i][3], result[i][4]);

@@ -36,82 +36,65 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-using crc_types = testbench::enum_collection<gtl::crc_size, gtl::crc_size::bits_8, gtl::crc_size::bits_16, gtl::crc_size::bits_32, gtl::crc_size::bits_64>;
+using crc_types = testbench::value_collection<8, 16, 32, 64>;
 
 TEST(crc, traits, standard) {
     testbench::test_template<crc_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
 
-            REQUIRE(sizeof(gtl::crc<value_enum>) >= 0);
+            REQUIRE((std::is_pod<gtl::crc<value>>::value == false));
 
-            REQUIRE((std::is_pod<gtl::crc<value_enum>>::value == false));
+            REQUIRE((std::is_trivial<gtl::crc<value>>::value == false));
 
-            REQUIRE((std::is_trivial<gtl::crc<value_enum>>::value == false));
+            REQUIRE((std::is_trivially_copyable<gtl::crc<value>>::value == true));
 
-            #if defined(__clang__)
-                // This check failes on gcc7 for some reason.
-                REQUIRE((std::is_trivially_copyable<gtl::crc<value_enum>>::value == false));
-            #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
-                REQUIRE((std::is_trivially_copyable<gtl::crc<value_enum>>::value == true));
-            #else
-                // This check failes on gcc7 for some reason.
-                REQUIRE((std::is_trivially_copyable<gtl::crc<value_enum>>::value == false));
-            #endif
-
-            REQUIRE((std::is_standard_layout<gtl::crc<value_enum>>::value == true));
+            REQUIRE((std::is_standard_layout<gtl::crc<value>>::value == true));
         }
     );
 }
 
-TEST(crc, constructor, empty) {
+TEST(crc, function, reset) {
     testbench::test_template<crc_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
-
-            gtl::crc<value_enum> crc = gtl::crc<value_enum>(typename gtl::crc<value_enum>::settings_type());
-            testbench::do_not_optimise_away(crc);
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
+            gtl::crc<value> crc;
+            crc.reset();
         }
     );
 }
 
-TEST(crc, function, clear) {
+TEST(crc, function, consume) {
     testbench::test_template<crc_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
-
-            gtl::crc<value_enum> crc;
-            crc.clear();
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
+            gtl::crc<value> crc;
+            crc.consume("", 0);
+            crc.consume("123456781234567812345678123456781234567812345678123456781234567", 63);
+            crc.consume("1234567812345678123456781234567812345678123456781234567812345678", 64);
+            crc.consume("12345678123456781234567812345678123456781234567812345678123456781", 65);
         }
-    );
-}
-
-TEST(crc, function, insert) {
-    testbench::test_template<crc_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
-
-            gtl::crc<value_enum> crc;
-            crc.insert("", 0);
-            crc.insert("123456781234567812345678123456781234567812345678123456781234567", 63);
-            crc.insert("1234567812345678123456781234567812345678123456781234567812345678", 64);
-            crc.insert("12345678123456781234567812345678123456781234567812345678123456781", 65);
-        }
-    );
+        );
 }
 
 TEST(crc, function, finalise) {
     testbench::test_template<crc_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
 
-            gtl::crc<value_enum> crc;
+            gtl::crc<value> crc;
             crc.finalise();
+        }
+    );
+}
+
+TEST(crc, function, get_hash) {
+    testbench::test_template<crc_types>(
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
+            gtl::crc<value> crc;
+            crc.finalise();
+            crc.get_hash();
         }
     );
 }
@@ -154,17 +137,18 @@ TEST(crc, evaluate, hash_as_integer) {
     UNUSED(result_crc64);
 
     testbench::test_template<crc_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
 
-            gtl::crc<value_enum> crc;
+            gtl::crc<value> crc;
             for (unsigned int i = 0; i < data_count; ++i) {
-                crc.clear();
-                crc.insert(data[i], strlen(data[i]));
-                typename gtl::crc<value_enum>::hash_type hash = crc.finalise();
+                crc.reset();
+                crc.consume(&data[i][0], strlen(&data[i][0]));
+                crc.finalise();
 
-                if constexpr (value_enum == gtl::crc_size::bits_8) {
+                typename gtl::crc<value>::hash_type hash = crc.get_hash();
+
+                if constexpr (value == 8) {
                     char hash_string[2 + 4 + 2 + 1] = {};
                     snprintf(
                         hash_string,
@@ -174,10 +158,10 @@ TEST(crc, evaluate, hash_as_integer) {
                         result_crc8[i]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc8[i], gtl::crc<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc8[i], gtl::crc<value>::hash_size) == true);
                 }
 
-                if constexpr (value_enum == gtl::crc_size::bits_16) {
+                if constexpr (value == 16) {
                     char hash_string[4 + 4 + 4 + 1] = {};
                     snprintf(
                         hash_string,
@@ -187,10 +171,10 @@ TEST(crc, evaluate, hash_as_integer) {
                         result_crc16[i]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc16[i], gtl::crc<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc16[i], gtl::crc<value>::hash_size) == true);
                 }
 
-                if constexpr (value_enum == gtl::crc_size::bits_32) {
+                if constexpr (value == 32) {
                     char hash_string[8 + 4 + 8 + 1] = {};
                     snprintf(
                         hash_string,
@@ -200,10 +184,10 @@ TEST(crc, evaluate, hash_as_integer) {
                         result_crc32[i]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc32[i], gtl::crc<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc32[i], gtl::crc<value>::hash_size) == true);
                 }
 
-                if constexpr (value_enum == gtl::crc_size::bits_64) {
+                if constexpr (value == 64) {
                     char hash_string[16 + 4 + 16 + 1] = {};
                     snprintf(
                         hash_string,
@@ -213,7 +197,7 @@ TEST(crc, evaluate, hash_as_integer) {
                         result_crc64[i]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc64[i], gtl::crc<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc64[i], gtl::crc<value>::hash_size) == true);
                 }
             }
         }
@@ -277,17 +261,21 @@ TEST(crc, evaluate, hash_as_string) {
     UNUSED(result);
 
     testbench::test_template<crc_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
 
-            gtl::crc<value_enum> crc;
+            gtl::crc<value> crc;
             for (unsigned int i = 0; i < data_count; ++i) {
-                crc.clear();
-                crc.insert(data[i], strlen(data[i]));
-                typename gtl::crc<value_enum>::hash_type hash = crc.finalise();
-                PRINT("%s == %s\n", gtl::crc<value_enum>::hash_to_string(hash).hash, result[static_cast<unsigned int>(value_enum)][i]);
-                REQUIRE(testbench::is_string_same(gtl::crc<value_enum>::hash_to_string(hash).hash, result[static_cast<unsigned int>(value_enum)][i]) == true);
+                crc.reset();
+                crc.consume(&data[i][0], strlen(&data[i][0]));
+                crc.finalise();
+
+                typename gtl::crc<value>::hash_type hash = crc.get_hash();
+
+                unsigned long long int result_index = value == 64 ? 3 : value == 32 ? 2 : value == 16 ? 1 : 0;
+
+                PRINT("%s == %s\n", gtl::crc<value>::hash_to_string(hash).hash, result[result_index][i]);
+                REQUIRE(testbench::is_string_same(gtl::crc<value>::hash_to_string(hash).hash, result[result_index][i]) == true);
             }
         }
     );
@@ -344,18 +332,19 @@ TEST(crc, evaluate, partial_insert) {
     UNUSED(result_crc64);
 
     testbench::test_template<crc_types>(
-        [](auto test_enum)->void {
-            using type_enum = typename decltype(test_enum)::type;
-            constexpr static const type_enum value_enum = decltype(test_enum)::value;
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
 
-            gtl::crc<value_enum> crc;
+            gtl::crc<value> crc;
             for (unsigned int i = 0; i < data_count; ++i) {
-                crc.clear();
-                crc.insert(data1[i], strlen(data1[i]));
-                crc.insert(data2[i], strlen(data2[i]));
-                typename gtl::crc<value_enum>::hash_type hash = crc.finalise();
+                crc.reset();
+                crc.consume(&data1[i][0], strlen(&data1[i][0]));
+                crc.consume(&data2[i][0], strlen(&data2[i][0]));
+                crc.finalise();
 
-                if constexpr (value_enum == gtl::crc_size::bits_8) {
+                typename gtl::crc<value>::hash_type hash = crc.get_hash();
+
+                if constexpr (value == 8) {
                     char hash_string[2 + 4 + 2 + 1] = {};
                     snprintf(
                         hash_string,
@@ -365,10 +354,10 @@ TEST(crc, evaluate, partial_insert) {
                         result_crc8[i]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc8[i], gtl::crc<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc8[i], gtl::crc<value>::hash_size) == true);
                 }
 
-                if constexpr (value_enum == gtl::crc_size::bits_16) {
+                if constexpr (value == 16) {
                     char hash_string[4 + 4 + 4 + 1] = {};
                     snprintf(
                         hash_string,
@@ -378,10 +367,10 @@ TEST(crc, evaluate, partial_insert) {
                         result_crc16[i]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc16[i], gtl::crc<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc16[i], gtl::crc<value>::hash_size) == true);
                 }
 
-                if constexpr (value_enum == gtl::crc_size::bits_32) {
+                if constexpr (value == 32) {
                     char hash_string[8 + 4 + 8 + 1] = {};
                     snprintf(
                         hash_string,
@@ -391,10 +380,10 @@ TEST(crc, evaluate, partial_insert) {
                         result_crc32[i]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc32[i], gtl::crc<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc32[i], gtl::crc<value>::hash_size) == true);
                 }
 
-                if constexpr (value_enum == gtl::crc_size::bits_64) {
+                if constexpr (value == 64) {
                     char hash_string[16 + 4 + 16 + 1] = {};
                     snprintf(
                         hash_string,
@@ -404,7 +393,7 @@ TEST(crc, evaluate, partial_insert) {
                         result_crc64[i]
                         );
                     PRINT("%s\n", hash_string);
-                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc64[i], gtl::crc<value_enum>::hash_size) == true);
+                    REQUIRE(testbench::is_memory_same(hash.data, &result_crc64[i], gtl::crc<value>::hash_size) == true);
                 }
             }
         }
