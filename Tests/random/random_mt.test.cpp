@@ -37,9 +37,9 @@ THE SOFTWARE
 #endif
 
 TEST(random_mt, traits, standard) {
-    REQUIRE(std::is_pod<gtl::random_mt>::value == true, "Expected std::is_pod to be true.");
+    REQUIRE(std::is_pod<gtl::random_mt>::value == false, "Expected std::is_pod to be false.");
 
-    REQUIRE(std::is_trivial<gtl::random_mt>::value == true, "Expected std::is_trivial to be true.");
+    REQUIRE(std::is_trivial<gtl::random_mt>::value == false, "Expected std::is_trivial to be false.");
 
     REQUIRE(std::is_trivially_copyable<gtl::random_mt>::value == true, "Expected std::is_trivially_copyable to be true.");
 

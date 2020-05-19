@@ -65,7 +65,11 @@ namespace gtl {
         ~random_mt() = default;
 
         /// @brief  Defaulted constructor.
-        random_mt() = default;
+        random_mt()
+            : state{}
+            , position(0) {
+            this->seed(0xCF5C76CEu);
+        }
 
         /// @brief  Defaulted copy constructor.
         random_mt(const random_mt&) = default;
@@ -86,7 +90,7 @@ namespace gtl {
             this->seed(seed_value);
         }
 
-        /// @brief  Constructor using an array of 32 bit std::uint32_tegers as the seed.
+        /// @brief  Constructor using an array of 32 bit integers as the seed.
         /// @param  seed_values Seed value used to initialise the state.
         /// @param  size Number of entried in the array.
         random_mt(const std::uint32_t* seed_values, const std::uint32_t size)
