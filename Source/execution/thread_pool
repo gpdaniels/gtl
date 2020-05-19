@@ -302,7 +302,7 @@ namespace gtl {
     };
 
     // The push function for the queue class is implemented here as it needs to access the thread_pool class.
-    void thread_pool::queue::push(const std::function<void()>& task) {
+    inline void thread_pool::queue::push(const std::function<void()>& task) {
         {
             // Add the task to the queue.
             std::lock_guard<std::mutex> lock(this->tasks_mutex);
@@ -319,7 +319,7 @@ namespace gtl {
     }
 
     // The drain function for the queue class is implemented here as it needs to access the thread_pool class.
-    void thread_pool::queue::drain() {
+    inline void thread_pool::queue::drain() {
         this->pool.drain(*this);
     }
 }
