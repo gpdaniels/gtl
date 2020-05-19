@@ -33,6 +33,7 @@ The current classes are as described below:
 |          **access** | Classes and macros for accessing class private members.                                 |
 |          **assert** | Macros that define an assert macro that optionally takes a format string and parameters.|
 |          **signal** | Class to wrap signal handlers allowing the use of lambdas with scope.                   |
+|          **unused** | Macro for hiding unused variable warnings.                                              |
 
 ### Execution ###
 

@@ -34,20 +34,120 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(unused, traits, standard) {
-    REQUIRE(sizeof(gtl::unused) >= 0);
+TEST(unused, evaluate, unused) {
 
-    REQUIRE((std::is_pod<gtl::unused>::value == true));
+    // Unused with a variable.
+    int variable;
+    GTL_UNUSED(variable);
 
-    REQUIRE((std::is_trivial<gtl::unused>::value == true));
+    // Unused with a value.
+    GTL_UNUSED(true);
+    GTL_UNUSED(1);
+    GTL_UNUSED(static_cast<unsigned long long int>(0xFF00FF00FF00FFull));
 
-    REQUIRE((std::is_trivially_copyable<gtl::unused>::value == true));
+    // Unused with a comparison.
+    {
+        constexpr static const int variable1 = -1;
+        volatile double variable2 = 2.0;
+        GTL_UNUSED(variable1 < variable2);
+    }
 
-    REQUIRE((std::is_standard_layout<gtl::unused>::value == true));
-}
+    // Unused in an if statement, with {}.
+    {
+        if (true) {
+            GTL_UNUSED(true);
+        }
 
-TEST(unused, constructor, empty) {
-    gtl::unused unused;
-    testbench::do_not_optimise_away(unused);
+        if (true) {
+            GTL_UNUSED(true);
+        }
+        else {
+            // This should never be reached.
+            REQUIRE(false);
+        }
+
+        if (false) {
+            // This should never be reached.
+            REQUIRE(false);
+        }
+        else {
+            GTL_UNUSED(true);
+        }
+    }
+
+    // Unused in an if statement, without {}.
+    {
+        if (true)
+            GTL_UNUSED(true);
+
+        if (true)
+            GTL_UNUSED(true);
+        else
+            // This should never be reached.
+            REQUIRE(false);
+
+        if (false)
+            // This should never be reached.
+            GTL_UNUSED(false);
+        else
+            REQUIRE(true);
+    }
+
+    // Unused in a for loop, with {}.
+    {
+        for (bool loop = true; loop; loop = false) {
+            GTL_UNUSED(true);
+        }
+
+        for (bool loop = false; loop; loop = false) {
+            GTL_UNUSED(false);
+        }
+    }
+
+    // Unused in a for loop, without {}.
+    {
+        for (bool loop = true; loop; loop = false)
+            GTL_UNUSED(true);
+
+        for (bool loop = false; loop; loop = false)
+            GTL_UNUSED(false);
+    }
+
+    // Unused in a while loop, with {}.
+    {
+        bool loop = true;
+        while (loop) {
+            GTL_UNUSED(true);
+            loop = false;
+        }
+
+        while (loop) {
+            GTL_UNUSED(false);
+        }
+    }
+
+    // Unused in a while loop, without {}.
+    {
+        bool loop = true;
+        while (loop)
+            GTL_UNUSED(true), loop = false;
+
+        while (loop)
+            GTL_UNUSED(false);
+    }
+
+    // Unused in a do while loop, with {}.
+    {
+        do {
+            GTL_UNUSED(true);
+        } while (false);
+    }
+
+    // Unused in a do while loop, without {}.
+    {
+        do
+            GTL_UNUSED(true);
+        while (false);
+    }
 }
 

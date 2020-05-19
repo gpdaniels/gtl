@@ -23,9 +23,10 @@ THE SOFTWARE
 #define GTL_UNUSED_HPP
 
 namespace gtl {
-    class unused {
+namespace unused {
 
-    };
-}
+    #define GTL_UNUSED(VARIABLE) (static_cast<void>(VARIABLE))
+
+}}
 
 #endif // GTL_UNUSED_HPP
