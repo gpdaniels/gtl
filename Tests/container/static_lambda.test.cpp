@@ -129,6 +129,14 @@ TEST(static_lambda, operator, moving)
     testbench::do_not_optimise_away(static_lambda2);
 }
 
+TEST(static_lambda, operator, bool)
+{
+    gtl::static_lambda<void(), 128> static_lambda;
+    REQUIRE(static_lambda == false);
+    static_lambda = gtl::static_lambda<void(), 128>([](){});
+    REQUIRE(static_lambda == true);
+}
+
 TEST(static_lambda, operator, executing)
 {
     {
