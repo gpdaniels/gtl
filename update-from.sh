@@ -40,13 +40,43 @@ git checkout $2 CMakeLists.txt
 # Try and checkout the README.md.
 git checkout $2 README.md
 
+# Try and checkout the TODO file.
+temp_file=$(mktemp)
+if git cat-file -e $2:TODO-BEFORE-FULL-RELEASE.txt > /dev/null 2>&1
+then
+    git show $2:TODO-BEFORE-FULL-RELEASE.txt > ${temp_file}
+fi
+
+function check_todo() {
+    if [ -f ${temp_file} ]
+    then
+        file_name=$(basename $1 .test.cpp)
+        if grep -Fxq "${file_name}" "${temp_file}" 
+        then
+            return 1
+        fi
+        return 0
+    fi
+}
+
 # Try and checkout all files found in the target branch from the source branch.
 for file in ${source}
 do
     if [ -f "${file}" ]
     then
-        echo "Adding '${file}'"
-        git checkout $2 ${file}
+        if check_todo "${file}" $2
+        then
+            echo "Checking '${file}'..."
+            if git cat-file -e $2:${file} > /dev/null 2>&1
+            then
+                echo "Adding '${file}'."
+                git checkout $2 ${file}
+            else
+                echo "File '${file}' no longer exists on target branch."
+            fi
+        else
+            echo "Ignoring '${file}'."
+        fi
     fi
 done
 
@@ -54,8 +84,19 @@ for file in ${testbench}
 do
     if [ -f "${file}" ]
     then
-        echo "Adding '${file}'"
-        git checkout $2 ${file}
+        if check_todo "${file}" $2
+        then
+            echo "Checking '${file}'..."
+            if git cat-file -e $2:${file} > /dev/null 2>&1
+            then
+                echo "Adding '${file}'."
+                git checkout $2 ${file}
+            else
+                echo "File '${file}' no longer exists on target branch."
+            fi
+        else
+            echo "Ignoring '${file}'."
+        fi
     fi
 done
 
@@ -63,7 +104,21 @@ for file in ${tests}
 do
     if [ -f "${file}" ]
     then
-        echo "Adding '${file}'"
-        git checkout $2 ${file}
+        if check_todo "${file}" $2
+        then
+            echo "Checking '${file}'..."
+            if git cat-file -e $2:${file} > /dev/null 2>&1
+            then
+                echo "Adding '${file}'."
+                git checkout $2 ${file}
+            else
+                echo "File '${file}' no longer exists on target branch."
+            fi
+        else
+            echo "Ignoring '${file}'."
+        fi
     fi
 done
+
+# Remove the temp TODO file
+rm ${temp_file}
