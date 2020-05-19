@@ -47,7 +47,11 @@ TEST(crc, traits, standard) {
 
             REQUIRE((std::is_trivial<gtl::crc<value>>::value == false));
 
-            REQUIRE((std::is_trivially_copyable<gtl::crc<value>>::value == true));
+            #if defined(_MSC_VER)
+                REQUIRE((std::is_trivially_copyable<gtl::crc<value>>::value == false));
+            #else
+                REQUIRE((std::is_trivially_copyable<gtl::crc<value>>::value == true));
+            #endif
 
             REQUIRE((std::is_standard_layout<gtl::crc<value>>::value == true));
         }
