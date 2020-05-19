@@ -36,7 +36,7 @@ elif [[ "$OSTYPE" == "msys" ]]; then
     # Lightweight shell and GNU utilities compiled for Windows (part of MinGW).
     mkdir -p BUILD
     pushd BUILD
-    cmake -DBUILD_TESTING=ON -DBUILD_MEMCHECK=ON  ..
+    cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DBUILD_TESTING=ON -DBUILD_MEMCHECK=ON  ..
     cmake --build . --config ${BUILD_TYPE} -- -nologo -verbosity:minimal -maxcpucount
     cmake --build . --config ${BUILD_TYPE} --target test
     popd
