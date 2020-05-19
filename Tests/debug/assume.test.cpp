@@ -19,7 +19,6 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
-#include <benchmark.tests.hpp>
 #include <require.tests.hpp>
 
 #include <debug/assume>
@@ -34,20 +33,114 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(assume, traits, standard) {
-    REQUIRE(sizeof(gtl::assume) >= 0);
+TEST(assume, evaluate, assume) {
+    // Assuming without a message.
+    GTL_ASSUME(true);
 
-    REQUIRE((std::is_pod<gtl::assume>::value == true));
+    // Assuming with a variable.
+    {
+        constexpr static const int variable1 = -1;
+        double variable2 = 2.0;
+        GTL_ASSUME(variable1 < variable2);
+        UNUSED(variable1);
+        UNUSED(variable2);
+    }
 
-    REQUIRE((std::is_trivial<gtl::assume>::value == true));
+    // Assuming in an if statement, with {}.
+    {
+        if (true) {
+            GTL_ASSUME(true);
+        }
+        
+        if (true) {
+            GTL_ASSUME(true);
+        }
+        else {
+            // This should never be reached.
+            REQUIRE(false);
+        }
 
-    REQUIRE((std::is_trivially_copyable<gtl::assume>::value == true));
+        if (false) {
+            // This should never be reached.
+            REQUIRE(false);
+        }
+        else {
+            GTL_ASSUME(true);
+        }
+    }
 
-    REQUIRE((std::is_standard_layout<gtl::assume>::value == true));
+    // Assuming in an if statement, without {}.
+    {
+        if (true)
+            GTL_ASSUME(true);
+
+        if (true)
+            GTL_ASSUME(true);
+        else
+            // This should never be reached.
+            REQUIRE(false);
+
+        if (false)
+            // This should never be reached.
+            GTL_ASSUME(false);
+        else
+            REQUIRE(true);
+    }
+    
+    // Assuming in a for loop, with {}.
+    {
+        for (bool loop = true; loop; loop = false) {
+            GTL_ASSUME(true);
+        }
+
+        for (bool loop = false; loop; loop = false) {
+            GTL_ASSUME(false);
+        }
+    }
+    
+    // Assuming in a for loop, without {}.
+    {
+        for (bool loop = true; loop; loop = false)
+            GTL_ASSUME(true);
+
+        for (bool loop = false; loop; loop = false)
+            GTL_ASSUME(false);
+    }
+    
+    // Assuming in a while loop, with {}.
+    {
+        bool loop = true;
+        while (loop) {
+            GTL_ASSUME(true);
+            loop = false;
+        }
+
+        while (loop) {
+            GTL_ASSUME(false);
+        }
+    }
+    
+    // Assuming in a while loop, without {}.
+    {
+        bool loop = true;
+        while (loop)
+            GTL_ASSUME(true), loop = false;
+
+        while (loop)
+            GTL_ASSUME(false);
+    }
+
+    // Assuming in a do while loop, with {}.
+    {
+        do {
+            GTL_ASSUME(true);
+        } while (false);
+    }
+    
+    // Assuming in a do while loop, without {}.
+    {
+        do
+            GTL_ASSUME(true);
+        while (false);
+    }
 }
-
-TEST(assume, constructor, empty) {
-    gtl::assume assume;
-    testbench::do_not_optimise_away(assume);
-}
-
