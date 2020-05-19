@@ -22,6 +22,9 @@ THE SOFTWARE
 
 namespace testbench {
     bool is_memory_same(const void* lhs, const void* rhs, unsigned int length) {
+        if ((length > 0) && ((!lhs) || (!rhs))) {
+            return false;
+        }
         for (unsigned int i = 0; i < length; ++i) {
             if (reinterpret_cast<const char*>(lhs)[i] != reinterpret_cast<const char*>(rhs)[i]) {
                 return false;
@@ -31,6 +34,9 @@ namespace testbench {
     }
 
     bool is_string_same(const char* lhs, const char* rhs) {
+        if ((!lhs) || (!rhs)) {
+            return false;
+        }
         while (*lhs && (*lhs == *rhs)) {
             ++lhs;
             ++rhs;
