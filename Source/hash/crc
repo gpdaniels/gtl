@@ -1,0 +1,307 @@
+/*
+The MIT License
+Copyright (c) 2019 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_CRC_HPP
+#define GTL_CRC_HPP
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the hash is misused.
+#   define GTL_CRC_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_CRC_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+namespace gtl {
+    /// @brief  The crc class computes a CRC hash of a sequence of data.
+    /// @tparam crc_size The size parameter allows for the selection of different hash lengths.
+    template <unsigned long long int crc_size>
+    class crc final {
+    private:
+        static_assert (crc_size % 8 == 0, "Size of crc hash must be a multiple of eight.");
+        static_assert (crc_size == 8 || crc_size == 16 || crc_size == 32 || crc_size == 64, "Currently only sizes 8, 16, 32, and 64 bits are supported.");
+
+    public:
+        /// @brief  Handy variable for accessing the size in bits.
+        constexpr static const unsigned long long int size = crc_size;
+
+        /// @brief  Size of the hash in bytes.
+        constexpr static const unsigned long long int hash_size = crc::size / 8;
+
+        /// @brief  Size of each processed block of data in bytes.
+        constexpr static const unsigned long long int block_size = 1;
+
+        /// @brief  Number of rounds used to process each block of data.
+        constexpr static const unsigned long long int processing_rounds = 8;
+
+    private:
+        /// @brief  Internal crc traits class for the different sizes.
+        /// @tparam size The size of the crc hash.
+        /// @tparam inexplicit_specialisation Dummy template param so spectialisation is partial and can be done inside the crc class.
+        template <unsigned long long int size, typename inexplicit_specialisation = void>
+        struct internals;
+
+        /// @brief  Internal crc traits class crc8.
+        template <typename inexplicit_specialisation>
+        struct internals<8, inexplicit_specialisation> final {
+            using base_type = unsigned char;
+            constexpr static const bool      default_reflect_input    = false;
+            constexpr static const bool      default_reflect_output   = false;
+            constexpr static const base_type default_polynomial_value = 0x07;
+            constexpr static const base_type default_initial_hash_value = 0x00;
+            constexpr static const base_type default_output_xor_value = 0x00;
+        };
+
+        /// @brief  Internal crc traits class crc16.
+        template <typename inexplicit_specialisation>
+        struct internals<16, inexplicit_specialisation> final {
+            using base_type = unsigned short;
+            constexpr static const bool      default_reflect_input    = false;
+            constexpr static const bool      default_reflect_output   = false;
+            constexpr static const base_type default_polynomial_value = 0x8005;
+            constexpr static const base_type default_initial_hash_value = 0x00;
+            constexpr static const base_type default_output_xor_value = 0x00;
+        };
+
+        /// @brief  Internal crc traits class crc32.
+        template <typename inexplicit_specialisation>
+        struct internals<32, inexplicit_specialisation> final {
+            using base_type = unsigned int;
+            constexpr static const bool      default_reflect_input    = true;
+            constexpr static const bool      default_reflect_output   = true;
+            constexpr static const base_type default_polynomial_value = 0x04C11DB7;
+            constexpr static const base_type default_initial_hash_value = 0xFFFFFFFF;
+            constexpr static const base_type default_output_xor_value = 0xFFFFFFFF;
+        };
+
+        /// @brief  Internal crc traits class crc64.
+        template <typename inexplicit_specialisation>
+        struct internals<64, inexplicit_specialisation> final {
+            using base_type = unsigned long long int;
+            constexpr static const bool      default_reflect_input    = false;
+            constexpr static const bool      default_reflect_output   = false;
+            constexpr static const base_type default_polynomial_value = 0x42F0E1EBA9EA3693;
+            constexpr static const base_type default_initial_hash_value = 0x0000000000000000;
+            constexpr static const base_type default_output_xor_value = 0x0000000000000000;
+        };
+
+    public:
+        /// @brief  Type to hold the hash data.
+        struct hash_type final {
+            typename internals<crc::size>::base_type data[crc::hash_size / sizeof(typename internals<crc::size>::base_type)] = {};
+        };
+
+    private:
+        /// @brief  Internal type used to construct blocks of data for processing.
+        struct block_type final {
+            unsigned char data[crc::block_size] = {};
+        };
+
+    private:
+        /// @brief  Setting flag for reflecting the input byte stream.
+        const bool setting_reflect_input;
+
+        /// @brief  Setting flag for reflecting the output byte stream.
+        const bool setting_reflect_output;
+
+        /// @brief  Setting for the polynomial.
+        const typename internals<crc::size>::base_type setting_polynomial_value;
+
+        /// @brief  Setting for the initial value.
+        const typename internals<crc::size>::base_type setting_initial_hash_value;
+
+        /// @brief  Setting for the output XOR value.
+        const typename internals<crc::size>::base_type setting_output_xor_value;
+
+        /// @brief  The current block of data being filled.
+        block_type block;
+
+        /// @brief  The current hash.
+        hash_type hash;
+
+        /// @brief  Flag showing whether the hash has been finalised.
+        bool finalised;
+
+    public:
+        /// @brief Constructor taking all parameters at options, but providing sensible defaults.
+        /// @param reflect_input Should the input bytes be reflected before consumption.
+        /// @param reflect_output Should the output bytes be reflected before production.
+        /// @param polynomial_value The value of the polynomial used in the hashing function.
+        /// @param initial_hash_value Initial value of the hash state.
+        /// @param output_xor_value Value the output will be xor'd with.
+        crc(
+            bool reflect_input  = internals<crc::size>::default_reflect_input,
+            bool reflect_output = internals<crc::size>::default_reflect_output,
+            typename internals<crc::size>::base_type polynomial_value   = internals<crc::size>::default_polynomial_value,
+            typename internals<crc::size>::base_type initial_hash_value = internals<crc::size>::default_initial_hash_value,
+            typename internals<crc::size>::base_type output_xor_value   = internals<crc::size>::default_output_xor_value
+        )
+            : setting_reflect_input(reflect_input)
+            , setting_reflect_output(reflect_output)
+            , setting_polynomial_value(polynomial_value)
+            , setting_initial_hash_value(initial_hash_value)
+            , setting_output_xor_value(output_xor_value)
+            , block{}
+            , hash{initial_hash_value}
+            , finalised(false) {
+        }
+
+    private:
+        /// @brief  Reflect the bits of a value about the middle, so the MSB becomes the LSB etc.
+        /// @param  value The value to reflect.
+        /// @return The value after all its bits have been reflected.
+        constexpr static unsigned char reflect(unsigned char value) {
+            value = static_cast<unsigned char>(((value & 0x0F) << 4) | ((value & 0xF0) >> 4));
+            value = static_cast<unsigned char>(((value & 0x33) << 2) | ((value & 0xCC) >> 2));
+            value = static_cast<unsigned char>(((value & 0x55) << 1) | ((value & 0xAA) >> 1));
+            return value;
+        }
+
+        /// @brief  Reflect the bits of a value about the middle, so the MSB becomes the LSB etc.
+        /// @param  value The value to reflect.
+        /// @return The value after all its bits have been reflected.
+        constexpr static unsigned short reflect(unsigned short value) {
+            value = static_cast<unsigned short>((value & 0x00FF) << 8) | ((value & 0xFF00) >> 8);
+            value = static_cast<unsigned short>((value & 0x0F0F) << 4) | ((value & 0xF0F0) >> 4);
+            value = static_cast<unsigned short>((value & 0x3333) << 2) | ((value & 0xCCCC) >> 2);
+            value = static_cast<unsigned short>((value & 0x5555) << 1) | ((value & 0xAAAA) >> 1);
+            return value;
+        }
+
+        /// @brief  Reflect the bits of a value about the middle, so the MSB becomes the LSB etc.
+        /// @param  value The value to reflect.
+        /// @return The value after all its bits have been reflected.
+        constexpr static unsigned int reflect(unsigned int value) {
+            value = static_cast<unsigned int>((value & 0x0000FFFF) << 16) | ((value & 0xFFFF0000) >> 16);
+            value = static_cast<unsigned int>((value & 0x00FF00FF) << 8) | ((value & 0xFF00FF00) >> 8);
+            value = static_cast<unsigned int>((value & 0x0F0F0F0F) << 4) | ((value & 0xF0F0F0F0) >> 4);
+            value = static_cast<unsigned int>((value & 0x33333333) << 2) | ((value & 0xCCCCCCCC) >> 2);
+            value = static_cast<unsigned int>((value & 0x55555555) << 1) | ((value & 0xAAAAAAAA) >> 1);
+            return value;
+        }
+
+        /// @brief  Reflect the bits of a value about the middle, so the MSB becomes the LSB etc.
+        /// @param  value The value to reflect.
+        /// @return The value after all its bits have been reflected.
+        constexpr static unsigned long long int reflect(unsigned long long int value) {
+            value = static_cast<unsigned long long int>((value & 0x00000000FFFFFFFF) << 32) | ((value & 0x00000000FFFFFFFF) >> 32);
+            value = static_cast<unsigned long long int>((value & 0x0000FFFF0000FFFF) << 16) | ((value & 0x0000FFFF0000FFFF) >> 16);
+            value = static_cast<unsigned long long int>((value & 0x00FF00FF00FF00FF) << 8) | ((value & 0x00FF00FF00FF00FF) >> 8);
+            value = static_cast<unsigned long long int>((value & 0x0F0F0F0F0F0F0F0F) << 4) | ((value & 0x0F0F0F0F0F0F0F0F) >> 4);
+            value = static_cast<unsigned long long int>((value & 0x3333333333333333) << 2) | ((value & 0xCCCCCCCCCCCCCCCC) >> 2);
+            value = static_cast<unsigned long long int>((value & 0x5555555555555555) << 1) | ((value & 0xAAAAAAAAAAAAAAAA) >> 1);
+            return value;
+        }
+
+    private:
+        /// @brief  Perform the hashing algorithm on a block of data.
+        constexpr void hash_block() {
+            // Pre-processing.
+            if (this->setting_reflect_input) {
+                this->block.data[0] = reflect(this->block.data[0]);
+            }
+
+            // Block data incorporation.
+            this->hash.data[0] ^= static_cast<typename internals<crc::size>::base_type>(this->block.data[0]) << (sizeof(typename internals<crc::size>::base_type) - 1) * 8;
+
+            // Hash processing.
+            for (unsigned int i = 0; i < crc::processing_rounds; ++i) {
+                if ((this->hash.data[0] & (static_cast<typename internals<crc::size>::base_type>(1) << ((sizeof(typename internals<crc::size>::base_type) * 8) - 1))) != 0) {
+                    this->hash.data[0] = static_cast<typename internals<crc::size>::base_type>((this->hash.data[0] << 1) ^ this->setting_polynomial_value);
+                }
+                else {
+                    this->hash.data[0] <<= 1;
+                }
+            }
+        }
+
+    public:
+        /// @brief  Reset the internal state of the hash.
+        constexpr void reset() {
+            this->block = {};
+            this->hash = hash_type{this->setting_initial_hash_value};
+            this->finalised = false;
+        }
+
+        /// @brief  Consume data, constructing blocks and hashing as needed.
+        /// @param  data Input data pointer.
+        /// @param  length Valid length of the input data pointer.
+        constexpr void consume(const char* data, unsigned long long int length) {
+            GTL_CRC_ASSERT(this->finalised == false, "Finalise must not be called before consume().");
+            // Block construction and processing.
+            while (length--) {
+                this->block.data[0] = static_cast<unsigned char>(*data++);
+                this->hash_block();
+            }
+        }
+
+        /// @brief  Finishes processing any remaining buffered data.
+        constexpr void finalise() {
+            GTL_CRC_ASSERT(this->finalised == false, "Finalise must not be called before finalise().");
+            // Optionally reflect the output.
+            if (this->setting_reflect_output) {
+                this->hash.data[0] = reflect(this->hash.data[0]);
+            }
+            // XOR the output.
+            this->hash.data[0] = this->hash.data[0] ^ this->setting_output_xor_value;
+
+            this->finalised = true;
+        }
+
+        /// @brief  Calculate the final hash from the state and return it.
+        /// @return The resultant hash.
+        constexpr const hash_type& get_hash() const {
+            GTL_CRC_ASSERT(this->finalised == true, "Finalise must be called before get_hash().");
+            return this->hash;
+        }
+
+    public:
+        /// @brief  Simple type to hold the string representation of the hash.
+        struct hash_string_type {
+            char hash[(crc::hash_size * 2) + 1] = {};
+        };
+
+        /// @brief  Convert a hash into its string representation.
+        /// @param  hash The hash to convert.
+        /// @return The string representation of the hash, with null termination.
+        constexpr static hash_string_type hash_to_string(const hash_type& hash) {
+            hash_string_type output;
+            constexpr const char* hex_characters = "0123456789ABCDEF";
+            for (unsigned int index = 0u; index < (crc::hash_size * 2); ++index) {
+                output.hash[index] = hex_characters[(hash.data[index / (sizeof(typename internals<crc::size>::base_type) * 2)] >> ((((sizeof(typename internals<crc::size>::base_type) * 2) - 1) - (index % (sizeof(typename internals<crc::size>::base_type) * 2))) * 4)) & 0xF];
+            }
+            output.hash[crc::hash_size * 2] = 0;
+            return output;
+        }
+    };
+
+    using crc8 = crc<8>;
+    using crc16 = crc<16>;
+    using crc32 = crc<32>;
+    using crc64 = crc<64>;
+}
+
+#undef GTL_CRC_ASSERT
+
+#endif // GTL_CRC_HPP
