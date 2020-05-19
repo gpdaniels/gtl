@@ -78,12 +78,12 @@ TEST(virtual_machine, function, register_opcode) {
     virtual_machine.register_opcode<0x08, &gtl::vmo::jump_if_not_zero<gtl::vm::reg<gtl::vm::rn::general_a>>>();
     virtual_machine.register_opcode<0x09, &gtl::vmo::jump_if_less_than_zero<gtl::vm::reg<gtl::vm::rn::general_a>>>();
 
-    virtual_machine.register_opcode<0x0a, &gtl::vmo::call<gtl::vm::reg<gtl::vm::rn::general_a>>>();
-    virtual_machine.register_opcode<0x0b, &gtl::vmo::call_if_zero<gtl::vm::reg<gtl::vm::rn::general_a>>>();
-    virtual_machine.register_opcode<0x0c, &gtl::vmo::call_if_not_zero<gtl::vm::reg<gtl::vm::rn::general_a>>>();
-    virtual_machine.register_opcode<0x0d, &gtl::vmo::call_if_less_than_zero<gtl::vm::reg<gtl::vm::rn::general_a>>>();
-    virtual_machine.register_opcode<0x0e, &gtl::vmo::call_return>();
-    virtual_machine.register_opcode<0x0f, &gtl::vmo::call_return_if_zero>();
+    virtual_machine.register_opcode<0x0A, &gtl::vmo::call<gtl::vm::reg<gtl::vm::rn::general_a>>>();
+    virtual_machine.register_opcode<0x0B, &gtl::vmo::call_if_zero<gtl::vm::reg<gtl::vm::rn::general_a>>>();
+    virtual_machine.register_opcode<0x0C, &gtl::vmo::call_if_not_zero<gtl::vm::reg<gtl::vm::rn::general_a>>>();
+    virtual_machine.register_opcode<0x0D, &gtl::vmo::call_if_less_than_zero<gtl::vm::reg<gtl::vm::rn::general_a>>>();
+    virtual_machine.register_opcode<0x0E, &gtl::vmo::call_return>();
+    virtual_machine.register_opcode<0x0F, &gtl::vmo::call_return_if_zero>();
     virtual_machine.register_opcode<0x10, &gtl::vmo::call_return_if_not_zero>();
     virtual_machine.register_opcode<0x11, &gtl::vmo::call_return_if_less_than_zero>();
 
