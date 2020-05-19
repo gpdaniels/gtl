@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(short_file, traits, standard) {
-    REQUIRE(sizeof(gtl::short_file) >= 0);
-
     REQUIRE((std::is_pod<gtl::short_file>::value == true));
 
     REQUIRE((std::is_trivial<gtl::short_file>::value == true));

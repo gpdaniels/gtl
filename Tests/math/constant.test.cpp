@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(constant, traits, standard) {
-    REQUIRE(sizeof(gtl::constant) >= 0);
-
     REQUIRE((std::is_pod<gtl::constant>::value == true));
 
     REQUIRE((std::is_trivial<gtl::constant>::value == true));

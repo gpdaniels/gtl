@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(process_instance, traits, standard) {
-    REQUIRE(sizeof(gtl::process_instance) >= 0);
-
     REQUIRE((std::is_pod<gtl::process_instance>::value == true));
 
     REQUIRE((std::is_trivial<gtl::process_instance>::value == true));

@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(aes, traits, standard) {
-    REQUIRE(sizeof(gtl::aes) >= 0);
-
     REQUIRE((std::is_pod<gtl::aes>::value == true));
 
     REQUIRE((std::is_trivial<gtl::aes>::value == true));

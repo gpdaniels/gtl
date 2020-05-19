@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(rsa, traits, standard) {
-    REQUIRE(sizeof(gtl::rsa) >= 0);
-
     REQUIRE((std::is_pod<gtl::rsa>::value == true));
 
     REQUIRE((std::is_trivial<gtl::rsa>::value == true));

@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(complex_nd, traits, standard) {
-    REQUIRE(sizeof(gtl::complex_nd) >= 0);
-
     REQUIRE((std::is_pod<gtl::complex_nd>::value == true));
 
     REQUIRE((std::is_trivial<gtl::complex_nd>::value == true));

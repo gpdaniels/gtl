@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(window, traits, standard) {
-    REQUIRE(sizeof(gtl::window) >= 0);
-
     REQUIRE((std::is_pod<gtl::window>::value == true));
 
     REQUIRE((std::is_trivial<gtl::window>::value == true));

@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(command_line, traits, standard) {
-    REQUIRE(sizeof(gtl::command_line) >= 0);
-
     REQUIRE((std::is_pod<gtl::command_line>::value == true));
 
     REQUIRE((std::is_trivial<gtl::command_line>::value == true));

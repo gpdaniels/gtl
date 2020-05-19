@@ -38,8 +38,6 @@ THE SOFTWARE
 
 TEST(coroutine, traits, standard) {
 
-    //REQUIRE(sizeof(gtl::coroutine) == ???);
-
     REQUIRE(std::is_pod<gtl::coroutine>::value == false, "Expected std::is_pod to be false.");
 
     REQUIRE(std::is_trivial<gtl::coroutine>::value == false, "Expected std::is_trivial to be false.");

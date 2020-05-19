@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(debugger_detection, traits, standard) {
-    REQUIRE(sizeof(gtl::debugger_detection) >= 0);
-
     REQUIRE((std::is_pod<gtl::debugger_detection>::value == true));
 
     REQUIRE((std::is_trivial<gtl::debugger_detection>::value == true));

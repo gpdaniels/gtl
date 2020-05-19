@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(serial_usb, traits, standard) {
-    REQUIRE(sizeof(gtl::serial_usb) >= 0);
-
     REQUIRE((std::is_pod<gtl::serial_usb>::value == true));
 
     REQUIRE((std::is_trivial<gtl::serial_usb>::value == true));

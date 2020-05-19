@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(fundamental, traits, standard) {
-    REQUIRE(sizeof(gtl::fundamental) >= 0);
-
     REQUIRE((std::is_pod<gtl::fundamental>::value == true));
 
     REQUIRE((std::is_trivial<gtl::fundamental>::value == true));

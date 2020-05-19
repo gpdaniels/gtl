@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(socket, traits, standard) {
-    REQUIRE(sizeof(gtl::socket) >= 0);
-
     REQUIRE((std::is_pod<gtl::socket>::value == true));
 
     REQUIRE((std::is_trivial<gtl::socket>::value == true));

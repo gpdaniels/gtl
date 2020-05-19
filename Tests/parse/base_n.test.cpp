@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(base_n, traits, standard) {
-    REQUIRE(sizeof(gtl::base_n) >= 0);
-
     REQUIRE((std::is_pod<gtl::base_n>::value == true));
 
     REQUIRE((std::is_trivial<gtl::base_n>::value == true));

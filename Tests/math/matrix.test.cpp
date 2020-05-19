@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(matrix, traits, standard) {
-    REQUIRE(sizeof(gtl::matrix) >= 0);
-
     REQUIRE((std::is_pod<gtl::matrix>::value == true));
 
     REQUIRE((std::is_trivial<gtl::matrix>::value == true));

@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(speaker, traits, standard) {
-    REQUIRE(sizeof(gtl::speaker) >= 0);
-
     REQUIRE((std::is_pod<gtl::speaker>::value == true));
 
     REQUIRE((std::is_trivial<gtl::speaker>::value == true));

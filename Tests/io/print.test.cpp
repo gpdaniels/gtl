@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(print, traits, standard) {
-    REQUIRE(sizeof(gtl::print) >= 0);
-
     REQUIRE((std::is_pod<gtl::print>::value == true));
 
     REQUIRE((std::is_trivial<gtl::print>::value == true));

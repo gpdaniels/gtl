@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(serial_ttl, traits, standard) {
-    REQUIRE(sizeof(gtl::serial_ttl) >= 0);
-
     REQUIRE((std::is_pod<gtl::serial_ttl>::value == true));
 
     REQUIRE((std::is_trivial<gtl::serial_ttl>::value == true));

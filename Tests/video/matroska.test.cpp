@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(matroska, traits, standard) {
-    REQUIRE(sizeof(gtl::matroska) >= 0);
-
     REQUIRE((std::is_pod<gtl::matroska>::value == true));
 
     REQUIRE((std::is_trivial<gtl::matroska>::value == true));

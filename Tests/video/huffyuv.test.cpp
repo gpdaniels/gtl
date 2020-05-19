@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(huffyuv, traits, standard) {
-    REQUIRE(sizeof(gtl::huffyuv) >= 0);
-
     REQUIRE((std::is_pod<gtl::huffyuv>::value == true));
 
     REQUIRE((std::is_trivial<gtl::huffyuv>::value == true));

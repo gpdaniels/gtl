@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(string_literal_encryption, traits, standard) {
-    REQUIRE(sizeof(gtl::string_literal_encryption) >= 0);
-
     REQUIRE((std::is_pod<gtl::string_literal_encryption>::value == true));
 
     REQUIRE((std::is_trivial<gtl::string_literal_encryption>::value == true));

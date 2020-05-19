@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(hmm, traits, standard) {
-    REQUIRE(sizeof(gtl::hmm) >= 0);
-
     REQUIRE((std::is_pod<gtl::hmm>::value == true));
 
     REQUIRE((std::is_trivial<gtl::hmm>::value == true));

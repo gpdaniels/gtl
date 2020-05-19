@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(utf8, traits, standard) {
-    REQUIRE(sizeof(gtl::utf8) >= 0);
-
     REQUIRE((std::is_pod<gtl::utf8>::value == true));
 
     REQUIRE((std::is_trivial<gtl::utf8>::value == true));

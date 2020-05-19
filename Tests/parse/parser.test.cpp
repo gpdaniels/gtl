@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(parser, traits, standard) {
-    REQUIRE(sizeof(gtl::parser) >= 0);
-
     REQUIRE((std::is_pod<gtl::parser>::value == true));
 
     REQUIRE((std::is_trivial<gtl::parser>::value == true));

@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(gamepad, traits, standard) {
-    REQUIRE(sizeof(gtl::gamepad) >= 0);
-
     REQUIRE((std::is_pod<gtl::gamepad>::value == true));
 
     REQUIRE((std::is_trivial<gtl::gamepad>::value == true));

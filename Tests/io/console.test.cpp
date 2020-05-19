@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(console, traits, standard) {
-    REQUIRE(sizeof(gtl::console) >= 0);
-
     REQUIRE((std::is_pod<gtl::console>::value == true));
 
     REQUIRE((std::is_trivial<gtl::console>::value == true));

@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(camera_trackball, traits, standard) {
-    REQUIRE(sizeof(gtl::camera_trackball) >= 0);
-
     REQUIRE((std::is_pod<gtl::camera_trackball>::value == true));
 
     REQUIRE((std::is_trivial<gtl::camera_trackball>::value == true));

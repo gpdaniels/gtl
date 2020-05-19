@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(camera, traits, standard) {
-    REQUIRE(sizeof(gtl::camera) >= 0);
-
     REQUIRE((std::is_pod<gtl::camera>::value == true));
 
     REQUIRE((std::is_trivial<gtl::camera>::value == true));

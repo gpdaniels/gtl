@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(slot_map, traits, standard) {
-    REQUIRE(sizeof(gtl::slot_map) >= 0);
-
     REQUIRE((std::is_pod<gtl::slot_map>::value == true));
 
     REQUIRE((std::is_trivial<gtl::slot_map>::value == true));

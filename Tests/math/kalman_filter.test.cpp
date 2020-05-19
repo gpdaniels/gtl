@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(kalman_filter, traits, standard) {
-    REQUIRE(sizeof(gtl::kalman_filter) >= 0);
-
     REQUIRE((std::is_pod<gtl::kalman_filter>::value == true));
 
     REQUIRE((std::is_trivial<gtl::kalman_filter>::value == true));

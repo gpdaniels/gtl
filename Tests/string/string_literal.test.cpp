@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(string_literal, traits, standard) {
-    REQUIRE(sizeof(gtl::string_literal) >= 0);
-
     REQUIRE((std::is_pod<gtl::string_literal>::value == true));
 
     REQUIRE((std::is_trivial<gtl::string_literal>::value == true));

@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(entropy, traits, standard) {
-    REQUIRE(sizeof(gtl::entropy) >= 0);
-
     REQUIRE((std::is_pod<gtl::entropy>::value == true));
 
     REQUIRE((std::is_trivial<gtl::entropy>::value == true));

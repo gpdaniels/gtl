@@ -35,8 +35,6 @@ THE SOFTWARE
 #endif
 
 TEST(big_unsigned, traits, standard) {
-    REQUIRE(sizeof(gtl::big_unsigned) >= 0);
-
     REQUIRE((std::is_pod<gtl::big_unsigned>::value == true));
 
     REQUIRE((std::is_trivial<gtl::big_unsigned>::value == true));
