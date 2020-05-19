@@ -29,10 +29,10 @@ The current classes are as described below:
 
 |               Class | Description                                                                             |
 |--------------------:|:----------------------------------------------------------------------------------------|
-|      **breakpoint** | Macro for creating a breakpoint.                                                        |
 |          **access** | Classes and macros for accessing class private members.                                 |
 |          **assert** | Macros that define an assert macro that optionally takes a format string and parameters.|
 |          **assume** | Macro that hints to the compiler when a statement should be assumed true.               |
+|      **breakpoint** | Macro for creating a breakpoint.                                                        |
 |          **signal** | Class to wrap signal handlers allowing the use of lambdas with scope.                   |
 |          **unused** | Macro for hiding unused variable warnings.                                              |
 
