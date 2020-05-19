@@ -41,37 +41,6 @@ TEST(static_array_nd, traits, standard) {
     testbench::test_template<testbench::test_types>(
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
-            REQUIRE(sizeof(gtl::static_array_nd<type>) >= 1, "sizeof(gtl::static_array_nd<type>) = %ld, expected >= %lld", sizeof(gtl::static_array_nd<type>), 1ull);
-            testbench::test_template<testbench::value_collection<0, 1, 10>>(
-                [](auto value_1)->void {
-                    using type_value1 = decltype(value_1);
-                    constexpr static const unsigned long long value1 = type_value1::value;
-                    REQUIRE(sizeof(gtl::static_array_nd<type, value1>) >= sizeof(type) * value1, "sizeof(gtl::static_array_nd<type, value1>) = %ld, expected >= %lld", sizeof(gtl::static_array_nd<type, value1>), sizeof(type) * value1);
-                    testbench::test_template<testbench::value_collection<0, 1, 10>>(
-                        [](auto value_2)->void {
-                            using type_value2 = decltype(value_2);
-                            constexpr static const unsigned long long value1 = type_value1::value;
-                            constexpr static const unsigned long long value2 = type_value2::value;
-                            REQUIRE(sizeof(gtl::static_array_nd<type, value1, value2>) >= sizeof(type) * value1 * value2, "sizeof(gtl::static_array_nd<type, value1, value2>) = %ld, expected >= %lld", sizeof(gtl::static_array_nd<type, value1, value2>), sizeof(type) * value1 * value2);
-                            testbench::test_template<testbench::value_collection<0, 1, 10>>(
-                                [](auto value_3)->void {
-                                    using type_value3 = decltype(value_3);
-                                    constexpr static const unsigned long long value1 = type_value1::value;
-                                    constexpr static const unsigned long long value2 = type_value2::value;
-                                    constexpr static const unsigned long long value3 = type_value3::value;
-                                    REQUIRE(sizeof(gtl::static_array_nd<type, value1, value2, value3>) >= sizeof(type) * value1 * value2 * value3, "sizeof(gtl::static_array_nd<type, value1, value2, value3>) = %ld, expected >= %lld", sizeof(gtl::static_array_nd<type, value1, value2, value3>), sizeof(type) * value1 * value2 * value3);
-                                }
-                            );
-                        }
-                    );
-                }
-            );
-        }
-    );
-
-    testbench::test_template<testbench::test_types>(
-        [](auto test_type)->void {
-            using type = typename decltype(test_type)::type;
             REQUIRE((std::is_pod<gtl::static_array_nd<type> >::value == true), "Expected std::is_pod to be true.");
             testbench::test_template<testbench::value_collection<0, 1, 10>>(
                 [](auto value_1)->void {

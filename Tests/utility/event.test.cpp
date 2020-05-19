@@ -40,8 +40,6 @@ struct test_event {
 };
 
 TEST(event, traits, standard) {
-    REQUIRE(sizeof(gtl::event_manager<test_event>) >= 4, "sizeof(gtl::event_manager) = %ld, expected >= %lld", sizeof(gtl::event_manager<test_event>), 1ull);
-
     REQUIRE(std::is_pod<gtl::event_manager<test_event>>::value == false, "Expected std::is_pod to be false.");
 
     REQUIRE(std::is_trivial<gtl::event_manager<test_event>>::value == false, "Expected std::is_trivial to be false.");

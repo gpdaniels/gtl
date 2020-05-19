@@ -45,9 +45,9 @@ TEST(ring_buffer, traits, standard) {
             using type = typename decltype(test_type)::type;
             using type_value = decltype(value_type);
             constexpr static const unsigned long long value = type_value::value;
-            constexpr static const unsigned long long expected_size = sizeof(type) * value + sizeof(std::atomic<unsigned long long int>) * 2;
-            REQUIRE(sizeof(gtl::ring_buffer<type, value>) >= expected_size, "sizeof(gtl::ring_buffer<type, value>) = %ld, expected >= %lld", sizeof(gtl::ring_buffer<type, value>), expected_size);
+
             REQUIRE((std::is_pod<gtl::ring_buffer<type, value> >::value == false), "Expected std::is_pod to be false.");
+
             REQUIRE((std::is_trivial<gtl::ring_buffer<type, value> >::value == false), "Expected std::is_trivial to be false.");
 
             #if defined(__clang__)

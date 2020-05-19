@@ -37,8 +37,6 @@ THE SOFTWARE
 #endif
 
 TEST(random_xorshift, traits, standard) {
-    REQUIRE(sizeof(gtl::random_xorshift) >= 8ull, "sizeof(gtl::random_xorshift) = %ld, expected >= %lld", sizeof(gtl::random_xorshift), 8ull);
-
     REQUIRE(std::is_pod<gtl::random_xorshift>::value == false, "Expected std::is_pod to be false.");
 
     REQUIRE(std::is_trivial<gtl::random_xorshift>::value == false, "Expected std::is_trivial to be false.");

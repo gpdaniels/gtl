@@ -37,8 +37,6 @@ THE SOFTWARE
 #endif
 
 TEST(random_pcg, traits, standard) {
-    REQUIRE(sizeof(gtl::random_pcg) >= 16ull, "sizeof(gtl::random_pcg) = %ld, expected >= %lld", sizeof(gtl::random_pcg), 16ull);
-
     REQUIRE(std::is_pod<gtl::random_pcg>::value == false, "Expected std::is_pod to be false.");
 
     REQUIRE(std::is_trivial<gtl::random_pcg>::value == false, "Expected std::is_trivial to be false.");

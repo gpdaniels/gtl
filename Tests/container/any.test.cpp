@@ -38,8 +38,6 @@ THE SOFTWARE
 #endif
 
 TEST(any, traits, standard) {
-    REQUIRE(sizeof(gtl::any) >= 1, "sizeof(gtl::any) = %ld, expected >= %lld", sizeof(gtl::any), 1ull);
-
     REQUIRE(std::is_pod<gtl::any>::value == false, "Expected std::is_pod to be false.");
 
     REQUIRE(std::is_trivial<gtl::any>::value == false, "Expected std::is_trivial to be false.");

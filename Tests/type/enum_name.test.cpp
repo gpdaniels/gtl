@@ -43,8 +43,6 @@ enum class test_enum {
 };
 
 TEST(enum_name, traits, standard) {
-    REQUIRE(sizeof(gtl::enum_name<test_enum, test_enum::first>) >= 1, "sizeof(gtl::enum_name<test_enum>) = %ld, expected >= %lld", sizeof(gtl::enum_name<test_enum, test_enum::first>), 1ull);
-
     REQUIRE((std::is_pod<gtl::enum_name<test_enum, test_enum::first> >::value == true), "Expected std::is_pod to be true.");
 
     REQUIRE((std::is_trivial<gtl::enum_name<test_enum, test_enum::first> >::value == true), "Expected std::is_trivial to be true.");
