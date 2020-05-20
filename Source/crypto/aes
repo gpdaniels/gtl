@@ -22,10 +22,545 @@ THE SOFTWARE
 #ifndef GTL_AES_HPP
 #define GTL_AES_HPP
 
-namespace gtl {
-    class aes {
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the aes is misused.
+#   define GTL_AES_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+///  @brief At release time the assert macro is implemented as a nop.
+#   define GTL_AES_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
 
+namespace gtl {
+    /// @brief  Different block cipher modes available for the aes class.
+    enum class aes_mode {
+        ecb, // Electronic codebook.
+        cbc, // Cipher block chaining.
+        cfb  // Cipher feedback.
+    };
+
+    /// @brief  The aes class computes and aes encrypted output of a sequence of data.
+    /// @tparam aes_size The size of the key length used in the aes algorithm.
+    /// @tparam block_cipher_mode The mode used to chain together blocks.
+    template <unsigned long long int aes_size, aes_mode block_cipher_mode>
+    class aes final {
+    private:
+        static_assert (aes_size % 8 == 0, "Size of aes key must be a multiple of eight.");
+        static_assert (aes_size == 128 || aes_size == 192 || aes_size == 256, "Currently only sizes 128, 192, and 256 bits are supported.");
+
+    public:
+        /// @brief  Handy variable for accessing the size in bits.
+        constexpr static const unsigned long long int size = aes_size;
+
+        /// @brief  Handy variable for accessing the aes mode type.
+        constexpr static const aes_mode mode = block_cipher_mode;
+
+        /// @brief  Internal size of each processed block of data in bytes.
+        constexpr static const unsigned int block_size = 32 / 8;
+
+        /// @brief  Size of the key in bytes.
+        constexpr static const unsigned int key_size = size / 8;
+
+        /// @brief  The number of encryption/decryption rounds.
+        constexpr static const int number_of_rounds = 6 + (size / 32);
+
+    public:
+        /// @brief  Type used to hold words of data for processing.
+        struct word_type {
+            unsigned char data[aes::block_size] = {};
+        };
+
+        /// @brief  Type used to hold blocks of data for processing.
+        struct block_type {
+            /// @brief  The data stored in the block.
+            word_type data[aes::block_size] = {};
+        };
+
+        /// @brief  Simple type to hold the key data.
+        struct key_type {
+            unsigned char data[aes::key_size] = {};
+        };
+
+    private:
+        /// @brief  Standard forward substitution box for aes.
+        constexpr static const unsigned char substitution_box_forward[16][16] = {
+            { 0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76 },
+            { 0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0 },
+            { 0xB7, 0xFD, 0x93, 0x26, 0x36, 0x3F, 0xF7, 0xCC, 0x34, 0xA5, 0xE5, 0xF1, 0x71, 0xD8, 0x31, 0x15 },
+            { 0x04, 0xC7, 0x23, 0xC3, 0x18, 0x96, 0x05, 0x9A, 0x07, 0x12, 0x80, 0xE2, 0xEB, 0x27, 0xB2, 0x75 },
+            { 0x09, 0x83, 0x2C, 0x1A, 0x1B, 0x6E, 0x5A, 0xA0, 0x52, 0x3B, 0xD6, 0xB3, 0x29, 0xE3, 0x2F, 0x84 },
+            { 0x53, 0xD1, 0x00, 0xED, 0x20, 0xFC, 0xB1, 0x5B, 0x6A, 0xCB, 0xBE, 0x39, 0x4A, 0x4C, 0x58, 0xCF },
+            { 0xD0, 0xEF, 0xAA, 0xFB, 0x43, 0x4D, 0x33, 0x85, 0x45, 0xF9, 0x02, 0x7F, 0x50, 0x3C, 0x9F, 0xA8 },
+            { 0x51, 0xA3, 0x40, 0x8F, 0x92, 0x9D, 0x38, 0xF5, 0xBC, 0xB6, 0xDA, 0x21, 0x10, 0xFF, 0xF3, 0xD2 },
+            { 0xCD, 0x0C, 0x13, 0xEC, 0x5F, 0x97, 0x44, 0x17, 0xC4, 0xA7, 0x7E, 0x3D, 0x64, 0x5D, 0x19, 0x73 },
+            { 0x60, 0x81, 0x4F, 0xDC, 0x22, 0x2A, 0x90, 0x88, 0x46, 0xEE, 0xB8, 0x14, 0xDE, 0x5E, 0x0B, 0xDB },
+            { 0xE0, 0x32, 0x3A, 0x0A, 0x49, 0x06, 0x24, 0x5C, 0xC2, 0xD3, 0xAC, 0x62, 0x91, 0x95, 0xE4, 0x79 },
+            { 0xE7, 0xC8, 0x37, 0x6D, 0x8D, 0xD5, 0x4E, 0xA9, 0x6C, 0x56, 0xF4, 0xEA, 0x65, 0x7A, 0xAE, 0x08 },
+            { 0xBA, 0x78, 0x25, 0x2E, 0x1C, 0xA6, 0xB4, 0xC6, 0xE8, 0xDD, 0x74, 0x1F, 0x4B, 0xBD, 0x8B, 0x8A },
+            { 0x70, 0x3E, 0xB5, 0x66, 0x48, 0x03, 0xF6, 0x0E, 0x61, 0x35, 0x57, 0xB9, 0x86, 0xC1, 0x1D, 0x9E },
+            { 0xE1, 0xF8, 0x98, 0x11, 0x69, 0xD9, 0x8E, 0x94, 0x9B, 0x1E, 0x87, 0xE9, 0xCE, 0x55, 0x28, 0xDF },
+            { 0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16 }
+        };
+
+        /// @brief  Standard inverse substitution box for aes.
+        constexpr static const unsigned char substitution_box_inverse[16][16] = {
+            { 0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB },
+            { 0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87, 0x34, 0x8E, 0x43, 0x44, 0xC4, 0xDE, 0xE9, 0xCB },
+            { 0x54, 0x7B, 0x94, 0x32, 0xA6, 0xC2, 0x23, 0x3D, 0xEE, 0x4C, 0x95, 0x0B, 0x42, 0xFA, 0xC3, 0x4E },
+            { 0x08, 0x2E, 0xA1, 0x66, 0x28, 0xD9, 0x24, 0xB2, 0x76, 0x5B, 0xA2, 0x49, 0x6D, 0x8B, 0xD1, 0x25 },
+            { 0x72, 0xF8, 0xF6, 0x64, 0x86, 0x68, 0x98, 0x16, 0xD4, 0xA4, 0x5C, 0xCC, 0x5D, 0x65, 0xB6, 0x92 },
+            { 0x6C, 0x70, 0x48, 0x50, 0xFD, 0xED, 0xB9, 0xDA, 0x5E, 0x15, 0x46, 0x57, 0xA7, 0x8D, 0x9D, 0x84 },
+            { 0x90, 0xD8, 0xAB, 0x00, 0x8C, 0xBC, 0xD3, 0x0A, 0xF7, 0xE4, 0x58, 0x05, 0xB8, 0xB3, 0x45, 0x06 },
+            { 0xD0, 0x2C, 0x1E, 0x8F, 0xCA, 0x3F, 0x0F, 0x02, 0xC1, 0xAF, 0xBD, 0x03, 0x01, 0x13, 0x8A, 0x6B },
+            { 0x3A, 0x91, 0x11, 0x41, 0x4F, 0x67, 0xDC, 0xEA, 0x97, 0xF2, 0xCF, 0xCE, 0xF0, 0xB4, 0xE6, 0x73 },
+            { 0x96, 0xAC, 0x74, 0x22, 0xE7, 0xAD, 0x35, 0x85, 0xE2, 0xF9, 0x37, 0xE8, 0x1C, 0x75, 0xDF, 0x6E },
+            { 0x47, 0xF1, 0x1A, 0x71, 0x1D, 0x29, 0xC5, 0x89, 0x6F, 0xB7, 0x62, 0x0E, 0xAA, 0x18, 0xBE, 0x1B },
+            { 0xFC, 0x56, 0x3E, 0x4B, 0xC6, 0xD2, 0x79, 0x20, 0x9A, 0xDB, 0xC0, 0xFE, 0x78, 0xCD, 0x5A, 0xF4 },
+            { 0x1F, 0xDD, 0xA8, 0x33, 0x88, 0x07, 0xC7, 0x31, 0xB1, 0x12, 0x10, 0x59, 0x27, 0x80, 0xEC, 0x5F },
+            { 0x60, 0x51, 0x7F, 0xA9, 0x19, 0xB5, 0x4A, 0x0D, 0x2D, 0xE5, 0x7A, 0x9F, 0x93, 0xC9, 0x9C, 0xEF },
+            { 0xA0, 0xE0, 0x3B, 0x4D, 0xAE, 0x2A, 0xF5, 0xB0, 0xC8, 0xEB, 0xBB, 0x3C, 0x83, 0x53, 0x99, 0x61 },
+            { 0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D }
+        };
+
+    private:
+        /// @brief  Handle raising the degree of the polynomial represented by the aes irreducible polynomial and bits in the input.
+        /// @param  polynomial Bits representing the powers of a polynomial.
+        /// @return Result of raising the degree of the polynomial represented by the aes irreducible polynomial and bits in the input.
+        constexpr static unsigned char polynomial_raise(const unsigned char polynomial) {
+            // The aes irreducible polynomial used is:
+            // x^8 + x^4 + x^3 + x + 1 or 0b0000000100011011 or 0x011B
+            //
+            // The aim is to reduce the polynomial to degree 7 (to fit in 1 byte).
+            // A byte can be represented by each bits bool value:
+            // b7*x^7 + b6*x^6 + b5*x^5 + b4*x^4 + b3*x^3 + b2*x^2 + b1*x^1 + b0*x^0
+            //
+            // Which when multiplied by x becomes:
+            // b7*x^8 + b6*x^7 + b5*x^6 + b4*x^5 + b3*x^4 + b2*x^3 + b1*x^2 + b0*x^1
+            //
+            // This is equivalent to a shifted of 1 bit to the left.
+
+            // Check if the high bit is set, as this would shift off the side
+            if (polynomial & 0x80) {
+                // If set it is necessary to apply the modulo with the irreducible polynomial, achieved by xor.
+                return static_cast<unsigned char>(polynomial << 1) ^ 0x1B;
+            }
+            else {
+                // If not set the polynomial is already reduced.
+                return static_cast<unsigned char>(polynomial << 1);
+            }
+        }
+
+        /// @brief  To avoid zeros when multiplying bytes a polynomial multiply operation is performed instead.
+        /// @param  lhs_polynomial The lhs of the polynomial multiplication.
+        /// @param  rhs_polynomial The rhs of the polynomial multiplication.
+        /// @return The result of the polynomial multiply operation on the lhs and rhs polynomials.
+        constexpr static unsigned char polynomial_multiply(unsigned char lhs_polynomial, unsigned char rhs_polynomial) {
+            unsigned char result = {};
+            unsigned char lhs_polynomial_raised = lhs_polynomial;
+            result = result ^ (lhs_polynomial_raised * ((rhs_polynomial >> 0) & 1));
+            for (unsigned int i = 1; i < 8; i++) {
+                lhs_polynomial_raised = polynomial_raise(lhs_polynomial_raised);
+                result = result ^ (lhs_polynomial_raised * ((rhs_polynomial >> i) & 1));
+            }
+            return result;
+        }
+
+        /// @brief  Circular rotate of an input word by a number of bytes.
+        /// @param  shift Number of bytes to rotate the input word.
+        /// @param  word Data to rotate.
+        constexpr static void rotate_left(unsigned int shift, word_type& word) {
+            word = word_type {
+                word.data[(0 + shift) % aes::block_size],
+                word.data[(1 + shift) % aes::block_size],
+                word.data[(2 + shift) % aes::block_size],
+                word.data[(3 + shift) % aes::block_size]
+            };
+        }
+
+        /// @brief  Calculate the round constant for a given round number.
+        /// @param  round_number The round number to compute the round constant for.
+        /// @return The value of the round constant as the first byte in a word.
+        constexpr static word_type round_constant(const unsigned int round_number) {
+            word_type constant = { 1, 0, 0, 0 };
+            for (unsigned int round = 1; round < round_number; ++round) {
+                constant.data[0] = polynomial_raise(constant.data[0]);
+            }
+            return constant;
+        }
+
+        /// @brief  Expand the input key into the number of blocks required for all rounds of aes.
+        /// @param  key The input key.
+        /// @param  round_keys The result of expanding the key.
+        constexpr static void key_expansion(const key_type& key, block_type round_keys[aes::number_of_rounds + 1]) {
+            // round_keys_rows[i] means a row of the round_keys data (32 bits)
+            // round_keys_rows[i] = key_rows[i]                                                                                     : (i < key_size_words)
+            // round_keys_rows[i] = round_keys_rows[i - key_size_words] ^ Sub(Rot(round_keys_rows[i - 1])) ^ round_constant(i / N)  : (i >= key_size_words) && (i % key_size_words == 0)
+            // round_keys_rows[i] = round_keys_rows[i - key_size_words] ^ Sub(round_keys_rows[i - 1])                               : (i >= key_size_words) && (key_size_words > 6) && (i % key_size_words == 4)
+            // round_keys_rows[i] = round_keys_rows[i - key_size_words] ^ round_keys_rows[i - 1]                                    : otherwise
+
+            // Copy key into the blocks of round_keys.
+            for (unsigned int key_index = 0; key_index < aes::key_size; key_index += aes::block_size) {
+                const unsigned int round_index = key_index / (aes::block_size * aes::block_size);
+                const unsigned int block_column_index = (key_index % (aes::block_size * aes::block_size)) / (aes::block_size);
+                round_keys[round_index].data[0].data[block_column_index] = key.data[key_index + 0];
+                round_keys[round_index].data[1].data[block_column_index] = key.data[key_index + 1];
+                round_keys[round_index].data[2].data[block_column_index] = key.data[key_index + 2];
+                round_keys[round_index].data[3].data[block_column_index] = key.data[key_index + 3];
+            }
+
+            // Mutating the round_keys.
+            for (unsigned int key_index = aes::key_size; key_index < aes::block_size * aes::block_size * (aes::number_of_rounds + 1); key_index += aes::block_size) {
+                const unsigned int round_index = key_index / (aes::block_size * aes::block_size);
+                const unsigned int block_column_index = (key_index % (aes::block_size * aes::block_size)) / (aes::block_size);
+
+                const unsigned int previous_block_column_round_index = (key_index - aes::block_size) / (aes::block_size * aes::block_size);
+                const unsigned int previous_block_column_index = ((key_index - aes::block_size) % (aes::block_size * aes::block_size)) / (aes::block_size);
+
+                word_type previous_round_key_word = {
+                    round_keys[previous_block_column_round_index].data[0].data[previous_block_column_index],
+                    round_keys[previous_block_column_round_index].data[1].data[previous_block_column_index],
+                    round_keys[previous_block_column_round_index].data[2].data[previous_block_column_index],
+                    round_keys[previous_block_column_round_index].data[3].data[previous_block_column_index]
+                };
+
+                if ((key_index % aes::key_size) == 0) {
+                    aes::rotate_left(1, previous_round_key_word);
+                    aes::substitute_forward(previous_round_key_word);
+                    word_type round_constant_word = aes::round_constant(key_index / aes::key_size);
+                    previous_round_key_word = aes::xor_data(previous_round_key_word, round_constant_word);
+                }
+                else if (((aes::key_size / aes::block_size) > 6) && ((key_index % aes::key_size) == (aes::block_size * aes::block_size))) {
+                    aes::substitute_forward(previous_round_key_word);
+                }
+
+                const unsigned int key_round_index = (key_index - aes::key_size) / (aes::block_size * aes::block_size);
+                const unsigned int key_block_column_index = ((key_index - aes::key_size) % (aes::block_size * aes::block_size)) / (aes::block_size);
+
+                round_keys[round_index].data[0].data[block_column_index] = round_keys[key_round_index].data[0].data[key_block_column_index] ^ previous_round_key_word.data[0];
+                round_keys[round_index].data[1].data[block_column_index] = round_keys[key_round_index].data[1].data[key_block_column_index] ^ previous_round_key_word.data[1];
+                round_keys[round_index].data[2].data[block_column_index] = round_keys[key_round_index].data[2].data[key_block_column_index] ^ previous_round_key_word.data[2];
+                round_keys[round_index].data[3].data[block_column_index] = round_keys[key_round_index].data[3].data[key_block_column_index] ^ previous_round_key_word.data[3];
+            }
+        }
+
+    private:
+        /// @brief  Substitute all bytes in a word with their equivalent from the forward substitution box.
+        /// @param  word Data to substitute.
+        constexpr static void substitute_forward(word_type& word) {
+            for (unsigned int i = 0; i < aes::block_size; ++i) {
+                word.data[i] = aes::substitution_box_forward[word.data[i] / 16][word.data[i] % 16];
+            }
+        }
+
+        /// @brief  Substitute all bytes in a word with their equivalent from the inverse substitution box.
+        /// @param  word Data to substitute.
+        constexpr static void substitute_inverse(word_type& word) {
+            for (unsigned int i = 0; i < aes::block_size; ++i) {
+                word.data[i] = aes::substitution_box_inverse[word.data[i] / 16][word.data[i] % 16];
+            }
+        }
+
+        /// @brief  Substitute all bytes in a block with their equivalent from the forward substitution box.
+        /// @param  block Data to substitute.
+        constexpr static void substitute_forward(block_type& block) {
+            for (unsigned int i = 0; i < aes::block_size; i++) {
+                aes::substitute_forward(block.data[i]);
+            }
+        }
+
+        /// @brief  Substitute all bytes in a block with their equivalent from the inverse substitution box.
+        /// @param  block Data to substitute.
+        constexpr static void substitute_inverse(block_type& block) {
+            for (unsigned int i = 0; i < aes::block_size; ++i) {
+                aes::substitute_inverse(block.data[i]);
+            }
+        }
+
+        /// @brief  Mix all columns of a block using the forward transformation.
+        /// @param  block Data to mix.
+        constexpr static void mix_columns_forward(block_type& block) {
+            for (unsigned int i = 0; i < aes::block_size; ++i) {
+                const word_type temp = {
+                    static_cast<unsigned char>(aes::polynomial_multiply(0x02, block.data[0].data[i]) ^ aes::polynomial_multiply(0x03, block.data[1].data[i]) ^ block.data[2].data[i] ^ block.data[3].data[i]),
+                    static_cast<unsigned char>(block.data[0].data[i] ^ aes::polynomial_multiply(0x02, block.data[1].data[i]) ^ aes::polynomial_multiply(0x03, block.data[2].data[i]) ^ block.data[3].data[i]),
+                    static_cast<unsigned char>(block.data[0].data[i] ^ block.data[1].data[i] ^ aes::polynomial_multiply(0x02, block.data[2].data[i]) ^ aes::polynomial_multiply(0x03, block.data[3].data[i])),
+                    static_cast<unsigned char>(aes::polynomial_multiply(0x03, block.data[0].data[i]) ^ block.data[1].data[i] ^ block.data[2].data[i] ^ aes::polynomial_multiply(0x02, block.data[3].data[i]))
+                };
+                for (unsigned int j = 0; j < aes::block_size; ++j) {
+                    block.data[j].data[i] = temp.data[j];
+                }
+            }
+        }
+
+        /// @brief  Mix all columns of a block using the inverse transformation.
+        /// @param  block Data to mix.
+        constexpr static void mix_columns_inverse(block_type& block) {
+            for (unsigned int i = 0; i < aes::block_size; ++i) {
+                const word_type temp = {
+                    static_cast<unsigned char>(aes::polynomial_multiply(0x0E, block.data[0].data[i]) ^ aes::polynomial_multiply(0x0B, block.data[1].data[i]) ^ aes::polynomial_multiply(0x0D, block.data[2].data[i]) ^ aes::polynomial_multiply(0x09, block.data[3].data[i])),
+                    static_cast<unsigned char>(aes::polynomial_multiply(0x09, block.data[0].data[i]) ^ aes::polynomial_multiply(0x0E, block.data[1].data[i]) ^ aes::polynomial_multiply(0x0B, block.data[2].data[i]) ^ aes::polynomial_multiply(0x0D, block.data[3].data[i])),
+                    static_cast<unsigned char>(aes::polynomial_multiply(0x0D, block.data[0].data[i]) ^ aes::polynomial_multiply(0x09, block.data[1].data[i]) ^ aes::polynomial_multiply(0x0E, block.data[2].data[i]) ^ aes::polynomial_multiply(0x0B, block.data[3].data[i])),
+                    static_cast<unsigned char>(aes::polynomial_multiply(0x0B, block.data[0].data[i]) ^ aes::polynomial_multiply(0x0D, block.data[1].data[i]) ^ aes::polynomial_multiply(0x09, block.data[2].data[i]) ^ aes::polynomial_multiply(0x0E, block.data[3].data[i]))
+                };
+                for (unsigned int j = 0; j < aes::block_size; ++j) {
+                    block.data[j].data[i] = temp.data[j];
+                }
+            }
+        }
+
+        /// @brief  Rotate all rows of a block using the forward transformation.
+        /// @param  block Data to rotate.
+        constexpr static void rotate_rows_forward(block_type& block) {
+            //aes::rotate_left(0, block.data[0]);
+            aes::rotate_left(1, block.data[1]);
+            aes::rotate_left(2, block.data[2]);
+            aes::rotate_left(3, block.data[3]);
+        }
+
+        /// @brief  Rotate all rows of a block using the inverse transformation.
+        /// @param  block Data to rotate.
+        constexpr static void rotate_rows_inverse(block_type& block) {
+            //aes::rotate_left(4, block.data[0]);
+            aes::rotate_left(3, block.data[1]);
+            aes::rotate_left(2, block.data[2]);
+            aes::rotate_left(1, block.data[3]);
+        }
+
+    private:
+        /// @brief  Transform a block of data from decrypted to encrypted.
+        /// @param  key The input key used to encrypt the data.
+        /// @param  data Data to encrypt.
+        /// @return The encrypted data.
+        constexpr static block_type transform_block_forward(const key_type& key, const block_type& data) {
+            block_type round_keys[aes::number_of_rounds + 1];
+            aes::key_expansion(key, round_keys);
+
+            block_type state = data;
+
+            state = aes::xor_data(round_keys[0], state);
+
+            for (unsigned int round = 1; round < aes::number_of_rounds; ++round) {
+                aes::substitute_forward(state);
+                aes::rotate_rows_forward(state);
+                aes::mix_columns_forward(state);
+                state = aes::xor_data(round_keys[round], state);
+            }
+
+            aes::substitute_forward(state);
+            aes::rotate_rows_forward(state);
+            state = aes::xor_data(round_keys[aes::number_of_rounds], state);
+
+            return state;
+        }
+
+        /// @brief  Transform a block of data from encrypted to decrypted.
+        /// @param  key The input key used to decrypt the data.
+        /// @param  data Data to decrypt.
+        /// @return The decrypted data.
+        constexpr static block_type transform_block_inverse(const key_type& key, const block_type& data) {
+            block_type round_keys[aes::number_of_rounds + 1];
+            aes::key_expansion(key, round_keys);
+
+            block_type state = data;
+
+            state = aes::xor_data(round_keys[aes::number_of_rounds], state);
+
+            for (unsigned int round = aes::number_of_rounds - 1; round > 0; --round) {
+                aes::substitute_inverse(state);
+                aes::rotate_rows_inverse(state);
+                state = aes::xor_data(round_keys[round], state);
+                aes::mix_columns_inverse(state);
+            }
+
+            aes::substitute_inverse(state);
+            aes::rotate_rows_inverse(state);
+            state = aes::xor_data(round_keys[0], state);
+
+            return state;
+        }
+
+    private:
+        /// @brief
+        /// @param  lhs
+        /// @param  rhs
+        /// @return
+        constexpr static word_type xor_data(const word_type& lhs, const word_type& rhs) {
+            word_type result;
+            for (unsigned int i = 0; i < aes::block_size; ++i) {
+                result.data[i] = lhs.data[i] ^ rhs.data[i];
+            }
+            return result;
+        }
+
+        /// @brief
+        /// @param  lhs
+        /// @param  rhs
+        /// @return
+        constexpr static block_type xor_data(const block_type& lhs, const block_type& rhs) {
+            block_type result;
+            for (unsigned int i = 0; i < aes::block_size; ++i) {
+                result.data[i] = xor_data(lhs.data[i], rhs.data[i]);
+            }
+            return result;
+        }
+
+    public:
+        /// @brief  Transform a block of data from decrypted to encrypted chaining together blocks using an initialisation vector.
+        /// @param  key The input key used to encrypt the data.
+        /// @param  data Data to encrypt.
+        /// @param  initialisation_vector Data optionally used to seed the encryption process depending on the mode.
+        /// @return The encrypted data.
+        constexpr block_type encrypt_block(const key_type& key, const block_type& data, block_type& initialisation_vector = {}) {
+            block_type result;
+            if constexpr (aes::mode == aes_mode::cbc) {
+                const block_type block = aes::xor_data(initialisation_vector, data);
+                result = aes::transform_block_forward(key, block);
+                initialisation_vector = result;
+            }
+            else if constexpr (aes::mode == aes_mode::cfb) {
+                const block_type block = aes::transform_block_forward(key, initialisation_vector);
+                result = aes::xor_data(data, block);
+                initialisation_vector = result;
+            }
+            else if constexpr (aes::mode == aes_mode::ecb) {
+                result = aes::transform_block_forward(key, data);
+            }
+            else {
+                static_assert((aes::mode == aes_mode::cbc) || (aes::mode == aes_mode::cfb) || (aes::mode == aes_mode::ecb), "No valid mode selected for aes process.");
+            }
+            return result;
+        }
+
+        /// @brief  Transform a block of data from encrypted to decrypted chaining together blocks using an initialisation vector.
+        /// @param  key The input key used to decrypt the data.
+        /// @param  data Data to decrypt.
+        /// @param  initialisation_vector Data optionally used to seed the decryption process depending on the mode.
+        /// @return The decrypted data.
+        constexpr block_type decrypt_block(const key_type& key, const block_type& data, block_type& initialisation_vector = {}) {
+            block_type result;
+            if constexpr (aes::mode == aes_mode::cbc) {
+                const block_type block = aes::transform_block_inverse(key, data);
+                result = aes::xor_data(initialisation_vector, block);
+                initialisation_vector = data;
+            }
+            else if constexpr (aes::mode == aes_mode::cfb) {
+                const block_type block = aes::transform_block_forward(key, initialisation_vector);
+                result = aes::xor_data(data, block);
+                initialisation_vector = data;
+            }
+            else if constexpr (aes::mode == aes_mode::ecb) {
+                result = aes::transform_block_inverse(key, data);
+            }
+            else {
+                static_assert((aes::mode == aes_mode::cbc) || (aes::mode == aes_mode::cfb) || (aes::mode == aes_mode::ecb), "No valid mode selected for aes process.");
+            }
+            return result;
+        }
+
+    public:
+        /// @brief  Encrypt a string of data writing the encrypted data into the output string.
+        /// @param  data The string of data to encrypt.
+        /// @param  length The lenght of the data, must be a multiple of the aes block size.
+        /// @param  key The encryption key, must be at least the length required by the selected aes bitsize.
+        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
+        void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, unsigned char* output) {
+            const unsigned char iv[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+            this->encrypt(data, length, key, iv, output);
+        }
+
+        /// @brief  Decrypt a string of data writing the decrypted data into the output string.
+        /// @param  data The string of data to decrypt.
+        /// @param  length The lenght of the data, must be a multiple of the aes block size.
+        /// @param  key The encryption key, must be at least the length required by the selected aes bitsize.
+        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
+        unsigned char* decrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, unsigned char* output) {
+            const unsigned char iv[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+            this->decrypt(data, length, key, iv, output);
+        }
+
+        /// @brief  Encrypt a string of data writing the encrypted data into the output string.
+        /// @param  data The string of data to encrypt.
+        /// @param  length The lenght of the data, must be a multiple of the aes block size.
+        /// @param  key The encryption key, must be at least the length required by the selected aes bitsize.
+        /// @param  iv The initialisation vector used to seed the encryption process.
+        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
+        void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
+            GTL_AES_ASSERT(length % (aes::block_size * aes::block_size), "Data length must be a multiple of the aes block size.");
+
+            key_type key_data;
+            for (unsigned int i = 0; i < aes::key_size; ++i) {
+                key_data.data[i] = key[i];
+            }
+
+            block_type initialisation_vector;
+            for (unsigned int i = 0; i < aes::block_size; ++i) {
+                for (unsigned int j = 0; j < aes::block_size; ++j) {
+                    initialisation_vector.data[j].data[i] = iv[i * (aes::block_size) + j];
+                }
+            }
+
+            for (unsigned int i = 0; i < length / (aes::block_size * aes::block_size); ++i) {
+                block_type block;
+                for (unsigned int j = 0; j < aes::block_size; ++j) {
+                    for (unsigned int k = 0; k < aes::block_size; ++k) {
+                        block.data[k].data[j] = data[i * (aes::block_size * aes::block_size) + j * (aes::block_size) + k];
+                    }
+                }
+
+                block = aes::encrypt_block(key_data, block, initialisation_vector);
+
+                for (unsigned int j = 0; j < aes::block_size; ++j) {
+                    for (unsigned int k = 0; k < aes::block_size; ++k) {
+                        output[i * (aes::block_size * aes::block_size) + j * (aes::block_size) + k] = block.data[k].data[j];
+                    }
+                }
+            }
+        }
+
+        /// @brief  Decrypt a string of data writing the decrypted data into the output string.
+        /// @param  data The string of data to decrypt.
+        /// @param  length The lenght of the data, must be a multiple of the aes block size.
+        /// @param  key The encryption key, must be at least the length required by the selected aes bitsize.
+        /// @param  iv The initialisation vector used to seed the decryption process.
+        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
+        unsigned char* decrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
+            GTL_AES_ASSERT(length % (aes::block_size * aes::block_size), "Data length must be a multiple of the aes block size.");
+
+            key_type key_data;
+            for (unsigned int i = 0; i < aes::key_size; ++i) {
+                key_data.data[i] = key[i];
+            }
+
+
+            block_type initialisation_vector;
+            for (unsigned int i = 0; i < aes::block_size; ++i) {
+                for (unsigned int j = 0; j < aes::block_size; ++j) {
+                    initialisation_vector.data[j].data[i] = iv[i * (aes::block_size) + j];
+                }
+            }
+
+            for (unsigned int i = 0; i < length / (aes::block_size * aes::block_size); ++i) {
+                block_type block;
+                for (unsigned int j = 0; j < aes::block_size; ++j) {
+                    for (unsigned int k = 0; k < aes::block_size; ++k) {
+                        block.data[k].data[j] = data[i * (aes::block_size * aes::block_size) + j * (aes::block_size) + k];
+                    }
+                }
+
+                block = aes::decrypt_block(key_data, block, initialisation_vector);
+
+                for (unsigned int j = 0; j < aes::block_size; ++j) {
+                    for (unsigned int k = 0; k < aes::block_size; ++k) {
+                        output[i * (aes::block_size * aes::block_size) + j * (aes::block_size) + k] = block.data[k].data[j];
+                    }
+                }
+            }
+        }
     };
 }
+
+#undef GTL_AES_ASSERT
 
 #endif // GTL_AES_HPP

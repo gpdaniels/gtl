@@ -25,6 +25,12 @@ The current classes are as described below:
 | **static_array_nd** | N-dimensional statically sized array.                                                   |
 |   **static_lambda** | Lambda function class that uses the stack for storage.                                  |
 
+### Crypto ###
+
+|               Class | Description                                                                             |
+|--------------------:|:----------------------------------------------------------------------------------------|
+|             **aes** | An implementation of the aes encryption algorithm for 128, 196, and 256 bits.           |
+
 ### Debug ###
 
 |               Class | Description                                                                             |
