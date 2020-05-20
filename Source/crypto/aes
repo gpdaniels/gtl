@@ -382,10 +382,10 @@ namespace gtl {
         }
 
     private:
-        /// @brief
-        /// @param  lhs
-        /// @param  rhs
-        /// @return
+        /// @brief  Calculate and return the byte by byte xor of the lhs and rhs words.
+        /// @param  lhs The lhs word.
+        /// @param  rhs The rhs word.
+        /// @return A word containing the byte by byte xor of the lhs and rhs words.
         constexpr static word_type xor_data(const word_type& lhs, const word_type& rhs) {
             word_type result;
             for (unsigned int i = 0; i < aes::block_size; ++i) {
@@ -394,10 +394,10 @@ namespace gtl {
             return result;
         }
 
-        /// @brief
-        /// @param  lhs
-        /// @param  rhs
-        /// @return
+        /// @brief  Calculate and return the byte by byte xor of the lhs and rhs blocks.
+        /// @param  lhs The lhs block.
+        /// @param  rhs The rhs block.
+        /// @return A word containing the byte by byte xor of the lhs and rhs blocks.
         constexpr static block_type xor_data(const block_type& lhs, const block_type& rhs) {
             block_type result;
             for (unsigned int i = 0; i < aes::block_size; ++i) {
