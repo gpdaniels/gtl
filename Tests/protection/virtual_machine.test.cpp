@@ -345,3 +345,85 @@ TEST(virtual_machine, evaluate, complex_syscall) {
     }
     REQUIRE(successful_ticks == 15);
 }
+
+TEST(virtual_machine, evaluate, custom_opcode) {
+    unsigned char program[] = {
+        0x01,
+        0x01,
+        0x01
+    };
+
+    gtl::virtual_machine virtual_machine(program, sizeof(program));
+
+    constexpr static const gtl::virtual_machine::function_type custom_opcode = [](gtl::virtual_machine& vm)->void {
+        static_cast<void>(vm);
+        unsigned char register_e = gtl::vm::reg<gtl::vm::rn::general_e>::get(vm);
+        register_e += 1;
+        PRINT("Hello world %d\n", static_cast<int>(register_e));
+        gtl::vm::reg<gtl::vm::rn::general_e>::set(vm, register_e);
+    };
+
+    virtual_machine.register_opcode(0x01, custom_opcode);
+
+    unsigned int successful_ticks = 0;
+    while (virtual_machine.tick()) {
+        ++successful_ticks;
+    }
+    REQUIRE(successful_ticks == 3);
+
+    const unsigned char result = gtl::vm::reg<gtl::vm::rn::general_e>::get(virtual_machine);
+    REQUIRE(result == 3, "%d\n", result);
+}
+
+TEST(virtual_machine, evaluate, custom_opcode_loop) {
+    unsigned char program[] = {
+        0x01,
+        0x01,
+        0x01,
+        0x01,
+        0x01,
+        0x01
+    };
+
+    gtl::virtual_machine virtual_machine(program, sizeof(program));
+    constexpr static const gtl::virtual_machine::function_type custom_opcode_1 = [](gtl::virtual_machine& vm_1)->void {
+        static_cast<void>(vm_1);
+        unsigned char register_e_1 = gtl::vm::reg<gtl::vm::rn::general_e>::get(vm_1);
+        register_e_1 += 1;
+        PRINT("Level 1, sum: %d\n", static_cast<int>(register_e_1));
+        gtl::vm::reg<gtl::vm::rn::general_e>::set(vm_1, register_e_1);
+
+        constexpr static const gtl::virtual_machine::function_type custom_opcode_10 = [](gtl::virtual_machine& vm_10)->void {
+            static_cast<void>(vm_10);
+            unsigned char register_e_10 = gtl::vm::reg<gtl::vm::rn::general_e>::get(vm_10);
+            register_e_10 += 10;
+            PRINT("Level 2, sum: %d\n", static_cast<int>(register_e_10));
+            gtl::vm::reg<gtl::vm::rn::general_e>::set(vm_10, register_e_10);
+
+            constexpr static const gtl::virtual_machine::function_type custom_opcode_100 = [](gtl::virtual_machine& vm_100)->void {
+                static_cast<void>(vm_100);
+                unsigned char register_e_100 = gtl::vm::reg<gtl::vm::rn::general_e>::get(vm_100);
+                register_e_100 += 100;
+                PRINT("Level 3, sum: %d\n", static_cast<int>(register_e_100));
+                gtl::vm::reg<gtl::vm::rn::general_e>::set(vm_100, register_e_100);
+
+                vm_100.register_opcode(0x01, custom_opcode_1);
+            };
+
+            vm_10.register_opcode(0x01, custom_opcode_100);
+        };
+
+        vm_1.register_opcode(0x01, custom_opcode_10);
+    };
+
+    virtual_machine.register_opcode(0x01, custom_opcode_1);
+
+    unsigned int successful_ticks = 0;
+    while (virtual_machine.tick()) {
+        ++successful_ticks;
+    }
+    REQUIRE(successful_ticks == 6);
+
+    const unsigned char result = gtl::vm::reg<gtl::vm::rn::general_e>::get(virtual_machine);
+    REQUIRE(result == 222, "%d\n", result);
+}
