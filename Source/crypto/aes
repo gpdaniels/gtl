@@ -487,7 +487,7 @@ namespace gtl {
         /// @param  iv The initialisation vector used to seed the encryption process.
         /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
         void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
-            GTL_AES_ASSERT(length % (aes::block_size * aes::block_size), "Data length must be a multiple of the aes block size.");
+            GTL_AES_ASSERT((length % (aes::block_size * aes::block_size)) == 0, "Data length must be a multiple of the aes block size.");
 
             key_type key_data;
             for (unsigned int i = 0; i < aes::key_size; ++i) {
@@ -526,7 +526,7 @@ namespace gtl {
         /// @param  iv The initialisation vector used to seed the decryption process.
         /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
         void decrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
-            GTL_AES_ASSERT(length % (aes::block_size * aes::block_size), "Data length must be a multiple of the aes block size.");
+            GTL_AES_ASSERT((length % (aes::block_size * aes::block_size)) == 0, "Data length must be a multiple of the aes block size.");
 
             key_type key_data;
             for (unsigned int i = 0; i < aes::key_size; ++i) {
