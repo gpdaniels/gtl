@@ -124,7 +124,7 @@ TEST(assume, evaluate, assume) {
     {
         bool loop = true;
         while (loop)
-            GTL_ASSUME(true), loop = false;
+            UNUSED(GTL_ASSUME(true)), loop = false;
 
         while (loop)
             GTL_ASSUME(false);

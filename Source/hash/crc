@@ -163,7 +163,7 @@ namespace gtl {
             , setting_initial_hash_value(initial_hash_value)
             , setting_output_xor_value(output_xor_value)
             , block{}
-            , hash{initial_hash_value}
+            , hash{{initial_hash_value}}
             , finalised(false) {
         }
 
@@ -240,7 +240,7 @@ namespace gtl {
         /// @brief  Reset the internal state of the hash.
         constexpr void reset() {
             this->block = {};
-            this->hash = hash_type{this->setting_initial_hash_value};
+            this->hash = hash_type{{this->setting_initial_hash_value}};
             this->finalised = false;
         }
 
