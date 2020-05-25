@@ -138,7 +138,7 @@ namespace gtl {
         /// @param  initialisation_function The function to use to initialise the weights of the network.
         /// @param  activation_function The activation function to use for each neuron.
         constexpr ann(const std::vector<unsigned long long int>& neurons_per_layer, const initialisation_type& initialisation_function = initialisation_type::random, const activation_type& activation_function = activation_type::sigmoid) {
-            const int number_of_layers = neurons_per_layer.size();
+            const unsigned long long int number_of_layers = neurons_per_layer.size();
 
             GTL_ANN_ASSERT(number_of_layers >= 2, "Must have at least an input and output layer.");
 
@@ -147,7 +147,7 @@ namespace gtl {
 
             // Input layer.
             this->layers_of_neurons[0].resize(neurons_per_layer[0]);
-            for (int j = 0; j < neurons_per_layer[0]; ++j) {
+            for (unsigned long long int j = 0; j < neurons_per_layer[0]; ++j) {
                 this->layers_of_neurons[0][j].activation_function = activation_type::none;
                 this->layers_of_neurons[0][j].error_gradient = 0.0;
                 this->layers_of_neurons[0][j].output = 0.0;
@@ -159,9 +159,9 @@ namespace gtl {
             random_pcg random_number_generator;
 
             // Hidden and output layers.
-            for (unsigned int layer_index = 1; layer_index < number_of_layers; ++layer_index) {
+            for (unsigned long long int layer_index = 1; layer_index < number_of_layers; ++layer_index) {
                 this->layers_of_neurons[layer_index].resize(neurons_per_layer[layer_index]);
-                for (int j = 0; j < neurons_per_layer[layer_index]; ++j) {
+                for (unsigned long long int j = 0; j < neurons_per_layer[layer_index]; ++j) {
                     // Change the activation function for the output layer.
                     if (layer_index == number_of_layers - 1) {
                         this->layers_of_neurons[layer_index][j].activation_function = activation_type::identity;
@@ -215,18 +215,18 @@ namespace gtl {
             GTL_ANN_ASSERT((this->layers_of_neurons.back().size() == targets.size()), "Size of target data must match number of output neurons in the last layer.");
 
             // Forwards process.
-            for (unsigned int layer_index = 0; layer_index < this->layers_of_neurons[0].size(); ++layer_index) {
+            for (unsigned long long int layer_index = 0; layer_index < this->layers_of_neurons[0].size(); ++layer_index) {
                 this->layers_of_neurons[0][layer_index].output = inputs[layer_index];
             }
 
-            for (unsigned int layer_index = 1; layer_index < this->layers_of_neurons.size(); ++layer_index) {
+            for (unsigned long long int layer_index = 1; layer_index < this->layers_of_neurons.size(); ++layer_index) {
                 this->forward_propagate(layer_index - 1, layer_index);
             }
 
             // Backwards process.
             this->update_output_error(targets);
 
-            for (unsigned int layer_index = this->layers_of_neurons.size() - 1; layer_index > 1; --layer_index) {
+            for (unsigned long long int layer_index = this->layers_of_neurons.size() - 1; layer_index > 1; --layer_index) {
                 this->back_propagate(layer_index, layer_index - 1);
             }
 
@@ -244,11 +244,11 @@ namespace gtl {
             GTL_ANN_ASSERT((this->layers_of_neurons.front().size() == inputs.size()), "Size of input data must match number of input neurons in the first layer.");
 
             // Forwards process.
-            for (unsigned int layer_index = 0; layer_index < this->layers_of_neurons[0].size(); ++layer_index) {
+            for (unsigned long long int layer_index = 0; layer_index < this->layers_of_neurons[0].size(); ++layer_index) {
                 this->layers_of_neurons[0][layer_index].output = inputs[layer_index];
             }
 
-            for (unsigned int layer_index = 1; layer_index < this->layers_of_neurons.size(); ++layer_index) {
+            for (unsigned long long int layer_index = 1; layer_index < this->layers_of_neurons.size(); ++layer_index) {
                 this->forward_propagate(layer_index - 1, layer_index);
             }
 
@@ -258,7 +258,7 @@ namespace gtl {
             std::vector<scalar_type> result;
             result.resize(this->layers_of_neurons[output_index].size());
 
-            for (unsigned int neuron_index = 0; neuron_index < this->layers_of_neurons[output_index].size(); ++neuron_index) {
+            for (unsigned long long int neuron_index = 0; neuron_index < this->layers_of_neurons[output_index].size(); ++neuron_index) {
                 result[neuron_index] = this->layers_of_neurons[output_index][neuron_index].output;
             }
 
@@ -273,9 +273,9 @@ namespace gtl {
             GTL_ANN_ASSERT(source_index < this->layers_of_neurons.size(), "Source layer index is greater than number of layers.");
             GTL_ANN_ASSERT(destination_index < this->layers_of_neurons.size(), "Destination layer index is greater than number of layers.");
 
-            for (unsigned int destination_neuron_index = 0; destination_neuron_index < this->layers_of_neurons[destination_index].size(); ++destination_neuron_index) {
+            for (unsigned long long int destination_neuron_index = 0; destination_neuron_index < this->layers_of_neurons[destination_index].size(); ++destination_neuron_index) {
                 scalar_type value = 0.0;
-                for (unsigned int source_neuron_index = 0; source_neuron_index < this->layers_of_neurons[source_index].size(); ++source_neuron_index) {
+                for (unsigned long long int source_neuron_index = 0; source_neuron_index < this->layers_of_neurons[source_index].size(); ++source_neuron_index) {
                     const scalar_type source_weight = this->layers_of_neurons[destination_index][destination_neuron_index].weights[source_neuron_index];
                     const scalar_type destination_output = this->layers_of_neurons[source_index][source_neuron_index].output;
                     value += source_weight * destination_output;
@@ -291,9 +291,9 @@ namespace gtl {
         constexpr void update_output_error(const std::vector<scalar_type>& targets) {
             GTL_ANN_ASSERT((this->layers_of_neurons.back().size() == targets.size()), "Size of target data must match number of output neurons in the last layer.");
 
-            const unsigned int output_index = this->layers_of_neurons.size() - 1;
+            const unsigned long long int output_index = this->layers_of_neurons.size() - 1;
 
-            for (unsigned int output_neuron_index = 0; output_neuron_index < this->layers_of_neurons[output_index].size(); ++output_neuron_index) {
+            for (unsigned long long int output_neuron_index = 0; output_neuron_index < this->layers_of_neurons[output_index].size(); ++output_neuron_index) {
                 const scalar_type output = this->layers_of_neurons[output_index][output_neuron_index].output;
                 const scalar_type error = targets[output_neuron_index] - output;
                 const scalar_type gradient = this->activate_differential(this->layers_of_neurons[output_index][output_neuron_index].activation_function, output);
@@ -308,9 +308,9 @@ namespace gtl {
             GTL_ANN_ASSERT(source_index < this->layers_of_neurons.size(), "Source layer index is greater than number of layers.");
             GTL_ANN_ASSERT(destination_index < this->layers_of_neurons.size(), "Destination layer index is greater than number of layers.");
 
-            for (unsigned int destination_neuron_index = 0; destination_neuron_index < this->layers_of_neurons[destination_index].size(); ++destination_neuron_index) {
+            for (unsigned long long int destination_neuron_index = 0; destination_neuron_index < this->layers_of_neurons[destination_index].size(); ++destination_neuron_index) {
                 scalar_type error = 0;
-                for (unsigned int source_neuron_index = 0; source_neuron_index < this->layers_of_neurons[source_index].size(); ++source_neuron_index) {
+                for (unsigned long long int source_neuron_index = 0; source_neuron_index < this->layers_of_neurons[source_index].size(); ++source_neuron_index) {
                     error += this->layers_of_neurons[source_index][source_neuron_index].weights[destination_neuron_index] * this->layers_of_neurons[source_index][source_neuron_index].error_gradient;
                 }
 
@@ -322,10 +322,10 @@ namespace gtl {
 
         /// @brief  Adjust the weights in the entire network, from top to bottom, based on the error gradients.
         constexpr void adjust_weights() {
-            for (unsigned int layer_index = 1; layer_index < this->layers_of_neurons.size(); ++layer_index) {
-                for (unsigned int neuron_index = 0; neuron_index < this->layers_of_neurons[layer_index].size(); ++neuron_index) {
+            for (unsigned long long int layer_index = 1; layer_index < this->layers_of_neurons.size(); ++layer_index) {
+                for (unsigned long long int neuron_index = 0; neuron_index < this->layers_of_neurons[layer_index].size(); ++neuron_index) {
                     const scalar_type error_gradient = this->layers_of_neurons[layer_index][neuron_index].error_gradient;
-                    for (unsigned int layer_above_neuron_index = 0; layer_above_neuron_index < this->layers_of_neurons[layer_index - 1].size(); ++layer_above_neuron_index) {
+                    for (unsigned long long int layer_above_neuron_index = 0; layer_above_neuron_index < this->layers_of_neurons[layer_index - 1].size(); ++layer_above_neuron_index) {
                         const scalar_type delta = this->learning_rate * error_gradient * this->layers_of_neurons[layer_index - 1][layer_above_neuron_index].output;
                         const scalar_type delta_with_momentum = (1 - this->momentum) * delta + (this->momentum) * this->layers_of_neurons[layer_index][neuron_index].weight_deltas[layer_above_neuron_index];
                         this->layers_of_neurons[layer_index][neuron_index].weights[layer_above_neuron_index] += delta_with_momentum;
@@ -341,21 +341,15 @@ namespace gtl {
         /// @return The processed value, equivalent to "activation_function(value)".
         constexpr static scalar_type activate(activation_type activation_function, const scalar_type& value) {
             switch (activation_function) {
-            case activation_type::none:
-                return 0.0;
-            case activation_type::identity:
-                return ann::identity(value);
-            case activation_type::step:
-                return ann::step(value);
-            case activation_type::sigmoid:
-                return ann::sigmoid(value);
-            case activation_type::softplus:
-                return ann::softplus(value);
-            case activation_type::tanh:
-                return ann::tanh(value);
-            case activation_type::erf:
-                return ann::erf(value);
+                case activation_type::none:     return 0;
+                case activation_type::identity: return ann::identity(value);
+                case activation_type::step:     return ann::step(value);
+                case activation_type::sigmoid:  return ann::sigmoid(value);
+                case activation_type::softplus: return ann::softplus(value);
+                case activation_type::tanh:     return ann::tanh(value);
+                case activation_type::erf:      return ann::erf(value);
             }
+            return 0;
         }
 
         /// @brief  Process result of an activation function on a value using the supplied activation differential function to get the gradient of the activation function.
@@ -364,21 +358,15 @@ namespace gtl {
         /// @return The gradient of the activation function at the value location.
         constexpr static scalar_type activate_differential(activation_type activation_function, const scalar_type& activiated_value) {
             switch (activation_function) {
-            case activation_type::none:
-                return 0.0;
-            case activation_type::identity:
-                return ann::identity_differential(activiated_value);
-            case activation_type::step:
-                return ann::step_differential(activiated_value);
-            case activation_type::softplus:
-                return ann::softplus_differential(activiated_value);
-            case activation_type::sigmoid:
-                return ann::sigmoid_differential(activiated_value);
-            case activation_type::tanh:
-                return ann::tanh_differential(activiated_value);
-            case activation_type::erf:
-                return ann::erf_differential(activiated_value);
+                case activation_type::none:     return 0;
+                case activation_type::identity: return ann::identity_differential(activiated_value);
+                case activation_type::step:     return ann::step_differential(activiated_value);
+                case activation_type::softplus: return ann::softplus_differential(activiated_value);
+                case activation_type::sigmoid:  return ann::sigmoid_differential(activiated_value);
+                case activation_type::tanh:     return ann::tanh_differential(activiated_value);
+                case activation_type::erf:      return ann::erf_differential(activiated_value);
             }
+            return 0;
         }
 
         // Activation functions

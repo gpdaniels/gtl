@@ -311,7 +311,7 @@ TEST(ann, evaluate, adder) {
         std::vector<float> output;
         output = ann.process(input);
 
-        if ((target[0]>0.5f != output[0]>0.5f) || (target[1]>0.5f != output[1]>0.5f) || (target[2]>0.5f != output[2]>0.5f) || (target[3]>0.5f != output[3]>0.5f)) {
+        if (((target[0] > 0.5f) != (output[0] > 0.5f)) || ((target[1] > 0.5f) != (output[1] > 0.5f)) || ((target[2] > 0.5f) != (output[2] > 0.5f)) || ((target[3] > 0.5f) != (output[3] > 0.5f))) {
             ++incorrect;
         }
     }
