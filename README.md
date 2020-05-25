@@ -9,6 +9,13 @@ This repository aims is a collection of useful cross-platform, well-commented, s
 
 The current classes are as described below:
 
+### AI ###
+
+|               Class | Description                                                                             |
+|--------------------:|:----------------------------------------------------------------------------------------|
+|             **ann** | Artificial neural network using the backpropagation algorithm for training.             |
+|             **hmm** | Hidden markov model using the Baum-Welch algorithm for training.                        |
+
 ### Algorithm ###
 
 |               Class | Description                                                                             |

@@ -1,0 +1,577 @@
+/*
+The MIT License
+Copyright (c) 2019 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_HMM_HPP
+#define GTL_HMM_HPP
+
+#ifndef NDEBUG
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
+/// @brief A simple assert macro to break the program if the hmm is misused.
+#define GTL_HMM_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#define GTL_HMM_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <algorithm>
+#include <cmath>
+#include <vector>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace gtl {
+    /// @brief  A simple hidden markov model class that uses ???? to learn.
+    /// @tparam scalar_type The floating point type used to represent values in the model.
+    template<typename scalar_type>
+    class hmm final {
+    private:
+        /// @brief  The random_pcg class is a stripped down pcg pseudo-random-number generator.
+        class random_pcg final
+        {
+        private:
+            /// @brief  Current state of the random number generator.
+            unsigned long long int state = 0x853C49E6748FEA9Bull;
+
+            /// @brief  Increment added to the state during pseudo-random-number generation.
+            unsigned long long int increment = 0xDA3E39CB94B95BDBull;
+
+        public:
+            /// @brief  Get a random number in the closed interval 0 <= x <= 1.
+            /// @return A pseudo-random number.
+            scalar_type get_random_inclusive() {
+                // Save current state.
+                const unsigned long long int state_previous = this->state;
+                // Advance internal state.
+                this->state = state_previous * 0x5851F42D4C957F2Dull + this->increment;
+                // Calculate output function.
+                const unsigned int state_shift_xor_shift = static_cast<unsigned int>(((state_previous >> 18u) ^ state_previous) >> 27u);
+                const int rotation = state_previous >> 59u;
+
+                const unsigned int randon_number = (state_shift_xor_shift >> rotation) | (state_shift_xor_shift << ((-rotation) & 31));
+
+                return static_cast<scalar_type>(randon_number) * (1 / static_cast<scalar_type>((1ull << 32) - 1));
+            }
+        };
+
+    private:
+        /// @brief  Heap allocated array type of any number of dimensions.
+        /// @tparam type The type of an element of the array.
+        /// @tparam array_dimensions The number of dimensions of the array.
+        template <typename type, unsigned long long int array_dimensions>
+        class dynamic_array_nd final {
+        private:
+            static_assert(array_dimensions > 0, "Invalid number of array dimensions.");
+
+        public:
+            /// @brief  Container type to hold dimension sizes and associated offset calculation math.
+            /// @tparam dimensions The number of dimensions.
+            template <unsigned long long int dimensions>
+            class dimensions_nd {
+            private:
+                static_assert(dimensions > 0, "Invalid number of dimensions.");
+
+            private:
+                /// @brief  The total size of all dimensions multipled together.
+                unsigned long long int total_size = 0;
+
+                /// @brief  The size of each dimension.
+                unsigned long long int dimension_sizes[dimensions] = {};
+
+            public:
+                /// @brief  Defaulted constructor to allow the creation of empty sets of dimensions.
+                constexpr dimensions_nd() = default;
+
+                /// @brief  Main constructor that takes as many arguments as there are dimensions.
+                /// @tparam dimensions_size_types The types of the dimension size arguments.
+                /// @param  sizes The sizes of each dimension.
+                template <typename... dimensions_size_types>
+                constexpr dimensions_nd(dimensions_size_types... sizes)
+                    : total_size((static_cast<unsigned long long int>(sizes) * ... * 1))
+                    , dimension_sizes{static_cast<unsigned long long int>(sizes)...} {
+                    static_assert(dimensions == sizeof...(dimensions_size_types), "Invalid number of array dimension sizes.");
+                }
+
+            public:
+                /// @brief  Get the total size of all dimensions multipled together.
+                /// @return The total size of all dimensions multipled together.
+                unsigned long long int get_total_size() const {
+                    return this->total_size;
+                }
+
+            public:
+                /// @brief  Calculate the one dimensional offset given a set of multi-dimensional indexes.
+                /// @tparam dimension_index_types The types of the dimension index arguments.
+                /// @param  indexes The index for each dimension.
+                /// @return The one dimensional offset given by the multi-dimensional indexes.
+                template <typename... dimension_index_types>
+                constexpr unsigned long long int get_offset(dimension_index_types... indexes) {
+                    static_assert(dimensions == sizeof...(dimension_index_types), "Invalid number of array dimension indexes.");
+                    const unsigned long long int index_array[dimensions] = { static_cast<unsigned long long int>(indexes)... };
+                    unsigned long long int offset = 0;
+                    unsigned long long int step_size = 1;
+                    for (unsigned long long int dimension = 0; dimension < dimensions; ++dimension) {
+                        offset += index_array[dimension] * step_size;
+                        step_size *= this->dimension_sizes[dimension];
+                    }
+                    return offset;
+                }
+            };
+
+        private:
+            /// @brief  The sizes of each dimension.
+            dimensions_nd<array_dimensions> size;
+
+            /// @brief  The allocated memory.
+            type* data = nullptr;
+
+        public:
+            /// @brief  Destructor deallocates memory if it has been allocated.
+            ~dynamic_array_nd() {
+                delete[] this->data;
+            }
+
+            /// @brief  Defaulted constructor to allow the creation of empty arrays.
+            constexpr explicit dynamic_array_nd() = default;
+
+            /// @brief  Allocation constructor only allocates the array, but does not initialise the elements.
+            /// @param  dimension_sizes The sizes of the dimensions of the array.
+            constexpr explicit dynamic_array_nd(dimensions_nd<array_dimensions> dimension_sizes)
+                : size(dimension_sizes)
+                , data(new type[dimension_sizes.get_total_size()]) {
+            }
+
+            /// @brief  Allocation and initialisation constructor allocates the array and initialises the elements with the provided value.
+            /// @param  dimension_sizes The sizes of the dimensions of the array.
+            /// @param  value The value used to initialise the elements of the array.
+            constexpr explicit dynamic_array_nd(dimensions_nd<array_dimensions> dimension_sizes, type value)
+                : size(dimension_sizes)
+                , data(new type[dimension_sizes.get_total_size()]) {
+                for (unsigned long long int index = 0; index < this->size.get_total_size(); ++index) {
+                    this->data[index] = value;
+                }
+            }
+
+            /// @brief  Copy constructor copies memory from other array.
+            /// @param  other The source array to copy from.
+            constexpr dynamic_array_nd(const dynamic_array_nd& other)
+                : size(other.size)
+                , data(new type[other.size.get_total_size()]) {
+                for (unsigned long long int index = 0; index < this->size.get_total_size(); ++index) {
+                    this->data[index] = other.data[index];
+                }
+            }
+
+            /// @brief  Move constructor moves memory from other array.
+            /// @param  other The source array to move from.
+            constexpr dynamic_array_nd(dynamic_array_nd&& other)
+                : size(other.size)
+                , data(other.data) {
+                other.data = nullptr;
+                other.size = {};
+            }
+
+            /// @brief  Copy assignment operator copies memory from other array.
+            /// @param  other The source array to copy from.
+            /// @return A reference to this array.
+            constexpr dynamic_array_nd& operator=(const dynamic_array_nd& other) {
+                if (this != &other) {
+                    delete[] this->data;
+                    this->data = new type[other.size.get_total_size()];
+                    this->size = other.size;
+                    for (unsigned long long int index = 0; index < this->size.get_total_size(); ++index) {
+                        this->data[index] = other.data[index];
+                    }
+                }
+                return *this;
+            }
+
+            /// @brief  Move assignment operator moves memory from other array.
+            /// @param  other The source array to move from.
+            /// @return A reference to this array.
+            constexpr dynamic_array_nd& operator=(dynamic_array_nd&& other) {
+                if (this != &other) {
+                    delete[] this->data;
+                    this->data = other.data;
+                    this->size = other.size;
+                    other.data = nullptr;
+                    other.size = {};
+                }
+                return *this;
+            }
+
+        public:
+            /// @brief  Get a constant reference to an element of the array.
+            /// @tparam dimension_index_types The types of the dimension index arguments.
+            /// @param  indexes The index for each dimension.
+            /// @return A constant reference to the indexed value.
+            template <typename... dimension_index_types>
+            constexpr type& operator()(dimension_index_types... indexes) {
+                return this->data[this->size.get_offset(indexes...)];
+            }
+
+            /// @brief  Get a writable reference to an element of the array.
+            /// @tparam dimension_index_types The types of the dimension index arguments.
+            /// @param  indexes The index for each dimension.
+            /// @return A writable reference to the indexed value.
+            template <typename... dimension_index_types>
+            constexpr const type& operator()(dimension_index_types... indexes) const {
+                return this->data[this->size.get_offset(indexes...)];
+            }
+        };
+
+        /// @brief  Helper type for a one dimensional dynamic array.
+        /// @tparam type The type of an element of the array.
+        template<typename type> using array_1d = dynamic_array_nd<type, 1>;
+
+        /// @brief  Helper type for the dimensions of a one dimensional dynamic array.
+        /// @tparam type The type of an element of the array.
+        template<typename type> using dimensions_1d = typename dynamic_array_nd<type, 1>::template dimensions_nd<1>;
+
+        /// @brief  Helper type for a two dimensional dynamic array.
+        /// @tparam type The type of an element of the array.
+        template<typename type> using array_2d = dynamic_array_nd<type, 2>;
+
+        /// @brief  Helper type for the dimensions of a two dimensional dynamic array.
+        /// @tparam type The type of an element of the array.
+        template<typename type> using dimensions_2d = typename dynamic_array_nd<type, 2>::template dimensions_nd<2>;
+
+    private:
+        /// @brief Number of possible observable symbols in an input sequence.
+        unsigned long long int observable_symbols = 0;
+
+        /// @brief  Number of hidden states in the model.
+        unsigned long long int hidden_states = 0;
+
+        /// @brief  The probability of starting in a hidden state, stored in log format as a 1d array, one entry for each hidden state.
+        array_1d<scalar_type> initial_log_probability;
+
+        /// @brief  The probability of transitioning between two hidden states, stored in log format as a 2d array, one entry for in each row and column for each hidden state.
+        array_2d<scalar_type> transition_log_probability;
+
+        /// @brief  The probability of observing a symbol while in each state, stored in log format as a 2d array, one entry for in each row for each hidden state and each column for each observable symbol.
+        array_2d<scalar_type> emission_log_probability;
+
+    public:
+        /// @brief  Defaulted constructor to allow the creation of empty models.
+        constexpr hmm() = default;
+
+        /// @brief  Main constructor builds a model with the provided number of observable symbols and hidden states.
+        /// @param  observable_symbol_count The number of possible observable symbols in an input sequence, note this is not the length of a sequence, but the number of different characters.
+        /// @param  hidden_state_count The number of hidden states in the model.
+        constexpr hmm(const unsigned long long int observable_symbol_count, const unsigned long long int hidden_state_count) {
+            GTL_HMM_ASSERT(observable_symbol_count > 0, "There must be at least one symbol.");
+            GTL_HMM_ASSERT(hidden_state_count > 0, "There must be at least one hidden state.");
+
+            this->hidden_states = hidden_state_count;
+            this->observable_symbols = observable_symbol_count;
+
+            // Allocate the probabilitiy arrays.
+            this->initial_log_probability = array_1d<scalar_type>(dimensions_1d<scalar_type>{this->hidden_states});
+            this->transition_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{this->hidden_states, this->hidden_states});
+            this->emission_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{this->hidden_states, this->observable_symbols});
+
+            // Minimal random number generator for model variable initialisation.
+            random_pcg random_number_generator;
+
+            // Fill initial log probability array randomly.
+            scalar_type initial_log_probability_sum = 0;
+            for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
+                this->initial_log_probability(i) = random_number_generator.get_random_inclusive();
+                initial_log_probability_sum += this->initial_log_probability(i);
+            }
+            // Normalise and move into log space.
+            for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
+                this->initial_log_probability(i) = std::log(this->initial_log_probability(i) / initial_log_probability_sum);
+            }
+
+            // Fill transition log probability array randomly.
+            for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
+                scalar_type transition_log_probability_sum = 0;
+                for (unsigned long long int j = 0; j < this->hidden_states; ++j) {
+                    this->transition_log_probability(i, j) = random_number_generator.get_random_inclusive();
+                    transition_log_probability_sum += this->transition_log_probability(i, j);
+                }
+                // Normalise each column and move into log space.
+                for (unsigned long long int j = 0; j < this->hidden_states; ++j) {
+                    this->transition_log_probability(i, j) = std::log(this->transition_log_probability(i, j) / transition_log_probability_sum);
+                }
+            }
+
+            // Fill emission log probability array randomly.
+            for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
+                scalar_type emission_log_probability_sum = 0;
+                for (unsigned long long int j = 0; j < this->observable_symbols; ++j) {
+                    this->emission_log_probability(i, j) = random_number_generator.get_random_inclusive();
+                    emission_log_probability_sum += this->emission_log_probability(i, j);
+                }
+                // Normalise each column and move into log space.
+                for (unsigned long long int j = 0; j < this->observable_symbols; ++j) {
+                    this->emission_log_probability(i, j) = std::log(this->emission_log_probability(i, j) / emission_log_probability_sum);
+                }
+            }
+        }
+
+    public:
+        /// @brief  The Baum-Welch algorithm is used to train the model, it takes multiple observation sequences as input and maximises the probability of all of them occuring.
+        /// @param  observation_sequences An array of observataion sequences, these are sequences of observable symbols which are represented as numbers from 0 to one less than the limit as set when creating the model.
+        /// @param  max_iterations The maximum number of training iterations to perform.
+        /// @param  minimum_log_probability_improvement The minimum required improvement of the model per training iteration, otherwise training is considered complete.
+        /// @return The number of training iterations completed.
+        unsigned long long int train(const std::vector<std::vector<unsigned long long int>>& observation_sequences, const unsigned long long int max_iterations = 1000, const scalar_type minimum_log_probability_improvement = static_cast<scalar_type>(1e-10)) {
+
+            scalar_type previous_log_probablility = 0;
+
+            // Main training loop.
+            unsigned long long int iteration = 0;
+            for (; iteration < max_iterations; ++iteration) {
+                array_1d<scalar_type> update_initial_log_probability = array_1d<scalar_type>(dimensions_1d<scalar_type>{this->hidden_states}, scalar_type{});
+                array_2d<scalar_type> update_transition_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{this->hidden_states, this->hidden_states}, scalar_type{});
+                array_2d<scalar_type> update_emission_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{this->hidden_states, this->observable_symbols}, scalar_type{});
+
+                scalar_type current_log_probablility = 0;
+
+                // Calculate model probability updates.
+                for (const std::vector<unsigned long long int>& observation_sequence : observation_sequences) {
+
+                    array_2d<scalar_type> alpha = this->forward(observation_sequence);
+                    array_2d<scalar_type> beta = this->backward(observation_sequence);
+
+                    // Given alpha, calculate the probability of seeing the observation sequence.
+                    scalar_type sequence_log_probability = 0;
+                    for (unsigned long long int i = 0; i < this->hidden_states; i++) {
+                        sequence_log_probability = hmm::log_sum_exp(sequence_log_probability, alpha(i, observation_sequence.size() - 1));
+                    }
+                    current_log_probablility = hmm::log_sum_exp(current_log_probablility , sequence_log_probability);
+
+                    // Calculate update for initial probability.
+                    for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
+                        update_initial_log_probability(i) = hmm::log_sum_exp(update_initial_log_probability(i), alpha(i, 0) + beta(i, 0) - sequence_log_probability);
+                    }
+
+                    // Calculate update for transition probability.
+                    for (unsigned long long int symbol_index = 1; symbol_index < observation_sequence.size(); ++symbol_index) {
+                        for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
+                            for (unsigned long long int j = 0; j < this->hidden_states; ++j) {
+                                update_transition_log_probability(i, j) = hmm::log_sum_exp(update_transition_log_probability(i, j), alpha(i, symbol_index - 1) + this->transition_log_probability(i, j) + this->emission_log_probability(j, observation_sequence[symbol_index]) + beta(j, symbol_index) - sequence_log_probability);
+                            }
+                        }
+                    }
+
+                    // Calculate update for emission probability.
+                    for (unsigned long long int symbol_index = 0; symbol_index < observation_sequence.size(); ++symbol_index) {
+                        for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
+                            update_emission_log_probability(i, observation_sequence[symbol_index]) = hmm::log_sum_exp(update_emission_log_probability(i, observation_sequence[symbol_index]), alpha(i, symbol_index) + beta(i, symbol_index) - sequence_log_probability);
+                        }
+                    }
+                }
+
+                // Calculate the probability improvement.
+                scalar_type difference_log_probability = current_log_probablility - previous_log_probablility ;
+                // Except on the first iteration, check the probability with the updates is an improvement.
+                if ((iteration != 0) && (difference_log_probability < 0)) {
+                    // Otherwise exit the main training iteration loop.
+                    // This is done before we apply another update to the model, assuming it will be worse again.
+                    break;
+                }
+
+                // Normalise initial probability.
+                scalar_type initial_log_probability_sum = 0;
+                for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
+                    initial_log_probability_sum = hmm::log_sum_exp(initial_log_probability_sum, update_initial_log_probability(i));
+                }
+                for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
+                    this->initial_log_probability(i) = update_initial_log_probability(i) - initial_log_probability_sum;
+                }
+
+                // Normalise each transition probability column.
+                for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
+                    scalar_type transition_log_probability_sum = 0;
+                    for (unsigned long long int j = 0; j < this->hidden_states; ++j) {
+                        transition_log_probability_sum = hmm::log_sum_exp(transition_log_probability_sum, update_transition_log_probability(i, j));
+                    }
+                    for (unsigned long long int j = 0; j < this->hidden_states; j++) {
+                        this->transition_log_probability(i, j) = update_transition_log_probability(i, j) - transition_log_probability_sum;
+                    }
+                }
+
+                // Normalise each emission probability column.
+                for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
+                    scalar_type emission_log_probability_sum = 0;
+                    for (unsigned long long int j = 0; j < this->observable_symbols; j++) {
+                        emission_log_probability_sum = hmm::log_sum_exp(emission_log_probability_sum, update_emission_log_probability(i, j));
+                    }
+                    for (unsigned long long int j = 0; j < this->observable_symbols; j++) {
+                        this->emission_log_probability(i, j) = update_emission_log_probability(i, j) - emission_log_probability_sum;
+                    }
+                }
+
+                // Except on the first iteration, check the probability has improved by at least the minimum improvement.
+                if ((iteration != 0) && (difference_log_probability < minimum_log_probability_improvement)) {
+                    // Otherwise exit the main training iteration loop.
+                    break;
+                }
+                previous_log_probablility  = current_log_probablility ;
+            }
+
+            return iteration;
+        }
+
+        /// @brief  Process an observation sequence using the model to predict how likely it's occurance would be.
+        /// @param  observation_sequence A sequence of observable symbols which are represented as numbers from 0 to one less than the limit as set when creating the model.
+        /// @return The probability (in log form) of the provided sequence occurring according to the model.
+        scalar_type process(const std::vector<unsigned long long int>& observation_sequence) {
+
+            array_2d<scalar_type> alpha = this->forward(observation_sequence);
+
+            scalar_type sequence_log_probability = 0;
+            for (unsigned long long int i = 0; i < this->hidden_states; i++) {
+                sequence_log_probability = hmm::log_sum_exp(sequence_log_probability, alpha(i, observation_sequence.size() - 1));
+            }
+
+            return sequence_log_probability;
+        }
+
+        /// @brief  Predict the next symbol to be observed using the model when given the preceding sequence of symbols.
+        /// @param  observation_sequence A sequence of observable symbols which are represented as numbers from 0 to one less than the limit as set when creating the model.
+        /// @return The predicted id of the next symbol to be observed.
+        unsigned long long int predict(const std::vector<unsigned long long int>& observation_sequence) {
+
+            array_2d<scalar_type> alpha = this->forward(observation_sequence);
+
+            scalar_type highest_observation_symbol_probablility = 0;
+            unsigned long long int most_likely_observation_symbol = 0;
+
+            // The probability of the emission is the sum of probabilities of going from each state to each other state and then emitting the given emission.
+
+            // First compute the probability for symbol id 0, to get an initial value for the highest probability.
+            for (unsigned long long int j = 0; j < this->hidden_states; j++) {
+                for (unsigned long long int p = 0; p < this->hidden_states; p++) {
+                    highest_observation_symbol_probablility = hmm::log_sum_exp(highest_observation_symbol_probablility, alpha(j, observation_sequence.size() - 1) + this->transition_log_probability(j, p) + this->emission_log_probability(p, 0));
+                }
+            }
+
+            // Then compute the probability for all other symbols.
+            for (unsigned long long int i = 1; i < this->observable_symbols; i++) {
+
+                scalar_type observation_probability = 0;
+                for (unsigned long long int j = 0; j < this->hidden_states; j++) {
+                    for (unsigned long long int p = 0; p < this->hidden_states; p++) {
+                        observation_probability = hmm::log_sum_exp(observation_probability, alpha(j, observation_sequence.size() - 1) + this->transition_log_probability(j, p) + this->emission_log_probability(p, i));
+                    }
+                }
+
+                // Is the current probability is higher than the previous highest probability, replace it.
+                if (observation_probability > highest_observation_symbol_probablility) {
+                    highest_observation_symbol_probablility = observation_probability;
+                    most_likely_observation_symbol = i;
+                }
+            }
+
+            return most_likely_observation_symbol;
+        }
+
+    private:
+        /// @brief  Compute the log of the sum of the exponentials of the values.
+        /// @param  log_lhs The lhs value to the sum, provided in log space.
+        /// @param  log_rhs The rhs value to the sum, provided in log space.
+        /// @return The log of the sum of the exponentials of the values.
+        constexpr static scalar_type log_sum_exp(const scalar_type log_lhs, const scalar_type log_rhs) {
+            // If one of the inputs is zero, just return the other.
+            if ((std::abs(log_lhs) < scalar_type(1e-5)) || (std::abs(log_rhs) < scalar_type(1e-5))) {
+                return log_lhs + log_rhs;
+            }
+            const scalar_type difference = std::abs(log_rhs - log_lhs);
+            // To avoid floating point overflow when using the exp function, round log(1 + exp(log_lhs)) to log(exp(log_lhs)) = log_lhs.
+            if (difference > 50) {
+                return std::min(log_lhs, log_rhs) + difference;
+            }
+            // Otherwise return the log sum exp:
+            //   log(lhs + rhs) = log( exp(log(lhs)) + exp(log(rhs)) ) = log(lhs) + log ( 1 + exp(log(rhs) - log(lhs)) )
+            return std::min(log_lhs, log_rhs) + std::log(1 + std::exp(std::abs(log_rhs - log_lhs)));
+        }
+
+        /// @brief  The forward algorithm estimates the probability of being in each hidden state for each observable symbol moving forward over the provided sequence.
+        /// @param  observation_sequence A sequence of observable symbols which are represented as numbers from 0 to one less than the limit as set when creating the model.
+        /// @return An array containing the probabilities of being in each hidden state for each observable symbol in the provided sequence.
+        array_2d<scalar_type> forward(const std::vector<unsigned long long int>& observation_sequence) {
+            // Initialise all the probabilities with zero.
+            array_2d<scalar_type> alpha = array_2d<scalar_type>({this->hidden_states, observation_sequence.size()}, 0);
+
+            // Calculate the probability of each hidden state being the initial state, and emitting the first observed symbol.
+            for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
+                alpha(i, 0) = this->initial_log_probability(i) + this->emission_log_probability(i, observation_sequence[0]);
+            }
+
+            // Calculate the probability of transitioning to each hidden state, and emitting the next observed symbol in the sequence.
+            for (unsigned long long int symbol_index = 1; symbol_index < observation_sequence.size(); ++symbol_index) {
+                for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
+                    for (unsigned long long int j = 0; j < this->hidden_states; ++j) {
+                        scalar_type stateProb = alpha(j, symbol_index - 1) + this->transition_log_probability(j, i) + this->emission_log_probability(i, observation_sequence[symbol_index]);
+                        alpha(i, symbol_index) = hmm::log_sum_exp(alpha(i, symbol_index), stateProb);
+                    }
+                }
+            }
+
+            return alpha;
+        }
+
+        // The HMM backward algorithm uses dynamic programming to estimate the probability of being in state i at time t, and
+        // seeing a particular sequence of observation_sequence after transitioning to the next state at time t + 1
+
+        /// @brief  The backward algorithm estimates the probability of being in each hidden state for each observable symbol moving backward over the provided sequence.
+        /// @param  observation_sequence A sequence of observable symbols which are represented as numbers from 0 to one less than the limit as set when creating the model.
+        /// @return An array containing the probabilities of being in each hidden state for each observable symbol in the provided sequence.
+        array_2d<scalar_type> backward(const std::vector<unsigned long long int>& observation_sequence) {
+            // Initialise all the probabilities with zero.
+            array_2d<scalar_type> beta = array_2d<scalar_type>({this->hidden_states, observation_sequence.size()}, 0);
+
+            // Calculate the probability of each hidden state being the final state, and emitting the last observed symbol.
+            for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
+                beta(i, observation_sequence.size() - 1) = 1;
+            }
+
+            // Calculate the probability of transitioning to each hidden state, and emitting the previous observed symbol in the sequence.
+            for (unsigned long long int symbol_index_forward = 1; symbol_index_forward < observation_sequence.size(); ++symbol_index_forward) {
+                unsigned long long int symbol_index = static_cast<unsigned long long int>(observation_sequence.size() - 1 - symbol_index_forward);
+                for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
+                    for (unsigned long long int j = 0; j < this->hidden_states; ++j) {
+                        scalar_type stateProb = beta(j, symbol_index + 1) + this->transition_log_probability(i, j) + this->emission_log_probability(j, observation_sequence[symbol_index + 1]);
+                        beta(i, symbol_index) = hmm::log_sum_exp(beta(i, symbol_index), stateProb);
+                    }
+                }
+            }
+
+            return beta;
+        }
+    };
+}
+
+#undef GTL_HMM_ASSERT
+
+#endif // GTL_HMM_HPP
