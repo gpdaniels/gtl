@@ -124,10 +124,10 @@ namespace gtl {
         std::vector<std::vector<neuron_type>> layers_of_neurons;
 
         /// @brief  To aid training only percentage of the output error is computed as the weight delta.
-        scalar_type learning_rate = 0.7;
+        scalar_type learning_rate = static_cast<scalar_type>(0.7);
 
         /// @brief  To aid training a momentum is applied to the computed weight delta values.
-        scalar_type momentum = 0.2;
+        scalar_type momentum = static_cast<scalar_type>(0.2);
 
     public:
         /// @brief  Defaulted constructor to allow the creation of empty networks.
@@ -169,34 +169,34 @@ namespace gtl {
                     else {
                         this->layers_of_neurons[layer_index][j].activation_function = activation_function;
                     }
-                    const int neurons_on_layer_above = neurons_per_layer[layer_index - 1];
+                    const unsigned long long int neurons_on_layer_above = neurons_per_layer[layer_index - 1];
                     this->layers_of_neurons[layer_index][j].error_gradient = 0.0;
                     this->layers_of_neurons[layer_index][j].output = 0.0;
                     this->layers_of_neurons[layer_index][j].weights.resize(neurons_on_layer_above);
                     this->layers_of_neurons[layer_index][j].weight_deltas.resize(neurons_on_layer_above);
 
-                    for (int k = 0; k < neurons_on_layer_above; k++) {
+                    for (unsigned long long int k = 0; k < neurons_on_layer_above; k++) {
                         switch (initialisation_function) {
-                        case initialisation_type::zero: {
-                            this->layers_of_neurons[layer_index][j].weights[k] = 0;
-                        } break;
-                        case initialisation_type::positive_one: {
-                            this->layers_of_neurons[layer_index][j].weights[k] = 1;
-                        } break;
-                        case initialisation_type::negative_one: {
-                            this->layers_of_neurons[layer_index][j].weights[k] = -1;
-                        } break;
-                        case initialisation_type::random: {
-                            this->layers_of_neurons[layer_index][j].weights[k] = (random_number_generator.get_random_inclusive() - 0.5) * 2.0;
-                        } break;
-                        case initialisation_type::positive_random: {
-                            this->layers_of_neurons[layer_index][j].weights[k] = random_number_generator.get_random_inclusive();
-                        } break;
-                        case initialisation_type::negative_random: {
-                            this->layers_of_neurons[layer_index][j].weights[k] = random_number_generator.get_random_inclusive() - 1.0;
-                        } break;
+                            case initialisation_type::zero: {
+                                this->layers_of_neurons[layer_index][j].weights[k] = 0;
+                            } break;
+                            case initialisation_type::positive_one: {
+                                this->layers_of_neurons[layer_index][j].weights[k] = 1;
+                            } break;
+                            case initialisation_type::negative_one: {
+                                this->layers_of_neurons[layer_index][j].weights[k] = -1;
+                            } break;
+                            case initialisation_type::random: {
+                                this->layers_of_neurons[layer_index][j].weights[k] = (random_number_generator.get_random_inclusive() - static_cast<scalar_type>(0.5)) * static_cast<scalar_type>(2.0);
+                            } break;
+                            case initialisation_type::positive_random: {
+                                this->layers_of_neurons[layer_index][j].weights[k] = random_number_generator.get_random_inclusive();
+                            } break;
+                            case initialisation_type::negative_random: {
+                                this->layers_of_neurons[layer_index][j].weights[k] = random_number_generator.get_random_inclusive() - static_cast<scalar_type>(1.0);
+                            } break;
                         }
-                        this->layers_of_neurons[layer_index][j].weight_deltas[k] = (random_number_generator.get_random_inclusive() - 0.5) * 2.0;
+                        this->layers_of_neurons[layer_index][j].weight_deltas[k] = (random_number_generator.get_random_inclusive() - static_cast<scalar_type>(0.5)) * static_cast<scalar_type>(2.0);
                     }
                 }
             }
@@ -252,7 +252,7 @@ namespace gtl {
                 this->forward_propagate(layer_index - 1, layer_index);
             }
 
-            const unsigned int output_index = this->layers_of_neurons.size() - 1;
+            const unsigned long long int output_index = this->layers_of_neurons.size() - 1;
 
             // Extract results.
             std::vector<scalar_type> result;
@@ -269,7 +269,7 @@ namespace gtl {
         /// @brief  Propage data forward through the network from one input layer to next.
         /// @param  source_index The index of the source layer.
         /// @param  destination_index The index of the destination layer.
-        constexpr void forward_propagate(const unsigned int source_index, const unsigned int destination_index) {
+        constexpr void forward_propagate(const unsigned long long int source_index, const unsigned long long int destination_index) {
             GTL_ANN_ASSERT(source_index < this->layers_of_neurons.size(), "Source layer index is greater than number of layers.");
             GTL_ANN_ASSERT(destination_index < this->layers_of_neurons.size(), "Destination layer index is greater than number of layers.");
 
@@ -304,7 +304,7 @@ namespace gtl {
         /// @brief  Propage errors backward through the network from one input layer to next.
         /// @param  source_index The index of the source layer.
         /// @param  destination_index The index of the destination layer.
-        constexpr void back_propagate(const unsigned int source_index, const unsigned int destination_index) {
+        constexpr void back_propagate(const unsigned long long int source_index, const unsigned long long int destination_index) {
             GTL_ANN_ASSERT(source_index < this->layers_of_neurons.size(), "Source layer index is greater than number of layers.");
             GTL_ANN_ASSERT(destination_index < this->layers_of_neurons.size(), "Destination layer index is greater than number of layers.");
 
@@ -383,7 +383,7 @@ namespace gtl {
         /// @return One.
         constexpr static scalar_type identity_differential(scalar_type identity_value) {
             static_cast<void>(identity_value);
-            return 1.0;
+            return 1;
         }
 
         /// @brief  Step activation function, returns either a zero or a one depending on the sign of the input.
@@ -391,9 +391,9 @@ namespace gtl {
         /// @return One if the input is greater than zero, zero otherwise.
         constexpr static scalar_type step(scalar_type value) {
             if (value > 0) {
-                return 1.0;
+                return 1;
             }
-            return 0.0;
+            return 0;
         }
 
         /// @brief  Gradient of the step activation function, always zero.
@@ -401,35 +401,35 @@ namespace gtl {
         /// @return Zero.
         constexpr static scalar_type step_differential(scalar_type step_value) {
             static_cast<void>(step_value);
-            return 0.0;
+            return 0;
         }
 
         /// @brief  Sigmoid activation function, which returns a transition between zero and one depending on the input.
         /// @param  value The input value.
         /// @return Zero for an input of negative infinity and one for an input of positive infinity, signmoid transition inbetween.
         constexpr static scalar_type sigmoid(const scalar_type& value) {
-            return 1.0 / (1.0 + std::exp(-value));
+            return 1 / (1 + std::exp(-value));
         }
 
         /// @brief  Gradient of the sigmoid activation function.
         /// @param  sigmoid_value The input value, where "sigmoid_value = sigmoid(value)".
         /// @return Gradient of the sigmoid activation function at the value location.
         constexpr static scalar_type sigmoid_differential(scalar_type sigmoid_value) {
-            return sigmoid_value * (1.0 - sigmoid_value);
+            return sigmoid_value * (1 - sigmoid_value);
         }
 
         /// @brief  Softplus activation function, which returns a transition between zero and infinity depending on the input.
         /// @param  value The input value.
         /// @return Zero for an input of negative infinity and positive infinity for an input of positive infinity, softmax transition inbetween.
         constexpr static scalar_type softplus(const scalar_type& value) {
-            return std::log(1.0 + std::exp(value));
+            return std::log(1 + std::exp(value));
         }
 
         /// @brief  Gradient of the softplus activation function.
         /// @param  softplus_value The input value, where "softplus_value = softplus(value)".
         /// @return Gradient of the softplus activation function at the value location.
         constexpr static scalar_type softplus_differential(const scalar_type& softplus_value) {
-            return 1.0 / (1.0 + (1.0 / (std::exp(softplus_value) - 1.0)));
+            return 1 / (1 + (1 / (std::exp(softplus_value) - 1)));
         }
 
         /// @brief  Tanh activation function, which returns a transition between negative one and positive one depending on the input.
@@ -443,7 +443,7 @@ namespace gtl {
         /// @param  tanh_value The input value, where "tanh_value = tanh(value)".
         /// @return Gradient of the tanh activation function at the value location.
         constexpr static scalar_type tanh_differential(scalar_type tanh_value) {
-            return 1.0 - (tanh_value * tanh_value);
+            return 1 - (tanh_value * tanh_value);
         }
 
         /// @brief  Erf activation function, which returns a transition between negative one and positive one depending on the input.
@@ -461,13 +461,13 @@ namespace gtl {
                 const scalar_type sgn = (x < 0) ? -1 : 1;
                 x = (1 - x) * (1 + x);
                 const scalar_type lnx = std::log(x);
-                const scalar_type tt1 = 2 / (M_PI * 0.147) + 0.5f * lnx;
-                const scalar_type tt2 = 1 / (0.147) * lnx;
+                const scalar_type tt1 = 2 / (static_cast<scalar_type>(M_PI) * static_cast<scalar_type>(0.147)) + static_cast<scalar_type>(0.5) * lnx;
+                const scalar_type tt2 = 1 / static_cast<scalar_type>(0.147) * lnx;
                 return (sgn * std::sqrt(-tt1 + std::sqrt(tt1 * tt1 - tt2)));
             };
 
             scalar_type value = ierf(erf_value);
-            return std::exp(-(value * value)) / std::sqrt(M_PI);
+            return std::exp(-(value * value)) / std::sqrt(static_cast<scalar_type>(M_PI));
         }
     };
 }
