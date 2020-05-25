@@ -248,9 +248,17 @@ namespace gtl {
         /// @tparam type The type of an element of the array.
         template<typename type> using array_1d = dynamic_array_nd<type, 1>;
 
+        /// @brief  Helper type for the dimensions of a one dimensional dynamic array.
+        /// @tparam type The type of an element of the array.
+        template<typename type> using dimensions_1d = typename dynamic_array_nd<type, 1>::template dimensions_nd<1>;
+
         /// @brief  Helper type for a two dimensional dynamic array.
         /// @tparam type The type of an element of the array.
         template<typename type> using array_2d = dynamic_array_nd<type, 2>;
+
+        /// @brief  Helper type for the dimensions of a two dimensional dynamic array.
+        /// @tparam type The type of an element of the array.
+        template<typename type> using dimensions_2d = typename dynamic_array_nd<type, 2>::template dimensions_nd<2>;
 
     private:
         /// @brief Number of possible observable symbols in an input sequence.
@@ -283,9 +291,9 @@ namespace gtl {
             this->observable_symbols = observable_symbol_count;
 
             // Allocate the probabilitiy arrays.
-            this->initial_log_probability = array_1d<scalar_type>({this->hidden_states});
-            this->transition_log_probability = array_2d<scalar_type>({this->hidden_states, this->hidden_states});
-            this->emission_log_probability = array_2d<scalar_type>({this->hidden_states, this->observable_symbols});
+            this->initial_log_probability = array_1d<scalar_type>(dimensions_1d<scalar_type>{this->hidden_states});
+            this->transition_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{this->hidden_states, this->hidden_states});
+            this->emission_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{this->hidden_states, this->observable_symbols});
 
             // Minimal random number generator for model variable initialisation.
             random_pcg random_number_generator;
@@ -341,9 +349,9 @@ namespace gtl {
             // Main training loop.
             unsigned long long int iteration = 0;
             for (; iteration < max_iterations; ++iteration) {
-                array_1d<scalar_type> update_initial_log_probability = array_1d<scalar_type>({this->hidden_states}, scalar_type{});
-                array_2d<scalar_type> update_transition_log_probability = array_2d<scalar_type>({this->hidden_states, this->hidden_states}, scalar_type{});
-                array_2d<scalar_type> update_emission_log_probability = array_2d<scalar_type>({this->hidden_states, this->observable_symbols}, scalar_type{});
+                array_1d<scalar_type> update_initial_log_probability = array_1d<scalar_type>(dimensions_1d<scalar_type>{this->hidden_states}, scalar_type{});
+                array_2d<scalar_type> update_transition_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{this->hidden_states, this->hidden_states}, scalar_type{});
+                array_2d<scalar_type> update_emission_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{this->hidden_states, this->observable_symbols}, scalar_type{});
 
                 scalar_type current_log_probablility = 0;
 
