@@ -37,6 +37,7 @@ THE SOFTWARE
 #pragma warning(push, 0)
 #endif
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 

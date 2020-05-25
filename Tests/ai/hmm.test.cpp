@@ -153,7 +153,7 @@ TEST(hmm, evaluate, ascending) {
     }
     for (auto valid : observations_valid) {
         PRINT("Valid sequence: log(%f)\n", static_cast<double>(hmm.process(valid)));
-        REQUIRE(hmm.process(valid) > -30, "Probablity of valid sequence too low: log(%f)\n", static_cast<double>(hmm.process(valid)));
+        REQUIRE(hmm.process(valid) > -35, "Probablity of valid sequence too low: log(%f)\n", static_cast<double>(hmm.process(valid)));
     }
     for (auto invalid : observations_invalid) {
         PRINT("Invalid sequence: log(%f)\n", static_cast<double>(hmm.process(invalid)));
