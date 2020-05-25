@@ -80,14 +80,14 @@ namespace gtl {
         /// @brief  Deleted copy constructor.
         barrier(const barrier&) = delete;
 
-        /// @brief  Defaulted move constructor.
-        barrier(barrier&&) = default;
+        /// @brief  Deleted move constructor.
+        barrier(barrier&&) = delete;
 
         /// @brief  Deleted copy assignment.
         barrier& operator=(const barrier&) = delete;
 
-        /// @brief  Defaulted move assignment.
-        barrier& operator=(barrier&&) = default;
+        /// @brief  Deleted move assignment.
+        barrier& operator=(barrier&&) = delete;
 
     public:
         /// @brief  Set the number calls required before the barrier is triggered.

@@ -54,7 +54,7 @@ TEST(simulation_loop, function, update) {
     REQUIRE(simulation_loop.update() == false);
     while (!simulation_loop.update());
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    REQUIRE(std::chrono::nanoseconds(end - start).count() >= 1000000, "Failed %ld !>= %ld", (end - start).count(), 10000000l);
+    REQUIRE(std::chrono::nanoseconds(end - start).count() >= 1000000, "Failed %lld !>= %lld", static_cast<long long int>((end - start).count()), 10000000ll);
 }
 
 TEST(simulation_loop, function, get_tick_rate) {
@@ -74,7 +74,7 @@ TEST(simulation_loop, function, get_current_tick) {
     REQUIRE(simulation_loop.get_current_tick() == 0);
     while (!simulation_loop.update());
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    REQUIRE(std::chrono::nanoseconds(end - start).count() >= 10000000, "Failed %ld !>= %ld", (end - start).count(), 10000000l);
+    REQUIRE(std::chrono::nanoseconds(end - start).count() >= 10000000, "Failed %lld !>= %lld", static_cast<long long int>((end - start).count()), 10000000ll);
     REQUIRE(simulation_loop.get_current_tick() == 1);
 }
 
