@@ -33,22 +33,12 @@ THE SOFTWARE
 #   define GTL_RANDOM_SPLITMIX_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
-#if defined(_MSC_VER)
-#   pragma warning(push, 0)
-#endif
-
-#include <cstdint>
-
-#if defined(_MSC_VER)
-#   pragma warning(pop)
-#endif
-
 namespace gtl {
     /// @brief  The random_splitmix class implements the splitmix pseudo-random-number generator.
     class random_splitmix final {
     private:
         /// @brief  Current state of the random number generator.
-        std::uint64_t state;
+        unsigned long long int state;
 
     public:
         /// @brief  Defaulted destructor.
@@ -73,23 +63,23 @@ namespace gtl {
 
         /// @brief  Constructor with 64 bit seed.
         /// @param  seed_value Seed value used to initialise the state.
-        random_splitmix(std::uint64_t seed_value) {
+        random_splitmix(unsigned long long int seed_value) {
             this->seed(seed_value);
         }
 
         /// @brief  Initialise the state from a 64 bit seed.
         /// @param  seed_value Seed value used to initialise the state.
-        void seed(std::uint64_t seed_value) {
+        void seed(unsigned long long int seed_value) {
             this->state = seed_value;
         }
 
         /// @brief  Get the next random number from the generator.
         /// @return A pseudo-random number.
-        std::uint32_t get_random_raw() {
-            std::uint64_t z = (this->state += 0x9E3779B97F4A7C15ull);
+        unsigned int get_random_raw() {
+            unsigned long long int z = (this->state += 0x9E3779B97F4A7C15ull);
             z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull;
             z = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
-            return static_cast<std::uint32_t>((z ^ (z >> 31)) >> 31);
+            return static_cast<unsigned int>((z ^ (z >> 31)) >> 31);
         }
 
     public:
@@ -115,7 +105,7 @@ namespace gtl {
         /// @param  inclusive_min Minimum number that can be returned.
         /// @param  inclusive_max Max number than can be returned.
         /// @return A pseudo-random number.
-        std::uint32_t get_random(std::uint32_t inclusive_min, std::uint32_t inclusive_max)  {
+        unsigned int get_random(unsigned int inclusive_min, unsigned int inclusive_max)  {
             GTL_RANDOM_SPLITMIX_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");
             return (this->get_random_raw() % (1 + inclusive_max - inclusive_min)) + inclusive_min;
         }
