@@ -274,6 +274,11 @@ TEST(ann, evaluate, learning_rate) {
 }
 
 TEST(ann, evaluate, adder) {
+    #if defined(_WIN32) && !defined(NDEBUG)
+        // This test is too slow in debug mode on windows.
+        return;
+    #endif
+    
     gtl::ann<float> ann = gtl::ann<float>({8, 32, 32, 4}, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::sigmoid);
 
     for (unsigned int iterations = 0; iterations < 50000; ++iterations) {
