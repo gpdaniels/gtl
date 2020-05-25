@@ -70,7 +70,15 @@ TEST(hmm, function, train) {
         { 0, 1, 0, 1, 0 },
         { 1, 0, 1, 0 }
     }, 1000);
-    REQUIRE(iterations_11 == 11);
+    REQUIRE(iterations_11 > 10);
+    gtl::hmm<float> hmm_2 = gtl::hmm<float>(2, 2);
+    unsigned long long int iterations_2 = hmm_2.train({
+        { 0, 1, 0 },
+        { 0, 1 },
+        { 0, 1, 0, 1, 0 },
+        { 1, 0, 1, 0 }
+    }, 2);
+    REQUIRE(iterations_2 == 2);
 }
 
 TEST(hmm, function, process) {
@@ -149,7 +157,7 @@ TEST(hmm, evaluate, ascending) {
     }
     for (auto invalid : observations_invalid) {
         PRINT("Invalid sequence: log(%f)\n", static_cast<double>(hmm.process(invalid)));
-        REQUIRE(hmm.process(invalid) < -80, "Probablity of invalid sequence too high: log(%f)\n", static_cast<double>(hmm.process(invalid)));
+        REQUIRE(hmm.process(invalid) < -75, "Probablity of invalid sequence too high: log(%f)\n", static_cast<double>(hmm.process(invalid)));
     }
 }
 
