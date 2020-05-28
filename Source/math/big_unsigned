@@ -22,10 +22,896 @@ THE SOFTWARE
 #ifndef GTL_BIG_UNSIGNED_HPP
 #define GTL_BIG_UNSIGNED_HPP
 
-namespace gtl {
-    class big_unsigned {
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the big_unsigned is misused.
+#   define GTL_BIG_UNSIGNED_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_BIG_UNSIGNED_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
 
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <vector>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace gtl {
+    /// @brief  Numeric type to hold large numbers that do not fit in standard c++ types which are commonly a maximum of 64bits.
+    class big_unsigned final {
+    private:
+        /// @brief  The internal representation of a chunk of a big number.
+        using chunk_type = unsigned int;
+
+        /// @brief  The internal representation of a type that can hold two of the base chunk types.
+        using chunk_type_wide = unsigned long long int;
+
+        /// @brief  The container type used to hold all chunks of a big number.
+        using chunk_container_type = std::vector<chunk_type>;
+
+    private:
+        /// @brief  The number of bits in a chunk of the big number.
+        constexpr static const unsigned long long int chunk_bits = sizeof(chunk_type) * 8;
+
+        /// @brief  The mask that covers only the bits that fit inside a chunk of the big number.
+        constexpr static const unsigned long long int chunk_mask = (static_cast<chunk_type_wide>(1) << big_unsigned::chunk_bits) - 1;
+
+    private:
+        /// @brief  The chunks of the big number, most significant bit is at the back/end.
+        chunk_container_type chunks;
+
+    public:
+        /// @brief  Empty constructor initialises the big number with the value of zero.
+        big_unsigned()
+            : chunks(1, 0) {
+        }
+
+        /// @brief  Conversion constructor from a bool value.
+        /// @param  value The value to store.
+        big_unsigned(const bool value)
+            : chunks(1, static_cast<chunk_type>(value)) {
+        }
+
+        /// @brief  Conversion constructor from a char value.
+        /// @param  value The value to store.
+        big_unsigned(const char value)
+            : chunks(1, static_cast<chunk_type>(value)) {
+            GTL_BIG_UNSIGNED_ASSERT(value >= 0, "Value must be positive.");
+        }
+
+        /// @brief  Conversion constructor from a signed char value.
+        /// @param  value The value to store.
+        big_unsigned(const signed char value)
+            : chunks(1, static_cast<chunk_type>(value)) {
+            GTL_BIG_UNSIGNED_ASSERT(value >= 0, "Value must be positive.");
+        }
+
+
+        /// @brief  Conversion constructor from a signed short value.
+        /// @param  value The value to store.
+        big_unsigned(const signed short value)
+            : chunks(1, static_cast<chunk_type>(value)) {
+            GTL_BIG_UNSIGNED_ASSERT(value >= 0, "Value must be positive.");
+        }
+
+        /// @brief  Conversion constructor from a signed int value.
+        /// @param  value The value to store.
+        big_unsigned(const signed int value)
+            : chunks(1, static_cast<chunk_type>(value)) {
+            GTL_BIG_UNSIGNED_ASSERT(value >= 0, "Value must be positive.");
+        }
+
+        // No constructor for "signed long int" as these can be 32 or 64 bit depending on platform.
+
+        /// @brief  Conversion constructor from a signed long long int value.
+        /// @param  value The value to store.
+        big_unsigned(const signed long long int value)
+            : chunks{ static_cast<chunk_type>(static_cast<chunk_type_wide>(value) & big_unsigned::chunk_mask), static_cast<chunk_type>(value >> big_unsigned::chunk_bits) } {
+            GTL_BIG_UNSIGNED_ASSERT(value >= 0, "Value must be positive.");
+            this->trim();
+        }
+
+        /// @brief  Conversion constructor from an unsigned char value.
+        /// @param  value The value to store.
+        big_unsigned(const unsigned char value)
+            : chunks(1, static_cast<chunk_type>(value)) {
+        }
+
+        /// @brief  Conversion constructor from an unsigned short value.
+        /// @param  value The value to store.
+        big_unsigned(const unsigned short value)
+            : chunks(1, static_cast<chunk_type>(value)) {
+        }
+
+        /// @brief  Conversion constructor from an unsigned int value.
+        /// @param  value The value to store.
+        big_unsigned(const unsigned int value)
+            : chunks(1, static_cast<chunk_type>(value)) {
+        }
+
+        // No constructor for "unsigned long int" as these can be 32 or 64 bit depending on platform.
+
+        /// @brief  Conversion constructor from an unsigned long long int value.
+        /// @param  value The value to store.
+        big_unsigned(const unsigned long long int value)
+            : chunks{ static_cast<chunk_type>(value & big_unsigned::chunk_mask), static_cast<chunk_type>(value >> big_unsigned::chunk_bits) } {
+            this->trim();
+        }
+
+        /// @brief  Conversion constructor from a string value in base 10.
+        /// @param  value The value to store.
+        /// @param  length The length of the string.
+        big_unsigned(const char* value, const unsigned long long int length) {
+            // Sanity check length.
+            if (length == 0) {
+                return;
+            }
+            GTL_BIG_UNSIGNED_ASSERT(value != nullptr, "Value must not be null with a length greater than zero.");
+            // Loop over the string repeatedly multiplying the result by 10 to shift left as each new value is read.
+            big_unsigned result(static_cast<chunk_type>(value[0] - '0'));
+            for (unsigned long long int index = 1; index < length; ++index) {
+                result = big_unsigned::multiply(10, result) + big_unsigned(static_cast<chunk_type>(value[index] - '0'));
+            }
+            // Apply the result to this.
+            *this = result;
+        }
+
+        /// @brief  Copy constructor from another big number.
+        /// @param  other The other big number to copy.
+        big_unsigned(const big_unsigned& other)
+            : chunks(other.chunks) {
+        }
+
+        /// @brief  Move constructor from another big number.
+        /// @param  other The other big number to move.
+        big_unsigned(big_unsigned&& other)
+            : chunks(other.chunks) {
+        }
+
+        /// @brief  Copy assignment operator from another big number.
+        /// @param  other The other big number to copy.
+        /// @return A reference to this.
+        big_unsigned& operator=(const big_unsigned& other) {
+            if (this != &other) {
+                this->chunks = other.chunks;
+            }
+            return *this;
+        }
+
+        /// @brief  Move assignment operator from another big number.
+        /// @param  other The other big number to move.
+        /// @return A reference to this.
+        big_unsigned& operator=(big_unsigned&& other) {
+            if (this != &other) {
+                this->chunks = other.chunks;
+            }
+            return *this;
+        }
+
+    public:
+        /// @brief  Conversion operator to check if the big number is zero.
+        /// @return true if the big number is not zero, false otherwise.
+        explicit operator bool() const {
+            return (this->chunks.back() != 0);
+        }
+
+    private:
+        /// @brief  Trim the internal chunks to remove leading chunks with a value of zero.
+        void trim() {
+            // While there are leading chunks with a value of zero, that are not the last chunk.
+            while (this->chunks.back() == 0 && this->chunks.size() > 1) {
+                // Remove them.
+                this->chunks.pop_back();
+            }
+        }
+
+    public:
+        /// @brief  Pre-increment operator, add one to the big number and return it.
+        /// @return A reference to this after the increment.
+        big_unsigned& operator++() {
+            // Try to add one to every digit.
+            for (unsigned long long int chunk_index = 0; chunk_index < this->chunks.size(); ++chunk_index) {
+                // Brake the loop if the digit did not overflow to zero.
+                if ((++(this->chunks[chunk_index])) != 0) {
+                    break;
+                }
+            }
+            // Add a one on the end if most significant digit is zero.
+            if (this->chunks.back() == 0) {
+                this->chunks.push_back(1);
+            }
+            return *this;
+        }
+
+        /// @brief  Post-increment operator, add one to the big number and return a copy from before the increment.
+        /// @return The value of the big number before the increment.
+        big_unsigned operator++(int) {
+            big_unsigned temp(*this);
+            ++(*this);
+            return temp;
+        }
+
+        /// @brief  Pre-decrement operator, subtract one from the big number and return it.
+        /// @return A reference to this after the decrement.
+        big_unsigned& operator--() {
+            GTL_BIG_UNSIGNED_ASSERT(this->chunks.back() != 0, "Cannot subtract from zero in a big_unsigned value.");
+            // Try to subtract one from every digit.
+            for (unsigned long long int chunk_index = 0; chunk_index < chunks.size(); ++chunk_index) {
+                // Break the loop if the digit .
+                if (((this->chunks[chunk_index])--) != 0) {
+                    break;
+                }
+            }
+            // Remove any zeros on the end.
+            this->trim();
+            return *this;
+        }
+
+        /// @brief  Post-decrement operator, subtract one from the big number and return a copy from before the decrement.
+        /// @return The value of the big number before the decrement.
+        big_unsigned operator--(int) {
+            big_unsigned temp(*this);
+            --(*this);
+            return temp;
+        }
+
+    public:
+        /// @brief Add two big numbers together.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_unsigned add(const big_unsigned& lhs, const big_unsigned& rhs) {
+            const unsigned long long int lhs_chunks = lhs.chunks.size();
+            const unsigned long long int rhs_chunks = rhs.chunks.size();
+            const unsigned long long int max_chunks = lhs_chunks < rhs_chunks ? rhs_chunks : lhs_chunks;
+            big_unsigned result(lhs);
+            result.chunks.resize(max_chunks, 0);
+            // Loop over all chunks of the rhs, calculating the sum in the carry, and storing the bottom half in the result chunk.
+            unsigned long long int chunk_index = 0;
+            chunk_type_wide carry = 0;
+            for (; chunk_index < rhs_chunks; ++chunk_index) {
+                carry = (carry + result.chunks[chunk_index]) + rhs.chunks[chunk_index];
+                result.chunks[chunk_index] = static_cast<chunk_type>(carry);
+                carry >>= big_unsigned::chunk_bits;
+            }
+            // After the rhs chunks are exhausted finish propogating the carry to the remaining chunks in the result.
+            for (; chunk_index < result.chunks.size(); ++chunk_index) {
+                if (carry == 0) {
+                    break;
+                }
+                carry += result.chunks[chunk_index];
+                result.chunks[chunk_index] = static_cast<chunk_type>(carry);
+                carry >>= big_unsigned::chunk_bits;
+            }
+            // If the final carry is non zero, push a final one on the end of the result.
+            if (carry != 0) {
+                result.chunks.push_back(1);
+            }
+            return result;
+        }
+
+        /// @brief Subtract a big number from another.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_unsigned subtract(const big_unsigned& lhs, const big_unsigned& rhs) {
+            GTL_BIG_UNSIGNED_ASSERT(lhs >= rhs, "Cannot subtract a larger big_unsigned value from a smaller one.");
+            const unsigned long long int lhs_chunks = lhs.chunks.size();
+            const unsigned long long int rhs_chunks = rhs.chunks.size();
+            big_unsigned result(lhs);
+            // Loop over all chunks of the rhs, calculating the difference in the carry, and storing the bottom half in the result chunk.
+            unsigned long long int chunk_index = 0;
+            chunk_type_wide carry = 0;
+            for (; chunk_index < rhs_chunks; ++chunk_index) {
+                carry = (carry + result.chunks[chunk_index]) - rhs.chunks[chunk_index];
+                result.chunks[chunk_index] = static_cast<chunk_type>(carry);
+                carry = ((carry >> big_unsigned::chunk_bits) ? static_cast<chunk_type_wide>(-1) : 0);
+            }
+            // After the rhs chunks are exhausted finish propogating the carry to the remaining chunks in the result.
+            for (; chunk_index < lhs_chunks; ++chunk_index) {
+                if (carry == 0) {
+                    break;
+                }
+                carry += result.chunks[chunk_index];
+                result.chunks[chunk_index] = static_cast<chunk_type>(carry);
+                carry = ((carry >> big_unsigned::chunk_bits) ? static_cast<chunk_type_wide>(-1) : 0);
+            }
+            // Remove zeros on the end.
+            result.trim();
+            return result;
+        }
+
+        /// @brief Multiply two big numbers together.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_unsigned multiply(const big_unsigned& lhs, const big_unsigned& rhs) {
+            const unsigned long long int lhs_chunks = lhs.chunks.size();
+            const unsigned long long int rhs_chunks = rhs.chunks.size();
+            const unsigned long long int max_chunks = lhs_chunks + rhs_chunks;
+            big_unsigned result;
+            result.chunks.resize(max_chunks, 0);
+            // Loop over all chunks of the rhs.
+            for (unsigned long long int rhs_chunk_index = 0; rhs_chunk_index < rhs_chunks; ++rhs_chunk_index) {
+                // Loop over all chunks of the lhs, multiplying each by the outer loop rhs value and carrying overflow to the next iteration.
+                chunk_type_wide carry = 0;
+                for (unsigned long long int lhs_chunk_index = 0; lhs_chunk_index < lhs_chunks; ++lhs_chunk_index) {
+                    carry += static_cast<chunk_type_wide>(lhs.chunks[lhs_chunk_index]) * rhs.chunks[rhs_chunk_index] + result.chunks[lhs_chunk_index + rhs_chunk_index];
+                    result.chunks[lhs_chunk_index + rhs_chunk_index] = static_cast<chunk_type>(carry);
+                    carry >>= big_unsigned::chunk_bits;
+                }
+                result.chunks[rhs_chunk_index + lhs_chunks] = static_cast<chunk_type>(carry);
+            }
+            // Remove zeros on the end.
+            result.trim();
+            return result;
+        }
+
+        /// @brief Divide a big number by another.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_unsigned divide(const big_unsigned& lhs, const big_unsigned& rhs, big_unsigned& remainder) {
+            GTL_BIG_UNSIGNED_ASSERT(rhs.chunks.back() != 0, "Cannot divide a big_unsigned value by zero.");
+            const unsigned long long int lhs_chunks = lhs.chunks.size();
+            const unsigned long long int rhs_chunks = rhs.chunks.size();
+            // Set the remainder to the lhs, in case we immediately return.
+            remainder = lhs;
+            // Handle the case where the rhs is larger than the lhs, return 0.
+            if (lhs_chunks < rhs_chunks) {
+                return {};
+            }
+            // Normalise the divisor.
+            // Calculate the number of empty bits in the most significant chunk of the rhs.
+            unsigned long long int rhs_empty_significant_bits = big_unsigned::chunk_bits;
+            for (chunk_type rhs_most_significant_chumk = rhs.chunks.back(); rhs_most_significant_chumk != 0; rhs_most_significant_chumk >>= 1) {
+                --rhs_empty_significant_bits;
+            }
+            // Shift the rhs to align the first '1' with the most significant bit in the chunk bits.
+            big_unsigned rhs_normalised = rhs << rhs_empty_significant_bits;
+            // Also shift the remainder to keep it in the same space.
+            remainder <<= rhs_empty_significant_bits;
+            // Ensure first single-digit quotient (remainder[remainder_chunks-1] < rhs_normalised[rhs_chunks-1]).
+            remainder.chunks.push_back(0);
+            const unsigned long long int remainder_chunks = remainder.chunks.size();
+            // Allocate the result to the maximum size it could be.
+            big_unsigned result;
+            result.chunks.resize(remainder_chunks - rhs_chunks);
+            // Allocate the partial product
+            big_unsigned partial_product;
+            partial_product.chunks.resize(rhs_chunks + 1);
+            for (unsigned long long int result_index = remainder_chunks - rhs_chunks; result_index != 0; --result_index) {
+                // Estimate quotient chunk using only the most significant chunk from the normalised rhs.
+                chunk_type_wide quotient_chunk_estimate = ((static_cast<chunk_type_wide>(remainder.chunks[result_index + rhs_chunks - 1]) << big_unsigned::chunk_bits) | remainder.chunks[result_index + rhs_chunks - 2]) / rhs_normalised.chunks.back();
+                // Limit the estimate to the size of a single chunk.
+                if (quotient_chunk_estimate > big_unsigned::chunk_mask) {
+                    quotient_chunk_estimate = big_unsigned::chunk_mask;
+                }
+                // Compute partial product chunk (partial product = quotient estimate * rhs normalised).
+                chunk_type_wide carry_partial_product = 0;
+                for (unsigned long long int chunk_index = 0; chunk_index < rhs_chunks; ++chunk_index) {
+                    carry_partial_product += quotient_chunk_estimate * rhs_normalised.chunks[chunk_index];
+                    partial_product.chunks[chunk_index] = static_cast<chunk_type>(carry_partial_product);
+                    carry_partial_product >>= big_unsigned::chunk_bits;
+                }
+                partial_product.chunks[rhs_chunks] = static_cast<chunk_type>(carry_partial_product);
+                // Check if quotient estimate is too large (remainder < partial product).
+                bool is_quotient_estimate_large = true;
+                while (is_quotient_estimate_large) {
+                    // This loop skips over chunks until they don't match or the end is reached, to enable the less than operation.
+                    unsigned long long int chunk_index = rhs_chunks;
+                    for (; chunk_index != 0; --chunk_index) {
+                        if (remainder.chunks[result_index + chunk_index - 1] != partial_product.chunks[chunk_index]) {
+                            break;
+                        }
+                    }
+                    // Up to this point the values in remainder and partial product have matched, or it's the last index.
+                    // In either case, compare the values in the chunks to determine if remainder is smaller than partial product.
+                    is_quotient_estimate_large = (remainder.chunks[result_index + chunk_index - 1] < partial_product.chunks[chunk_index]);
+                    // If the quotient estimate is large, reduce it, update the partial product, and try again.
+                    if (is_quotient_estimate_large) {
+                        // Reduce the quotient estimate.
+                        --quotient_chunk_estimate;
+                        // Adjust partial product (partial product -= rhs normalised).
+                        chunk_type_wide carry_adjustment = 0;
+                        for (unsigned long long int chunk_index = 0; chunk_index < rhs_chunks; ++chunk_index) {
+                            carry_adjustment += partial_product.chunks[chunk_index] - rhs_normalised.chunks[chunk_index];
+                            partial_product.chunks[chunk_index] = static_cast<chunk_type>(carry_adjustment);
+                            carry_adjustment = ((carry_adjustment >> big_unsigned::chunk_bits) ? static_cast<chunk_type_wide>(-1) : 0);
+                        }
+                        partial_product.chunks[rhs_chunks] = static_cast<chunk_type>(carry_adjustment + partial_product.chunks[rhs_chunks]);
+                    }
+                }
+                // Store the calculated quotient estimate into the result.
+                result.chunks[result_index - 1] = static_cast<chunk_type>(quotient_chunk_estimate);
+                // Compute partial remainder (remainder -= partial product).
+                chunk_type_wide carry_partial_remainder = 0;
+                for (unsigned long long int chunk_index = 0; chunk_index < rhs_chunks; ++chunk_index) {
+                    carry_partial_remainder = carry_partial_remainder + remainder.chunks[result_index + chunk_index - 1] - partial_product.chunks[chunk_index];
+                    remainder.chunks[result_index + chunk_index - 1] = static_cast<chunk_type>(carry_partial_remainder);
+                    carry_partial_remainder = ((carry_partial_remainder >> big_unsigned::chunk_bits) ? static_cast<chunk_type_wide>(-1) : 0);
+                }
+            }
+            // Denormalise the remainder.
+            remainder.chunks.resize(rhs_chunks);
+            remainder >>= rhs_empty_significant_bits;
+            // Remove zeros on the end.
+            result.trim();
+            return result;
+        }
+
+        /// @brief Bitwise shift a big number left by a number of bits.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The number of bits to shift the big number by.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_unsigned bit_shift_left(const big_unsigned& lhs, const unsigned long long int rhs) {
+            // If the lhs is zero, the result is 0.
+            if (!lhs) {
+                return {};
+            }
+            // If the rhs is zero, the result is the lhs.
+            if (rhs == 0) {
+                return lhs;
+            }
+            // Calculate the number of whole chunk shifts.
+            const unsigned long long int chunk_shifts = rhs / big_unsigned::chunk_bits;
+            // Prepare the result starting with a number of zero value chunks equal to the number of whole chunk shifts.
+            big_unsigned result;
+            result.chunks.assign(chunk_shifts, 0);
+            // Following the zero value chunks is the content of the lhs.
+            result.chunks.insert(result.chunks.end(), lhs.chunks.begin(), lhs.chunks.end());
+            // Calculate the remaining number of bits to shift.
+            unsigned long long int remaining_bit_shifts = rhs - (chunk_shifts * big_unsigned::chunk_bits);
+            // Loop over the result, from least significant to most, shifting bits and propagating carry bits between chunks.
+            // Start the loop from the number of whole chunk shifts as before this all chunks are zero.
+            chunk_type_wide carry = 0;
+            for (unsigned long long int chunk_index = chunk_shifts; chunk_index < result.chunks.size(); ++chunk_index) {
+                // Extend the size of the current chunk, shift it, and combine the result with the current carry bits.
+                carry |= static_cast<chunk_type_wide>(result.chunks[chunk_index]) << remaining_bit_shifts;
+                // Clip the lower bits from the current carrt bits and store them in the chunk.
+                result.chunks[chunk_index] = static_cast<chunk_type>(carry);
+                // Shift the carry by the size of a chunk to prepare the remaining bits for the next iteration.
+                carry >>= big_unsigned::chunk_bits;
+            }
+            // If there are carry bits remaining after all chunks have been shifted, add them to the end.
+            if (carry != 0) {
+                result.chunks.push_back(static_cast<chunk_type>(carry));
+            }
+            return result;
+        }
+
+        /// @brief Bitwise shift a big number right by a number of bits.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The number of bits to shift the big number by.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_unsigned bit_shift_right(const big_unsigned& lhs, const unsigned long long int rhs) {
+            // If the lhs is zero or the number of whole chunk shifts is greater than the chunks in the lhs, the result is 0.
+            const unsigned long long int chunk_shifts = rhs / big_unsigned::chunk_bits;
+            if ((!lhs) || (chunk_shifts >= lhs.chunks.size())) {
+                return {};
+            }
+            // If the rhs is zero, the result is the lhs.
+            if (rhs == 0) {
+                return lhs;
+            }
+            // Only copy parts of lhs that have not been shifted off the end.
+            big_unsigned result;
+            result.chunks.assign(lhs.chunks.begin() + static_cast<long long int>(chunk_shifts), lhs.chunks.end());
+            // Calculate the remaining number of bits to shift.
+            unsigned long long int remaining_bit_shifts = rhs - (chunk_shifts * big_unsigned::chunk_bits);
+            // Loop over the result, from most significant to least, shifting bits and propagating carry bits between chunks.
+            chunk_type_wide carry = 0;
+            for (unsigned long long int chunk_index = result.chunks.size() - 1; chunk_index != 0; --chunk_index) {
+                // Save any current carry bits by shifting them out of the range of the chunks bits and combine with the current chunk.
+                carry = (carry << big_unsigned::chunk_bits) | result.chunks[chunk_index];
+                // Shift the current carry variable by the remaining number of bits to shift and cast it to the chunk size to just keep the current chunks bits.
+                result.chunks[chunk_index] = static_cast<chunk_type>(carry >> remaining_bit_shifts);
+            }
+            // Combine the final carry bits with the chunk bits and shift the result by the remaining number of bits to shift before casting it to the chunk size to just keep the current chunks bits.
+            result.chunks[0] = static_cast<chunk_type>(((carry << big_unsigned::chunk_bits) | result.chunks[0]) >> remaining_bit_shifts);
+            // Remove zeros on the end.
+            result.trim();
+            return result;
+        }
+
+        /// @brief Bitwise AND two big numbers together.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_unsigned bit_and(const big_unsigned& lhs, const big_unsigned& rhs) {
+            const unsigned long long int lhs_chunks = lhs.chunks.size();
+            const unsigned long long int rhs_chunks = rhs.chunks.size();
+            const unsigned long long int min_chunks = lhs_chunks < rhs_chunks ? lhs_chunks : rhs_chunks;
+            big_unsigned result;
+            result.chunks.resize(min_chunks);
+            // Loop over the chunks and fill them with the bitwise and of the lhs and rhs.
+            for (unsigned long long int chunk_index = 0; chunk_index < min_chunks; ++chunk_index) {
+                result.chunks[chunk_index] = lhs.chunks[chunk_index] & rhs.chunks[chunk_index];
+            }
+            // Remove zeros on the end.
+            result.trim();
+            return result;
+        }
+
+        /// @brief Bitwise OR two big numbers together.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_unsigned bit_or(const big_unsigned& lhs, const big_unsigned& rhs) {
+            const unsigned long long int lhs_chunks = lhs.chunks.size();
+            const unsigned long long int rhs_chunks = rhs.chunks.size();
+            const unsigned long long int max_chunks = lhs_chunks < rhs_chunks ? rhs_chunks : lhs_chunks;
+            big_unsigned result(lhs);
+            result.chunks.resize(max_chunks, 0);
+            // Loop over the chunks and fill them with the bitwise or of the lhs and rhs.
+            for (unsigned long long int chunk_index = 0; chunk_index < rhs_chunks; ++chunk_index) {
+                result.chunks[chunk_index] |= rhs.chunks[chunk_index];
+            }
+            return result;
+        }
+
+        /// @brief Bitwise XOR two big numbers together.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_unsigned bit_xor(const big_unsigned& lhs, const big_unsigned& rhs) {
+            const unsigned long long int lhs_chunks = lhs.chunks.size();
+            const unsigned long long int rhs_chunks = rhs.chunks.size();
+            const unsigned long long int max_chunks = lhs_chunks < rhs_chunks ? rhs_chunks : lhs_chunks;
+            big_unsigned result(lhs);
+            // Fill any extra chunks with zeros.
+            result.chunks.resize(max_chunks, 0);
+            // Loop over the chunks and fill them with the bitwise xor of the lhs and rhs.
+            for (unsigned long long int chunk_index = 0; chunk_index < rhs_chunks; ++chunk_index) {
+                result.chunks[chunk_index] ^= rhs.chunks[chunk_index];
+            }
+            // Remove zeros on the end.
+            result.trim();
+            return result;
+        }
+
+        /// @brief Bitwise NOT a big number.
+        /// @param lhs The left hand side of the big number.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_unsigned bit_not(const big_unsigned& lhs) {
+            const unsigned long long int lhs_chunks = lhs.chunks.size();
+            big_unsigned result;
+            result.chunks.resize(lhs_chunks);
+            // Loop over the chunks and fill them with the bitwise not of the lhs.
+            for (unsigned long long int chunk_index = 0; chunk_index < lhs_chunks; ++chunk_index) {
+                result.chunks[chunk_index] = ~lhs.chunks[chunk_index];
+            }
+            // Remove zeros on the end.
+            result.trim();
+            return result;
+        }
+
+        /// @brief Bitwise AND a big number with the bitwise NOT of a second.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_unsigned bit_and_not(const big_unsigned& lhs, const big_unsigned& rhs) {
+            const unsigned long long int lhs_chunks = lhs.chunks.size();
+            const unsigned long long int rhs_chunks = rhs.chunks.size();
+            const unsigned long long int min_chunks = lhs_chunks < rhs_chunks ? lhs_chunks : rhs_chunks;
+            big_unsigned result;
+            result.chunks.resize(min_chunks);
+            // Loop over the chunks and fill them with the bitwise and of the bitwise not of the rhs.
+            for (unsigned long long int chunk_index = 0; chunk_index < min_chunks; ++chunk_index) {
+                result.chunks[chunk_index] = lhs.chunks[chunk_index] & ~rhs.chunks[chunk_index];
+            }
+            // Remove zeros on the end.
+            result.trim();
+            return result;
+        }
+
+        /// @brief Compare the size of two big numbers.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return true if the lhs is smaller than the rhs, false otherwise.
+        static bool less_than(const big_unsigned& lhs, const big_unsigned& rhs) {
+            const unsigned long long int lhs_chunks = lhs.chunks.size();
+            const unsigned long long int rhs_chunks = rhs.chunks.size();
+            // If the number of chunks is different, the smaller number will be the one with less.
+            if (lhs_chunks != rhs_chunks) {
+                return (lhs_chunks < rhs_chunks);
+            }
+            // Otherwise we start with the most significant chunk and loop to the last, breaking out if they are different.
+            unsigned long long int chunk_index;
+            for (chunk_index = rhs_chunks - 1; chunk_index != 0; --chunk_index) {
+                if (lhs.chunks[chunk_index] != rhs.chunks[chunk_index]) {
+                    break;
+                }
+            }
+            // Chunk index will either be the first different chunk or the last one.
+            // Compare the values to determine the smaller big number.
+            return (lhs.chunks[chunk_index] < rhs.chunks[chunk_index]);
+        }
+
+        /// @brief Compare the size of two big numbers.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return true if the lhs is equal to the rhs, false otherwise.
+        static bool equal_to(const big_unsigned& lhs, const big_unsigned& rhs) {
+            return (lhs.chunks == rhs.chunks);
+        }
+
+        /// @brief Compare the size of two big numbers.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return true if the lhs is not equal to the rhs, false otherwise.
+        static bool not_equal_to(const big_unsigned& lhs, const big_unsigned& rhs) {
+            return (lhs.chunks != rhs.chunks);
+        }
+
+    public:
+        /// @brief  Addition assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after the addition of the rhs.
+        big_unsigned& operator+=(const big_unsigned& rhs) {
+            return (*this = big_unsigned::add(*this, rhs));
+        }
+
+        /// @brief  Addition operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return The value of this big number added to the rhs.
+        big_unsigned operator+(const big_unsigned& rhs) const {
+            return big_unsigned::add(*this, rhs);
+        }
+
+    public:
+        /// @brief  Subtraction assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after the subtraction of the rhs.
+        big_unsigned& operator-=(const big_unsigned& rhs) {
+            return (*this = big_unsigned::subtract(*this, rhs));
+        }
+
+        /// @brief  Subtraction assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after the subtraction of the rhs.
+        big_unsigned operator-(const big_unsigned& rhs) const {
+            return big_unsigned::subtract(*this, rhs);
+        }
+
+    public:
+        /// @brief  Multiplication assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after multiplication by the rhs.
+        big_unsigned& operator*=(const big_unsigned& rhs) {
+            return (*this = big_unsigned::multiply(*this, rhs));
+        }
+
+        /// @brief  Multiplication operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return The value of this big numbermultiplied by the rhs.
+        big_unsigned operator*(const big_unsigned& rhs) const {
+            return big_unsigned::multiply(*this, rhs);
+        }
+
+    public:
+        /// @brief  Division assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after division by the rhs.
+        big_unsigned& operator/=(const big_unsigned& rhs) {
+            big_unsigned remainder;
+            return (*this = big_unsigned::divide(*this, rhs, remainder));
+        }
+
+        /// @brief  Division operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return The value of this big number divided by the rhs.
+        big_unsigned operator/(const big_unsigned& rhs) const {
+            big_unsigned remainder;
+            return big_unsigned::divide(*this, rhs, remainder);
+        }
+
+    public:
+        /// @brief  Modulo assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this, set to the remainder of this big number divided by the rhs.
+        big_unsigned& operator%=(const big_unsigned& rhs) {
+            big_unsigned remainder;
+            big_unsigned::divide(*this, rhs, remainder);
+            return (*this = remainder);
+        }
+
+        /// @brief  Modulo operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return The remainder of this big number divided by the rhs.
+        big_unsigned operator%(const big_unsigned& rhs) const {
+            big_unsigned remainder;
+            big_unsigned::divide(*this, rhs, remainder);
+            return remainder;
+        }
+
+    public:
+        /// @brief  Left bit shift assignment operator.
+        /// @param  rhs The number of bits to shift the big number.
+        /// @return A reference to this after bit shifting by the rhs number of bits.
+        big_unsigned& operator<<=(unsigned long long int rhs) {
+            return (*this = big_unsigned::bit_shift_left(*this, rhs));
+        }
+
+        /// @brief  Left bit shift operator.
+        /// @param  rhs The number of bits to shift the big number.
+        /// @return The value of this big number bit shifted by the rhs number of bits.
+        big_unsigned operator<<(unsigned long long int rhs) const {
+            return big_unsigned::bit_shift_left(*this, rhs);
+        }
+
+    public:
+        /// @brief  Right bit shift assignment operator.
+        /// @param  rhs The number of bits to shift the big number.
+        /// @return A reference to this after bit shifting by the rhs number of bits.
+        big_unsigned& operator>>=(unsigned long long int rhs) {
+            return (*this = big_unsigned::bit_shift_right(*this, rhs));
+        }
+
+        /// @brief  Right bit shift operator.
+        /// @param  rhs The number of bits to shift the big number.
+        /// @return The value of this big number bit shifted by the rhs number of bits.
+        big_unsigned operator>>(unsigned long long int rhs) const {
+            return big_unsigned::bit_shift_right(*this, rhs);
+        }
+
+    public:
+        /// @brief  Bitwise AND assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after a bitwise AND with the rhs.
+        big_unsigned& operator&=(const big_unsigned& rhs) {
+            return (*this = big_unsigned::bit_and(*this, rhs));
+        }
+
+        /// @brief  Bitwise AND operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return The value of this big number bitwise AND with the rhs.
+        big_unsigned operator&(const big_unsigned& rhs) const {
+            return big_unsigned::bit_and(*this, rhs);
+        }
+
+    public:
+        /// @brief  Bitwise OR assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after a bitwise OR with the rhs.
+        big_unsigned& operator|=(const big_unsigned& rhs) {
+            return (*this = big_unsigned::bit_or(*this, rhs));
+        }
+
+        /// @brief  Bitwise OR operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return The value of this big number bitwise OR with the rhs.
+        big_unsigned operator|(const big_unsigned& rhs) const {
+            return big_unsigned::bit_or(*this, rhs);
+        }
+
+    public:
+        /// @brief  Bitwise XOR assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after a bitwise XOR with the rhs.
+        big_unsigned& operator^=(const big_unsigned& rhs) {
+            return (*this = big_unsigned::bit_xor(*this, rhs));
+        }
+
+        /// @brief  Bitwise XOR operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return The value of this big number bitwise XOR with the rhs.
+        big_unsigned operator^(const big_unsigned& rhs) const {
+            return big_unsigned::bit_xor(*this, rhs);
+        }
+
+    public:
+        /// @brief  Bitwise NOT operator.
+        /// @return The value of this big number with all its bits inverted.
+        big_unsigned operator~() {
+            return big_unsigned::bit_not(*this);
+        }
+
+    public:
+        /// @brief  Less than comparison.
+        /// @param  rhs The right hand side of the expression.
+        /// @return true if the value of this big number is less than the rhs, false otherwise.
+        bool operator<(const big_unsigned& rhs) const {
+            return big_unsigned::less_than(*this, rhs);
+        }
+
+        /// @brief  Greater than comparison.
+        /// @param  rhs The right hand side of the expression.
+        /// @return true if the value of this big number is greater than the rhs, false otherwise.
+        bool operator>(const big_unsigned& rhs) const {
+            return big_unsigned::less_than(rhs, *this);
+        }
+
+    public:
+        /// @brief  Less than or equal comparison.
+        /// @param  rhs The right hand side of the expression.
+        /// @return true if the value of this big number is less than or equal to the rhs, false otherwise.
+        bool operator<=(const big_unsigned& rhs) const {
+            return !big_unsigned::less_than(rhs, *this);
+        }
+
+        /// @brief  Greater than or equal comparison.
+        /// @param  rhs The right hand side of the expression.
+        /// @return true if the value of this big number is greater than or equal to the rhs, false otherwise.
+        bool operator>=(const big_unsigned& rhs) const {
+            return !big_unsigned::less_than(*this, rhs);
+        }
+
+    public:
+        /// @brief  Equal comparison.
+        /// @param  rhs The right hand side of the expression.
+        /// @return true if the value of this big number is equal to the rhs, false otherwise.
+        bool operator==(const big_unsigned& rhs) const {
+            return big_unsigned::equal_to(*this, rhs);
+        }
+
+        /// @brief  Not equal comparison.
+        /// @param  rhs The right hand side of the expression.
+        /// @return true if the value of this big number is not equal to the rhs, false otherwise.
+        bool operator!=(const big_unsigned& rhs) const {
+            return big_unsigned::not_equal_to(*this, rhs);
+        }
+
+    public:
+        /// @brief  Get the length of the big number in allocated bits, this will be a multiple of the bits in a chunk.
+        /// @return The number of bits allocated to store the big number.
+        unsigned long long int get_length_bits() const {
+            return this->chunks.size() * big_unsigned::chunk_bits;
+        }
+
+        /// @brief  Get the length of the big number in allocated bytes, this will be a multiple of the size of a chunk.
+        /// @return The number of bytes allocated to store the big number.
+        unsigned long long int get_length_bytes() const {
+            return this->chunks.size() * sizeof(chunk_type);
+        }
+
+        /// @brief  Get the length of the big number as a decimal number.
+        /// @return The number of digits required to represent the big number.
+        unsigned long long int get_length_decimal() const {
+            big_unsigned temp(*this);
+            // Loop and decimate the big number counting how many times we can before the number is zero.
+            unsigned long long int chunks = 1;
+            while (temp /= 10) {
+                ++chunks;
+            }
+            return chunks;
+        }
+
+    public:
+        /// @brief  Conver the big number to a string and output it in the provided buffer.
+        /// @param  buffer The output string buffer, must be at larger than the decimal length of the big number plus one for null termination.
+        /// @param  length The length of the output buffer.
+        /// @return The decimal length of the big number, equal to the number of digits written.
+        unsigned long long int to_string(char* buffer, const unsigned long long int length) {
+            GTL_BIG_UNSIGNED_ASSERT(length > this->get_length_decimal(), "Buffer length must be greater than decimal length of number.");
+            big_unsigned temp(*this);
+            // Loop and decimate the big number storing the remainder as the current digit ascii char.
+            unsigned long long int digit_index = 0;
+            do {
+                big_unsigned remainder;
+                temp = big_unsigned::divide(temp, 10, remainder);
+                buffer[digit_index++] = '0' + static_cast<char>(remainder.chunks[0]);
+            } while (temp);
+            // Reverse the string as digits were stored units first and we want units last.
+            for (unsigned long long int reverse_index = 0; reverse_index < digit_index / 2; ++reverse_index) {
+                char swap_character = buffer[reverse_index];
+                buffer[reverse_index] = buffer[digit_index - reverse_index - 1];
+                buffer[digit_index - reverse_index - 1] = swap_character;
+            }
+            // Null terminate the string.
+            buffer[digit_index] = 0;
+            return digit_index;
+        }
     };
 }
+
+#undef GTL_BIG_UNSIGNED_ASSERT
 
 #endif // GTL_BIG_UNSIGNED_HPP

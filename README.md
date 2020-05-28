@@ -77,6 +77,12 @@ The current classes are as described below:
 |--------------------:|:----------------------------------------------------------------------------------------|
 |           **paths** | Collection of cross platform functions to provide useful paths.                         |
 
+### Math ###
+
+|               Class | Description                                                                             |
+|--------------------:|:----------------------------------------------------------------------------------------|
+|    **big_unsigned** | Arbitrary sized unsigned integers.                                                      |
+
 ### Protection ###
 
 |               Class | Description                                                                             |
