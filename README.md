@@ -11,14 +11,14 @@ The current classes are as described below:
 
 ### AI ###
 
-|                    Class | Description                                                                             |
+|                    Class | Description                                                                             |
 |-------------------------:|:----------------------------------------------------------------------------------------|
 |                  **ann** | Artificial neural network using the backpropagation algorithm for training.             |
 |                  **hmm** | Hidden markov model using the Baum-Welch algorithm for training.                        |
 
 ### Algorithm ###
 
-|                    Class | Description                                                                             |
+|                    Class | Description                                                                             |
 |-------------------------:|:----------------------------------------------------------------------------------------|
 | **gaussian_elimination** | Linear simultaneous equation solver.                                                    |
 |      **simulation_loop** | Fixed time step helper class for creating game loops.                                   |
@@ -26,7 +26,7 @@ The current classes are as described below:
 
 ### Container ###
 
-|                    Class | Description                                                                             |
+|                    Class | Description                                                                             |
 |-------------------------:|:----------------------------------------------------------------------------------------|
 |                  **any** | Class that can hold any variable type.                                                  |
 |             **array_nd** | N-dimensional statically or dynamically sized array.                                    |
@@ -36,13 +36,13 @@ The current classes are as described below:
 
 ### Crypto ###
 
-|                    Class | Description                                                                             |
+|                    Class | Description                                                                             |
 |-------------------------:|:----------------------------------------------------------------------------------------|
 |                  **aes** | An implementation of the aes encryption algorithm for 128, 196, and 256 bits.           |
 
 ### Debug ###
 
-|                    Class | Description                                                                             |
+|                    Class | Description                                                                             |
 |-------------------------:|:----------------------------------------------------------------------------------------|
 |               **access** | Classes and macros for accessing class private members.                                 |
 |               **assert** | Macros that define an assert macro that optionally takes a format string and parameters.|
@@ -53,7 +53,7 @@ The current classes are as described below:
 
 ### Execution ###
 
-|                    Class | Description                                                                             |
+|                    Class | Description                                                                             |
 |-------------------------:|:----------------------------------------------------------------------------------------|
 |              **barrier** | Thread syncronisation barrier.                                                          |
 |            **coroutine** | Setjump/Longjump implementation of stackful coroutines.                                 |
@@ -64,7 +64,7 @@ The current classes are as described below:
 
 ### Hash ###
 
-|                    Class | Description                                                                             |
+|                    Class | Description                                                                             |
 |-------------------------:|:----------------------------------------------------------------------------------------|
 |                  **crc** | An implementation of the crc hashing function for 8, 16, 32, and 64 bits.               |
 |                  **md5** | An implementation of the md5 hashing function.                                          |
@@ -75,36 +75,36 @@ The current classes are as described below:
 
 ### IO ###
 
-|                    Class | Description                                                                             |
+|                    Class | Description                                                                             |
 |-------------------------:|:----------------------------------------------------------------------------------------|
 |                **paths** | Collection of cross platform functions to provide useful paths.                         |
 
 ### Math ###
 
-|                    Class | Description                                                                             |
+|                    Class | Description                                                                             |
 |-------------------------:|:----------------------------------------------------------------------------------------|
 |         **big_unsigned** | Arbitrary sized unsigned integers.                                                      |
 
 ### Protection ###
 
-|                    Class | Description                                                                             |
+|                    Class | Description                                                                             |
 |-------------------------:|:----------------------------------------------------------------------------------------|
 |      **virtual_machine** | A simple stack based virtual machine allowing easy creation of custom operands.         |
 
 ### Random ###
 
-|                    Class | Description                                                                             |
+|                    Class | Description                                                                             |
 |-------------------------:|:----------------------------------------------------------------------------------------|
 |            **random_mt** | Mersenne twister pseudo-random number generator.                                        |
 |           **random_pcg** | PCG pseudo-random number generator.                                                     |
-|       **random_romu_32** | Romu 32 bit pseudo-random number generator.                                                |
-|       **random_romu_64** | Romu 64 bit pseudo-random number generator.                                                |
+|       **random_romu_32** | Romu 32 bit pseudo-random number generator.                                             |
+|       **random_romu_64** | Romu 64 bit pseudo-random number generator.                                             |
 |      **random_splitmix** | Splitmix pseudo-random number generator.                                                |
 |      **random_xorshift** | Xorshift pseudo-random number generator.                                                |
 
 ### Type Information ###
 
-|                    Class | Description                                                                             |
+|                    Class | Description                                                                             |
 |-------------------------:|:----------------------------------------------------------------------------------------|
 |            **enum_name** | Compile-time enum value name as a string with -fno-rtti.                                |
 |              **type_id** | Simple run-time-type-information (rtti) with -fno-rtti.                                 |
@@ -112,7 +112,7 @@ The current classes are as described below:
 
 ### Utility ###
 
-|                    Class | Description                                                                             |
+|                    Class | Description                                                                             |
 |-------------------------:|:----------------------------------------------------------------------------------------|
 |                  **cpu** | Class to extract cpuid information to determine supported instructions at runtime.      |
 |                **error** | Composable error class that can be returned down a call stack.                          |
