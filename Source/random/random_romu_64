@@ -1,0 +1,140 @@
+/*
+The MIT License
+Copyright (c) 2019 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_RANDOM_ROMU_HPP
+#define GTL_RANDOM_ROMU_HPP
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the random_romu_64 is misused.
+#   define GTL_RANDOM_ROMU_64_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_RANDOM_ROMU_64_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+namespace gtl {
+    class random_romu_64 final {
+    private:
+        unsigned long long int state[4];
+
+    private:
+        constexpr static unsigned long long int rotate_left(unsigned long long int value, unsigned long long int shift) {
+            constexpr const unsigned long long int mask = (8 * sizeof(unsigned long long int) - 1);
+            shift &= mask;
+            return (value << shift) | (value >> ((-shift) & mask));
+        }
+
+    public:
+        /// @brief  Defaulted destructor.
+        ~random_romu_64() = default;
+
+        /// @brief  Empty constructor.
+        random_romu_64()
+            : state{ 0x853C49E6748FEA9Bull, 0xDA3E39CB94B95BDBull, 0xC1F651C67C62C6E0ull, 0xBF58476D1CE4E5B9ull } {
+        }
+
+        /// @brief  Defaulted copy constructor.
+        random_romu_64(const random_romu_64&) = default;
+
+        /// @brief  Defaulted move constructor.
+        random_romu_64(random_romu_64&&) = default;
+
+        /// @brief  Defaulted copy assignment.
+        random_romu_64& operator=(const random_romu_64&) = default;
+
+        /// @brief  Defaulted move assignment.
+        random_romu_64& operator=(random_romu_64&&) = default;
+
+        /// @brief  Constructor with 64 bit seed.
+        /// @param  seed_value Seed value used to initialise the state.
+        random_romu_64(unsigned long long int seed_value) {
+            this->seed(seed_value);
+        }
+
+        /// @brief  Initialise the state from a 64 bit seed.
+        /// @param  seed_value Seed value used to initialise the state.
+        void seed(unsigned long long int seed_value) {
+            this->state[0] = seed_value ^ 0x5555555555555555ull;
+            this->state[1] = seed_value ^ 0x3333333333333333ull;
+            this->state[2] = seed_value ^ 0x0F0F0F0F0F0F0F0Full;
+            this->state[3] = seed_value ^ 0x00FF00FF00FF00FFull;
+        }
+
+        /// @brief  Get the next random number from the generator.
+        /// @return A pseudo-random number.
+        unsigned long long int get_random_raw() {
+            const unsigned long long int wp = this->state[0];
+            const unsigned long long int xp = this->state[1];
+            const unsigned long long int yp = this->state[2];
+            const unsigned long long int zp = this->state[3];
+            this->state[0] = 15241094284759029579ull * zp;
+            this->state[1] = zp + rotate_left(wp, 52);
+            this->state[2] = yp - xp;
+            this->state[3] = yp + wp;
+            this->state[3] = rotate_left(this->state[3], 19);
+            return xp;
+        }
+
+    public:
+        /// @brief  Get a random number in the open interval 0 < value < 1.
+        /// @return A pseudo-random number.
+        double get_random_exclusive() {
+            return (static_cast<double>(this->get_random_raw()) + 0.5) * (0.5 / static_cast<double>(1ull << 63));
+        }
+
+        /// @brief  Get a random number in the half-open interval 0 <= x < 1.
+        /// @return A pseudo-random number.
+        double get_random_exclusive_top() {
+            return static_cast<double>(this->get_random_raw()) * (0.5 / static_cast<double>(1ull << 63));
+        }
+
+        /// @brief  Get a random number in the closed interval 0 <= x <= 1.
+        /// @return A pseudo-random number.
+        double get_random_inclusive() {
+            return static_cast<double>(this->get_random_raw()) * (0.5 / static_cast<double>((1ull << 63) - 1));
+        }
+
+        /// @brief  Get a random number between two bounds.
+        /// @param  inclusive_min Minimum number that can be returned.
+        /// @param  inclusive_max Max number than can be returned.
+        /// @return A pseudo-random number.
+        unsigned long long int get_random(unsigned long long int inclusive_min, unsigned long long int inclusive_max)  {
+            GTL_RANDOM_ROMU_64_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");
+            return (this->get_random_raw() % (1 + inclusive_max - inclusive_min)) + inclusive_min;
+        }
+
+        /// @brief  Get a random number between two bounds.
+        /// @param  inclusive_min Minimum number that can be returned.
+        /// @param  inclusive_max Max number than can be returned.
+        /// @return A pseudo-random number.
+        double get_random(double inclusive_min, double inclusive_max) {
+            GTL_RANDOM_ROMU_64_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");
+            return (this->get_random_inclusive() * (inclusive_max - inclusive_min)) + inclusive_min;
+        }
+    };
+}
+
+#undef GTL_RANDOM_ROMU_64_ASSERT
+
+#endif // GTL_RANDOM_ROMU_HPP

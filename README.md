@@ -95,6 +95,8 @@ The current classes are as described below:
 |--------------------:|:----------------------------------------------------------------------------------------|
 |       **random_mt** | Mersenne twister pseudo-random number generator.                                        |
 |      **random_pcg** | PCG pseudo-random number generator.                                                     |
+|  **random_romu_32** | Romu 32 bit pseudo-random number generator.                                                |
+|  **random_romu_64** | Romu 64 bit pseudo-random number generator.                                                |
 | **random_splitmix** | Splitmix pseudo-random number generator.                                                |
 | **random_xorshift** | Xorshift pseudo-random number generator.                                                |
 

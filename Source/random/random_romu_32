@@ -1,0 +1,159 @@
+/*
+The MIT License
+Copyright (c) 2019 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_RANDOM_ROMU_HPP
+#define GTL_RANDOM_ROMU_HPP
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the random_romu_32 is misused.
+#   define GTL_RANDOM_ROMU_32_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_RANDOM_ROMU_32_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+namespace gtl {
+    class random_romu_32 final {
+    private:
+        unsigned int state[4];
+
+    private:
+        constexpr static unsigned int rotate_left(unsigned int value, unsigned int shift) {
+            const unsigned int mask = (8 * sizeof(unsigned int ) - 1);
+            shift &= mask;
+            return (value << shift) | (value >> ((-shift) & mask));
+        }
+
+    public:
+        /// @brief  Defaulted destructor.
+        ~random_romu_32() = default;
+
+        /// @brief  Empty constructor.
+        random_romu_32()
+            : state{ 0x834E78E9u, 0x5C964FABu, 0xD33C9B5Du, 0xAE9B49BBu } {
+        }
+
+        /// @brief  Defaulted copy constructor.
+        random_romu_32(const random_romu_32&) = default;
+
+        /// @brief  Defaulted move constructor.
+        random_romu_32(random_romu_32&&) = default;
+
+        /// @brief  Defaulted copy assignment.
+        random_romu_32& operator=(const random_romu_32&) = default;
+
+        /// @brief  Defaulted move assignment.
+        random_romu_32& operator=(random_romu_32&&) = default;
+
+        /// @brief  Constructor with 32 bit seed.
+        /// @param  seed_value Seed value used to initialise the state.
+        random_romu_32(unsigned int seed_value) {
+            this->seed(seed_value);
+        }
+
+        /// @brief  Constructor using an array of 32 bit integers as the seed.
+        /// @param  seed_values Seed value used to initialise the state.
+        /// @param  size Number of entried in the array.
+        random_romu_32(unsigned int seed_value_0, unsigned int seed_value_1, unsigned int seed_value_2, unsigned int seed_value_3) {
+            this->seed(seed_value_0, seed_value_1, seed_value_2, seed_value_3);
+        }
+
+        /// @brief  Initialise the state from a 32 bit seed.
+        /// @param  seed_value Seed value used to initialise the state.
+        void seed(unsigned int seed_value) {
+            this->state[0] = seed_value ^ 0x55555555u;
+            this->state[1] = seed_value ^ 0x33333333u;
+            this->state[2] = seed_value ^ 0x0F0F0F0Fu;
+            this->state[3] = seed_value ^ 0x00FF00FFu;
+        }
+
+        /// @brief  Initialise the state from an array of 32 bit ints as seed.
+        /// @param  seed_value_0 Seed value used to initialise part of the state.
+        /// @param  seed_value_1 Seed value used to initialise part of the state.
+        /// @param  seed_value_2 Seed value used to initialise part of the state.
+        /// @param  seed_value_3 Seed value used to initialise part of the state.
+        void seed(unsigned int seed_value_0, unsigned int seed_value_1, unsigned int seed_value_2, unsigned int seed_value_3) {
+            this->state[0] = seed_value_0;
+            this->state[1] = seed_value_1;
+            this->state[2] = seed_value_2;
+            this->state[3] = seed_value_3;
+        }
+
+        /// @brief  Get the next random number from the generator_type.
+        /// @return A pseudo-random number.
+        unsigned int get_random_raw() {
+            const unsigned int wp = this->state[0];
+            const unsigned int xp = this->state[1];
+            const unsigned int yp = this->state[2];
+            const unsigned int zp = this->state[3];
+            this->state[0] = 3323815723u * zp;
+            this->state[1] = zp + rotate_left(wp, 26);
+            this->state[2] = yp - xp;
+            this->state[3] = yp + wp;
+            this->state[3] = rotate_left(this->state[3], 9);
+            return xp;
+        }
+
+    public:
+        /// @brief  Get a random number in the open interval 0 < value < 1.
+        /// @return A pseudo-random number.
+        double get_random_exclusive() {
+            return (static_cast<double>(this->get_random_raw()) + 0.5) * (1.0 / static_cast<double>(1ull << 32));
+        }
+
+        /// @brief  Get a random number in the half-open interval 0 <= x < 1.
+        /// @return A pseudo-random number.
+        double get_random_exclusive_top() {
+            return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>(1ull << 32));
+        }
+
+        /// @brief  Get a random number in the closed interval 0 <= x <= 1.
+        /// @return A pseudo-random number.
+        double get_random_inclusive() {
+            return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>((1ull << 32) - 1));
+        }
+
+        /// @brief  Get a random number between two bounds.
+        /// @param  inclusive_min Minimum number that can be returned.
+        /// @param  inclusive_max Max number than can be returned.
+        /// @return A pseudo-random number.
+        unsigned int get_random(unsigned int inclusive_min, unsigned int inclusive_max)  {
+            GTL_RANDOM_ROMU_32_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");
+            return (this->get_random_raw() % (1 + inclusive_max - inclusive_min)) + inclusive_min;
+        }
+
+        /// @brief  Get a random number between two bounds.
+        /// @param  inclusive_min Minimum number that can be returned.
+        /// @param  inclusive_max Max number than can be returned.
+        /// @return A pseudo-random number.
+        double get_random(double inclusive_min, double inclusive_max) {
+            GTL_RANDOM_ROMU_32_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");
+            return (this->get_random_inclusive() * (inclusive_max - inclusive_min)) + inclusive_min;
+        }
+    };
+}
+
+#undef GTL_RANDOM_ROMU_32_ASSERT
+
+#endif // GTL_RANDOM_ROMU_HPP
