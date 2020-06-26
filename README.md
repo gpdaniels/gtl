@@ -22,6 +22,7 @@ The current classes are as described below:
 |-------------------------:|:----------------------------------------------------------------------------------------|
 | **gaussian_elimination** | Linear simultaneous equation solver.                                                    |
 |      **simulation_loop** | Fixed time step helper class for creating game loops.                                   |
+|            **quicksort** | Recursive quicksort algorithm, both full and partial versions.                          |
 
 ### Container ###
 

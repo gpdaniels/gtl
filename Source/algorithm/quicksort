@@ -1,0 +1,141 @@
+/*
+The MIT License
+Copyright (c) 2020 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_QUICKSORT_HPP
+#define GTL_QUICKSORT_HPP
+
+namespace gtl {
+    /// @brief  The quicksort sorting algorithm to sort arrays of values using a comparitor function.
+    class quicksort final {
+    public:
+        /// @brief  The default comparitor type, takes two values and returns true or false.
+        /// @tparam type The type of the values to compare.
+        template<typename type>
+        using default_comparitor_type = bool(*)(const type& lhs, const type& rhs);
+
+        /// @brief  A comparitor that will sort values into ascending order.
+        /// @tparam type The type of the values to compare.
+        template<typename type>
+        constexpr static const default_comparitor_type<type> comparitor_ascending = [](const type& lhs, const type& rhs){ return lhs < rhs; };
+
+        /// @brief  A comparitor that will sort values into descending order.
+        /// @tparam type The type of the values to compare.
+        template<typename type>
+        constexpr static const default_comparitor_type<type> comparitor_descending = [](const type& lhs, const type& rhs){ return lhs > rhs; };
+
+    private:
+        /// @brief  Deleted constructor.
+        quicksort() = delete;
+
+    private:
+        /// @brief  Swap two values in place.
+        /// @param  lhs The value to replace with rhs
+        /// @param  rhs The value to replace with lhs
+        template <class type>
+        constexpr static void swap(type& lhs, type& rhs) {
+            type lhs_copy = lhs;
+            lhs = rhs;
+            rhs = lhs_copy;
+        }
+
+    public:
+        /// @brief  Sort function that will sort an array of values using a comparitor, using the recursive form of the quicksort algorithm.
+        /// @tparam type The type of the values to sort.
+        /// @tparam comparitor_type The type of the comparitor function used to compare pairs of values.
+        /// @param  values The array of values to sort in place.
+        /// @param  size The size of the array of values.
+        /// @param  comparitor The comparitor function used to determine the order.
+        template<typename type, typename comparitor_type = default_comparitor_type<type>>
+        static void sort(type* values, const unsigned long long int size, const comparitor_type comparitor = quicksort::comparitor_ascending<type>) {
+            // Can only sort if there are more than two values.
+            if (size < 2) {
+                return;
+            }
+
+            // Always compare against the current value, left is therefore the next value and right the far end.
+            unsigned long long int index_left = 1;
+            unsigned long long int index_right = size;
+
+            // Move along the indexes swapping as needed until the left and right indexes have met.
+            while (index_left < index_right) {
+                // If the comparitor returns true advance left, otherwise swap and advance right.
+                if (comparitor(values[index_left], values[0])) {
+                    ++index_left;
+                }
+                else {
+                    --index_right;
+                    quicksort::swap(values[index_left], values[index_right]);
+                }
+            }
+
+            // Once we've finished looping over the indexes swap the current value into the center by swapping with the value at left.
+            --index_left;
+            quicksort::swap(values[index_left], values[0]);
+
+            // Now recurse and sort either side of the center.
+            quicksort::sort(&values[0], index_left + 1, comparitor);
+            quicksort::sort(&values[index_right], size - index_right, comparitor);
+        }
+
+        /// @brief  Sort function that will partially sort an array of values up to a limit using a comparitor, using the recursive form of the quicksort algorithm.
+        /// @tparam type The type of the values to sort.
+        /// @tparam comparitor_type The type of the comparitor function used to compare pairs of values.
+        /// @param  values The array of values to sort in place.
+        /// @param  size The size of the array of values.
+        /// @param  length_sorted The number of elements to sort.
+        /// @param  comparitor The comparitor function used to determine the order.
+        template<typename type, typename comparitor_type = default_comparitor_type<type>>
+        static void sort_partial(type* values, const unsigned long long int size, const unsigned long long int length_sorted, const comparitor_type comparitor = quicksort::comparitor_ascending<type>) {
+            // Can only sort if there are more than two values.
+            if (size < 2) {
+                return;
+            }
+
+            // Always compare against the current value, left is therefore the next value and right the far end.
+            unsigned long long int index_left = 1;
+            unsigned long long int index_right = size;
+
+            // Move along the indexes swapping as needed until the left and right indexes have met.
+            while ((index_left < index_right) && ((index_left < length_sorted) || (index_right > length_sorted))) {
+                // If the comparitor returns true advance left, otherwise swap and advance right.
+                if (comparitor(values[index_left], values[0])) {
+                    ++index_left;
+                }
+                else {
+                    --index_right;
+                    quicksort::swap(values[index_left], values[index_right]);
+                }
+            }
+
+            // Once we've finished looping over the indexes swap the current value into the center by swapping with the value at left.
+            --index_left;
+            quicksort::swap(values[index_left], values[0]);
+
+            // Now recurse and sort either side of the center.
+            quicksort::sort_partial(&values[0], index_left + 1, length_sorted, comparitor);
+            if (index_right < length_sorted) {
+                quicksort::sort_partial(&values[index_right], size - index_right, length_sorted - index_right, comparitor);
+            }
+        }
+    };
+}
+
+#endif // GTL_QUICKSORT_HPP
