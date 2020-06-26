@@ -406,15 +406,15 @@ namespace gtl {
                 bool is_quotient_estimate_large = true;
                 while (is_quotient_estimate_large) {
                     // This loop skips over chunks until they don't match or the end is reached, to enable the less than operation.
-                    unsigned long long int chunk_index = rhs_chunks;
-                    for (; chunk_index != 0; --chunk_index) {
-                        if (remainder.chunks[result_index + chunk_index - 1] != partial_product.chunks[chunk_index]) {
+                    unsigned long long int chunk_diff_index = rhs_chunks;
+                    for (; chunk_diff_index != 0; --chunk_diff_index) {
+                        if (remainder.chunks[result_index + chunk_diff_index - 1] != partial_product.chunks[chunk_diff_index]) {
                             break;
                         }
                     }
                     // Up to this point the values in remainder and partial product have matched, or it's the last index.
                     // In either case, compare the values in the chunks to determine if remainder is smaller than partial product.
-                    is_quotient_estimate_large = (remainder.chunks[result_index + chunk_index - 1] < partial_product.chunks[chunk_index]);
+                    is_quotient_estimate_large = (remainder.chunks[result_index + chunk_diff_index - 1] < partial_product.chunks[chunk_diff_index]);
                     // If the quotient estimate is large, reduce it, update the partial product, and try again.
                     if (is_quotient_estimate_large) {
                         // Reduce the quotient estimate.
@@ -877,11 +877,11 @@ namespace gtl {
         unsigned long long int get_length_decimal() const {
             big_unsigned temp(*this);
             // Loop and decimate the big number counting how many times we can before the number is zero.
-            unsigned long long int chunks = 1;
+            unsigned long long int length = 1;
             while (temp /= 10) {
-                ++chunks;
+                ++length;
             }
-            return chunks;
+            return length;
         }
 
     public:
