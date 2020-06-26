@@ -49,14 +49,12 @@ TEST(static_lambda, constructor, empty) {
     testbench::do_not_optimise_away(static_lambda);
 }
 
-TEST(static_lambda, constructor, function)
-{
+TEST(static_lambda, constructor, function) {
     gtl::static_lambda<void(), 128> static_lambda([](){});
     testbench::do_not_optimise_away(static_lambda);
 }
 
-TEST(static_lambda, constructor, capturing_function)
-{
+TEST(static_lambda, constructor, capturing_function) {
     {
         int variable = 123;
         gtl::static_lambda<void(), 128> static_lambda([=](){
@@ -95,8 +93,7 @@ TEST(static_lambda, constructor, capturing_function)
     }
 }
 
-TEST(static_lambda, constructor, copying)
-{
+TEST(static_lambda, constructor, copying) {
     gtl::static_lambda<void(), 128> static_lambda1([](){});
     testbench::do_not_optimise_away(static_lambda1);
     const gtl::static_lambda<void(), 128> static_lambda2(static_lambda1);
@@ -105,47 +102,42 @@ TEST(static_lambda, constructor, copying)
     testbench::do_not_optimise_away(static_lambda3);
 }
 
-TEST(static_lambda, constructor, moving)
-{
+TEST(static_lambda, constructor, moving) {
     gtl::static_lambda<void(), 128> static_lambda1([](){});
     testbench::do_not_optimise_away(static_lambda1);
     gtl::static_lambda<void(), 128> static_lambda2(std::move(static_lambda1));
     testbench::do_not_optimise_away(static_lambda2);
 }
 
-TEST(static_lambda, operator, copying)
-{
+TEST(static_lambda, operator, copying) {
     gtl::static_lambda<void(), 128> static_lambda1([](){});
     testbench::do_not_optimise_away(static_lambda1);
     gtl::static_lambda<void(), 128> static_lambda2 = static_lambda1;
     testbench::do_not_optimise_away(static_lambda2);
 }
 
-TEST(static_lambda, operator, moving)
-{
+TEST(static_lambda, operator, moving) {
     gtl::static_lambda<void(), 128> static_lambda1([](){});
     testbench::do_not_optimise_away(static_lambda1);
     gtl::static_lambda<void(), 128> static_lambda2 = std::move(static_lambda1);
     testbench::do_not_optimise_away(static_lambda2);
 }
 
-TEST(static_lambda, operator, bool)
-{
+TEST(static_lambda, operator, bool) {
     gtl::static_lambda<void(), 128> static_lambda;
     REQUIRE(static_lambda == false);
     static_lambda = gtl::static_lambda<void(), 128>([](){});
     REQUIRE(static_lambda == true);
 }
 
-TEST(static_lambda, operator, executing)
-{
+TEST(static_lambda, operator, executing) {
     {
         gtl::static_lambda<void(), 128> static_lambda([](){});
         static_lambda();
     }
     {
-        auto lambda = [](){};
-        gtl::static_lambda<void(), 128> static_lambda(lambda);
+        auto function = [](){};
+        gtl::static_lambda<void(), 128> static_lambda(function);
         static_lambda();
     }
     {
@@ -201,8 +193,7 @@ TEST(static_lambda, operator, executing)
     }
 }
 
-TEST(static_lambda, operator, executing_with_arguments)
-{
+TEST(static_lambda, operator, executing_with_arguments) {
     {
         bool flag = false;
         gtl::static_lambda<void(bool&), 128> static_lambda([](bool& flag_argument){
@@ -214,13 +205,13 @@ TEST(static_lambda, operator, executing_with_arguments)
         REQUIRE(flag);
     }
     {
-        auto lambda = [](bool& flag){
+        auto function = [](bool& flag){
             REQUIRE(!flag);
             flag = true;
             REQUIRE(flag);
         };
         bool flag = false;
-        gtl::static_lambda<void(bool&), 128> static_lambda(lambda);
+        gtl::static_lambda<void(bool&), 128> static_lambda(function);
         static_lambda(flag);
         REQUIRE(flag);
     }
@@ -297,8 +288,7 @@ TEST(static_lambda, operator, executing_with_arguments)
     }
 }
 
-TEST(static_lambda, operator, executing_with_return)
-{
+TEST(static_lambda, operator, executing_with_return) {
     {
         gtl::static_lambda<bool(), 128> static_lambda([](){
             return true;
@@ -306,10 +296,10 @@ TEST(static_lambda, operator, executing_with_return)
         REQUIRE(static_lambda());
     }
     {
-        auto lambda = []()->bool{
+        auto function = []()->bool{
             return true;
         };
-        gtl::static_lambda<bool(), 128> static_lambda(lambda);
+        gtl::static_lambda<bool(), 128> static_lambda(function);
         REQUIRE(static_lambda());
     }
     {
@@ -369,8 +359,7 @@ TEST(static_lambda, operator, executing_with_return)
     }
 }
 
-TEST(static_lambda, evaluation, construction_and_destruction)
-{
+TEST(static_lambda, evaluation, construction_and_destruction) {
     static int constructed = 0;
     static int copied = 0;
     static int moved = 0;

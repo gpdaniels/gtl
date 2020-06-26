@@ -101,25 +101,22 @@ namespace gtl {
         /// @brief  Swap function to simplify constructors by following the copy-and-swap idiom.
         /// @param  lhs The left hand side static_lambda to swap.
         /// @param  rhs The right hand side static_lambda to swap.
-        static void swap(static_lambda& lhs, static_lambda& rhs) {
+        constexpr static void swap(static_lambda& lhs, static_lambda& rhs) {
             for (unsigned long long int index = 0; index < size; ++index) {
                 unsigned char byte = lhs.function[index];
                 lhs.function[index] = rhs.function[index];
                 rhs.function[index] = byte;
             }
 
-            copier_type copier;
-            copier = lhs.copier;
+            copier_type copier = lhs.copier;
             lhs.copier = rhs.copier;
             rhs.copier = copier;
 
-            executor_type executor;
-            executor = lhs.executor;
+            executor_type executor = lhs.executor;
             lhs.executor = rhs.executor;
             rhs.executor = executor;
 
-            destructor_type destructor;
-            destructor = lhs.destructor;
+            destructor_type destructor = lhs.destructor;
             lhs.destructor = rhs.destructor;
             rhs.destructor = destructor;
         }
