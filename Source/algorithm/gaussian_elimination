@@ -1,0 +1,124 @@
+/*
+The MIT License
+Copyright (c) 2020 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_GAUSSIAN_ELIMINATION_HPP
+#define GTL_GAUSSIAN_ELIMINATION_HPP
+
+namespace gtl {
+    /// @brief  Gaussian elimination is an algorithm for solving sets of linear simultaneous equations.
+    /// @tparam scalar_type The floating point type used to represent values in the equations.
+    /// @tparam variable_count The number of variables in the equations.
+    template <typename scalar_type, unsigned long long int variable_count>
+    class gaussian_elimination final {
+    private:
+        static_assert(variable_count > 0, "There must be at least one variable.");
+
+    public:
+        /// @brief  Structure to store a representation of an equation in the form: "coefficients[0] x + coefficients[1] y + coefficients[2] z = result".
+        struct equation_type {
+            /// @brief  The coefficients are the numbers before each variable.
+            scalar_type coefficients[variable_count];
+
+            /// @brief  The result is the number on the other side of the equation.
+            scalar_type result;
+        };
+
+        /// @brief  Structure to store a set of linear simultaneous equations to be solved.
+        struct problem_type {
+            /// @brief  Array of linear simultaneous equations, there must be the same number of equations as there are variables to solve.
+            equation_type equations[variable_count];
+        };
+
+        /// @brief  Structure to store the solution to a problem.
+        struct solution_type {
+            /// @brief  Array of the values of each variable in the solution.
+            scalar_type variables[variable_count];
+        };
+
+    private:
+        /// @brief  Deleted constructor.
+        gaussian_elimination() = delete;
+
+    public:
+        /// @brief  Try and solve a set of linear simultaneous equations.
+        /// @param  problem The set of linear simultaneous equations to solve.
+        /// @param  solution The values of each variable, if a solution was found.
+        /// @return true if the set of linear simultaneous equations was solved successfully, false otherwise.
+        /// @note   A failure to solve can be caused by either a failure to successfully pivot, or a set of unsolvable equations.
+        static bool solve(const problem_type& problem, solution_type& solution) {
+
+            // Clear solution.
+            solution = solution_type{};
+
+            problem_type problem_pivoted = problem;
+
+            // Pivot array if required using the "first non-zero pivot" strategy.
+            // Warning: This strategy can fail for valid sets of equations, resulting in no solution.
+            for (unsigned long long int i = 0; i < variable_count; ++i) {
+                // If this equation needs to be swapped.
+                if (problem_pivoted.equations[i].coefficients[i] == 0) {
+                    // Find a suitable equation from the remaining.
+                    for (unsigned long long int j = i + 1; j < variable_count; ++j) {
+                        if (problem_pivoted.equations[i].coefficients[j] != 0) {
+                            equation_type temp = problem_pivoted.equations[i];
+                            problem_pivoted.equations[i] = problem_pivoted.equations[j];
+                            problem_pivoted.equations[j] = temp;
+                            break;
+                        }
+                    }
+                    if (problem_pivoted.equations[i].coefficients[i] == 0) {
+                        // Couldn't swap equation below current equation.
+                        return false;
+                    }
+                }
+            }
+
+            // Convert array to solvable form.
+            for (unsigned long long int i = 0; i < variable_count - 1; ++i) {
+                // For each equation below this one.
+                for (unsigned long long int j = i; j < variable_count - 1; ++j) {
+                    // Calculate division factor.
+                    scalar_type factor = problem_pivoted.equations[j + 1].coefficients[i] / problem_pivoted.equations[i].coefficients[i];
+                    // Apply factor to all coefficients of this equation.
+                    for (unsigned long long int k = i; k < variable_count; ++k) {
+                        problem_pivoted.equations[j + 1].coefficients[k] = (problem_pivoted.equations[j + 1].coefficients[k] - (factor * problem_pivoted.equations[i].coefficients[k]));
+                    }
+                    // Apply factor to the result of this equation.
+                    problem_pivoted.equations[j + 1].result = (problem_pivoted.equations[j + 1].result - (factor * problem_pivoted.equations[i].result));
+                }
+            }
+
+            // Backsolve from the last equation.
+            for (unsigned long long int i = variable_count; i > 0; --i) {
+                // Add the contributions of each result.
+                for (unsigned long long int j = 0; j < variable_count; ++j) {
+                    solution.variables[i - 1] += (problem_pivoted.equations[i - 1].coefficients[j] * solution.variables[j]);
+                }
+                // Final answer is the result minus the solution divided by its current parameter
+                solution.variables[i - 1] = ((problem_pivoted.equations[i - 1].result - solution.variables[i - 1]) / problem_pivoted.equations[i - 1].coefficients[i - 1]);
+            }
+
+            return true;
+        }
+    };
+}
+
+#endif // GTL_GAUSSIAN_ELIMINATION_HPP
