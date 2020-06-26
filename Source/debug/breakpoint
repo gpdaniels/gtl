@@ -36,31 +36,31 @@ namespace breakpoint {
 
         #if (defined(__i386__) || defined(_M_IX86))
 
-            #define GTL_BREAKPOINT() ([]() __attribute__((always_inline)) -> void { asm volatile("int $0x03"); }())
+            #define GTL_BREAKPOINT() ([](){ asm volatile("int $0x03"); }())
 
         #elif (defined(__x86_64__) || defined(_M_X64))
 
-            #define GTL_BREAKPOINT() ([]() __attribute__((always_inline)) -> void { asm volatile("int $0x03"); }())
+            #define GTL_BREAKPOINT() ([](){ asm volatile("int $0x03"); }())
 
         #elif (defined(__arm__) || defined(_M_ARM))
 
             #if defined(__thumb__)
 
-                #define GTL_BREAKPOINT() ([]() __attribute__((always_inline)) -> void { asm volatile(".inst 0xde01"); }())
+                #define GTL_BREAKPOINT() ([](){ asm volatile(".inst 0xde01"); }())
 
             #else
 
-                #define GTL_BREAKPOINT() ([]() __attribute__((always_inline)) -> void { asm volatile(".inst 0xe7f001f0"); }())
+                #define GTL_BREAKPOINT() ([](){ asm volatile(".inst 0xe7f001f0"); }())
 
             #endif
 
         #elif (defined(__aarch64__))
 
-            #define GTL_BREAKPOINT() ([]() __attribute__((always_inline)) -> void { asm volatile(".inst 0xd4200000"); }())
+            #define GTL_BREAKPOINT() ([](){ asm volatile(".inst 0xd4200000"); }())
 
         #else
 
-            #define GTL_BREAKPOINT() ([]() __attribute__((always_inline)) -> void {}())
+            #define GTL_BREAKPOINT() ([](){}())
 
         #endif
 
