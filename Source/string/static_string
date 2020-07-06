@@ -19,13 +19,13 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef GTL_STRING_LITERAL_HPP
-#define GTL_STRING_LITERAL_HPP
+#ifndef GTL_STATIC_STRING_HPP
+#define GTL_STATIC_STRING_HPP
 
 namespace gtl {
-    class string_literal {
+    class static_string {
 
     };
 }
 
-#endif // GTL_STRING_LITERAL_HPP
+#endif // GTL_STATIC_STRING_HPP

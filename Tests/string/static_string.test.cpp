@@ -22,7 +22,7 @@ THE SOFTWARE
 #include <optimise.tests.hpp>
 #include <require.tests.hpp>
 
-#include <string/string_literal>
+#include <string/static_string>
 
 #if defined(_MSC_VER)
 #   pragma warning(push, 0)
@@ -34,18 +34,18 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(string_literal, traits, standard) {
-    REQUIRE((std::is_pod<gtl::string_literal>::value == true));
+TEST(static_string, traits, standard) {
+    REQUIRE((std::is_pod<gtl::static_string>::value == true));
 
-    REQUIRE((std::is_trivial<gtl::string_literal>::value == true));
+    REQUIRE((std::is_trivial<gtl::static_string>::value == true));
 
-    REQUIRE((std::is_trivially_copyable<gtl::string_literal>::value == true));
+    REQUIRE((std::is_trivially_copyable<gtl::static_string>::value == true));
 
-    REQUIRE((std::is_standard_layout<gtl::string_literal>::value == true));
+    REQUIRE((std::is_standard_layout<gtl::static_string>::value == true));
 }
 
-TEST(string_literal, constructor, empty) {
-    gtl::string_literal string_literal;
-    testbench::do_not_optimise_away(string_literal);
+TEST(static_string, constructor, empty) {
+    gtl::static_string static_string;
+    testbench::do_not_optimise_away(static_string);
 }
 
