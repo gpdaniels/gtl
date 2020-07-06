@@ -26,7 +26,7 @@ THE SOFTWARE
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()
 #   endif
-/// @brief A simple assert macro to break the program if the hash is misused.
+/// @brief A simple assert macro to break the program if the crc is misused.
 #   define GTL_CRC_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
