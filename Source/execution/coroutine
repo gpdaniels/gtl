@@ -440,7 +440,7 @@ namespace gtl {
                 signal_stack.ss_sp = reinterpret_cast<void*>((reinterpret_cast<std::uintptr_t>(this->stack) + (coroutine::stack_alignment - 1)) & ~std::uintptr_t(coroutine::stack_alignment - 1));
                 signal_stack.ss_size = coroutine::stack_size;
                 signal_stack.ss_flags = 0;
-                stack_t parent_signal_stack;
+                stack_t parent_signal_stack = {};
                 if (sigaltstack(&signal_stack, &parent_signal_stack) != 0) {
                     std::terminate();
                 }
