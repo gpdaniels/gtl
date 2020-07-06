@@ -891,6 +891,7 @@ namespace gtl {
         /// @return The decimal length of the big number, equal to the number of digits written.
         unsigned long long int to_string(char* buffer, const unsigned long long int length) {
             GTL_BIG_UNSIGNED_ASSERT(length > this->get_length_decimal(), "Buffer length must be greater than decimal length of number.");
+            static_cast<void>(length);
             big_unsigned temp(*this);
             // Loop and decimate the big number storing the remainder as the current digit ascii char.
             unsigned long long int digit_index = 0;
