@@ -30,6 +30,7 @@ The current classes are as described below:
 |-------------------------:|:----------------------------------------------------------------------------------------|
 |                  **any** | Class that can hold any variable type.                                                  |
 |             **array_nd** | N-dimensional statically or dynamically sized array.                                    |
+|               **lambda** | Lambda function class that uses the heap for storage.                                   |
 |          **ring_buffer** | Statically sized thread-safe multi-producer multi-consumer ring-buffer.                 |
 |      **static_array_nd** | N-dimensional statically sized array.                                                   |
 |        **static_lambda** | Lambda function class that uses the stack for storage.                                  |
