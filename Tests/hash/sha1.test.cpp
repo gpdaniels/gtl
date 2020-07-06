@@ -19,7 +19,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
-#include <benchmark.tests.hpp>
+#include <optimise.tests.hpp>
 #include <comparison.tests.hpp>
 #include <require.tests.hpp>
 
@@ -102,7 +102,7 @@ TEST(sha1, evaluate, hash_as_integer) {
 
     for (unsigned int i = 0; i < data_count; ++i) {
         sha1.reset();
-        sha1.consume(data[i], strlen(data[i]));
+        sha1.consume(data[i], testbench::string_length(data[i]));
         sha1.finalise();
         gtl::sha1::hash_type hash = sha1.get_hash();
 
@@ -141,7 +141,7 @@ TEST(sha1, evaluate, hash_as_string) {
     gtl::sha1 sha1;
     for (unsigned int i = 0; i < data_count; ++i) {
         sha1.reset();
-        sha1.consume(data[i], strlen(data[i]));
+        sha1.consume(data[i], testbench::string_length(data[i]));
         sha1.finalise();
         gtl::sha1::hash_type hash = sha1.get_hash();
 
@@ -188,8 +188,8 @@ TEST(sha1, evaluate, partial_insert) {
     gtl::sha1 sha1;
     for (unsigned int i = 0; i < data_count; ++i) {
         sha1.reset();
-        sha1.consume(data1[i], strlen(data1[i]));
-        sha1.consume(data2[i], strlen(data2[i]));
+        sha1.consume(data1[i], testbench::string_length(data1[i]));
+        sha1.consume(data2[i], testbench::string_length(data2[i]));
         sha1.finalise();
         gtl::sha1::hash_type hash = sha1.get_hash();
 

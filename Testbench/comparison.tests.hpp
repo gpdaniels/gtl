@@ -19,10 +19,12 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef COMPARISON_TESTS_HPP
-#define COMPARISON_TESTS_HPP
+#ifndef GTL_COMPARISON_TESTS_HPP
+#define GTL_COMPARISON_TESTS_HPP
 
 namespace testbench {
+    unsigned long long int  string_length(const char* string);
+
     bool is_memory_same(const void* lhs, const void* rhs, unsigned int length);
 
     bool is_string_same(const char* lhs, const char* rhs);
@@ -76,4 +78,4 @@ namespace testbench {
 
 }
 
-#endif // COMPARISON_TESTS_HPP
+#endif // GTL_COMPARISON_TESTS_HPP

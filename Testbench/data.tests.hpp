@@ -19,8 +19,8 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef DATA_TESTS_HPP
-#define DATA_TESTS_HPP
+#ifndef GTL_DATA_TESTS_HPP
+#define GTL_DATA_TESTS_HPP
 
 namespace testbench {
     // Useful test data.
@@ -71,4 +71,4 @@ namespace testbench {
     #undef TEST_DATA_STRUCT
 }
 
-#endif // DATA_TESTS_HPP
+#endif // GTL_DATA_TESTS_HPP

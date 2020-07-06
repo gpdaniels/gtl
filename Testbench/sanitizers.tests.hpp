@@ -18,6 +18,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE
 */
 
+#pragma once
+#ifndef GTL_SANITIZERS_TESTS_HPP
+#define GTL_SANITIZERS_TESTS_HPP
+
 namespace testbench {
 
 }
@@ -69,3 +73,5 @@ namespace testbench {
 #      define GTL_HAS_SANITIZER_UNDEFINED_BEHAVIOR 0
 #   endif
 #endif
+
+#endif // GTL_SANITIZERS_TESTS_HPP

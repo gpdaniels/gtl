@@ -19,7 +19,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
-#include <benchmark.tests.hpp>
+#include <optimise.tests.hpp>
 #include <require.tests.hpp>
 
 #include <io/speaker>

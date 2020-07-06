@@ -19,8 +19,8 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef TEMPLATE_TESTS_HPP
-#define TEMPLATE_TESTS_HPP
+#ifndef GTL_TEMPLATE_TESTS_HPP
+#define GTL_TEMPLATE_TESTS_HPP
 
 namespace testbench {
     // For testing templates a method of storing types and looping over them is required.
@@ -196,4 +196,4 @@ namespace testbench {
     >;
 }
 
-#endif // TEMPLATE_TESTS_HPP
+#endif // GTL_TEMPLATE_TESTS_HPP

@@ -19,8 +19,8 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef UNUSED_TESTS_HPP
-#define UNUSED_TESTS_HPP
+#ifndef GTL_UNUSED_TESTS_HPP
+#define GTL_UNUSED_TESTS_HPP
 
 namespace testbench {
 
@@ -29,4 +29,4 @@ namespace testbench {
 /// @brief  A helper macro to prevent compiler warnings about unused variables.
 #define UNUSED(VARIABLE) (static_cast<void>(VARIABLE))
 
-#endif // UNUSED_TESTS_HPP
+#endif // GTL_UNUSED_TESTS_HPP

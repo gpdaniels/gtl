@@ -19,8 +19,8 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef MAIN_TESTS_HPP
-#define MAIN_TESTS_HPP
+#ifndef GTL_MAIN_TESTS_HPP
+#define GTL_MAIN_TESTS_HPP
 
 // These macros are defined in the main tests header as they are the minumum required to run tests.
 // They require the test_node type.
@@ -48,4 +48,4 @@ THE SOFTWARE
 // Declare the main function.
 int main(int argument_count, char* arguments[]);
 
-#endif // MAIN_TESTS_HPP
+#endif // GTL_MAIN_TESTS_HPP

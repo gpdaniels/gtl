@@ -19,7 +19,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
-#include <benchmark.tests.hpp>
+#include <optimise.tests.hpp>
 #include <comparison.tests.hpp>
 #include <require.tests.hpp>
 #include <template.tests.hpp>
@@ -147,7 +147,7 @@ TEST(crc, evaluate, hash_as_integer) {
             gtl::crc<value> crc;
             for (unsigned int i = 0; i < data_count; ++i) {
                 crc.reset();
-                crc.consume(&data[i][0], strlen(&data[i][0]));
+                crc.consume(&data[i][0], testbench::string_length(&data[i][0]));
                 crc.finalise();
 
                 typename gtl::crc<value>::hash_type hash = crc.get_hash();
@@ -271,7 +271,7 @@ TEST(crc, evaluate, hash_as_string) {
             gtl::crc<value> crc;
             for (unsigned int i = 0; i < data_count; ++i) {
                 crc.reset();
-                crc.consume(&data[i][0], strlen(&data[i][0]));
+                crc.consume(&data[i][0], testbench::string_length(&data[i][0]));
                 crc.finalise();
 
                 typename gtl::crc<value>::hash_type hash = crc.get_hash();
@@ -342,8 +342,8 @@ TEST(crc, evaluate, partial_insert) {
             gtl::crc<value> crc;
             for (unsigned int i = 0; i < data_count; ++i) {
                 crc.reset();
-                crc.consume(&data1[i][0], strlen(&data1[i][0]));
-                crc.consume(&data2[i][0], strlen(&data2[i][0]));
+                crc.consume(&data1[i][0], testbench::string_length(&data1[i][0]));
+                crc.consume(&data2[i][0], testbench::string_length(&data2[i][0]));
                 crc.finalise();
 
                 typename gtl::crc<value>::hash_type hash = crc.get_hash();

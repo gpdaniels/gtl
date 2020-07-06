@@ -19,9 +19,10 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef REQUIRE_TESTS_HPP
-#define REQUIRE_TESTS_HPP
+#ifndef GTL_REQUIRE_TESTS_HPP
+#define GTL_REQUIRE_TESTS_HPP
 
+#include "ignored.tests.hpp"
 #include "print.tests.hpp"
 #include "unused.tests.hpp"
 
@@ -93,4 +94,4 @@ namespace testbench {
         )                                                                                               \
     )
 
-#endif // REQUIRE_TESTS_HPP
+#endif // GTL_REQUIRE_TESTS_HPP

@@ -19,8 +19,8 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef PRINT_TESTS_HPP
-#define PRINT_TESTS_HPP
+#ifndef GTL_PRINT_TESTS_HPP
+#define GTL_PRINT_TESTS_HPP
 
 #if defined(_MSC_VER)
 #   pragma warning(push, 0)
@@ -85,4 +85,4 @@ namespace testbench {
 /// @brief  Print the output format.
 #define PRINT(...) (testbench::print(stderr, __VA_ARGS__))
 
-#endif // PRINT_TESTS_HPP
+#endif // GTL_PRINT_TESTS_HPP

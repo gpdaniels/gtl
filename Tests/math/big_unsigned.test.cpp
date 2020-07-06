@@ -19,7 +19,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
-#include <benchmark.tests.hpp>
+#include <optimise.tests.hpp>
 #include <comparison.tests.hpp>
 #include <require.tests.hpp>
 
@@ -116,11 +116,11 @@ TEST(big_unsigned, constructor, string) {
     REQUIRE(big_unsigned == 123456);
 
     constexpr static const char* two_power_95 = "39614081257132168796771975168";
-    gtl::big_unsigned big_unsigned_95(two_power_95, strlen(two_power_95));
+    gtl::big_unsigned big_unsigned_95(two_power_95, testbench::string_length(two_power_95));
     REQUIRE(check_power_of_two(big_unsigned_95, 0, 95, 1));
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(check_power_of_two(big_unsigned_333, 0, 333, 1));
 }
 
@@ -130,12 +130,12 @@ TEST(big_unsigned, constructor, copy) {
     REQUIRE(big_unsigned_copy == 123456);
 
     constexpr static const char* two_power_95 = "39614081257132168796771975168";
-    gtl::big_unsigned big_unsigned_95(two_power_95, strlen(two_power_95));
+    gtl::big_unsigned big_unsigned_95(two_power_95, testbench::string_length(two_power_95));
     gtl::big_unsigned big_unsigned_95_copy(big_unsigned_95);
     REQUIRE(check_power_of_two(big_unsigned_95_copy, 0, 95, 1));
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     gtl::big_unsigned big_unsigned_333_copy(big_unsigned_333);
     REQUIRE(check_power_of_two(big_unsigned_333_copy, 0, 333, 1));
 }
@@ -146,12 +146,12 @@ TEST(big_unsigned, constructor, move) {
     REQUIRE(big_unsigned_move == 123456);
 
     constexpr static const char* two_power_95 = "39614081257132168796771975168";
-    gtl::big_unsigned big_unsigned_95(two_power_95, strlen(two_power_95));
+    gtl::big_unsigned big_unsigned_95(two_power_95, testbench::string_length(two_power_95));
     gtl::big_unsigned big_unsigned_95_move(std::move(big_unsigned_95));
     REQUIRE(check_power_of_two(big_unsigned_95_move, 0, 95, 1));
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     gtl::big_unsigned big_unsigned_333_move(std::move(big_unsigned_333));
     REQUIRE(check_power_of_two(big_unsigned_333_move, 0, 333, 1));
 }
@@ -162,12 +162,12 @@ TEST(big_unsigned, operator, copy) {
     REQUIRE(big_unsigned_copy == 123456);
 
     constexpr static const char* two_power_95 = "39614081257132168796771975168";
-    gtl::big_unsigned big_unsigned_95(two_power_95, strlen(two_power_95));
+    gtl::big_unsigned big_unsigned_95(two_power_95, testbench::string_length(two_power_95));
     gtl::big_unsigned big_unsigned_95_copy = big_unsigned_95;
     REQUIRE(check_power_of_two(big_unsigned_95_copy, 0, 95, 1));
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     gtl::big_unsigned big_unsigned_333_copy = big_unsigned_333;
     REQUIRE(check_power_of_two(big_unsigned_333_copy, 0, 333, 1));
 }
@@ -178,12 +178,12 @@ TEST(big_unsigned, operator, move) {
     REQUIRE(big_unsigned_move == 123456);
 
     constexpr static const char* two_power_95 = "39614081257132168796771975168";
-    gtl::big_unsigned big_unsigned_95(two_power_95, strlen(two_power_95));
+    gtl::big_unsigned big_unsigned_95(two_power_95, testbench::string_length(two_power_95));
     gtl::big_unsigned big_unsigned_95_move = std::move(big_unsigned_95);
     REQUIRE(check_power_of_two(big_unsigned_95_move, 0, 95, 1));
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     gtl::big_unsigned big_unsigned_333_move = std::move(big_unsigned_333);
     REQUIRE(check_power_of_two(big_unsigned_333_move, 0, 333, 1));
 }
@@ -203,7 +203,7 @@ TEST(big_unsigned, operator, increment_pre) {
     REQUIRE(big_unsigned == 124);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(check_power_of_two(big_unsigned_333, 0, 333, 1));
     REQUIRE(check_power_of_two(++big_unsigned_333, 1, 333, 1));
     REQUIRE(check_power_of_two(big_unsigned_333, 1, 333, 1));
@@ -216,7 +216,7 @@ TEST(big_unsigned, operator, increment_post) {
     REQUIRE(big_unsigned == 124);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(check_power_of_two(big_unsigned_333, 0, 333, 1));
     REQUIRE(check_power_of_two(big_unsigned_333++, 0, 333, 1));
     REQUIRE(check_power_of_two(big_unsigned_333, 1, 333, 1));
@@ -229,7 +229,7 @@ TEST(big_unsigned, operator, decrement_pre) {
     REQUIRE(big_unsigned == 122);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(check_power_of_two(big_unsigned_333, 0, 333, 1));
     REQUIRE(check_power_of_two(--big_unsigned_333, -1, 333, 1));
     REQUIRE(check_power_of_two(big_unsigned_333, -1, 333, 1));
@@ -242,7 +242,7 @@ TEST(big_unsigned, operator, decrement_post) {
     REQUIRE(big_unsigned == 122);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(check_power_of_two(big_unsigned_333, 0, 333, 1));
     REQUIRE(check_power_of_two(big_unsigned_333--, 0, 333, 1));
     REQUIRE(check_power_of_two(big_unsigned_333, -1, 333, 1));
@@ -261,7 +261,7 @@ TEST(big_unsigned, operator, add) {
     REQUIRE(gtl::big_unsigned(0) + big_unsigned_rhs == big_unsigned_rhs);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(check_power_of_two(big_unsigned_333 + 1, 1, 333, 1));
     REQUIRE(check_power_of_two(big_unsigned_333 + 333, 333, 333, 1));
 }
@@ -279,7 +279,7 @@ TEST(big_unsigned, operator, subtract) {
     REQUIRE(big_unsigned_rhs - 0 == big_unsigned_rhs);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(check_power_of_two(big_unsigned_333 - 1, -1, 333, 1));
     REQUIRE(check_power_of_two(big_unsigned_333 - 333, -333, 333, 1));
 }
@@ -297,7 +297,7 @@ TEST(big_unsigned, operator, multiply) {
     REQUIRE(gtl::big_unsigned(0) * big_unsigned_rhs == 0);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(check_power_of_two(big_unsigned_333 * 1, 0, 333, 1));
     REQUIRE(check_power_of_two(big_unsigned_333 * 333, 0, 333, 333));
 }
@@ -315,7 +315,7 @@ TEST(big_unsigned, operator, divide) {
     REQUIRE(gtl::big_unsigned(0) / big_unsigned_rhs == 0);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(check_power_of_two(big_unsigned_333 / 1, 0, 333, 1));
     REQUIRE(check_power_of_two(big_unsigned_333 / 1024, 0, 333 - 10, 1));
 }
@@ -331,7 +331,7 @@ TEST(big_unsigned, operator, modulo) {
     REQUIRE(big_unsigned_rhs % 1 == rhs % 1);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(check_power_of_two(big_unsigned_333 % 1, 0, 0, 0));
     REQUIRE(check_power_of_two(big_unsigned_333 % 2, 0, 0, 0));
     REQUIRE(check_power_of_two(big_unsigned_333 % 3, 2, 0, 0));
@@ -357,7 +357,7 @@ TEST(big_unsigned, operator, bit_shift_left) {
     REQUIRE(big_unsigned_rhs << 61 == lhs);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(check_power_of_two(big_unsigned_333 << 0, 0, 333, 1));
     REQUIRE(check_power_of_two(big_unsigned_333 << 1, 0, 334, 1));
     REQUIRE(check_power_of_two(big_unsigned_333 << 2, 0, 335, 1));
@@ -376,7 +376,7 @@ TEST(big_unsigned, operator, bit_shift_right) {
     REQUIRE(big_unsigned_lhs >> 61 == rhs);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(check_power_of_two(big_unsigned_333 >> 0, 0, 333, 1));
     REQUIRE(check_power_of_two(big_unsigned_333 >> 1, 0, 332, 1));
     REQUIRE(check_power_of_two(big_unsigned_333 >> 2, 0, 331, 1));
@@ -401,7 +401,7 @@ TEST(big_unsigned, operator, bit_and) {
     REQUIRE(((big_unsigned_rhs - 1) & 1) == 1);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE((big_unsigned_333 & big_unsigned_333) == big_unsigned_333);
     REQUIRE((big_unsigned_333 & 1) == 0);
     REQUIRE((big_unsigned_333 & 0) == 0);
@@ -430,7 +430,7 @@ TEST(big_unsigned, operator, bit_or) {
     REQUIRE(((big_unsigned_rhs - 1) | 1) == ((rhs - 1) | 1));
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE((big_unsigned_333 | big_unsigned_333) == big_unsigned_333);
     REQUIRE((big_unsigned_333 | 1) == (gtl::big_unsigned(1) | big_unsigned_333));
     REQUIRE((big_unsigned_333 | 0) == big_unsigned_333);
@@ -459,7 +459,7 @@ TEST(big_unsigned, operator, bit_xor) {
     REQUIRE(((big_unsigned_rhs - 1) ^ 1) == ((rhs - 1) ^ 1));
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE((big_unsigned_333 ^ big_unsigned_333) == 0);
     REQUIRE((big_unsigned_333 ^ 1) == (gtl::big_unsigned(1) ^ big_unsigned_333));
     REQUIRE((big_unsigned_333 ^ 0) == big_unsigned_333);
@@ -480,8 +480,8 @@ TEST(big_unsigned, operator, bit_not) {
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
     constexpr static const char* two_power_352 ="9173994463960286046443283581208347763186259956673124494950355357547691504353939232280074212440502746218496";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
-    gtl::big_unsigned big_unsigned_352(two_power_352, strlen(two_power_352));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
+    gtl::big_unsigned big_unsigned_352(two_power_352, testbench::string_length(two_power_352));
     REQUIRE(~big_unsigned_333 == ((big_unsigned_352 - 1) ^ big_unsigned_333));
     REQUIRE(~(big_unsigned_352 - 1) == 0);
 }
@@ -499,8 +499,8 @@ TEST(big_unsigned, operator, bit_and_not) {
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
     constexpr static const char* two_power_352 ="9173994463960286046443283581208347763186259956673124494950355357547691504353939232280074212440502746218496";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
-    gtl::big_unsigned big_unsigned_352(two_power_352, strlen(two_power_352));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
+    gtl::big_unsigned big_unsigned_352(two_power_352, testbench::string_length(two_power_352));
     REQUIRE(gtl::big_unsigned::bit_and_not(big_unsigned_333, big_unsigned_352) == big_unsigned_333);
     REQUIRE(gtl::big_unsigned::bit_and_not(big_unsigned_352, big_unsigned_333) == 0);
     REQUIRE(gtl::big_unsigned::bit_and_not(big_unsigned_333, big_unsigned_333) == 0);
@@ -519,7 +519,7 @@ TEST(big_unsigned, operator, less_than) {
     REQUIRE((big_unsigned_rhs < big_unsigned_rhs) == false);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE((big_unsigned_lhs < big_unsigned_333) == true);
     REQUIRE((big_unsigned_rhs < big_unsigned_333) == true);
     REQUIRE((big_unsigned_333 < big_unsigned_lhs) == false);
@@ -539,7 +539,7 @@ TEST(big_unsigned, operator, greater_than) {
     REQUIRE((big_unsigned_rhs > big_unsigned_rhs) == false);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE((big_unsigned_lhs > big_unsigned_333) == false);
     REQUIRE((big_unsigned_rhs > big_unsigned_333) == false);
     REQUIRE((big_unsigned_333 > big_unsigned_lhs) == true);
@@ -559,7 +559,7 @@ TEST(big_unsigned, operator, less_than_or_equal_to) {
     REQUIRE((big_unsigned_rhs <= big_unsigned_rhs) == true);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE((big_unsigned_lhs <= big_unsigned_333) == true);
     REQUIRE((big_unsigned_rhs <= big_unsigned_333) == true);
     REQUIRE((big_unsigned_333 <= big_unsigned_lhs) == false);
@@ -579,7 +579,7 @@ TEST(big_unsigned, operator, greater_than_or_equal_to) {
     REQUIRE((big_unsigned_rhs >= big_unsigned_rhs) == true);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE((big_unsigned_lhs >= big_unsigned_333) == false);
     REQUIRE((big_unsigned_rhs >= big_unsigned_333) == false);
     REQUIRE((big_unsigned_333 >= big_unsigned_lhs) == true);
@@ -599,7 +599,7 @@ TEST(big_unsigned, operator, equal_to) {
     REQUIRE((big_unsigned_rhs == big_unsigned_rhs) == true);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE((big_unsigned_lhs == big_unsigned_333) == false);
     REQUIRE((big_unsigned_rhs == big_unsigned_333) == false);
     REQUIRE((big_unsigned_333 == big_unsigned_lhs) == false);
@@ -619,7 +619,7 @@ TEST(big_unsigned, operator, not_equal_to) {
     REQUIRE((big_unsigned_rhs != big_unsigned_rhs) == false);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE((big_unsigned_lhs != big_unsigned_333) == true);
     REQUIRE((big_unsigned_rhs != big_unsigned_333) == true);
     REQUIRE((big_unsigned_333 != big_unsigned_lhs) == true);
@@ -637,7 +637,7 @@ TEST(big_unsigned, operator, get_length_bits) {
     REQUIRE(big_unsigned_rhs.get_length_bits() == 32);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(big_unsigned_333.get_length_bits() == 352);
 }
 
@@ -651,7 +651,7 @@ TEST(big_unsigned, operator, get_length_bytes) {
     REQUIRE(big_unsigned_rhs.get_length_bytes() == 4);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(big_unsigned_333.get_length_bytes() == 44);
 }
 
@@ -665,7 +665,7 @@ TEST(big_unsigned, operator, get_length_decimal) {
     REQUIRE(big_unsigned_rhs.get_length_decimal() == 1);
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(big_unsigned_333.get_length_decimal() == 101);
 }
 
@@ -684,7 +684,7 @@ TEST(big_unsigned, operator, to_string) {
 
     constexpr static const char* two_power_333 ="17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
     char string_333[102];
-    gtl::big_unsigned big_unsigned_333(two_power_333, strlen(two_power_333));
+    gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(big_unsigned_333.to_string(string_333, 102) == 101);
     REQUIRE(testbench::is_string_same(string_333, two_power_333));
 }
