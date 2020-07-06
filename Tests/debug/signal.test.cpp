@@ -48,10 +48,9 @@ TEST(signal, traits, standard) {
 
     REQUIRE((std::is_trivially_copyable<gtl::signal<SIGUSR1>>::value == false));
 
-    #if defined(__clang__) || defined(_WIN32)
+    #if 0
+        // Not reliable across compiler / os.
         REQUIRE((std::is_standard_layout<gtl::signal<SIGUSR1>>::value == true));
-    #else
-        REQUIRE((std::is_standard_layout<gtl::signal<SIGUSR1>>::value == false));
     #endif
 }
 
