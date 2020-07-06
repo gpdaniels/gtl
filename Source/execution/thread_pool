@@ -197,7 +197,7 @@ namespace gtl {
 
                             // If there's no tasks left on this queue, remove it.
                             else {
-                                this->queues.erase(this->queues.begin());
+                                this->queues.erase(queue);
                             }
                         }
                     }
