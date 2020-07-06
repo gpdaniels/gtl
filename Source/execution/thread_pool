@@ -151,7 +151,7 @@ namespace gtl {
 
         /// @brief  Constructor that allocates the internal threads and starts them running.
         /// @param  thread_count The number of threads to use.
-        thread_pool(unsigned int thread_count = std::min(std::thread::hardware_concurrency(), 1u) - 1u)
+        thread_pool(unsigned int thread_count = std::max(std::thread::hardware_concurrency(), 1u) - 1u)
             : running(true) {
             this->threads.reserve(thread_count);
             for (unsigned int thread_index = 0; thread_index < thread_count; ++ thread_index) {
