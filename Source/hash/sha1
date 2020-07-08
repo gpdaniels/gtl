@@ -83,7 +83,7 @@ namespace gtl {
         /// @param  shift The number of bits to rotate by.
         /// @return The value after it has been rotated left by shift bits.
         constexpr static unsigned int rotate_left(unsigned int value, unsigned int shift) {
-            constexpr const unsigned int mask = (8 * sizeof(unsigned int ) - 1);
+            constexpr const unsigned int mask = (8 * sizeof(unsigned int) - 1);
             shift &= mask;
             return (value << shift) | (value >> ((-shift) & mask));
         }

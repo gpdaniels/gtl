@@ -386,7 +386,7 @@ namespace gtl {
         coroutine(function_type&& coroutine_function, argument_types&&... coroutine_arguments)
 #           if !defined(_WIN32)
                 : signal_raised(0)
-                , stack(std::malloc(coroutine::stack_size + (coroutine::stack_alignment - 1))) {
+                , stack(operator new(coroutine::stack_size + (coroutine::stack_alignment - 1))) {
 #           else
                 : stack(nullptr) {
 #           endif

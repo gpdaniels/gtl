@@ -196,7 +196,8 @@ namespace assert {
                 std::abort(),                                                                                                       \
                 0)                                                                                                                  \
             )                                                                                                                       \
-        )
+        )                                                                                                                           \
+
 }}
 
 #endif // GTL_ASSERT_HPP
