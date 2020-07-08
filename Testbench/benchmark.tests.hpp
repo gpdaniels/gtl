@@ -23,59 +23,53 @@ THE SOFTWARE
 #define GTL_BENCHMARK_TESTS_HPP
 
 #include "abort.tests.hpp"
+#include "lambda.tests.hpp"
 #include "optimise.tests.hpp"
 
-#if defined(_MSC_VER)
-#   pragma warning(push, 0)
-#endif
-
-#include <chrono>
-#include <functional>
-
-#if defined(_MSC_VER)
-#   pragma warning(pop)
-#endif
-
 namespace testbench {
+    long long int get_timestamp_nanoseconds();
+
+    double get_difference_seconds(long long int start_nanoseconds, long long int end_nanoseconds);
+
     template <typename type>
-    double benchmark(std::function<type()>&& testFunction, unsigned long long int minimum_iterations = 1) {
+    double benchmark(lambda<type()>&& testFunction, unsigned long long int minimum_iterations = 1) {
         // Warmup
-        do_not_optimise_away(std::forward<std::function<type()>>(testFunction));
+        do_not_optimise_away(testFunction);
 
         // Monitoring variables.
-        std::chrono::steady_clock::time_point Start = std::chrono::steady_clock::now();
-        std::chrono::steady_clock::time_point End = Start;
+        long long int start_nanoseconds = get_timestamp_nanoseconds();
+        long long int end_nanoseconds = start_nanoseconds;
         unsigned long long int iterations = 0;
 
         // Testing
         while (iterations < minimum_iterations) {
 
-            do_not_optimise_away(std::forward<std::function<type()>>(testFunction));
+            do_not_optimise_away(testFunction);
 
             ++iterations;
-            End = std::chrono::steady_clock::now();
+            end_nanoseconds = get_timestamp_nanoseconds();
         }
 
-        return std::chrono::duration<double, std::nano>(End - Start).count() / static_cast<double>(iterations);
+        return get_difference_seconds(end_nanoseconds, start_nanoseconds) / static_cast<double>(iterations);
     }
 
     template <typename type>
-    unsigned long long int benchmark(std::function<type()>&& testFunction, double minimum_runtime) {
+    unsigned long long int benchmark(lambda<type()>&& testFunction, double minimum_runtime) {
         // Warmup
-        do_not_optimise_away(std::forward<std::function<type()>>(testFunction));
+        do_not_optimise_away(testFunction);
 
         // Monitoring variables.
-        std::chrono::steady_clock::time_point Start = std::chrono::steady_clock::now();
-        std::chrono::steady_clock::time_point End = Start;
+        long long int start_nanoseconds = get_timestamp_nanoseconds();
+        long long int end_nanoseconds = start_nanoseconds;
         unsigned long long int iterations = 0;
 
         // Testing
-        while (std::chrono::duration<double>(End - Start).count() < minimum_runtime) {
+        while (get_difference_seconds(end_nanoseconds, start_nanoseconds) < minimum_runtime) {
 
-            do_not_optimise_away(std::forward<std::function<type()>>(testFunction));
+            do_not_optimise_away(testFunction);
 
             ++iterations;
-            End = std::chrono::steady_clock::now();
+            end_nanoseconds = get_timestamp_nanoseconds();
         }
 
         return iterations;

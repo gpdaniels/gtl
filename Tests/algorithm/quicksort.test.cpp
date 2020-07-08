@@ -29,7 +29,10 @@ THE SOFTWARE
 #   pragma warning(push, 0)
 #endif
 
+#include <algorithm>
 #include <array>
+#include <chrono>
+#include <functional>
 #include <random>
 #include <type_traits>
 
@@ -414,7 +417,7 @@ TEST(quicksort, evaluate, benchmark_sort) {
         std::mt19937       engine(seed);
         std::uniform_int_distribution<int> distribution;
         std::vector<int> random_data(size);
-        std::generate(random_data.begin(), random_data.end(), bind(distribution, engine));
+        std::generate(random_data.begin(), random_data.end(), std::bind(distribution, engine));
         return random_data;
     };
 
@@ -457,7 +460,7 @@ TEST(quicksort, evaluate, benchmark_partial) {
         std::mt19937       engine(seed);
         std::uniform_int_distribution<int> distribution;
         std::vector<int> random_data(size);
-        std::generate(random_data.begin(), random_data.end(), bind(distribution, engine));
+        std::generate(random_data.begin(), random_data.end(), std::bind(distribution, engine));
         return random_data;
     };
 

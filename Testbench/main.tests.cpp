@@ -29,8 +29,8 @@ THE SOFTWARE
 int main(int argument_count, char* arguments[]) {
 
     // Disable output buffering.
-    setvbuf(stdout, nullptr, _IONBF, 0);
-    setvbuf(stderr, nullptr, _IONBF, 0);
+    testbench::disable_output_buffering(testbench::output_stream::output);
+    testbench::disable_output_buffering(testbench::output_stream::error);
 
     bool quiet = false;
     const char* filter_file = nullptr;

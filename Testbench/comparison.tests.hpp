@@ -23,7 +23,7 @@ THE SOFTWARE
 #define GTL_COMPARISON_TESTS_HPP
 
 namespace testbench {
-    unsigned long long int  string_length(const char* string);
+    unsigned long long int string_length(const char* string);
 
     bool is_memory_same(const void* lhs, const void* rhs, unsigned int length);
 
@@ -35,7 +35,7 @@ namespace testbench {
     // Macro for generating test functions.
     #define TEST_IS_VALUE_EQUAL_FUNCTION(TYPE)                  \
         template <>                                             \
-        bool is_value_equal(const TYPE& lhs, const TYPE& rhs)
+        bool is_value_equal(const TYPE& lhs, const TYPE& rhs)   \
 
     // Boolean.
     TEST_IS_VALUE_EQUAL_FUNCTION(bool);

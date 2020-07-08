@@ -23,17 +23,7 @@ THE SOFTWARE
 #define GTL_OPTIMISE_TESTS_HPP
 
 #include "abort.tests.hpp"
-
-#if defined(_MSC_VER)
-#   pragma warning(push, 0)
-#endif
-
-#include <functional>
-#include <thread>
-
-#if defined(_MSC_VER)
-#   pragma warning(pop)
-#endif
+#include "lambda.tests.hpp"
 
 extern "C" int putchar(int);
 
@@ -43,6 +33,8 @@ extern "C" int putchar(int);
 #endif
 
 namespace testbench {
+    unsigned long long int get_thread_id();
+
     template <typename type>
     void do_not_optimise_away(type&& value) {
         // To prevent value being optimised away it needs to be used somwhere.
@@ -51,8 +43,8 @@ namespace testbench {
         // However, compilers are smart enough that using an if(false) block is not enough.
         // An if block is required that will never execute and complex enough that the compiler cannot remove it.
         // Enter std::thread::id, the compiler cannot know that the current thread id will never match std::thread::id().
-        static std::thread::id thread_id = std::this_thread::get_id();
-        if (thread_id == std::thread::id()) {
+        static unsigned long long int thread_id = get_thread_id();
+        if (thread_id == 0xFFFFFFFFFFFFFFFF) {
             // Once inside the if block we must now "use" the value.
             for (unsigned long long int index = 0; index < sizeof(type); ++index) {
                 putchar(reinterpret_cast<const char*>(&value)[index]);
@@ -63,7 +55,7 @@ namespace testbench {
     }
 
     template <typename type>
-    void do_not_optimise_away(std::function<type()>&& function) {
+    void do_not_optimise_away(lambda<type()>&& function) {
         // Call function and get returned value.
         volatile type value = function();
 
@@ -73,13 +65,13 @@ namespace testbench {
         // However, compilers are smart enough that using an if(false) block is not enough.
         // An if block is required that will never execute and complex enough that the compiler cannot remove it.
         // Enter std::thread::id, the compiler cannot know that the current thread id will never match std::thread::id().
-        static std::thread::id thread_id = std::this_thread::get_id();
-        if (thread_id == std::thread::id()) {
+        static unsigned long long int thread_id = get_thread_id();
+        if (thread_id == 0xFFFFFFFFFFFFFFFF) {
             // Once inside the if block we must now "use" the function and value.
             for (unsigned long long int index = 0; index < sizeof(type); ++index) {
                 putchar(reinterpret_cast<char*>(&value)[index]);
             }
-            for (unsigned long long int index = 0; index < sizeof(std::function<type()>); ++index) {
+            for (unsigned long long int index = 0; index < sizeof(lambda<type()>); ++index) {
                 putchar(reinterpret_cast<char*>(&function)[index]);
             }
             // To sanity check that this block of code is never reached, abort.
@@ -88,7 +80,7 @@ namespace testbench {
     }
 
     template <>
-    void do_not_optimise_away(std::function<void()>&& function);
+    void do_not_optimise_away(lambda<void()>&& function);
 }
 
 #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER)) && (!defined(__clang__))

@@ -60,7 +60,7 @@ namespace testbench {
         template <>                                             \
         bool is_value_equal(const TYPE& lhs, const TYPE& rhs) { \
             return lhs == rhs;                                  \
-        }
+        }                                                       \
 
     // Boolean.
     TEST_IS_VALUE_EQUAL_FUNCTION(bool)

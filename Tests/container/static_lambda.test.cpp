@@ -105,7 +105,7 @@ TEST(static_lambda, constructor, copying) {
 TEST(static_lambda, constructor, moving) {
     gtl::static_lambda<void(), 128> static_lambda1([](){});
     testbench::do_not_optimise_away(static_lambda1);
-    gtl::static_lambda<void(), 128> static_lambda2(std::move(static_lambda1));
+    gtl::static_lambda<void(), 128> static_lambda2(static_cast<gtl::static_lambda<void(), 128>&&>(static_lambda1));
     testbench::do_not_optimise_away(static_lambda2);
 }
 
@@ -119,7 +119,7 @@ TEST(static_lambda, operator, copying) {
 TEST(static_lambda, operator, moving) {
     gtl::static_lambda<void(), 128> static_lambda1([](){});
     testbench::do_not_optimise_away(static_lambda1);
-    gtl::static_lambda<void(), 128> static_lambda2 = std::move(static_lambda1);
+    gtl::static_lambda<void(), 128> static_lambda2 = static_cast<gtl::static_lambda<void(), 128>&&>(static_lambda1);
     testbench::do_not_optimise_away(static_lambda2);
 }
 
@@ -436,7 +436,7 @@ TEST(static_lambda, evaluation, construction_and_destruction) {
             REQUIRE(operated == 0);
             REQUIRE(destructed == 0);
 
-            gtl::static_lambda<void(), 128> static_lambda(std::move(function));
+            gtl::static_lambda<void(), 128> static_lambda(static_cast<function_type&&>(function));
 
             REQUIRE(constructed == 1);
             REQUIRE(copied == 0);

@@ -57,7 +57,7 @@ TEST(random_mt, constructor, seed_value) {
 }
 
 TEST(random_mt, constructor, seed_array) {
-    std::uint32_t seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
+    unsigned int seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
     gtl::random_mt random_mt(&seed_values[0], 5);
     testbench::do_not_optimise_away(random_mt);
 }
@@ -68,7 +68,7 @@ TEST(random_mt, function, seed_value) {
 }
 
 TEST(random_mt, function, seed_array) {
-    std::uint32_t seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
+    unsigned int seed_values[5] = { 0x01234567, 0x12345678, 0x23456789, 0x34567890, 0x45678901 };
     gtl::random_mt random_mt;
     random_mt.seed(&seed_values[0], 5);
 }
@@ -76,7 +76,7 @@ TEST(random_mt, function, seed_array) {
 TEST(random_mt, function, get_random_raw) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
-    std::uint32_t random_raw = random_mt.get_random_raw();
+    unsigned int random_raw = random_mt.get_random_raw();
     REQUIRE(testbench::is_value_equal(random_raw, 1802874368u), "Pseudo-random number 1 was %u, expected %u", random_raw, 1802874368u);
     random_raw = random_mt.get_random_raw();
     REQUIRE(testbench::is_value_equal(random_raw, 453914126u), "Pseudo-random number 2 was %u, expected %u", random_raw, 453914126u);
@@ -139,7 +139,7 @@ TEST(random_mt, function, get_random_inclusive) {
 TEST(random_mt, function, get_random_bounded_long) {
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
-    std::uint32_t random = random_mt.get_random(0u, 1u);
+    unsigned int random = random_mt.get_random(0u, 1u);
     REQUIRE(testbench::is_value_equal(random, 0u), "Pseudo-random number 1 was %u, expected %u", random, 0u);
     random = random_mt.get_random(0u, 1u);
     REQUIRE(testbench::is_value_equal(random, 0u), "Pseudo-random number 2 was %u, expected %u", random, 0u);

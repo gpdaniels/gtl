@@ -29,6 +29,7 @@ THE SOFTWARE
 #   pragma warning(push, 0)
 #endif
 
+#include <cstdio>
 #include <type_traits>
 
 #if defined(_MSC_VER)
