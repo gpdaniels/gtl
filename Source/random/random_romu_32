@@ -40,7 +40,7 @@ namespace gtl {
 
     private:
         constexpr static unsigned int rotate_left(unsigned int value, unsigned int shift) {
-            const unsigned int mask = (8 * sizeof(unsigned int ) - 1);
+            constexpr const unsigned int mask = (8 * sizeof(unsigned int) - 1);
             shift &= mask;
             return (value << shift) | (value >> ((-shift) & mask));
         }
