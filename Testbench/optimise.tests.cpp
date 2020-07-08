@@ -38,27 +38,9 @@ THE SOFTWARE
 #endif
 
 namespace testbench {
-    template <typename member_type, member_type member, typename connection_id>
-    class private_connection final {
-        friend member_type get_member(connection_id) {
-            return member;
-        }
-    };
-
-    template <typename class_type, typename return_type>
-    struct private_target final {
-        using member_type = return_type class_type::*;
-        using connection_type = return_type&;
-    };
-
-    struct private_connection_to_M_thread final {};
-    private_target<std::thread::id, std::thread::native_handle_type>::member_type get_member(private_connection_to_M_thread);
-    template class private_connection<private_target<std::thread::id, std::thread::native_handle_type>::member_type, &std::thread::id::_M_thread, private_connection_to_M_thread>;
-
-    unsigned long long int get_thread_id() {
-        std::thread::id thread_id = std::this_thread::get_id();
-        private_target<std::thread::id, std::thread::native_handle_type>::connection_type _M_thread = &thread_id->*get_member(private_connection_to_M_thread{});
-        return static_cast<unsigned long long int>(_M_thread);
+    bool check_thread_id() {
+        static std::thread::id thread_id = std::this_thread::get_id();
+        return thread_id == std::thread::id();
     }
 
     template <>
@@ -72,8 +54,7 @@ namespace testbench {
         // However, compilers are smart enough that using an if(false) block is not enough.
         // An if block is required that will never execute and complex enough that the compiler cannot remove it.
         // Enter std::thread::id, the compiler cannot know that the current thread id will never match std::thread::id().
-        static unsigned long long int thread_id = get_thread_id();
-        if (thread_id == 0xFFFFFFFFFFFFFFFF) {
+        if (check_thread_id()) {
             // Once inside the if block we must now "use" the function.
             for (unsigned long long int index = 0; index < sizeof(lambda<void()>); ++index) {
                 putchar(reinterpret_cast<char*>(&function)[index]);

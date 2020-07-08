@@ -33,7 +33,7 @@ extern "C" int putchar(int);
 #endif
 
 namespace testbench {
-    unsigned long long int get_thread_id();
+    bool check_thread_id();
 
     template <typename type>
     void do_not_optimise_away(type&& value) {
@@ -43,8 +43,7 @@ namespace testbench {
         // However, compilers are smart enough that using an if(false) block is not enough.
         // An if block is required that will never execute and complex enough that the compiler cannot remove it.
         // Enter std::thread::id, the compiler cannot know that the current thread id will never match std::thread::id().
-        static unsigned long long int thread_id = get_thread_id();
-        if (thread_id == 0xFFFFFFFFFFFFFFFF) {
+        if (check_thread_id()) {
             // Once inside the if block we must now "use" the value.
             for (unsigned long long int index = 0; index < sizeof(type); ++index) {
                 putchar(reinterpret_cast<const char*>(&value)[index]);
@@ -65,8 +64,7 @@ namespace testbench {
         // However, compilers are smart enough that using an if(false) block is not enough.
         // An if block is required that will never execute and complex enough that the compiler cannot remove it.
         // Enter std::thread::id, the compiler cannot know that the current thread id will never match std::thread::id().
-        static unsigned long long int thread_id = get_thread_id();
-        if (thread_id == 0xFFFFFFFFFFFFFFFF) {
+        if (check_thread_id()) {
             // Once inside the if block we must now "use" the function and value.
             for (unsigned long long int index = 0; index < sizeof(type); ++index) {
                 putchar(reinterpret_cast<char*>(&value)[index]);
