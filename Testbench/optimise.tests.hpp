@@ -25,8 +25,6 @@ THE SOFTWARE
 #include "abort.tests.hpp"
 #include "lambda.tests.hpp"
 
-extern "C" int putchar(int);
-
 #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER)) && (!defined(__clang__))
 #   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
@@ -34,6 +32,7 @@ extern "C" int putchar(int);
 
 namespace testbench {
     bool check_thread_id();
+    void use_character(char character);
 
     template <typename type>
     void do_not_optimise_away(type&& value) {
@@ -46,7 +45,7 @@ namespace testbench {
         if (check_thread_id()) {
             // Once inside the if block we must now "use" the value.
             for (unsigned long long int index = 0; index < sizeof(type); ++index) {
-                putchar(reinterpret_cast<const char*>(&value)[index]);
+                use_character(reinterpret_cast<const char*>(&value)[index]);
             }
             // To sanity check that this block of code is never reached, abort.
             testbench::abort();
@@ -67,10 +66,10 @@ namespace testbench {
         if (check_thread_id()) {
             // Once inside the if block we must now "use" the function and value.
             for (unsigned long long int index = 0; index < sizeof(type); ++index) {
-                putchar(reinterpret_cast<char*>(&value)[index]);
+                use_character(reinterpret_cast<char*>(&value)[index]);
             }
             for (unsigned long long int index = 0; index < sizeof(lambda<type()>); ++index) {
-                putchar(reinterpret_cast<char*>(&function)[index]);
+                use_character(reinterpret_cast<char*>(&function)[index]);
             }
             // To sanity check that this block of code is never reached, abort.
             testbench::abort();

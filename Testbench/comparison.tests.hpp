@@ -25,7 +25,7 @@ THE SOFTWARE
 namespace testbench {
     unsigned long long int string_length(const char* string);
 
-    bool is_memory_same(const void* lhs, const void* rhs, unsigned int length);
+    bool is_memory_same(const void* lhs, const void* rhs, unsigned long long int length);
 
     bool is_string_same(const char* lhs, const char* rhs);
 

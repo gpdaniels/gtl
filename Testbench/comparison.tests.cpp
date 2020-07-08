@@ -32,7 +32,7 @@ namespace testbench {
         return length;
     }
 
-    bool is_memory_same(const void* lhs, const void* rhs, unsigned int length) {
+    bool is_memory_same(const void* lhs, const void* rhs, unsigned long long int length) {
         if ((length > 0) && ((!lhs) || (!rhs))) {
             return false;
         }

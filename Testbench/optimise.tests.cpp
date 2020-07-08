@@ -24,13 +24,13 @@ THE SOFTWARE
 #   pragma warning(push, 0)
 #endif
 
+#include <cstdio>
 #include <functional>
 #include <thread>
 
 #if defined(_MSC_VER)
 #   pragma warning(pop)
 #endif
-
 
 #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER)) && (!defined(__clang__))
 #   pragma GCC diagnostic push
@@ -41,6 +41,10 @@ namespace testbench {
     bool check_thread_id() {
         static std::thread::id thread_id = std::this_thread::get_id();
         return thread_id == std::thread::id();
+    }
+
+    void use_character(char character) {
+        putchar(character);
     }
 
     template <>
@@ -57,7 +61,7 @@ namespace testbench {
         if (check_thread_id()) {
             // Once inside the if block we must now "use" the function.
             for (unsigned long long int index = 0; index < sizeof(lambda<void()>); ++index) {
-                putchar(reinterpret_cast<char*>(&function)[index]);
+                use_character(reinterpret_cast<char*>(&function)[index]);
             }
             // To sanity check that this block of code is never reached, abort.
             testbench::abort();
