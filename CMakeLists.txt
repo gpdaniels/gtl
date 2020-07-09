@@ -27,6 +27,7 @@ SET(PROJECT_NAME "gtl")
 PROJECT(${PROJECT_NAME})
 
 # Settings.
+SET(BUILD_CHECKS ON CACHE BOOL "Enable automatic checking of source code for common mistakes using scripts in 'Check' directory.")
 SET(BUILD_TESTING ON CACHE BOOL "Enable building individual unit test targets.")
 SET(BUILD_MEMCHECK OFF CACHE BOOL "Enable running unit tests through valgrind memcheck.")
 SET(BUILD_COVERAGE OFF CACHE BOOL "Enable generation of unit test code coverage data.")
@@ -616,6 +617,19 @@ IF(BUILD_TESTING)
     SET_TARGET_PROPERTIES(test PROPERTIES EXCLUDE_FROM_ALL TRUE)
     SET_TARGET_PROPERTIES(test PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
     CMAKE_POLICY(POP)
+ENDIF()
+
+###############################################################################
+
+IF(BUILD_CHECKS)
+    # Find all check scripts in the checks directory.
+    FILE(GLOB CHECK_FILES "${CMAKE_SOURCE_DIR}/Checks/*.[Cc][Mm][Aa][Kk][Ee]")
+    
+    # Include all found scripts.
+    FOREACH(CHECK_FILE ${CHECK_FILES})
+        INCLUDE("${CHECK_FILE}")
+    ENDFOREACH()
+    
 ENDIF()
 
 ###############################################################################
