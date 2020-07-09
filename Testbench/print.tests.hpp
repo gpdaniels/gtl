@@ -19,18 +19,8 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef PRINT_TESTS_HPP
-#define PRINT_TESTS_HPP
-
-#if defined(_MSC_VER)
-#   pragma warning(push, 0)
-#endif
-
-#include <cstdio>
-
-#if defined(_MSC_VER)
-#   pragma warning(pop)
-#endif
+#ifndef GTL_PRINT_TESTS_HPP
+#define GTL_PRINT_TESTS_HPP
 
 #if defined(_MSC_VER)
 
@@ -79,10 +69,17 @@ THE SOFTWARE
 #endif
 
 namespace testbench {
-    PRINT_FORMAT_PRINT_DECORATION(1) int print(FILE* stream, PRINT_FORMAT_PRINT_ARGUMENT(const char* format), ...);
+    enum class output_stream {
+        output,
+        error
+    };
+
+    void disable_output_buffering(output_stream stream);
+
+    PRINT_FORMAT_PRINT_DECORATION(1) int print(output_stream stream, PRINT_FORMAT_PRINT_ARGUMENT(const char* format), ...);
 }
 
 /// @brief  Print the output format.
-#define PRINT(...) (testbench::print(stderr, __VA_ARGS__))
+#define PRINT(...) (testbench::print(testbench::output_stream::error, __VA_ARGS__))
 
-#endif // PRINT_TESTS_HPP
+#endif // GTL_PRINT_TESTS_HPP

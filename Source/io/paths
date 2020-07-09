@@ -410,4 +410,3 @@ namespace gtl {
 }
 
 #endif // GTL_PATHS_HPP
-

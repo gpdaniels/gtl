@@ -19,14 +19,14 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef GTL_SHA0_HPP
-#define GTL_SHA0_HPP
+#ifndef GTL_SHA1_HPP
+#define GTL_SHA1_HPP
 
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()
 #   endif
-/// @brief A simple assert macro to break the program if the hash is misused.
+/// @brief A simple assert macro to break the program if the sha1 is misused.
 #   define GTL_SHA1_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
@@ -234,4 +234,4 @@ namespace gtl {
 
 #undef GTL_SHA1_ASSERT
 
-#endif // GTL_SHA0_HPP
+#endif // GTL_SHA1_HPP

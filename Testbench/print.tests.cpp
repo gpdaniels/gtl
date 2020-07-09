@@ -44,13 +44,37 @@ THE SOFTWARE
 #endif
 
 #include <cstdarg>
+#include <cstdio>
 
 #if defined(_MSC_VER)
 #   pragma warning(pop)
 #endif
 
 namespace testbench {
-    PRINT_FORMAT_PRINT_DECORATION(1) int print(FILE* stream, PRINT_FORMAT_PRINT_ARGUMENT(const char* format), ...) {
+    void disable_output_buffering(output_stream stream) {
+        FILE* handle = nullptr;
+        switch (stream) {
+        case output_stream::output:
+            handle = stdout;
+            break;
+        case output_stream::error:
+            handle = stderr;
+            break;
+        }
+        setvbuf(handle, nullptr, _IONBF, 0);
+    }
+
+    PRINT_FORMAT_PRINT_DECORATION(1) int print(output_stream stream, PRINT_FORMAT_PRINT_ARGUMENT(const char* format), ...) {
+        FILE* handle = nullptr;
+        switch (stream) {
+        case output_stream::output:
+            handle = stdout;
+            break;
+        case output_stream::error:
+            handle = stderr;
+            break;
+        }
+
         #if defined(_WIN32)
 
             char outputString[1024] = {};
@@ -62,9 +86,9 @@ namespace testbench {
 
             ::OutputDebugStringA(outputString);
 
-            int outputCountStdOut = std::fprintf(stream, "%s", outputString);
+            int outputCountStdOut = std::fprintf(handle, "%s", outputString);
 
-            std::fflush(stream);
+            std::fflush(handle);
 
             UNUSED(outputCountStdOut);
             return outputCountDebug;
@@ -73,10 +97,10 @@ namespace testbench {
 
             va_list formatArguments;
             va_start(formatArguments, format);
-            int outputCount = std::vfprintf(stream, format, formatArguments);
+            int outputCount = std::vfprintf(handle, format, formatArguments);
             va_end(formatArguments);
 
-            std::fflush(stream);
+            std::fflush(handle);
 
             return outputCount;
 

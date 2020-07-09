@@ -18,18 +18,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE
 */
 
-#pragma once
-#ifndef GTL_PIMPL_TEST_HPP
-#define GTL_PIMPL_TEST_HPP
+#include "gui.tests.hpp"
 
-#include <utility/pimpl>
+namespace testbench {
 
-class test_pimpl
-    : private gtl::pimpl<test_pimpl, 4, alignof(int)> {
-public:
-    ~test_pimpl();
-    test_pimpl(int value);
-    int return_value() const;
-};
-
-#endif // GTL_PIMPL_TEST_HPP
+}

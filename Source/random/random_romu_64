@@ -19,8 +19,8 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef GTL_RANDOM_ROMU_HPP
-#define GTL_RANDOM_ROMU_HPP
+#ifndef GTL_RANDOM_ROMU_64_HPP
+#define GTL_RANDOM_ROMU_64_HPP
 
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
@@ -137,4 +137,4 @@ namespace gtl {
 
 #undef GTL_RANDOM_ROMU_64_ASSERT
 
-#endif // GTL_RANDOM_ROMU_HPP
+#endif // GTL_RANDOM_ROMU_64_HPP

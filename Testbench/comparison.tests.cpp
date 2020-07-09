@@ -21,7 +21,18 @@ THE SOFTWARE
 #include "comparison.tests.hpp"
 
 namespace testbench {
-    bool is_memory_same(const void* lhs, const void* rhs, unsigned int length) {
+    unsigned long long int string_length(const char* string) {
+        if (!string) {
+            return 0;
+        }
+        unsigned long long int length = 0;
+        while (*string++) {
+            ++length;
+        }
+        return length;
+    }
+
+    bool is_memory_same(const void* lhs, const void* rhs, unsigned long long int length) {
         if ((length > 0) && ((!lhs) || (!rhs))) {
             return false;
         }
@@ -49,7 +60,7 @@ namespace testbench {
         template <>                                             \
         bool is_value_equal(const TYPE& lhs, const TYPE& rhs) { \
             return lhs == rhs;                                  \
-        }
+        }                                                       \
 
     // Boolean.
     TEST_IS_VALUE_EQUAL_FUNCTION(bool)

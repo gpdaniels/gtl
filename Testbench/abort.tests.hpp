@@ -19,17 +19,11 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef GTL_PIMPL_TEST_HPP
-#define GTL_PIMPL_TEST_HPP
+#ifndef GTL_ABORT_TESTS_HPP
+#define GTL_ABORT_TESTS_HPP
 
-#include <utility/pimpl>
+namespace testbench {
+    [[noreturn]] void abort();
+}
 
-class test_pimpl
-    : private gtl::pimpl<test_pimpl, 4, alignof(int)> {
-public:
-    ~test_pimpl();
-    test_pimpl(int value);
-    int return_value() const;
-};
-
-#endif // GTL_PIMPL_TEST_HPP
+#endif // GTL_ABORT_TESTS_HPP

@@ -18,18 +18,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE
 */
 
-#pragma once
-#ifndef GTL_PIMPL_TEST_HPP
-#define GTL_PIMPL_TEST_HPP
+#include "abort.tests.hpp"
 
-#include <utility/pimpl>
+extern "C" int raise(int signal_number);
 
-class test_pimpl
-    : private gtl::pimpl<test_pimpl, 4, alignof(int)> {
-public:
-    ~test_pimpl();
-    test_pimpl(int value);
-    int return_value() const;
-};
+namespace testbench {
+    [[noreturn]] void abort() {
 
-#endif // GTL_PIMPL_TEST_HPP
+        // Try and raise a sigabort.
+        constexpr static const int sigabort = 6;
+        raise(sigabort);
+
+        // Force a segfault just in case.
+        *static_cast<volatile char*>(nullptr) = static_cast<char(*)()>(nullptr)();
+
+        // This function can never return.
+        for (;;);
+    }
+}

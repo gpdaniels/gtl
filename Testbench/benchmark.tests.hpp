@@ -19,107 +19,61 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef BENCHMARK_TESTS_HPP
-#define BENCHMARK_TESTS_HPP
+#ifndef GTL_BENCHMARK_TESTS_HPP
+#define GTL_BENCHMARK_TESTS_HPP
 
-#if defined(_MSC_VER)
-#   pragma warning(push, 0)
-#endif
-
-#include <chrono>
-#include <cstdio>
-#include <cstring>
-#include <cstdlib>
-#include <functional>
-#include <thread>
-#include <utility>
-
-#if defined(_MSC_VER)
-#   pragma warning(pop)
-#endif
+#include "abort.tests.hpp"
+#include "lambda.tests.hpp"
+#include "optimise.tests.hpp"
 
 namespace testbench {
-    template <typename type>
-    void do_not_optimise_away(type&& value) {
-        // To prevent value being optimised away it needs to be used somwhere.
-        // When using the value it must not impact the benchmark being performed.
-        // Therefore, use the value inside a never executed if block.
-        // However, compilers are smart enough that using an if(false) block is not enough.
-        // An if block is required that will never execute and complex enough that the compiler cannot remove it.
-        // Enter std::thread::id, the compiler cannot know that the current thread id will never match std::thread::id().
-        static std::thread::id thread_id = std::this_thread::get_id();
-        if (thread_id == std::thread::id()) {
-            // Once inside the if block we must now "use" the function and value.
-            // Copy the raw data of the value.
-            char buffer_value[sizeof(type)] = {};
-            std::memcpy(&buffer_value[0], &value, sizeof(type));
-            // Print it all out.
-            for (const char character : buffer_value) {
-                putchar(character);
-            }
-            // To sanity check that this block of code is never reached, abort.
-            std::abort();
-        }
-    }
+    long long int get_timestamp_nanoseconds();
+
+    double get_difference_seconds(long long int start_nanoseconds, long long int end_nanoseconds);
 
     template <typename type>
-    void do_not_optimise_away(std::function<type()>&& function) {
-        // Call function and get returned value.
-        volatile type value = function();
-
-        // To prevent value and function being optimised away they must be used somwhere.
-        // When using the value and function they must not impact the benchmark being performed.
-        // Therefore, use the value and function inside a never executed if block.
-        // However, compilers are smart enough that using an if(false) block is not enough.
-        // An if block is required that will never execute and complex enough that the compiler cannot remove it.
-        // Enter std::thread::id, the compiler cannot know that the current thread id will never match std::thread::id().
-        static std::thread::id thread_id = std::this_thread::get_id();
-        if (thread_id == std::thread::id()) {
-            // Once inside the if block we must now "use" the function and value.
-            // Copy the raw data of the value.
-            char buffer_value[sizeof(type)] = {};
-            std::memcpy(buffer_value, &value, sizeof(type));
-            // Print it all out.
-            for (const char character : buffer_value) {
-                putchar(character);
-            }
-            // Copy the raw data of the function.
-            char buffer_function[sizeof(std::function<type()>)] = {};
-            std::memcpy(&buffer_function[0], &function, sizeof(std::function<type()>));
-            // Print it all out.
-            for (const char character : buffer_function) {
-                putchar(character);
-            }
-            // To sanity check that this block of code is never reached, abort.
-            std::abort();
-        }
-    }
-
-    template <>
-    void do_not_optimise_away(std::function<void()>&& function);
-
-    // Simple benchmarking function
-    template <typename type = void>
-    std::pair<double, unsigned long long int> benchmark(std::function<type()>&& testFunction, unsigned long long int minimum_iterations = 1, double minimum_runtime = 0.0) {
+    double benchmark(lambda<type()>&& testFunction, unsigned long long int minimum_iterations = 1) {
         // Warmup
-        do_not_optimise_away(std::forward<std::function<type()>>(testFunction));
+        do_not_optimise_away(testFunction);
 
         // Monitoring variables.
-        std::chrono::steady_clock::time_point Start = std::chrono::steady_clock::now();
-        std::chrono::steady_clock::time_point End = Start;
+        long long int start_nanoseconds = get_timestamp_nanoseconds();
+        long long int end_nanoseconds = start_nanoseconds;
         unsigned long long int iterations = 0;
 
         // Testing
-        while ((iterations < minimum_iterations) || (std::chrono::duration<double>(End - Start).count() < minimum_runtime)) {
+        while (iterations < minimum_iterations) {
 
-            do_not_optimise_away(std::forward<std::function<type()>>(testFunction));
+            do_not_optimise_away(testFunction);
 
             ++iterations;
-            End = std::chrono::steady_clock::now();
+            end_nanoseconds = get_timestamp_nanoseconds();
         }
 
-        return { std::chrono::duration<double, std::nano>(End - Start).count() / static_cast<double>(iterations), iterations };
+        return get_difference_seconds(end_nanoseconds, start_nanoseconds) / static_cast<double>(iterations);
+    }
+
+    template <typename type>
+    unsigned long long int benchmark(lambda<type()>&& testFunction, double minimum_runtime) {
+        // Warmup
+        do_not_optimise_away(testFunction);
+
+        // Monitoring variables.
+        long long int start_nanoseconds = get_timestamp_nanoseconds();
+        long long int end_nanoseconds = start_nanoseconds;
+        unsigned long long int iterations = 0;
+
+        // Testing
+        while (get_difference_seconds(end_nanoseconds, start_nanoseconds) < minimum_runtime) {
+
+            do_not_optimise_away(testFunction);
+
+            ++iterations;
+            end_nanoseconds = get_timestamp_nanoseconds();
+        }
+
+        return iterations;
     }
 }
 
-#endif // BENCHMARK_TESTS_HPP
+#endif // GTL_BENCHMARK_TESTS_HPP

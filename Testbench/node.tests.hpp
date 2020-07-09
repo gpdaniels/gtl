@@ -19,8 +19,8 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef NODE_TESTS_HPP
-#define NODE_TESTS_HPP
+#ifndef GTL_NODE_TESTS_HPP
+#define GTL_NODE_TESTS_HPP
 
 namespace testbench {
     // Define the test_node type, used to create a linked list of tests at program startup.
@@ -57,4 +57,4 @@ namespace testbench {
     };
 }
 
-#endif // NODE_TESTS_HPP
+#endif // GTL_NODE_TESTS_HPP

@@ -19,17 +19,16 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef GTL_PIMPL_TEST_HPP
-#define GTL_PIMPL_TEST_HPP
+#ifndef GTL_IGNORED_TESTS_HPP
+#define GTL_IGNORED_TESTS_HPP
 
-#include <utility/pimpl>
+#include "unused.tests.hpp"
 
-class test_pimpl
-    : private gtl::pimpl<test_pimpl, 4, alignof(int)> {
-public:
-    ~test_pimpl();
-    test_pimpl(int value);
-    int return_value() const;
-};
+namespace testbench {
 
-#endif // GTL_PIMPL_TEST_HPP
+}
+
+/// @brief  A helper macro to prevent compiler warnings about ignored return values.
+#define IGNORED(STATEMENT) do { auto variable = (STATEMENT); UNUSED(variable); } while(0)
+
+#endif // GTL_IGNORED_TESTS_HPP

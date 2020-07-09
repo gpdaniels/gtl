@@ -20,7 +20,7 @@ THE SOFTWARE
 
 #include <main.tests.hpp>
 #include <comparison.tests.hpp>
-#include <benchmark.tests.hpp>
+#include <optimise.tests.hpp>
 #include <require.tests.hpp>
 
 #include <hash/md5>
@@ -29,6 +29,7 @@ THE SOFTWARE
 #   pragma warning(push, 0)
 #endif
 
+#include <cstdio>
 #include <type_traits>
 
 #if defined(_MSC_VER)
@@ -101,7 +102,7 @@ TEST(md5, evaluate, hash_as_integer) {
     gtl::md5 md5;
     for (unsigned int i = 0; i < data_count; ++i) {
         md5.reset();
-        md5.consume(&data[i][0], strlen(&data[i][0]));
+        md5.consume(&data[i][0], testbench::string_length(&data[i][0]));
         md5.finalise();
 
         gtl::md5::hash_type hash = md5.get_hash();
@@ -141,7 +142,7 @@ TEST(md5, evaluate, hash_as_string) {
     gtl::md5 md5;
     for (unsigned int i = 0; i < data_count; ++i) {
         md5.reset();
-        md5.consume(&data[i][0], strlen(&data[i][0]));
+        md5.consume(&data[i][0], testbench::string_length(&data[i][0]));
         md5.finalise();
 
         gtl::md5::hash_type hash = md5.get_hash();
@@ -189,8 +190,8 @@ TEST(md5, evaluate, partial_insert) {
     gtl::md5 md5;
     for (unsigned int i = 0; i < data_count; ++i) {
         md5.reset();
-        md5.consume(&data1[i][0], strlen(&data1[i][0]));
-        md5.consume(&data2[i][0], strlen(&data2[i][0]));
+        md5.consume(&data1[i][0], testbench::string_length(&data1[i][0]));
+        md5.consume(&data2[i][0], testbench::string_length(&data2[i][0]));
         md5.finalise();
 
         gtl::md5::hash_type hash = md5.get_hash();

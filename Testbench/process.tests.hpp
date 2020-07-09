@@ -19,8 +19,8 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef PROCESS_TESTS_HPP
-#define PROCESS_TESTS_HPP
+#ifndef GTL_PROCESS_TESTS_HPP
+#define GTL_PROCESS_TESTS_HPP
 
 namespace testbench {
     const char* get_executable();
@@ -28,4 +28,4 @@ namespace testbench {
     int launch_process(const char* executable, const char* arguments[]);
 }
 
-#endif // PROCESS_TESTS_HPP
+#endif // GTL_PROCESS_TESTS_HPP
