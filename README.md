@@ -103,6 +103,12 @@ The current classes are as described below:
 |         **random_splitmix** | Splitmix pseudo-random number generator.                                                |
 |         **random_xorshift** | Xorshift pseudo-random number generator.                                                |
 
+### Strings ###
+
+|                       Class | Description                                                                             |
+|----------------------------:|:----------------------------------------------------------------------------------------|
+| **static_string_encrypted** | Compile-time string encryption with runtime decryption to obfuscate strings.            |
+
 ### Type Information ###
 
 |                       Class | Description                                                                             |
