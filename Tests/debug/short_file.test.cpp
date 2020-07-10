@@ -1,6 +1,6 @@
 /*
 The MIT License
-Copyright (c) 2019 Geoffrey Daniels. http://gpdaniels.com/
+Copyright (c) 2020 Geoffrey Daniels. http://gpdaniels.com/
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -19,6 +19,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
+#include <comparison.tests.hpp>
 #include <optimise.tests.hpp>
 #include <require.tests.hpp>
 
@@ -34,18 +35,9 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
-TEST(short_file, traits, standard) {
-    REQUIRE((std::is_pod<gtl::short_file>::value == true));
-
-    REQUIRE((std::is_trivial<gtl::short_file>::value == true));
-
-    REQUIRE((std::is_trivially_copyable<gtl::short_file>::value == true));
-
-    REQUIRE((std::is_standard_layout<gtl::short_file>::value == true));
+TEST(short_file, evaluate, macro) {
+    PRINT("SHORT: %s\n", GTL_SHORT_FILE);
+    PRINT("LONG:  %s\n", __FILE__);
+    REQUIRE(testbench::is_string_same(__FILE__, "short_file.test.cpp") == false);
+    REQUIRE(testbench::is_string_same(GTL_SHORT_FILE, "short_file.test.cpp"));
 }
-
-TEST(short_file, constructor, empty) {
-    gtl::short_file short_file;
-    testbench::do_not_optimise_away(short_file);
-}
-
