@@ -219,12 +219,12 @@ namespace static_string_encrypted {
         /// @return The decoded string data.
         static const char* get_decoded() {
             static const char* string_decoded = [](){
-                static char string_decoded[string_encoded_type::length + 1];
+                static char string_decoded_internal[string_encoded_type::length + 1];
                 for(unsigned long long int index = 0; index < string_encoded_type::length; ++index) {
-                    string_decoded[index] = character_decode(string_encoded_type::data[index], index);
+                    string_decoded_internal[index] = character_decode(string_encoded_type::data[index], index);
                 }
-                string_decoded[string_encoded_type::length] = 0;
-                return string_decoded;
+                string_decoded_internal[string_encoded_type::length] = 0;
+                return string_decoded_internal;
             }();
             return string_decoded;
         }
