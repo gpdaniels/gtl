@@ -458,8 +458,8 @@ namespace gtl {
         /// @return Gradient of the erf activation function at the value location.
         constexpr static scalar_type erf_differential(scalar_type erf_value) {
             constexpr auto ierf = [](scalar_type x) -> scalar_type {
-                const scalar_type sgn = (x < 0) ? -1 : 1;
-                x = (1 - x) * (1 + x);
+                const scalar_type sgn = (x < 0) ? static_cast<scalar_type>(-1) : static_cast<scalar_type>(1);
+                x = (static_cast<scalar_type>(1) - x) * (static_cast<scalar_type>(1) + x);
                 const scalar_type lnx = std::log(x);
                 const scalar_type tt1 = 2 / (static_cast<scalar_type>(M_PI) * static_cast<scalar_type>(0.147)) + static_cast<scalar_type>(0.5) * lnx;
                 const scalar_type tt2 = 1 / static_cast<scalar_type>(0.147) * lnx;
