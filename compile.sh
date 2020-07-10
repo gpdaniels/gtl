@@ -37,7 +37,7 @@ elif [[ "$OSTYPE" == "msys" ]]; then
     mkdir -p BUILD
     pushd BUILD
     cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DBUILD_TESTING=ON -DBUILD_MEMCHECK=ON  ..
-    cmake --build . --config ${BUILD_TYPE} -- -nologo -verbosity:minimal -maxcpucount
+    cmake --build . --config ${BUILD_TYPE} -- -nologo -verbosity:quiet -maxcpucount 
     cmake --build . --config ${BUILD_TYPE} --target test
     popd
 elif [[ "$OSTYPE" == "cygwin" ]]; then
