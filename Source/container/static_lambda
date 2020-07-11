@@ -41,7 +41,7 @@ namespace gtl {
     class static_lambda;
 }
 
-namespace  {
+namespace {
     using size_t = decltype(sizeof(1));
 }
 
