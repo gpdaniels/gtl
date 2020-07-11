@@ -218,17 +218,6 @@ namespace gtl {
             }
         }
 
-        /// @brief  Universal assignment operator from a template type.
-        /// @tparam function_type The lambda type to store.
-        /// @param  raw_function The lambda to store.
-        //template <typename function_type>
-        //constexpr lambda& operator=(function_type&& raw_function) {
-        //    lambda other(raw_function);
-        //    lambda::swap(*this, other);
-        //    return *this;
-        //}
-
-    public:
         /// @brief  Asignment operator from a null pointer.
         constexpr lambda& operator=(decltype(nullptr)) {
             lambda other;
