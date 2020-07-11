@@ -117,8 +117,6 @@ TEST(lambda, operator, copying) {
     testbench::do_not_optimise_away(static_lambda2);
 }
 
-#include <functional>
-
 TEST(lambda, operator, moving) {
     auto function = [](){};
     gtl::lambda<void()> static_lambda1 = static_cast<decltype(function)&&>(function);
