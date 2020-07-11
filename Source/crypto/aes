@@ -231,8 +231,10 @@ namespace gtl {
                     word_type round_constant_word = aes::round_constant(key_index / aes::key_size);
                     previous_round_key_word = aes::xor_data(previous_round_key_word, round_constant_word);
                 }
-                else if (((aes::key_size / aes::block_size) > 6) && ((key_index % aes::key_size) == (aes::block_size * aes::block_size))) {
-                    aes::substitute_forward(previous_round_key_word);
+                else if constexpr ((aes::key_size / aes::block_size) > 6) {
+                    if ((key_index % aes::key_size) == (aes::block_size * aes::block_size)){
+                        aes::substitute_forward(previous_round_key_word);
+                    }
                 }
 
                 const unsigned int key_round_index = (key_index - aes::key_size) / (aes::block_size * aes::block_size);
@@ -425,9 +427,13 @@ namespace gtl {
                 initialisation_vector = result;
             }
             else if constexpr (aes::mode == aes_mode::ecb) {
+                static_cast<void>(initialisation_vector);
                 result = aes::transform_block_forward(key, data);
             }
             else {
+                static_cast<void>(key);
+                static_cast<void>(data);
+                static_cast<void>(initialisation_vector);
                 static_assert((aes::mode == aes_mode::cbc) || (aes::mode == aes_mode::cfb) || (aes::mode == aes_mode::ecb), "No valid mode selected for aes process.");
             }
             return result;
@@ -451,9 +457,13 @@ namespace gtl {
                 initialisation_vector = data;
             }
             else if constexpr (aes::mode == aes_mode::ecb) {
+                static_cast<void>(initialisation_vector);
                 result = aes::transform_block_inverse(key, data);
             }
             else {
+                static_cast<void>(key);
+                static_cast<void>(data);
+                static_cast<void>(initialisation_vector);
                 static_assert((aes::mode == aes_mode::cbc) || (aes::mode == aes_mode::cfb) || (aes::mode == aes_mode::ecb), "No valid mode selected for aes process.");
             }
             return result;
