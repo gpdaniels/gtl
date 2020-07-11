@@ -54,12 +54,10 @@ namespace testbench {
         }
 
     private:
-        constexpr lambda(lambda& other) = delete;
-        constexpr lambda(const lambda& other) = delete;
-        constexpr lambda(lambda&& other) = delete;
-        constexpr lambda& operator=(lambda& other) = delete;
-        constexpr lambda& operator=(const lambda& other) = delete;
-        constexpr lambda& operator=(lambda&& other) = delete;
+        lambda(const lambda& other) = delete;
+        lambda(lambda&& other) = delete;
+        lambda& operator=(const lambda& other) = delete;
+        lambda& operator=(lambda&& other) = delete;
 
     public:
         constexpr return_type operator()(argument_types... arguments) const {
