@@ -110,14 +110,16 @@ TEST(static_lambda, constructor, moving) {
 }
 
 TEST(static_lambda, operator, copying) {
-    gtl::static_lambda<void(), 128> static_lambda1([](){});
+    auto function = [](){};
+    gtl::static_lambda<void(), 128> static_lambda1 = function;
     testbench::do_not_optimise_away(static_lambda1);
     gtl::static_lambda<void(), 128> static_lambda2 = static_lambda1;
     testbench::do_not_optimise_away(static_lambda2);
 }
 
 TEST(static_lambda, operator, moving) {
-    gtl::static_lambda<void(), 128> static_lambda1([](){});
+    auto function = [](){};
+    gtl::static_lambda<void(), 128> static_lambda1 = static_cast<decltype(function)&&>(function);
     testbench::do_not_optimise_away(static_lambda1);
     gtl::static_lambda<void(), 128> static_lambda2 = static_cast<gtl::static_lambda<void(), 128>&&>(static_lambda1);
     testbench::do_not_optimise_away(static_lambda2);
