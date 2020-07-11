@@ -157,9 +157,9 @@ namespace static_string_encrypted {
     /// @return The encoded character.
     constexpr unsigned char character_encode(const unsigned char character, unsigned long long int index) {
         constexpr const unsigned int seed = (
-            static_cast<unsigned int>(__TIME__[7] - '0') * 1  +
-            static_cast<unsigned int>(__TIME__[6] - '0') * 10  +
-            static_cast<unsigned int>(__TIME__[4] - '0') * 60   +
+            static_cast<unsigned int>(__TIME__[7] - '0') * 1 +
+            static_cast<unsigned int>(__TIME__[6] - '0') * 10 +
+            static_cast<unsigned int>(__TIME__[4] - '0') * 60 +
             static_cast<unsigned int>(__TIME__[3] - '0') * 600 +
             static_cast<unsigned int>(__TIME__[1] - '0') * 3600 +
             static_cast<unsigned int>(__TIME__[0] - '0') * 36000);
@@ -168,7 +168,7 @@ namespace static_string_encrypted {
         #   pragma warning(push)
         #   pragma warning(disable: 4307)
         #endif
-                constexpr const unsigned long long int random = random_pcg(seed, rounds);
+            constexpr const unsigned long long int random = random_pcg(seed, rounds);
         #ifdef _MSC_VER
         #   pragma warning(pop)
         #endif
@@ -183,9 +183,9 @@ namespace static_string_encrypted {
     /// @return The decoded character.
     constexpr unsigned char character_decode(const unsigned char character, unsigned long long int index) {
         constexpr const unsigned int seed = (
-            static_cast<unsigned int>(__TIME__[7] - '0') * 1  +
-            static_cast<unsigned int>(__TIME__[6] - '0') * 10  +
-            static_cast<unsigned int>(__TIME__[4] - '0') * 60   +
+            static_cast<unsigned int>(__TIME__[7] - '0') * 1 +
+            static_cast<unsigned int>(__TIME__[6] - '0') * 10 +
+            static_cast<unsigned int>(__TIME__[4] - '0') * 60 +
             static_cast<unsigned int>(__TIME__[3] - '0') * 600 +
             static_cast<unsigned int>(__TIME__[1] - '0') * 3600 +
             static_cast<unsigned int>(__TIME__[0] - '0') * 36000);
@@ -213,6 +213,10 @@ namespace static_string_encrypted {
         return string_encode(string_exploded<characters...>{}, make_integer_sequence<unsigned long long int, sizeof...(characters)>{});
     }
 
+    #ifdef _MSC_VER
+    #   pragma warning(push)
+    #   pragma warning(disable: 4307)
+    #endif
     /// @brief  Encode a string in a string_exploded type by processing each character using character_encode to create a new encoded string_exploded type.
     /// @tparam characters The characters in the string.
     /// @tparam indexes The indexes of each character in the string.
@@ -225,6 +229,9 @@ namespace static_string_encrypted {
         static_cast<void>(character_index_sequence);
         return string_exploded<character_encode(characters, indexes)...>{};
     }
+    #ifdef _MSC_VER
+    #   pragma warning(pop)
+    #endif
 
     /// @brief  Container for encoded strings, has a member function to provide decoding.
     /// @tparam string_encoded_type An encoded string as a type to ensure encoding happens at compile time.
