@@ -156,9 +156,23 @@ namespace static_string_encrypted {
     /// @param  index The location of the character in a string, used as extra information for encoding the character.
     /// @return The encoded character.
     constexpr unsigned char character_encode(const unsigned char character, unsigned long long int index) {
-        constexpr const unsigned int seed = ((__TIME__[7] - '0') * 1  + (__TIME__[6] - '0') * 10  + (__TIME__[4] - '0') * 60   + (__TIME__[3] - '0') * 600 + (__TIME__[1] - '0') * 3600 + (__TIME__[0] - '0') * 36000);
+        constexpr const unsigned int seed = (
+            static_cast<unsigned int>(__TIME__[7] - '0') * 1  +
+            static_cast<unsigned int>(__TIME__[6] - '0') * 10  +
+            static_cast<unsigned int>(__TIME__[4] - '0') * 60   +
+            static_cast<unsigned int>(__TIME__[3] - '0') * 600 +
+            static_cast<unsigned int>(__TIME__[1] - '0') * 3600 +
+            static_cast<unsigned int>(__TIME__[0] - '0') * 36000);
         constexpr const unsigned int rounds = 10;
-        constexpr const unsigned char key = static_cast<unsigned char>(random_pcg(seed, rounds) % (0xFF + 1));
+        #ifdef _MSC_VER
+        #   pragma warning(push)
+        #   pragma warning(disable: 4307)
+        #endif
+                constexpr const unsigned long long int random = random_pcg(seed, rounds);
+        #ifdef _MSC_VER
+        #   pragma warning(pop)
+        #endif
+        constexpr const unsigned char key = static_cast<unsigned char>(random % (0xFF + 1));
         const unsigned char offset = static_cast<unsigned char>(random_pcg(index, rounds) % (0xFF + 1));
         return rotate_left(rotate_right(character, 3 + index % 5) ^ key ^ offset, index % 3);
     }
@@ -168,9 +182,23 @@ namespace static_string_encrypted {
     /// @param  index The location of the character in a string, used as extra information for decoding the character.
     /// @return The decoded character.
     constexpr unsigned char character_decode(const unsigned char character, unsigned long long int index) {
-        constexpr const unsigned int seed = ((__TIME__[7] - '0') * 1  + (__TIME__[6] - '0') * 10  + (__TIME__[4] - '0') * 60   + (__TIME__[3] - '0') * 600 + (__TIME__[1] - '0') * 3600 + (__TIME__[0] - '0') * 36000);
+        constexpr const unsigned int seed = (
+            static_cast<unsigned int>(__TIME__[7] - '0') * 1  +
+            static_cast<unsigned int>(__TIME__[6] - '0') * 10  +
+            static_cast<unsigned int>(__TIME__[4] - '0') * 60   +
+            static_cast<unsigned int>(__TIME__[3] - '0') * 600 +
+            static_cast<unsigned int>(__TIME__[1] - '0') * 3600 +
+            static_cast<unsigned int>(__TIME__[0] - '0') * 36000);
         constexpr const unsigned int rounds = 10;
-        constexpr const unsigned char key = static_cast<unsigned char>(random_pcg(seed, rounds) % (0xFF + 1));
+        #ifdef _MSC_VER
+        #   pragma warning(push)
+        #   pragma warning(disable: 4307)
+        #endif
+            constexpr const unsigned long long int random = random_pcg(seed, rounds);
+        #ifdef _MSC_VER
+        #   pragma warning(pop)
+        #endif
+        constexpr const unsigned char key = static_cast<unsigned char>(random % (0xFF + 1));
         const unsigned char offset = static_cast<unsigned char>(random_pcg(index, rounds) % (0xFF + 1));
         return rotate_left(rotate_right(character, index % 3) ^ (key ^ offset), 3 + index % 5);
     }
