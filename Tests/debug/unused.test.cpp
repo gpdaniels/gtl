@@ -34,6 +34,11 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
+#ifdef _MSC_VER
+#   pragma warning(push)
+#   pragma warning(disable: 4702)
+#endif
+
 TEST(unused, evaluate, unused) {
 
     // Unused with a variable.
@@ -151,3 +156,6 @@ TEST(unused, evaluate, unused) {
     }
 }
 
+#ifdef _MSC_VER
+#   pragma warning(pop)
+#endif

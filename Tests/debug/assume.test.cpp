@@ -33,6 +33,11 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
+#ifdef _MSC_VER
+#   pragma warning(push)
+#   pragma warning(disable: 4702)
+#endif
+
 TEST(assume, evaluate, assume) {
     // Assuming without a message.
     GTL_ASSUME(true);
@@ -93,16 +98,9 @@ TEST(assume, evaluate, assume) {
             GTL_ASSUME(true);
         }
 
-        #ifdef _MSC_VER
-        #   pragma warning(push)
-        #   pragma warning(disable: 4702)
-        #endif
         for (bool loop = false; loop; loop = false) {
             GTL_ASSUME(false);
         }
-        #ifdef _MSC_VER
-        #   pragma warning(pop)
-        #endif
     }
     
     // Assuming in a for loop, without {}.
@@ -110,15 +108,8 @@ TEST(assume, evaluate, assume) {
         for (bool loop = true; loop; loop = false)
             GTL_ASSUME(true);
 
-        #ifdef _MSC_VER
-        #   pragma warning(push)
-        #   pragma warning(disable: 4702)
-        #endif
         for (bool loop = false; loop; loop = false)
             GTL_ASSUME(false);
-        #ifdef _MSC_VER
-        #   pragma warning(pop)
-        #endif
     }
     
     // Assuming in a while loop, with {}.
@@ -158,3 +149,7 @@ TEST(assume, evaluate, assume) {
         while (false);
     }
 }
+
+#ifdef _MSC_VER
+#   pragma warning(pop)
+#endif
