@@ -50,6 +50,10 @@ inline void* operator new(size_t size, void* pointer, gtl::static_lambda<functio
     static_cast<void>(size);
     return pointer;
 }
+template <typename function_type, unsigned long long int static_lambda_size>
+inline void operator delete(void* pointer, gtl::static_lambda<function_type, static_lambda_size>*) {
+    static_cast<void>(pointer);
+}
 
 namespace gtl {
     /// @brief  An optionally capturing lambda that is stored on the stack.
