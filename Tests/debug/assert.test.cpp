@@ -33,6 +33,11 @@ THE SOFTWARE
 #   pragma warning(pop)
 #endif
 
+#ifdef _MSC_VER
+#   pragma warning(push)
+#   pragma warning(disable: 4702)
+#endif
+
 TEST(assert, evaluate, assert) {
     // Asserting without a message.
     GTL_ASSERT(true);
@@ -148,6 +153,10 @@ TEST(assert, evaluate, assert) {
         while (false);
     }
 }
+
+#ifdef _MSC_VER
+#   pragma warning(pop)
+#endif
 
 namespace gtl_assert_test {
     static bool triggered = false;

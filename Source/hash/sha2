@@ -266,7 +266,7 @@ namespace gtl {
         constexpr static unsigned int rotate_right(unsigned int value, unsigned int shift) {
             constexpr const unsigned int mask = (8 * sizeof(unsigned int) - 1);
             shift &= mask;
-            return (value >> shift) | (value << ((-shift) & mask));
+            return (value >> shift) | (value << ((static_cast<unsigned int>(-static_cast<signed int>(shift))) & mask));
         }
 
         /// @brief  Rotate a 64 bit value right by a shift amount.
@@ -276,7 +276,7 @@ namespace gtl {
         constexpr static unsigned long long int rotate_right(unsigned long long int value, unsigned long long int shift) {
             constexpr const unsigned long long int mask = (8 * sizeof(unsigned long long int) - 1);
             shift &= mask;
-            return (value >> shift) | (value << ((-shift) & mask));
+            return (value >> shift) | (value << ((static_cast<unsigned long long int>(-static_cast<signed long long int>(shift))) & mask));
         }
 
     private:

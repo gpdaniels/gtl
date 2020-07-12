@@ -134,7 +134,7 @@ namespace gtl {
         constexpr static unsigned long long int rotate_left(unsigned long long int value, unsigned long long int shift) {
             constexpr const unsigned long long int mask = (8 * sizeof(unsigned long long int) - 1);
             shift &= mask;
-            return (value << shift) | (value >> ((-shift) & mask));
+            return (value << shift) | (value >> ((static_cast<unsigned long long int>(-static_cast<signed long long int>(shift))) & mask));
         }
 
         /// @brief  Perform the hashing algorithm on a block of data.

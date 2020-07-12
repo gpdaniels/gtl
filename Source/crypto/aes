@@ -75,7 +75,7 @@ namespace gtl {
         /// @brief  Type used to hold blocks of data for processing.
         struct block_type {
             /// @brief  The data stored in the block.
-            word_type data[aes::block_size] = {};
+            word_type data[aes::block_size] = {{}};
         };
 
         /// @brief  Simple type to hold the key data.
@@ -171,19 +171,19 @@ namespace gtl {
         /// @param  shift Number of bytes to rotate the input word.
         /// @param  word Data to rotate.
         constexpr static void rotate_left(unsigned int shift, word_type& word) {
-            word = word_type {
+            word = word_type {{
                 word.data[(0 + shift) % aes::block_size],
                 word.data[(1 + shift) % aes::block_size],
                 word.data[(2 + shift) % aes::block_size],
                 word.data[(3 + shift) % aes::block_size]
-            };
+            }};
         }
 
         /// @brief  Calculate the round constant for a given round number.
         /// @param  round_number The round number to compute the round constant for.
         /// @return The value of the round constant as the first byte in a word.
         constexpr static word_type round_constant(const unsigned int round_number) {
-            word_type constant = { 1, 0, 0, 0 };
+            word_type constant = {{ 1, 0, 0, 0 }};
             for (unsigned int round = 1; round < round_number; ++round) {
                 constant.data[0] = polynomial_raise(constant.data[0]);
             }
@@ -218,12 +218,12 @@ namespace gtl {
                 const unsigned int previous_block_column_round_index = (key_index - aes::block_size) / (aes::block_size * aes::block_size);
                 const unsigned int previous_block_column_index = ((key_index - aes::block_size) % (aes::block_size * aes::block_size)) / (aes::block_size);
 
-                word_type previous_round_key_word = {
+                word_type previous_round_key_word = {{
                     round_keys[previous_block_column_round_index].data[0].data[previous_block_column_index],
                     round_keys[previous_block_column_round_index].data[1].data[previous_block_column_index],
                     round_keys[previous_block_column_round_index].data[2].data[previous_block_column_index],
                     round_keys[previous_block_column_round_index].data[3].data[previous_block_column_index]
-                };
+                }};
 
                 if ((key_index % aes::key_size) == 0) {
                     aes::rotate_left(1, previous_round_key_word);
@@ -231,8 +231,10 @@ namespace gtl {
                     word_type round_constant_word = aes::round_constant(key_index / aes::key_size);
                     previous_round_key_word = aes::xor_data(previous_round_key_word, round_constant_word);
                 }
-                else if (((aes::key_size / aes::block_size) > 6) && ((key_index % aes::key_size) == (aes::block_size * aes::block_size))) {
-                    aes::substitute_forward(previous_round_key_word);
+                else if constexpr ((aes::key_size / aes::block_size) > 6) {
+                    if ((key_index % aes::key_size) == (aes::block_size * aes::block_size)){
+                        aes::substitute_forward(previous_round_key_word);
+                    }
                 }
 
                 const unsigned int key_round_index = (key_index - aes::key_size) / (aes::block_size * aes::block_size);
@@ -282,12 +284,12 @@ namespace gtl {
         /// @param  block Data to mix.
         constexpr static void mix_columns_forward(block_type& block) {
             for (unsigned int i = 0; i < aes::block_size; ++i) {
-                const word_type temp = {
+                const word_type temp = {{
                     static_cast<unsigned char>(aes::polynomial_multiply(0x02, block.data[0].data[i]) ^ aes::polynomial_multiply(0x03, block.data[1].data[i]) ^ block.data[2].data[i] ^ block.data[3].data[i]),
                     static_cast<unsigned char>(block.data[0].data[i] ^ aes::polynomial_multiply(0x02, block.data[1].data[i]) ^ aes::polynomial_multiply(0x03, block.data[2].data[i]) ^ block.data[3].data[i]),
                     static_cast<unsigned char>(block.data[0].data[i] ^ block.data[1].data[i] ^ aes::polynomial_multiply(0x02, block.data[2].data[i]) ^ aes::polynomial_multiply(0x03, block.data[3].data[i])),
                     static_cast<unsigned char>(aes::polynomial_multiply(0x03, block.data[0].data[i]) ^ block.data[1].data[i] ^ block.data[2].data[i] ^ aes::polynomial_multiply(0x02, block.data[3].data[i]))
-                };
+                }};
                 for (unsigned int j = 0; j < aes::block_size; ++j) {
                     block.data[j].data[i] = temp.data[j];
                 }
@@ -298,12 +300,12 @@ namespace gtl {
         /// @param  block Data to mix.
         constexpr static void mix_columns_inverse(block_type& block) {
             for (unsigned int i = 0; i < aes::block_size; ++i) {
-                const word_type temp = {
+                const word_type temp = {{
                     static_cast<unsigned char>(aes::polynomial_multiply(0x0E, block.data[0].data[i]) ^ aes::polynomial_multiply(0x0B, block.data[1].data[i]) ^ aes::polynomial_multiply(0x0D, block.data[2].data[i]) ^ aes::polynomial_multiply(0x09, block.data[3].data[i])),
                     static_cast<unsigned char>(aes::polynomial_multiply(0x09, block.data[0].data[i]) ^ aes::polynomial_multiply(0x0E, block.data[1].data[i]) ^ aes::polynomial_multiply(0x0B, block.data[2].data[i]) ^ aes::polynomial_multiply(0x0D, block.data[3].data[i])),
                     static_cast<unsigned char>(aes::polynomial_multiply(0x0D, block.data[0].data[i]) ^ aes::polynomial_multiply(0x09, block.data[1].data[i]) ^ aes::polynomial_multiply(0x0E, block.data[2].data[i]) ^ aes::polynomial_multiply(0x0B, block.data[3].data[i])),
                     static_cast<unsigned char>(aes::polynomial_multiply(0x0B, block.data[0].data[i]) ^ aes::polynomial_multiply(0x0D, block.data[1].data[i]) ^ aes::polynomial_multiply(0x09, block.data[2].data[i]) ^ aes::polynomial_multiply(0x0E, block.data[3].data[i]))
-                };
+                }};
                 for (unsigned int j = 0; j < aes::block_size; ++j) {
                     block.data[j].data[i] = temp.data[j];
                 }
@@ -425,9 +427,13 @@ namespace gtl {
                 initialisation_vector = result;
             }
             else if constexpr (aes::mode == aes_mode::ecb) {
+                static_cast<void>(initialisation_vector);
                 result = aes::transform_block_forward(key, data);
             }
             else {
+                static_cast<void>(key);
+                static_cast<void>(data);
+                static_cast<void>(initialisation_vector);
                 static_assert((aes::mode == aes_mode::cbc) || (aes::mode == aes_mode::cfb) || (aes::mode == aes_mode::ecb), "No valid mode selected for aes process.");
             }
             return result;
@@ -451,9 +457,13 @@ namespace gtl {
                 initialisation_vector = data;
             }
             else if constexpr (aes::mode == aes_mode::ecb) {
+                static_cast<void>(initialisation_vector);
                 result = aes::transform_block_inverse(key, data);
             }
             else {
+                static_cast<void>(key);
+                static_cast<void>(data);
+                static_cast<void>(initialisation_vector);
                 static_assert((aes::mode == aes_mode::cbc) || (aes::mode == aes_mode::cfb) || (aes::mode == aes_mode::ecb), "No valid mode selected for aes process.");
             }
             return result;
