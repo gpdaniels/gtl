@@ -50,6 +50,7 @@ The current classes are as described below:
 |                  **assume** | Macro that hints to the compiler when a statement should be assumed true.               |
 |              **breakpoint** | Macro for creating a breakpoint.                                                        |
 |                  **signal** | Class to wrap signal handlers allowing the use of lambdas with scope.                   |
+|              **short_file** | Replacement for the __FILE__ macro to prevent build path being leaked into the binary.  |
 |                  **unused** | Macro for hiding unused variable warnings.                                              |
 
 ### Execution ###
