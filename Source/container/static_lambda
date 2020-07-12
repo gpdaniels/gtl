@@ -41,7 +41,7 @@ namespace gtl {
     class static_lambda;
 }
 
-namespace  {
+namespace {
     using size_t = decltype(sizeof(1));
 }
 
@@ -49,6 +49,10 @@ template <typename function_type, unsigned long long int static_lambda_size>
 inline void* operator new(size_t size, void* pointer, gtl::static_lambda<function_type, static_lambda_size>*) {
     static_cast<void>(size);
     return pointer;
+}
+template <typename function_type, unsigned long long int static_lambda_size>
+inline void operator delete(void* pointer, gtl::static_lambda<function_type, static_lambda_size>*) {
+    static_cast<void>(pointer);
 }
 
 namespace gtl {
@@ -62,22 +66,34 @@ namespace gtl {
         static_assert(size > 0, "Size of static_lambda storage must be greater than zero.");
 
     private:
-        /// @brief  A template to remove referenced from types.
-        template<typename, typename type>
+        /// @brief  A template to remove references from types.
+        template<typename type>
         struct remove_reference final {
             using type_unreferenced = type;
         };
 
-        /// @brief  A template to remove referenced from types.
+        /// @brief  A template to remove references from types.
         template<typename type>
-        struct remove_reference<type&, type&> final {
+        struct remove_reference<type&> final {
             using type_unreferenced = type;
         };
 
-        /// @brief  A template to remove referenced from types.
+        /// @brief  A template to remove references from types.
         template<typename type>
-        struct remove_reference<type&&, type&&> final {
+        struct remove_reference<type&&> final {
             using type_unreferenced = type;
+        };
+
+        /// @brief  A template to check if two types are the same.
+        template<typename lhs_type, typename rhs_type>
+        struct is_same_type final {
+            constexpr static const bool value = false;
+        };
+
+        /// @brief  A template to check if two types are the same.
+        template<typename type>
+        struct is_same_type<type, type> final {
+            constexpr static const bool value = true;
         };
 
     private:
@@ -149,18 +165,6 @@ namespace gtl {
             , destructor(nullptr) {
         }
 
-        /// @brief  Copy constructor for non const static_lambda types.
-        /// @param  other The static_lambda to copy.
-        constexpr static_lambda(static_lambda& other)
-            : function{}
-            , copier(other.copier)
-            , executor(other.executor)
-            , destructor(other.destructor) {
-            if (this->copier) {
-                this->copier(other.function, this->function);
-            }
-        }
-
         /// @brief  Copy constructor for const static_lambda types.
         /// @param  other The static_lambda to copy.
         constexpr static_lambda(const static_lambda& other)
@@ -180,13 +184,6 @@ namespace gtl {
             static_lambda::swap(*this, other);
         }
 
-        /// @brief  Copy assignment operator for non const static_lambda types.
-        /// @param  other The static_lambda to copy.
-        constexpr static_lambda& operator=(static_lambda& other) {
-            static_lambda::swap(*this, static_lambda(other));
-            return *this;
-        }
-
         /// @brief  Copy assignment operator for const static_lambda types.
         /// @param  other The static_lambda to copy.
         constexpr static_lambda& operator=(const static_lambda& other) {
@@ -202,66 +199,47 @@ namespace gtl {
         }
 
     public:
-        /// @brief  Copy constructor from a function type.
-        /// @tparam function_type The lambda type to store.
-        /// @param  raw_function The lambda to store.
-        template <typename function_type>
-        constexpr static_lambda(const function_type& raw_function)
-            : function{}
-            , copier([](erased_type_const source, erased_type destination) -> void {
-                destination = new (destination, static_cast<static_lambda*>(nullptr)) function_type(*static_cast<function_type*>(const_cast<erased_type>(source)));
-            })
-            , executor([](erased_type_const function_pointer, argument_types... arguments) -> return_type {
-                return static_cast<const function_type*>(function_pointer)->operator()(arguments...);
-            })
-            , destructor([](erased_type function_pointer) -> void {
-                static_cast<function_type*>(function_pointer)->~function_type();
-            }) {
-            static_assert(sizeof(function_type) <= size, "Functional object is larger than static_lambda size.");
-            this->copier(&raw_function, this->function);
-        }
-
-        /// @brief  Move constructor from a function type.
+        /// @brief  Universal constructor from a template type.
         /// @tparam function_type The lambda type to store.
         /// @param  raw_function The lambda to store.
         template <typename function_type>
         constexpr static_lambda(function_type&& raw_function)
-            : function{}
-            , copier([](erased_type_const source, erased_type destination) -> void {
-                using function_type_unreferenced = typename remove_reference<function_type, function_type>::type_unreferenced;
-                destination = new (destination, static_cast<static_lambda*>(nullptr)) function_type_unreferenced(static_cast<function_type&&>(*static_cast<function_type_unreferenced*>(const_cast<erased_type>(source))));
-            })
-            , executor([](erased_type_const function_pointer, argument_types... arguments) -> return_type {
-                using function_type_unreferenced = typename remove_reference<function_type, function_type>::type_unreferenced;
-                return static_cast<const function_type_unreferenced*>(function_pointer)->operator()(arguments...);
-            })
-            , destructor([](erased_type function_pointer) -> void {
-                using function_type_unreferenced = typename remove_reference<function_type, function_type>::type_unreferenced;
-                static_cast<function_type_unreferenced*>(function_pointer)->~function_type_unreferenced();
-            }) {
-            using function_type_unreferenced = typename remove_reference<function_type, function_type>::type_unreferenced;
-            static_assert(sizeof(function_type_unreferenced) <= size, "Functional object is larger than static_lambda size.");
-            this->copier(&raw_function, this->function);
-        }
-
-        /// @brief  Copy assignment operator from a function type.
-        /// @tparam function_type The lambda type to store.
-        /// @param  raw_function The lambda to store.
-        template <typename function_type>
-        constexpr static_lambda& operator=(const function_type& raw_function) {
-            static_lambda other(raw_function);
-            static_lambda::swap(*this, other);
-            return *this;
-        }
-
-        /// @brief  Move assignment operator from a function type.
-        /// @tparam function_type The lambda type to store.
-        /// @param  raw_function The lambda to store.
-        template <typename function_type>
-        constexpr static_lambda& operator=(function_type&& raw_function) {
-            static_lambda other(static_cast<function_type&&>(raw_function));
-            static_lambda::swap(*this, other);
-            return *this;
+            : static_lambda() {
+            // First get real function type.
+            using real_function_type = decltype(raw_function);
+            using pure_function_type = typename remove_reference<real_function_type>::type_unreferenced;
+            // If input is already a static_lambda type, cast can call the appropriate constructor.
+            constexpr bool is_lambda = is_same_type<static_lambda, pure_function_type>::value;
+            if constexpr (is_lambda) {
+                constexpr bool is_move = is_same_type<real_function_type, pure_function_type&&>::value;
+                if constexpr (is_move) {
+                    static_lambda other(static_cast<static_lambda&&>(raw_function));
+                    static_lambda::swap(*this, other);
+                }
+                else {
+                    static_lambda other(static_cast<const static_lambda&>(raw_function));
+                    static_lambda::swap(*this, other);
+                }
+            }
+            else {
+                static_assert(sizeof(pure_function_type) <= size, "Functional object is larger than static_lambda size.");
+                this->copier = [](erased_type_const source, erased_type destination) -> void {
+                    constexpr bool is_move = is_same_type<real_function_type, pure_function_type&&>::value;
+                    if constexpr ((is_move)) {
+                        new (destination, static_cast<static_lambda*>(nullptr)) pure_function_type(static_cast<function_type&&>(*static_cast<pure_function_type*>(const_cast<erased_type>(source))));
+                    }
+                    else {
+                        new (destination, static_cast<static_lambda*>(nullptr)) pure_function_type(static_cast<const function_type&>(*static_cast<pure_function_type*>(const_cast<erased_type>(source))));
+                    }
+                };
+                this->executor = [](erased_type_const function_pointer, argument_types... arguments) -> return_type {
+                    return static_cast<const pure_function_type*>(function_pointer)->operator()(arguments...);
+                };
+                this->destructor = [](erased_type function_pointer) -> void {
+                    static_cast<pure_function_type*>(function_pointer)->~pure_function_type();
+                };
+                this->copier(&raw_function, this->function);
+            }
         }
 
         /// @brief  Asignment operator from a null pointer.
