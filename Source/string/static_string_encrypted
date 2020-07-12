@@ -156,6 +156,14 @@ namespace static_string_encrypted {
     /// @param  index The location of the character in a string, used as extra information for encoding the character.
     /// @return The encoded character.
     constexpr unsigned char character_encode(const unsigned char character, unsigned long long int index) {
+        #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+        #   pragma GCC diagnostic push
+        #   pragma GCC diagnostic ignored "-Wdate-time"
+        #endif
+        #if (defined(__clang__))
+        #   pragma clang diagnostic push
+        #   pragma clang diagnostic ignored "-Wdate-time"
+        #endif
         constexpr const unsigned int seed = (
             static_cast<unsigned int>(__TIME__[7] - '0') * 1 +
             static_cast<unsigned int>(__TIME__[6] - '0') * 10 +
@@ -163,6 +171,12 @@ namespace static_string_encrypted {
             static_cast<unsigned int>(__TIME__[3] - '0') * 600 +
             static_cast<unsigned int>(__TIME__[1] - '0') * 3600 +
             static_cast<unsigned int>(__TIME__[0] - '0') * 36000);
+        #if (defined(__clang__))
+        #   pragma clang diagnostic pop
+        #endif
+        #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+        #   pragma GCC diagnostic pop
+        #endif
         constexpr const unsigned int rounds = 10;
         #ifdef _MSC_VER
         #   pragma warning(push)
@@ -182,6 +196,14 @@ namespace static_string_encrypted {
     /// @param  index The location of the character in a string, used as extra information for decoding the character.
     /// @return The decoded character.
     constexpr unsigned char character_decode(const unsigned char character, unsigned long long int index) {
+        #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+        #   pragma GCC diagnostic push
+        #   pragma GCC diagnostic ignored "-Wdate-time"
+        #endif
+        #if (defined(__clang__))
+        #   pragma clang diagnostic push
+        #   pragma clang diagnostic ignored "-Wdate-time"
+        #endif
         constexpr const unsigned int seed = (
             static_cast<unsigned int>(__TIME__[7] - '0') * 1 +
             static_cast<unsigned int>(__TIME__[6] - '0') * 10 +
@@ -189,6 +211,12 @@ namespace static_string_encrypted {
             static_cast<unsigned int>(__TIME__[3] - '0') * 600 +
             static_cast<unsigned int>(__TIME__[1] - '0') * 3600 +
             static_cast<unsigned int>(__TIME__[0] - '0') * 36000);
+        #if (defined(__clang__))
+        #   pragma clang diagnostic pop
+        #endif
+        #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+        #   pragma GCC diagnostic pop
+        #endif
         constexpr const unsigned int rounds = 10;
         #ifdef _MSC_VER
         #   pragma warning(push)
@@ -256,7 +284,7 @@ namespace static_string_encrypted {
             static const char* string_decoded = [](){
                 static char string_decoded_internal[string_encoded_type::length + 1];
                 for(unsigned long long int index = 0; index < string_encoded_type::length; ++index) {
-                    string_decoded_internal[index] = character_decode(string_encoded_type::data[index], index);
+                    string_decoded_internal[index] = static_cast<char>(character_decode(string_encoded_type::data[index], index));
                 }
                 string_decoded_internal[string_encoded_type::length] = 0;
                 return string_decoded_internal;
