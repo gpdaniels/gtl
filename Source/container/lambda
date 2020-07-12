@@ -186,21 +186,22 @@ namespace gtl {
             using real_function_type = decltype(raw_function);
             using pure_function_type = typename remove_reference<real_function_type>::type_unreferenced;
             // If input is already a lambda type, cast can call the appropriate constructor.
-            if constexpr (is_same_type<lambda, pure_function_type>::value) {
-                if constexpr (is_same_type<real_function_type, pure_function_type&&>::value) {
+            constexpr bool is_lambda = is_same_type<lambda, pure_function_type>::value;
+            if constexpr (is_lambda) {
+                constexpr bool is_move = is_same_type<real_function_type, pure_function_type&&>::value;
+                if constexpr (is_move) {
                     lambda other(static_cast<lambda&&>(raw_function));
                     lambda::swap(*this, other);
-                    return;
                 }
                 else {
                     lambda other(static_cast<const lambda&>(raw_function));
                     lambda::swap(*this, other);
-                    return;
                 }
             }
             else {
                 this->copier = [](erased_type_const source, erased_type& destination) -> void {
-                    if constexpr (is_same_type<real_function_type, pure_function_type&&>::value) {
+                    constexpr bool is_move = is_same_type<real_function_type, pure_function_type&&>::value;
+                    if constexpr (is_move) {
                         destination = new pure_function_type(static_cast<function_type&&>(*static_cast<pure_function_type*>(const_cast<erased_type>(source))));
                     }
                     else {
