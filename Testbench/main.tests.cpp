@@ -88,7 +88,7 @@ int main(int argument_count, char* arguments[]) {
             if (testbench::is_string_same("-x", arguments[argument_index]) || testbench::is_string_same("--execute", arguments[argument_index])) {
                 execute_in_process = false;
                 if (!quiet) {
-                    PRINT("Running tests in this process.\n");
+                    PRINT("Launching tests in this process.\n");
                 }
                 continue;
             }
@@ -138,7 +138,10 @@ int main(int argument_count, char* arguments[]) {
             continue;
         }
 
-        PRINT("Running [File: %s] [Group: %s] [Test: %s]...\n", current_test->get_file(), current_test->get_group(), current_test->get_name());
+        if (!quiet) {
+            PRINT("Launching [File: %s] [Group: %s] [Test: %s]...\n", current_test->get_file(), current_test->get_group(), current_test->get_name());
+        }
+
         ++TEST_COUNT;
         if (execute_in_process) {
             const char* test_arguments[] = { "--quiet", "--execute", "--file", current_test->get_file(), "--group", current_test->get_group(), "--name", current_test->get_name(), nullptr };
@@ -154,11 +157,13 @@ int main(int argument_count, char* arguments[]) {
                 ++TEST_FAILURE_COUNT;
             }
         }
-        PRINT("Finished [File: %s] [Group: %s] [Test: %s].\n", current_test->get_file(), current_test->get_group(), current_test->get_name());
+        if (!quiet) {
+            PRINT("Finishing [File: %s] [Group: %s] [Test: %s].\n", current_test->get_file(), current_test->get_group(), current_test->get_name());
+        }
     }
 
     if (!quiet) {
-        PRINT("Finished '%lld' tests. Detected '%lld' failures.\n", TEST_COUNT, TEST_FAILURE_COUNT);
+        PRINT("Finishing '%lld' tests. Detected '%lld' failures.\n", TEST_COUNT, TEST_FAILURE_COUNT);
     }
 
     return (TEST_FAILURE_COUNT != 0);
