@@ -414,7 +414,7 @@ namespace gtl {
         /// @param  data Data to encrypt.
         /// @param  initialisation_vector Data optionally used to seed the encryption process depending on the mode.
         /// @return The encrypted data.
-        constexpr block_type encrypt_block(const key_type& key, const block_type& data, block_type& initialisation_vector = {}) {
+        constexpr block_type encrypt_block(const key_type& key, const block_type& data, block_type& initialisation_vector = {}) const {
             block_type result;
             if constexpr (aes::mode == aes_mode::cbc) {
                 const block_type block = aes::xor_data(initialisation_vector, data);
@@ -444,7 +444,7 @@ namespace gtl {
         /// @param  data Data to decrypt.
         /// @param  initialisation_vector Data optionally used to seed the decryption process depending on the mode.
         /// @return The decrypted data.
-        constexpr block_type decrypt_block(const key_type& key, const block_type& data, block_type& initialisation_vector = {}) {
+        constexpr block_type decrypt_block(const key_type& key, const block_type& data, block_type& initialisation_vector = {}) const {
             block_type result;
             if constexpr (aes::mode == aes_mode::cbc) {
                 const block_type block = aes::transform_block_inverse(key, data);
@@ -475,7 +475,7 @@ namespace gtl {
         /// @param  length The lenght of the data, must be a multiple of the aes block size.
         /// @param  key The encryption key, must be at least the length required by the selected aes bitsize.
         /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
-        void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, unsigned char* output) {
+        void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, unsigned char* output) const {
             const unsigned char iv[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
             this->encrypt(data, length, key, iv, output);
         }
@@ -485,7 +485,7 @@ namespace gtl {
         /// @param  length The lenght of the data, must be a multiple of the aes block size.
         /// @param  key The encryption key, must be at least the length required by the selected aes bitsize.
         /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
-        void decrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, unsigned char* output) {
+        void decrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, unsigned char* output) const {
             const unsigned char iv[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
             this->decrypt(data, length, key, iv, output);
         }
@@ -496,7 +496,7 @@ namespace gtl {
         /// @param  key The encryption key, must be at least the length required by the selected aes bitsize.
         /// @param  iv The initialisation vector used to seed the encryption process.
         /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
-        void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
+        void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) const {
             GTL_AES_ASSERT((length % (aes::block_size * aes::block_size)) == 0, "Data length must be a multiple of the aes block size.");
 
             key_type key_data;
@@ -535,7 +535,7 @@ namespace gtl {
         /// @param  key The encryption key, must be at least the length required by the selected aes bitsize.
         /// @param  iv The initialisation vector used to seed the decryption process.
         /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
-        void decrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
+        void decrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) const {
             GTL_AES_ASSERT((length % (aes::block_size * aes::block_size)) == 0, "Data length must be a multiple of the aes block size.");
 
             key_type key_data;
