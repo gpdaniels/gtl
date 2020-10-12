@@ -148,15 +148,18 @@ namespace gtl {
         /// @brief  Conversion constructor from a string value in base 10.
         /// @param  value The value to store.
         /// @param  length The length of the string.
-        big_unsigned(const char* value, const unsigned long long int length) {
+        big_unsigned(const char* value, const unsigned long long int length)
+            : chunks(1, 0) {
             // Sanity check length.
             if (length == 0) {
                 return;
             }
             GTL_BIG_UNSIGNED_ASSERT(value != nullptr, "Value must not be null with a length greater than zero.");
+            GTL_BIG_UNSIGNED_ASSERT(((value[0] >= '0') && (value[0] <= '9')), "Value must start with an integer.");
             // Loop over the string repeatedly multiplying the result by 10 to shift left as each new value is read.
             big_unsigned result(static_cast<chunk_type>(value[0] - '0'));
             for (unsigned long long int index = 1; index < length; ++index) {
+                GTL_BIG_UNSIGNED_ASSERT(((value[index] >= '0') && (value[index] <= '9')), "Value must only containt integers.");
                 result = big_unsigned::multiply(10, result) + big_unsigned(static_cast<chunk_type>(value[index] - '0'));
             }
             // Apply the result to this.
@@ -211,6 +214,15 @@ namespace gtl {
                 this->chunks.pop_back();
             }
         }
+
+    public:
+        /// @brief  Unary plus operator returns a copy of the big number.
+        big_unsigned operator+() const {
+            return *this;
+        }
+
+        /// @brief  Unary minus operator is deleted as negating an unsigned number is not supported;
+        big_unsigned operator-() const = delete;
 
     public:
         /// @brief  Pre-increment operator, add one to the big number and return it.
@@ -357,6 +369,16 @@ namespace gtl {
         /// @brief Divide a big number by another.
         /// @param lhs The left hand side of the expression.
         /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_unsigned divide(const big_unsigned& lhs, const big_unsigned& rhs) {
+            big_unsigned remainder;
+            return big_unsigned::divide(lhs, rhs, remainder);
+        }
+
+        /// @brief Divide a big number by another.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @param remainder The remainder of the divison.
         /// @return A big number with the value of the result of the evaluated expression.
         static big_unsigned divide(const big_unsigned& lhs, const big_unsigned& rhs, big_unsigned& remainder) {
             GTL_BIG_UNSIGNED_ASSERT(rhs.chunks.back() != 0, "Cannot divide a big_unsigned value by zero.");
@@ -701,16 +723,14 @@ namespace gtl {
         /// @param  rhs The right hand side of the expression.
         /// @return A reference to this after division by the rhs.
         big_unsigned& operator/=(const big_unsigned& rhs) {
-            big_unsigned remainder;
-            return (*this = big_unsigned::divide(*this, rhs, remainder));
+            return (*this = big_unsigned::divide(*this, rhs));
         }
 
         /// @brief  Division operator.
         /// @param  rhs The right hand side of the expression.
         /// @return The value of this big number divided by the rhs.
         big_unsigned operator/(const big_unsigned& rhs) const {
-            big_unsigned remainder;
-            return big_unsigned::divide(*this, rhs, remainder);
+            return big_unsigned::divide(*this, rhs);
         }
 
     public:
@@ -886,7 +906,7 @@ namespace gtl {
 
     public:
         /// @brief  Conver the big number to a string and output it in the provided buffer.
-        /// @param  buffer The output string buffer, must be at larger than the decimal length of the big number plus one for null termination.
+        /// @param  buffer The output string buffer, must be larger than the decimal length of the big number plus one for null termination.
         /// @param  length The length of the output buffer.
         /// @return The decimal length of the big number, equal to the number of digits written.
         unsigned long long int to_string(char* buffer, const unsigned long long int length) {
