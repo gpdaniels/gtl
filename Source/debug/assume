@@ -30,7 +30,7 @@ namespace assume {
     // This is a dangerous macro used to provide compiler hints in code.
     #if defined(__clang__)
         #define GTL_ASSUME(ASSUMPTION) __builtin_assume(ASSUMPTION)
-    #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         #define GTL_ASSUME(ASSUMPTION) static_cast<void>((ASSUMPTION) || (__builtin_unreachable(), 0))
     #elif defined(_MSC_VER)
         #define GTL_ASSUME(ASSUMPTION) __assume(ASSUMPTION)

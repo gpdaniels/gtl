@@ -137,7 +137,7 @@ TEST(access, traits, standard) {
 
     #if defined(__clang__)
         REQUIRE(std::is_trivially_copyable<test_class>::value == true);
-    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         REQUIRE(std::is_trivially_copyable<test_class>::value == true);
     #elif defined(_MSC_VER)
         REQUIRE(std::is_trivially_copyable<test_class>::value == false);

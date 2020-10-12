@@ -52,7 +52,7 @@ TEST(ring_buffer, traits, standard) {
 
             #if defined(__clang__)
                 REQUIRE((std::is_trivially_copyable<gtl::ring_buffer<type, value> >::value == true), "Expected std::is_trivially_copyable to be true.");
-            #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+            #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
                 REQUIRE((std::is_trivially_copyable<gtl::ring_buffer<type, value> >::value == true), "Expected std::is_trivially_copyable to be true.");
             #elif defined(_MSC_VER)
                 REQUIRE((std::is_trivially_copyable<gtl::ring_buffer<type, value> >::value == false), "Expected std::is_trivially_copyable to be false.");

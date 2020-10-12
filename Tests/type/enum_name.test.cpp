@@ -67,7 +67,7 @@ TEST(enum_name, function, name) {
 
         gtl::enum_name<test_enum, test_enum::third> enum_name3;
         REQUIRE(testbench::is_string_same(enum_name3.name(), "test_enum::third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name(), "test_enum::third");
-    #elif defined(__GNUC__)
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         gtl::enum_name<test_enum, test_enum::first> enum_name1;
         REQUIRE(testbench::is_string_same(enum_name1.name(), "(test_enum)0") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name(), "(test_enum)0");
 
@@ -100,7 +100,7 @@ TEST(enum_name, function, name_value) {
 
         gtl::enum_name<test_enum, test_enum::third> enum_name3;
         REQUIRE(testbench::is_string_same(enum_name3.name_value(), "third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_value(), "third");
-    #elif defined(__GNUC__)
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         gtl::enum_name<test_enum, test_enum::first> enum_name1;
         REQUIRE(testbench::is_string_same(enum_name1.name_value(), "0") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name_value(), "0");
 
@@ -130,7 +130,7 @@ TEST(enum_name, function, name_with_namespaces) {
 
         gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::third> enum_name3;
         REQUIRE(testbench::is_string_same(enum_name3.name(), "test_namespace::test_enum::third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name(), "test_namespace::test_enum::third");
-    #elif defined(__GNUC__)
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::first> enum_name1;
         REQUIRE(testbench::is_string_same(enum_name1.name(), "(test_namespace::test_enum)0") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name(), "(test_namespace::test_enum)0");
 
@@ -163,7 +163,7 @@ TEST(enum_name, function, name_value_with_namespaces) {
 
         gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::third> enum_name3;
         REQUIRE(testbench::is_string_same(enum_name3.name_value(), "third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_value(), "third");
-    #elif defined(__GNUC__)
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::first> enum_name1;
         REQUIRE(testbench::is_string_same(enum_name1.name_value(), "0") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name_value(), "0");
 
