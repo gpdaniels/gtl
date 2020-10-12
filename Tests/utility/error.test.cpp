@@ -142,7 +142,7 @@ TEST(error, parameter, name) {
         REQUIRE(testbench::is_string_same(error2.name, "error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "error_code1");
         REQUIRE(testbench::is_string_same(error3.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "error_code2");
         REQUIRE(testbench::is_string_same(error4.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "error_code2");
-    #elif defined(__GNUC__)
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         REQUIRE(testbench::is_string_same(error1.name, "test_error_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "test_error_parameter_name()::error_code1");
         REQUIRE(testbench::is_string_same(error2.name, "test_error_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "test_error_parameter_name()::error_code1");
         REQUIRE(testbench::is_string_same(error3.name, "test_error_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "test_error_parameter_name()::error_code2");

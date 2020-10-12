@@ -37,7 +37,7 @@ namespace testbench {
 // Attempt to use a more detailed function macro if possible.
 #if defined(__clang__)
 #   define REQUIRE_FUNCTION __PRETTY_FUNCTION__
-#elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+#elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
 #   define REQUIRE_FUNCTION __PRETTY_FUNCTION__
 #elif defined(_MSC_VER)
 #   define REQUIRE_FUNCTION __FUNCSIG__

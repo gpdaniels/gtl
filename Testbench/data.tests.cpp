@@ -93,7 +93,7 @@ namespace testbench {
     #if defined(__clang__)
         // clang.
         const char* test_data<unsigned short int>::name = "unsigned short";
-    #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         // gcc.
         const char* test_data<unsigned short int>::name = "short unsigned int";
     #elif defined(_MSC_VER)
@@ -111,7 +111,7 @@ namespace testbench {
     #if defined(__clang__)
         // clang.
         const char* test_data<signed short int>::name = "short";
-    #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         // gcc.
         const char* test_data<signed short int>::name = "short int";
     #elif defined(_MSC_VER)
@@ -143,7 +143,7 @@ namespace testbench {
     #if defined(__clang__)
         // clang.
         const char* test_data<unsigned long int>::name = "unsigned long";
-    #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         // gcc.
         const char* test_data<unsigned long int>::name = "long unsigned int";
     #elif defined(_MSC_VER)
@@ -161,7 +161,7 @@ namespace testbench {
     #if defined(__clang__)
         // clang.
         const char* test_data<signed long int>::name = "long";
-    #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         // gcc.
         const char* test_data<signed long int>::name = "long int";
     #elif defined(_MSC_VER)
@@ -179,7 +179,7 @@ namespace testbench {
     #if defined(__clang__)
         // clang.
         const char* test_data<unsigned long long int>::name = "unsigned long long";
-    #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         // gcc.
         const char* test_data<unsigned long long int>::name = "long long unsigned int";
     #elif defined(_MSC_VER)
@@ -197,7 +197,7 @@ namespace testbench {
     #if defined(__clang__)
         // clang.
         const char* test_data<signed long long int>::name = "long long";
-    #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         // gcc.
         const char* test_data<signed long long int>::name = "long long int";
     #elif defined(_MSC_VER)
@@ -256,7 +256,7 @@ namespace testbench {
     #if defined(__clang__)
         // clang.
         const char* test_data<decltype(nullptr)>::name = "nullptr_t";
-    #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         // gcc.
         const char* test_data<decltype(nullptr)>::name = "std::nullptr_t";
     #elif defined(_MSC_VER)

@@ -48,7 +48,7 @@ THE SOFTWARE
 #   define PRINT_FORMAT_PRINT_DECORATION(ARGUMENT_INDEX)
 #   define PRINT_FORMAT_SCAN_DECORATION(ARGUMENT_INDEX)
 
-#elif (defined(__clang__)) || ((defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER)))
+#elif (defined(__clang__)) || ((defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER))))
 
 //  Clang and GCC don't need to wrap the format string argument.
 #define PRINT_FORMAT_PRINT_ARGUMENT(ARGUMENT)           ARGUMENT

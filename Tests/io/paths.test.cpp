@@ -39,7 +39,7 @@ TEST(paths, traits, standard) {
         REQUIRE((std::is_pod<gtl::paths>::value == false));
         REQUIRE((std::is_trivial<gtl::paths>::value == false));
         REQUIRE((std::is_trivially_copyable<gtl::paths>::value == false));
-    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__INTEL_COMPILER))
+    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         REQUIRE((std::is_pod<gtl::paths>::value == true));
         REQUIRE((std::is_trivial<gtl::paths>::value == true));
         REQUIRE((std::is_trivially_copyable<gtl::paths>::value == true));
