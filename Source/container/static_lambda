@@ -34,25 +34,38 @@ THE SOFTWARE
 #endif
 
 namespace gtl {
-    /// @brief  Class declaration to enable expansion of the function_type in template specialisation.
-    /// @tparam function_type The lambda type to store.
-    /// @tparam size The reserved stack buffer size.
+    // Forward declare class to allow a unique definition of operator new using it as a parameter.
     template <typename function_type, unsigned long long int size>
     class static_lambda;
 }
 
 namespace {
+    // Operator new requires the size_t type for its size argument.
     using size_t = decltype(sizeof(1));
 }
 
+/// @brief  Custom placement operator new to avoid including the (massive) <new> header.
+/// @tparam function_type Type required by the unused static_lambda parameter.
+/// @tparam static_lambda_size Value required by the unused static_lambda parameter.
+/// @param  size The size of the data to placement new on.
+/// @param  pointer The pointer of the data to placement new on.
+/// @param  unused_type_tag An unused type tag used to make this placement new operator function unique.
 template <typename function_type, unsigned long long int static_lambda_size>
-inline void* operator new(size_t size, void* pointer, gtl::static_lambda<function_type, static_lambda_size>*) {
+inline void* operator new(size_t size, void* pointer, gtl::static_lambda<function_type, static_lambda_size>* unused_type_tag) {
     static_cast<void>(size);
+    static_cast<void>(unused_type_tag);
     return pointer;
 }
+
+/// @brief  Custom placement operator delete to avoid compilers complaing about potential memory leaks.
+/// @tparam function_type Type required by the unused static_lambda parameter.
+/// @tparam static_lambda_size Value required by the unused static_lambda parameter.
+/// @param  pointer The pointer of the data to placement delete on.
+/// @param  unused_type_tag An unused type tag used to make this placement delete operator function unique.
 template <typename function_type, unsigned long long int static_lambda_size>
-inline void operator delete(void* pointer, gtl::static_lambda<function_type, static_lambda_size>*) {
+inline void operator delete(void* pointer, gtl::static_lambda<function_type, static_lambda_size>* unused_type_tag) {
     static_cast<void>(pointer);
+    static_cast<void>(unused_type_tag);
 }
 
 namespace gtl {
