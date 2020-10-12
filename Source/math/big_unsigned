@@ -444,7 +444,7 @@ namespace gtl {
                         // Adjust partial product (partial product -= rhs normalised).
                         chunk_type_wide carry_adjustment = 0;
                         for (unsigned long long int chunk_index = 0; chunk_index < rhs_chunks; ++chunk_index) {
-                            carry_adjustment += partial_product.chunks[chunk_index] - rhs_normalised.chunks[chunk_index];
+                            carry_adjustment = carry_adjustment + partial_product.chunks[chunk_index] - rhs_normalised.chunks[chunk_index];
                             partial_product.chunks[chunk_index] = static_cast<chunk_type>(carry_adjustment);
                             carry_adjustment = ((carry_adjustment >> big_unsigned::chunk_bits) ? static_cast<chunk_type_wide>(-1) : 0);
                         }
