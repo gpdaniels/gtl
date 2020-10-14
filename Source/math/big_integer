@@ -1,6 +1,6 @@
 /*
 The MIT License
-Copyright (c) 2019 Geoffrey Daniels. http://gpdaniels.com/
+Copyright (c) 2020 Geoffrey Daniels. http://gpdaniels.com/
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -22,10 +22,737 @@ THE SOFTWARE
 #ifndef GTL_BIG_INTEGER_HPP
 #define GTL_BIG_INTEGER_HPP
 
-namespace gtl {
-    class big_integer {
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the big_integer is misused.
+#   define GTL_BIG_INTEGER_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_BIG_INTEGER_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
 
+#include "big_unsigned"
+
+namespace gtl {
+    class big_integer final {
+    private:
+        signed int sign;
+        big_unsigned magnitude;
+
+    public:
+        /// @brief  Empty constructor initialises the big number with the value of zero.
+        big_integer()
+            : sign(0)
+            , magnitude(0) {
+        }
+
+        /// @brief  Conversion constructor from a bool value.
+        /// @param  value The value to store.
+        big_integer(const bool value)
+            : sign(value > 0)
+            , magnitude(value) {
+        }
+
+        /// @brief  Conversion constructor from a char value.
+        /// @param  value The value to store.
+        big_integer(const char value)
+            : sign((value > 0) - (value < 0))
+            , magnitude(0) {
+            if (value < 0) {
+                this->magnitude = -(value + 1);
+                ++this->magnitude;
+            }
+            else {
+                this->magnitude = value;
+            }
+        }
+
+        /// @brief  Conversion constructor from a signed char value.
+        /// @param  value The value to store.
+        big_integer(const signed char value)
+            : sign((value > 0) - (value < 0))
+            , magnitude(0) {
+            if (value < 0) {
+                this->magnitude = -(value + 1);
+                ++this->magnitude;
+            }
+            else {
+                this->magnitude = value;
+            }
+        }
+
+        /// @brief  Conversion constructor from a signed short value.
+        /// @param  value The value to store.
+        big_integer(const signed short value)
+            : sign((value > 0) - (value < 0))
+            , magnitude(0) {
+            if (value < 0) {
+                this->magnitude = -(value + 1);
+                ++this->magnitude;
+            }
+            else {
+                this->magnitude = value;
+            }
+        }
+
+        /// @brief  Conversion constructor from a signed int value.
+        /// @param  value The value to store.
+        big_integer(const signed int value)
+            : sign((value > 0) - (value < 0))
+            , magnitude(0) {
+            if (value < 0) {
+                this->magnitude = -(value + 1);
+                ++this->magnitude;
+            }
+            else {
+                this->magnitude = value;
+            }
+        }
+
+        // No constructor for "signed long int" as these can be 32 or 64 bit depending on platform.
+
+        /// @brief  Conversion constructor from a signed long long int value.
+        /// @param  value The value to store.
+        big_integer(const signed long long int value)
+            : sign((value > 0) - (value < 0))
+            , magnitude(0) {
+            if (value < 0) {
+                this->magnitude = -(value + 1);
+                ++this->magnitude;
+            }
+            else {
+                this->magnitude = value;
+            }
+        }
+
+        /// @brief  Conversion constructor from an unsigned char value.
+        /// @param  value The value to store.
+        big_integer(const unsigned char value)
+            : sign(value > 0)
+            , magnitude(value) {
+        }
+
+        /// @brief  Conversion constructor from an unsigned short value.
+        /// @param  value The value to store.
+        big_integer(const unsigned short value)
+            : sign(value > 0)
+            , magnitude(value) {
+        }
+
+        /// @brief  Conversion constructor from an unsigned int value.
+        /// @param  value The value to store.
+        big_integer(const unsigned int value)
+            : sign(value > 0)
+            , magnitude(value) {
+        }
+
+        // No constructor for "unsigned long int" as these can be 32 or 64 bit depending on platform.
+
+        /// @brief  Conversion constructor from an unsigned long long int value.
+        /// @param  value The value to store.
+        big_integer(const unsigned long long int value)
+            : sign(value > 0)
+            , magnitude(value) {
+        }
+
+        /// @brief  Conversion constructor from a string value in base 10.
+        /// @param  value The value to store.
+        /// @param  length The length of the string.
+        big_integer(const char* value, const unsigned long long int length)
+            : sign(0)
+            , magnitude(0) {
+            // Sanity check length.
+            if (length == 0) {
+                return;
+            }
+            GTL_BIG_INTEGER_ASSERT(value != nullptr, "Value must not be null with a length greater than zero.");
+            GTL_BIG_INTEGER_ASSERT((((value[0] >= '0') && (value[0] <= '9')) || (value[0] == '+') || (value[0] == '-')), "Value must start with an integer or sign character.");
+
+            // Check for a sign character.
+            if (value[0] == '+') {
+                this->sign = 1;
+            }
+            else if (value[0] == '-') {
+                this->sign = -1;
+            }
+
+            // Consume the remaining string as the magnitude.
+            this->magnitude = big_unsigned(&value[(this->sign != 0)], length - (this->sign != 0));
+
+            // If the magniture is zero the sign must be zero.
+            if (this->magnitude == 0) {
+                this->sign = 0;
+            }
+            // Otherwise if the sign hasn't been set ensure it is positive.
+            else if (this->sign == 0) {
+                this->sign = 1;
+            }
+        }
+
+        /// @brief  Copy constructor from another big number.
+        /// @param  other The other big number to copy.
+        big_integer(const big_integer& other)
+            : sign(other.sign)
+            , magnitude(other.magnitude) {
+        }
+
+        /// @brief  Move constructor from another big number.
+        /// @param  other The other big number to move.
+        big_integer(big_integer&& other)
+            : sign(other.sign)
+            , magnitude(other.magnitude) {
+        }
+
+        /// @brief  Copy assignment operator from another big number.
+        /// @param  other The other big number to copy.
+        /// @return A reference to this.
+        big_integer& operator=(const big_integer& other) {
+            if (this != &other) {
+                this->sign = other.sign;
+                this->magnitude = other.magnitude;
+            }
+            return *this;
+        }
+
+        /// @brief  Move assignment operator from another big number.
+        /// @param  other The other big number to move.
+        /// @return A reference to this.
+        big_integer& operator=(big_integer&& other) {
+            if (this != &other) {
+                this->sign = other.sign;
+                this->magnitude = other.magnitude;
+            }
+            return *this;
+        }
+
+    public:
+        /// @brief  Conversion operator to check if the big number is zero.
+        /// @return true if the big number is not zero, false otherwise.
+        explicit operator bool() const {
+            return (this->sign != 0);
+        }
+
+    public:
+    public:
+        /// @brief  Unary plus operator returns a copy of the big number.
+        big_integer operator+() const {
+            return *this;
+        }
+
+        /// @brief  Unary minus operator returns a copy of the big number with the sign inverted;
+        big_integer operator-() const {
+            big_integer inverted(*this);
+            inverted.sign = -this->sign;
+            return inverted;
+        }
+
+    public:
+        /// @brief  Pre-increment operator, add one to the big number and return it.
+        /// @return A reference to this after the increment.
+        big_integer& operator++() {
+            if (this->sign < 0) {
+                if (--this->magnitude == 0) {
+                    this->sign = 0;
+                }
+            }
+            else {
+                this->sign = 1;
+                ++this->magnitude;
+            }
+            return *this;
+        }
+
+        /// @brief  Post-increment operator, add one to the big number and return a copy from before the increment.
+        /// @return The value of the big number before the increment.
+        big_integer operator++(int) {
+            big_integer temp(*this);
+            ++(*this);
+            return temp;
+        }
+
+        /// @brief  Pre-decrement operator, subtract one from the big number and return it.
+        /// @return A reference to this after the decrement.
+        big_integer& operator--() {
+            if (this->sign > 0) {
+                if (--this->magnitude == 0) {
+                    sign = 0;
+                }
+            }
+            else {
+                this->sign = -1;
+                ++this->magnitude;
+            }
+            return *this;
+        }
+
+        /// @brief  Post-decrement operator, subtract one from the big number and return a copy from before the decrement.
+        /// @return The value of the big number before the decrement.
+        big_integer operator--(int) {
+            big_integer temp(*this);
+            --(*this);
+            return temp;
+        }
+
+    public:
+        /// @brief Add two big numbers together.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_integer add(const big_integer& lhs, const big_integer& rhs) {
+            if (lhs.sign == 0) {
+                return rhs;
+            }
+            if (rhs.sign == 0) {
+                return lhs;
+            }
+            if (lhs.sign == rhs.sign) {
+                big_integer result;
+                result.sign = lhs.sign;
+                result.magnitude = lhs.magnitude + rhs.magnitude;
+                return result;
+            }
+            if (rhs.magnitude == lhs.magnitude) {
+                return {};
+            }
+            if (rhs.magnitude < lhs.magnitude) {
+                big_integer result;
+                result.sign = lhs.sign;
+                result.magnitude = lhs.magnitude - rhs.magnitude;
+                return result;
+            }
+            big_integer result;
+            result.sign = rhs.sign;
+            result.magnitude = rhs.magnitude - lhs.magnitude;
+            return result;
+        }
+
+        /// @brief Subtract a big number from another.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_integer subtract(const big_integer& lhs, const big_integer& rhs) {
+            return big_integer::add(lhs, -rhs);
+        }
+
+        /// @brief Multiply two big numbers together.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_integer multiply(const big_integer& lhs, const big_integer& rhs) {
+            big_integer result;
+            result.sign = lhs.sign * rhs.sign;
+            result.magnitude = lhs.magnitude * rhs.magnitude;
+            return result;
+        }
+
+        /// @brief Divide a big number by another.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_integer divide(const big_integer& lhs, const big_integer& rhs) {
+            big_integer result;
+            result.sign = lhs.sign * rhs.sign;
+            result.magnitude = lhs.magnitude / rhs.magnitude;
+            if (result.magnitude == 0) {
+                result.sign = 0;
+            }
+            return result;
+        }
+
+        /// @brief Bitwise shift a big number left by a number of bits.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The number of bits to shift the big number by.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_integer bit_shift_left(const big_integer& lhs, const unsigned long long int rhs) {
+            big_integer result;
+            result.sign = lhs.sign;
+            result.magnitude = lhs.magnitude << rhs;
+            return result;
+        }
+
+        /// @brief Bitwise shift a big number right by a number of bits.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The number of bits to shift the big number by.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_integer bit_shift_right(const big_integer& lhs, const unsigned long long int rhs) {
+            big_integer result;
+            result.sign = lhs.sign;
+            result.magnitude = lhs.magnitude >> rhs;
+            if (result.magnitude == 0) {
+                result.sign = 0;
+            }
+            return result;
+        }
+
+        /// @brief Bitwise AND two big numbers together.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_integer bit_and(const big_integer& lhs, const big_integer& rhs) {
+            if ((lhs.sign < 0) && (rhs.sign < 0)) {
+                big_integer result;
+                result.sign = -1;
+                result.magnitude = ((lhs.magnitude - 1) | (rhs.magnitude - 1)) + 1;
+                return result;
+            }
+            if ((lhs.sign > 0) && (rhs.sign < 0)) {
+                big_integer result;
+                result.magnitude = big_unsigned::bit_and_not(lhs.magnitude, rhs.magnitude - 1);
+                result.sign = (result.magnitude == 0 ? 0 : 1);
+                return result;
+            }
+            if ((lhs.sign < 0) && (rhs.sign > 0)) {
+                big_integer result;
+                result.magnitude = big_unsigned::bit_and_not(rhs.magnitude, lhs.magnitude - 1);
+                result.sign = (result.magnitude == 0 ? 0 : 1);
+                return result;
+            }
+            big_integer result;
+            result.magnitude = lhs.magnitude & rhs.magnitude;
+            result.sign = (result.magnitude == 0 ? 0 : 1);
+            return result;
+        }
+
+        /// @brief Bitwise OR two big numbers together.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_integer bit_or(const big_integer& lhs, const big_integer& rhs) {
+            if ((lhs.sign < 0) && (rhs.sign < 0)) {
+                big_integer result;
+                result.sign = -1;
+                result.magnitude = ((lhs.magnitude - 1) & (rhs.magnitude - 1)) + 1;
+                return result;
+            }
+            if ((lhs.sign > 0) && (rhs.sign < 0)) {
+                big_integer result;
+                result.sign = -1;
+                result.magnitude = big_unsigned::bit_and_not(rhs.magnitude - 1, lhs.magnitude) + 1;
+                return result;
+            }
+            if ((lhs.sign < 0) && (rhs.sign > 0)) {
+                big_integer result;
+                result.sign = -1;
+                result.magnitude = big_unsigned::bit_and_not(lhs.magnitude - 1, rhs.magnitude) + 1;
+                return result;
+            }
+            big_integer result;
+            result.sign = lhs.sign | rhs.sign;
+            result.magnitude = lhs.magnitude | rhs.magnitude;
+            return result;
+        }
+
+        /// @brief Bitwise XOR two big numbers together.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_integer bit_xor(const big_integer& lhs, const big_integer& rhs) {
+            if ((lhs.sign < 0) && (rhs.sign < 0)) {
+                big_integer result;
+                result.magnitude = ((lhs.magnitude - 1) ^ (rhs.magnitude - 1));
+                result.sign = (result.magnitude == 0 ? 0 : 1);
+                return result;
+            }
+            if ((lhs.sign > 0) && (rhs.sign < 0)) {
+                big_integer result;
+                result.sign = -1;
+                result.magnitude = (lhs.magnitude ^ (rhs.magnitude - 1)) + 1;
+                return result;
+            }
+            if ((lhs.sign < 0) && (rhs.sign > 0)) {
+                big_integer result;
+                result.sign = -1;
+                result.magnitude = ((lhs.magnitude - 1) ^ rhs.magnitude) + 1;
+                return result;
+            }
+            big_integer result;
+            result.sign = lhs.sign | rhs.sign;
+            result.magnitude = lhs.magnitude ^ rhs.magnitude;
+            if (result.magnitude == 0) {
+                result.sign = 0;
+            }
+            return result;
+        }
+
+        /// @brief Bitwise NOT a big number.
+        /// @param lhs The left hand side of the big number.
+        /// @return A big number with the value of the result of the evaluated expression.
+        static big_integer bit_not(const big_integer& lhs) {
+            return ((-lhs) - 1);
+        }
+
+        /// @brief Compare the size of two big numbers.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return true if the lhs is smaller than the rhs, false otherwise.
+        static bool less_than(const big_integer& lhs, const big_integer& rhs) {
+            return ((lhs.sign < rhs.sign) || ((lhs.sign == rhs.sign) && ((lhs.sign < 0) ? (rhs.magnitude < lhs.magnitude) : (lhs.magnitude < rhs.magnitude))));
+        }
+
+        /// @brief Compare the size of two big numbers.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return true if the lhs is equal to the rhs, false otherwise.
+        static bool equal_to(const big_integer& lhs, const big_integer& rhs) {
+            return ((lhs.sign == rhs.sign) && (lhs.magnitude == rhs.magnitude));
+        }
+
+        /// @brief Compare the size of two big numbers.
+        /// @param lhs The left hand side of the expression.
+        /// @param rhs The right hand side of the expression.
+        /// @return true if the lhs is not equal to the rhs, false otherwise.
+        static bool not_equal_to(const big_integer& lhs, const big_integer& rhs) {
+            return ((lhs.sign != rhs.sign) || (lhs.magnitude != rhs.magnitude));
+        }
+
+    public:
+        /// @brief  Addition assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after the addition of the rhs.
+        big_integer& operator+=(const big_integer& rhs) {
+            return (*this = big_integer::add(*this, rhs));
+        }
+
+        /// @brief  Addition operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return The value of this big number added to the rhs.
+        big_integer operator+(const big_integer& rhs) const {
+            return big_integer::add(*this, rhs);
+        }
+
+    public:
+        /// @brief  Subtraction assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after the subtraction of the rhs.
+        big_integer& operator-=(const big_integer& rhs) {
+            return (*this = big_integer::subtract(*this, rhs));
+        }
+
+        /// @brief  Subtraction assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after the subtraction of the rhs.
+        big_integer operator-(const big_integer& rhs) const {
+            return big_integer::subtract(*this, rhs);
+        }
+
+    public:
+        /// @brief  Multiplication assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after multiplication by the rhs.
+        big_integer& operator*=(const big_integer& rhs) {
+            return (*this = big_integer::multiply(*this, rhs));
+        }
+
+        /// @brief  Multiplication operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return The value of this big numbermultiplied by the rhs.
+        big_integer operator*(const big_integer& rhs) const {
+            return big_integer::multiply(*this, rhs);
+        }
+
+    public:
+        /// @brief  Division assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after division by the rhs.
+        big_integer& operator/=(const big_integer& rhs) {
+            return (*this = big_integer::divide(*this, rhs));
+        }
+
+        /// @brief  Division operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return The value of this big number divided by the rhs.
+        big_integer operator/(const big_integer& rhs) const {
+            return big_integer::divide(*this, rhs);
+        }
+
+    public:
+        /// @brief  Modulo assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this, set to the remainder of this big number divided by the rhs.
+        big_integer& operator%=(const big_integer& rhs) {
+            this->magnitude %= rhs.magnitude;
+            if (this->magnitude == 0) {
+                this->sign = 0;
+            }
+            return *this;
+        }
+
+        /// @brief  Modulo operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return The remainder of this big number divided by the rhs.
+        big_integer operator%(const big_integer& rhs) const {
+            big_integer remainder;
+            remainder.sign = this->sign;
+            remainder.magnitude = this->magnitude % rhs.magnitude;
+            if (remainder.magnitude == 0) {
+                remainder.sign = 0;
+            }
+            return remainder;
+        }
+
+    public:
+        /// @brief  Left bit shift assignment operator.
+        /// @param  rhs The number of bits to shift the big number.
+        /// @return A reference to this after bit shifting by the rhs number of bits.
+        big_integer& operator<<=(unsigned long long int rhs) {
+            return (*this = big_integer::bit_shift_left(*this, rhs));
+        }
+
+        /// @brief  Left bit shift operator.
+        /// @param  rhs The number of bits to shift the big number.
+        /// @return The value of this big number bit shifted by the rhs number of bits.
+        big_integer operator<<(unsigned long long int rhs) const {
+            return big_integer::bit_shift_left(*this, rhs);
+        }
+
+    public:
+        /// @brief  Right bit shift assignment operator.
+        /// @param  rhs The number of bits to shift the big number.
+        /// @return A reference to this after bit shifting by the rhs number of bits.
+        big_integer& operator>>=(unsigned long long int rhs) {
+            return (*this = big_integer::bit_shift_right(*this, rhs));
+        }
+
+        /// @brief  Right bit shift operator.
+        /// @param  rhs The number of bits to shift the big number.
+        /// @return The value of this big number bit shifted by the rhs number of bits.
+        big_integer operator>>(unsigned long long int rhs) const {
+            return big_integer::bit_shift_right(*this, rhs);
+        }
+
+    public:
+        /// @brief  Bitwise AND assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after a bitwise AND with the rhs.
+        big_integer& operator&=(const big_integer& rhs) {
+            return (*this = big_integer::bit_and(*this, rhs));
+        }
+
+        /// @brief  Bitwise AND operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return The value of this big number bitwise AND with the rhs.
+        big_integer operator&(const big_integer& rhs) const {
+            return big_integer::bit_and(*this, rhs);
+        }
+
+    public:
+        /// @brief  Bitwise OR assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after a bitwise OR with the rhs.
+        big_integer& operator|=(const big_integer& rhs) {
+            return (*this = big_integer::bit_or(*this, rhs));
+        }
+
+        /// @brief  Bitwise OR operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return The value of this big number bitwise OR with the rhs.
+        big_integer operator|(const big_integer& rhs) const {
+            return big_integer::bit_or(*this, rhs);
+        }
+
+    public:
+        /// @brief  Bitwise XOR assignment operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return A reference to this after a bitwise XOR with the rhs.
+        big_integer& operator^=(const big_integer& rhs) {
+            return (*this = big_integer::bit_xor(*this, rhs));
+        }
+
+        /// @brief  Bitwise XOR operator.
+        /// @param  rhs The right hand side of the expression.
+        /// @return The value of this big number bitwise XOR with the rhs.
+        big_integer operator^(const big_integer& rhs) const {
+            return big_integer::bit_xor(*this, rhs);
+        }
+
+    public:
+        /// @brief  Bitwise NOT operator.
+        /// @return The value of this big number with all its bits inverted.
+        big_integer operator~() {
+            return big_integer::bit_not(*this);
+        }
+
+    public:
+        /// @brief  Less than comparison.
+        /// @param  rhs The right hand side of the expression.
+        /// @return true if the value of this big number is less than the rhs, false otherwise.
+        bool operator<(const big_integer& rhs) const {
+            return big_integer::less_than(*this, rhs);
+        }
+
+        /// @brief  Greater than comparison.
+        /// @param  rhs The right hand side of the expression.
+        /// @return true if the value of this big number is greater than the rhs, false otherwise.
+        bool operator>(const big_integer& rhs) const {
+            return big_integer::less_than(rhs, *this);
+        }
+
+    public:
+        /// @brief  Less than or equal comparison.
+        /// @param  rhs The right hand side of the expression.
+        /// @return true if the value of this big number is less than or equal to the rhs, false otherwise.
+        bool operator<=(const big_integer& rhs) const {
+            return !big_integer::less_than(rhs, *this);
+        }
+
+        /// @brief  Greater than or equal comparison.
+        /// @param  rhs The right hand side of the expression.
+        /// @return true if the value of this big number is greater than or equal to the rhs, false otherwise.
+        bool operator>=(const big_integer& rhs) const {
+            return !big_integer::less_than(*this, rhs);
+        }
+
+    public:
+        /// @brief  Equal comparison.
+        /// @param  rhs The right hand side of the expression.
+        /// @return true if the value of this big number is equal to the rhs, false otherwise.
+        bool operator==(const big_integer& rhs) const {
+            return big_integer::equal_to(*this, rhs);
+        }
+
+        /// @brief  Not equal comparison.
+        /// @param  rhs The right hand side of the expression.
+        /// @return true if the value of this big number is not equal to the rhs, false otherwise.
+        bool operator!=(const big_integer& rhs) const {
+            return big_integer::not_equal_to(*this, rhs);
+        }
+
+    public:
+        /// @brief  Get the length of the big number in allocated bits for the magnitude.
+        /// @return The number of bits allocated to store the big number.
+        unsigned long long int get_length_bits() const {
+            return this->magnitude.get_length_bits();
+        }
+
+        /// @brief  Get the length of the big number in allocated bytes for the magnitude.
+        /// @return The number of bytes allocated to store the big number.
+        unsigned long long int get_length_bytes() const {
+            return this->magnitude.get_length_bytes();
+        }
+
+        /// @brief  Get the length of the big number as a decimal number.
+        /// @return The number of digits required to represent the big number.
+        unsigned long long int get_length_decimal() const {
+            return this->magnitude.get_length_decimal();
+        }
+
+    public:
+        /// @brief  Conver the big number to a string and output it in the provided buffer.
+        /// @param  buffer The output string buffer, must be larger than the decimal length of the big number plus one for null termination and one for a sign.
+        /// @param  length The length of the output buffer.
+        /// @return The decimal length of the big number, equal to the number of digits written.
+        unsigned long long int to_string(char* buffer, const unsigned long long int length) const {
+            GTL_BIG_INTEGER_ASSERT(length > this->magnitude.get_length_decimal() + 1, "Buffer length must be greater than decimal length of number including space for a sign character.");
+            if (this->sign < 0) {
+                buffer[0] = '-';
+            }
+            return this->magnitude.to_string(&buffer[(this->sign < 0)], length - (this->sign < 0)) + (this->sign < 0);
+        }
     };
 }
+
+#undef GTL_BIG_INTEGER_ASSERT
 
 #endif // GTL_BIG_INTEGER_HPP

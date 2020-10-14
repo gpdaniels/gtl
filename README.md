@@ -85,6 +85,7 @@ The current classes are as described below:
 
 |                       Class | Description                                                                             |
 |----------------------------:|:----------------------------------------------------------------------------------------|
+|             **big_integer** | Arbitrary sized signed integers.                                                        |
 |            **big_unsigned** | Arbitrary sized unsigned integers.                                                      |
 
 ### Protection ###
