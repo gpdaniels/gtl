@@ -617,17 +617,20 @@ namespace gtl {
 
         /// @brief Bitwise AND a big number with the bitwise NOT of a second.
         /// @param lhs The left hand side of the expression.
-        /// @param rhs The right hand side of the expression.
+        /// @param rhs The right hand side of the expression, note this will be extended to the length of the lhs.
         /// @return A big number with the value of the result of the evaluated expression.
         static big_unsigned bit_and_not(const big_unsigned& lhs, const big_unsigned& rhs) {
             const unsigned long long int lhs_chunks = lhs.chunks.size();
             const unsigned long long int rhs_chunks = rhs.chunks.size();
             const unsigned long long int min_chunks = lhs_chunks < rhs_chunks ? lhs_chunks : rhs_chunks;
             big_unsigned result;
-            result.chunks.resize(min_chunks);
+            result.chunks.resize(lhs_chunks);
             // Loop over the chunks and fill them with the bitwise and of the bitwise not of the rhs.
             for (unsigned long long int chunk_index = 0; chunk_index < min_chunks; ++chunk_index) {
                 result.chunks[chunk_index] = lhs.chunks[chunk_index] & ~rhs.chunks[chunk_index];
+            }
+            for (unsigned long long int chunk_index = min_chunks; chunk_index < lhs_chunks; ++chunk_index) {
+                result.chunks[chunk_index] = lhs.chunks[chunk_index];
             }
             // Remove zeros on the end.
             result.trim();
@@ -909,7 +912,7 @@ namespace gtl {
         /// @param  buffer The output string buffer, must be larger than the decimal length of the big number plus one for null termination.
         /// @param  length The length of the output buffer.
         /// @return The decimal length of the big number, equal to the number of digits written.
-        unsigned long long int to_string(char* buffer, const unsigned long long int length) {
+        unsigned long long int to_string(char* buffer, const unsigned long long int length) const {
             GTL_BIG_UNSIGNED_ASSERT(length > this->get_length_decimal(), "Buffer length must be greater than decimal length of number.");
             static_cast<void>(length);
             big_unsigned temp(*this);
