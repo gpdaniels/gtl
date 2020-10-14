@@ -391,6 +391,8 @@ TEST(big_unsigned, operator, bit_and) {
     REQUIRE((big_unsigned_lhs & big_unsigned_rhs) == 0);
     REQUIRE((big_unsigned_lhs & big_unsigned_lhs) == big_unsigned_lhs);
     REQUIRE((big_unsigned_rhs & big_unsigned_rhs) == big_unsigned_rhs);
+    REQUIRE((big_unsigned_lhs & 2) == 0);
+    REQUIRE((big_unsigned_rhs & 2) == 2);
     REQUIRE((big_unsigned_lhs & 1) == 0);
     REQUIRE((big_unsigned_rhs & 1) == 0);
     REQUIRE((big_unsigned_lhs & 0) == 0);
@@ -492,7 +494,7 @@ TEST(big_unsigned, operator, bit_and_not) {
 
     gtl::big_unsigned big_unsigned_lhs(lhs);
     gtl::big_unsigned big_unsigned_rhs(rhs);
-    REQUIRE(gtl::big_unsigned::bit_and_not(big_unsigned_lhs, big_unsigned_rhs) == 0);
+    REQUIRE(gtl::big_unsigned::bit_and_not(big_unsigned_lhs, big_unsigned_rhs) == lhs);
     REQUIRE(gtl::big_unsigned::bit_and_not(big_unsigned_rhs, big_unsigned_lhs) == rhs);
     REQUIRE(gtl::big_unsigned::bit_and_not(big_unsigned_lhs, big_unsigned_lhs) == 0);
     REQUIRE(gtl::big_unsigned::bit_and_not(big_unsigned_rhs, big_unsigned_rhs) == 0);
@@ -502,7 +504,7 @@ TEST(big_unsigned, operator, bit_and_not) {
     gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     gtl::big_unsigned big_unsigned_352(two_power_352, testbench::string_length(two_power_352));
     REQUIRE(gtl::big_unsigned::bit_and_not(big_unsigned_333, big_unsigned_352) == big_unsigned_333);
-    REQUIRE(gtl::big_unsigned::bit_and_not(big_unsigned_352, big_unsigned_333) == 0);
+    REQUIRE(gtl::big_unsigned::bit_and_not(big_unsigned_352, big_unsigned_333) == big_unsigned_352);
     REQUIRE(gtl::big_unsigned::bit_and_not(big_unsigned_333, big_unsigned_333) == 0);
     REQUIRE(gtl::big_unsigned::bit_and_not(big_unsigned_352, big_unsigned_352) == 0);
 }
