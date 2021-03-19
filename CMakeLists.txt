@@ -632,11 +632,27 @@ IF(BUILD_CHECKS)
     # Find all check scripts in the checks directory.
     FILE(GLOB CHECK_FILES "${CMAKE_SOURCE_DIR}/Checks/*.[Cc][Mm][Aa][Kk][Ee]")
     
+    # Add a checking target to attach all the post builds to and add it to the ALL target.
+    ADD_CUSTOM_TARGET(gtl_check ALL
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running checks..."
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+    
     # Include all found scripts.
     FOREACH(CHECK_FILE ${CHECK_FILES})
-        INCLUDE("${CHECK_FILE}")
+        ADD_CUSTOM_COMMAND(
+            TARGET gtl_check
+            POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_SOURCE_DIR}" "-P" "${CHECK_FILE}"
+            COMMENT "Running ${CHECK_FILE}..."
+        )
     ENDFOREACH()
-    
+ELSE()
+    # Add a dummy checking target so that the target exists.
+    ADD_CUSTOM_TARGET(gtl_check
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "No checks found."
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
 ENDIF()
 
 ###############################################################################

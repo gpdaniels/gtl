@@ -18,7 +18,14 @@
 # THE SOFTWARE
 #
 
+# Define the minimum version of CMake that is required.
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
+CMAKE_POLICY(VERSION 3.5.1)
+
 MESSAGE(STATUS "Checking include guards...")
+
+# Get parameters passed from the main CMakeLists.txt.
+SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 
 # Find all source files, test headers, and testbench headers.
 FILE(GLOB_RECURSE GUARDED_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DIR}/Source/*" "${CMAKE_SOURCE_DIR}/Tests/*.hpp" "${CMAKE_SOURCE_DIR}/Testbench/*.hpp")
