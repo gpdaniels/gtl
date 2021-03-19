@@ -45,8 +45,13 @@ FOREACH(GUARDED_FILE ${GUARDED_FILES})
     # Replace newlines.
     STRING(REGEX REPLACE "[\r]?[\n]" ";" GUARDED_FILE_LINES "${GUARDED_FILE_CONTENT}")
     
-    # Calculate the end guard lines location.
+    # Get the number of lines in the file.
     LIST(LENGTH GUARDED_FILE_LINES GUARDED_FILE_LENGTH)
+    IF(GUARDED_FILE_LENGTH LESS 24)
+        MESSAGE(FATAL_ERROR "Include guard in file '${GUARDED_FILE}' is not correct: The file is too short.")
+    ENDIF()
+
+    # Calculate the end guard lines location.
     MATH(EXPR GUARDED_FILE_LENGTH "${GUARDED_FILE_LENGTH}-2")
     
     # Create a new list from the file lines.

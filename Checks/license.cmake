@@ -45,6 +45,12 @@ FOREACH(LICENSED_FILE ${LICENSED_FILES})
     # Replace newlines.
     STRING(REGEX REPLACE "[\r]?[\n]" ";" LICENSED_FILE_LINES "${LICENSED_FILE_CONTENT}")
     
+    # Get the number of lines in the file.
+    LIST(LENGTH LICENSED_FILE_LINES LICENSED_FILE_LENGTH)
+    IF(LICENSED_FILE_LENGTH LESS 18)
+        MESSAGE(FATAL_ERROR "License in file '${LICENSED_FILE}' does not match: The file is too short.")
+    ENDIF()
+
     # Prepare the license regex.
     SET(LICENSE_REGEX_LINES
         "^/\\*$"
