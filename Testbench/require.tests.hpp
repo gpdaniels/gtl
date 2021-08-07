@@ -94,4 +94,18 @@ namespace testbench {
         )                                                                                               \
     )
 
+/// @brief  Silent version of the require macro.
+#define REQUIRE_SILENT(...)                                                                             \
+    REQUIRE_IF(REQUIRE_HAS_TWO_ARGUMENTS(__VA_ARGS__))(                                                 \
+        UNUSED((REQUIRE_EXPAND(REQUIRE_ARGUMENT_1(__VA_ARGS__))) || (                                   \
+            (++testbench::REQUIRE_FAILURE_COUNT),                                                       \
+            0)                                                                                          \
+        )                                                                                               \
+    /*REQUIRE_ELSE*/,                                                                                   \
+        UNUSED((__VA_ARGS__) || (                                                                       \
+            (++testbench::REQUIRE_FAILURE_COUNT),                                                       \
+            0)                                                                                          \
+        )                                                                                               \
+    )
+
 #endif // GTL_REQUIRE_TESTS_HPP

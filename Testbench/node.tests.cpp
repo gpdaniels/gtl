@@ -30,7 +30,20 @@ namespace testbench {
         test_node::root = this;
     }
 
-    test_node* test_node::get_root() {
+    void test_node::reverse() {
+        const test_node* current = test_node::root;
+        const test_node *prev = nullptr;
+        const test_node *next = nullptr;
+        while (current != nullptr) {
+            next = current->next;
+            const_cast<test_node*>(current)->next = prev;
+            prev = current;
+            current = next;
+        }
+        test_node::root = prev;
+    }
+
+    const test_node* test_node::get_root() {
         return test_node::root;
     }
 

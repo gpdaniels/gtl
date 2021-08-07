@@ -20,6 +20,7 @@ THE SOFTWARE
 
 #include "main.tests.hpp"
 #include "comparison.tests.hpp"
+#include "debugger.tests.hpp"
 #include "print.tests.hpp"
 #include "process.tests.hpp"
 #include "require.tests.hpp"
@@ -94,7 +95,14 @@ int main(int argument_count, char* arguments[]) {
             }
         }
     }
-    
+
+    if (testbench::is_debugger_attached()) {
+        execute_in_process = false;
+        if (!quiet) {
+            PRINT("Debugger detected: Launching tests in this process.\n");
+        }
+    }
+
     // Notifiy if any sanitizers are running.
     #if GTL_HAS_SANITIZER_ADDRESS
         if (!quiet) {
@@ -126,6 +134,8 @@ int main(int argument_count, char* arguments[]) {
     
     unsigned long long TEST_COUNT = 0;
     unsigned long long TEST_FAILURE_COUNT = 0;
+
+    testbench::test_node::reverse();
 
     for (const testbench::test_node* current_test = testbench::test_node::get_root(); current_test != nullptr; current_test = current_test->get_next()) {
         if (filter_file && !testbench::is_string_same(filter_file, current_test->get_file())) {

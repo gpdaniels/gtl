@@ -1,6 +1,6 @@
 /*
 The MIT License
-Copyright (c) 2019 Geoffrey Daniels. http://gpdaniels.com/
+Copyright (c) 2018 Geoffrey Daniels. http://gpdaniels.com/
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -19,44 +19,11 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef GTL_NODE_TESTS_HPP
-#define GTL_NODE_TESTS_HPP
+#ifndef GTL_DEBUGGER_TESTS_HPP
+#define GTL_DEBUGGER_TESTS_HPP
 
 namespace testbench {
-    // Define the test_node type, used to create a linked list of tests at program startup.
-    class test_node final {
-    public:
-        using function_type = void(*)();
-
-    private:
-        static inline const test_node* root = nullptr;
-
-        const char* const file;
-        const char* const group;
-        const char* const name;
-
-        const function_type function;
-
-        const test_node* next;
-
-    public:
-        test_node(const char* const test_file, const char* const test_group, const char* const test_name, function_type test_function);
-
-    public:
-        static void reverse();
-
-        static const test_node* get_root();
-
-        const char* get_file() const;
-
-        const char* get_group() const;
-
-        const char* get_name() const;
-
-        function_type get_function() const;
-
-        const test_node* get_next() const;
-    };
+    bool is_debugger_attached();
 }
 
-#endif // GTL_NODE_TESTS_HPP
+#endif // GTL_DEBUGGER_TESTS_HPP
