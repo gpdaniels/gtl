@@ -101,13 +101,13 @@ namespace gtl {
             return (static_cast<double>(this->get_random_raw()) + 0.5) * (1.0 / static_cast<double>(1ull << 32));
         }
 
-        /// @brief  Get a random number in the half-open interval 0 <= x < 1.
+        /// @brief  Get a random number in the half-open interval 0 <= value < 1.
         /// @return A pseudo-random number.
         double get_random_exclusive_top() {
             return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>(1ull << 32));
         }
 
-        /// @brief  Get a random number in the closed interval 0 <= x <= 1.
+        /// @brief  Get a random number in the closed interval 0 <= value <= 1.
         /// @return A pseudo-random number.
         double get_random_inclusive() {
             return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>((1ull << 32) - 1));

@@ -56,9 +56,15 @@ TEST(random_romu_32, constructor, seed) {
     testbench::do_not_optimise_away(random_romu_32);
 }
 
+TEST(random_romu_32, constructor, seed_multi) {
+    gtl::random_romu_32 random_romu_32(0x01234567, 0x01234567, 0x01234567, 0x0123456);
+    testbench::do_not_optimise_away(random_romu_32);
+}
+
 TEST(random_romu_32, function, seed) {
     gtl::random_romu_32 random_romu_32;
     random_romu_32.seed(0x01234567);
+    random_romu_32.seed(0x01234567, 0x01234567, 0x01234567, 0x0123456);
 }
 
 TEST(random_romu_32, function, get_random_raw) {
