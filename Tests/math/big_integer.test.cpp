@@ -748,8 +748,7 @@ TEST(big_integer, operator, bit_or) {
     REQUIRE((big_integer_lhs_negative | big_integer_rhs_negative) == (lhs_negative | rhs_negative));
     REQUIRE((big_integer_lhs_negative | big_integer_lhs_negative) == big_integer_lhs_negative);
     REQUIRE((big_integer_rhs_negative | big_integer_rhs_negative) == big_integer_rhs_negative);
-    REQUIRE((big_integer_lhs_negative | 1) == lhs_negative | 1);
-
+    REQUIRE((big_integer_lhs_negative | 1) == (lhs_negative | 1));
     REQUIRE((big_integer_rhs_negative | 1) == (rhs_negative | 1));
     REQUIRE((big_integer_lhs_negative | 0) == lhs_negative);
     REQUIRE((big_integer_rhs_negative | 0) == rhs_negative);
@@ -1113,6 +1112,46 @@ TEST(big_integer, operator, not_equal_to) {
     REQUIRE((big_integer_lhs_negative != big_integer_lhs) == true);
     REQUIRE((big_integer_rhs != big_integer_rhs_negative) == true);
     REQUIRE((big_integer_rhs_negative != big_integer_rhs) == true);
+}
+
+TEST(big_integer, function, signum) {
+    signed long long int lhs = 1ull << 62;
+    signed long long int rhs = 2;
+
+    gtl::big_integer big_integer_lhs(lhs);
+    gtl::big_integer big_integer_rhs(rhs);
+    REQUIRE(gtl::big_integer::signum(big_integer_lhs) == 1);
+    REQUIRE(gtl::big_integer::signum(big_integer_rhs) == 1);
+
+    signed long long int lhs_negative = -(1ll << 62);
+    signed long long int rhs_negative = -2;
+
+    gtl::big_integer big_integer_lhs_negative(lhs_negative);
+    gtl::big_integer big_integer_rhs_negative(rhs_negative);
+    REQUIRE(gtl::big_integer::signum(big_integer_lhs_negative) == -1);
+    REQUIRE(gtl::big_integer::signum(big_integer_rhs_negative) == -1);
+
+    REQUIRE(gtl::big_integer::signum(0) == 0);
+}
+
+TEST(big_integer, function, abs) {
+    signed long long int lhs = 1ull << 62;
+    signed long long int rhs = 2;
+
+    gtl::big_integer big_integer_lhs(lhs);
+    gtl::big_integer big_integer_rhs(rhs);
+    REQUIRE(gtl::big_integer::abs(big_integer_lhs) == lhs);
+    REQUIRE(gtl::big_integer::abs(big_integer_rhs) == rhs);
+
+    signed long long int lhs_negative = -(1ll << 62);
+    signed long long int rhs_negative = -2;
+
+    gtl::big_integer big_integer_lhs_negative(lhs_negative);
+    gtl::big_integer big_integer_rhs_negative(rhs_negative);
+    REQUIRE(gtl::big_integer::abs(big_integer_lhs_negative) == lhs);
+    REQUIRE(gtl::big_integer::abs(big_integer_rhs_negative) == rhs);
+
+    REQUIRE(gtl::big_integer::signum(0) == 0);
 }
 
 TEST(big_integer, operator, get_length_bits) {
