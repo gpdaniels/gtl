@@ -47,7 +47,7 @@ namespace gtl {
     public:
         /// @brief  Destructor calls the destructor of the implementation.
         ~pimpl() {
-            reinterpret_cast<implementation*>(&this->implementation_data[0])->~implementation();;
+            reinterpret_cast<implementation*>(&this->implementation_data[0])->~implementation();
         }
 
         /// @brief  Constructor forwards arguments to the constructor of the implementation.

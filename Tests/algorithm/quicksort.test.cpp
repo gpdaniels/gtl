@@ -430,7 +430,7 @@ TEST(quicksort, evaluate, benchmark_sort) {
         std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
         std::sort(data.begin(), data.end());
         std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-        PRINT("Standard:    %7.3fms\n", (end - start).count() / 1000000.0);
+        PRINT("Standard:    %7.3fms\n", static_cast<double>((end - start).count()) / 1000000.0);
     };
 
     static const auto quicksort = [](const std::vector<int>& random_data){
@@ -442,7 +442,7 @@ TEST(quicksort, evaluate, benchmark_sort) {
         std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
         gtl::quicksort::sort(data.data(), data.size());
         std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-        PRINT("Quicksort:   %7.3fms\n", (end - start).count() / 1000000.0);
+        PRINT("Quicksort:   %7.3fms\n", static_cast<double>((end - start).count()) / 1000000.0);
     };
 
     for (unsigned long long int size = 0; size < (1 << 18); size = (!size) + (size << 4)) {
@@ -473,7 +473,7 @@ TEST(quicksort, evaluate, benchmark_partial) {
         std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
         std::partial_sort(data.begin(), data.begin() + data.size() / 2, data.end());
         std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-        PRINT("Partial Standard:    %7.3fms\n", (end - start).count() / 1000000.0);
+        PRINT("Partial Standard:    %7.3fms\n", static_cast<double>((end - start).count()) / 1000000.0);
     };
 
     static const auto quicksort = [](const std::vector<int>& random_data){
@@ -485,7 +485,7 @@ TEST(quicksort, evaluate, benchmark_partial) {
         std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
         gtl::quicksort::sort_partial(data.data(), data.size(), data.size() / 2);
         std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-        PRINT("Partial Quicksort:   %7.3fms\n", (end - start).count() / 1000000.0);
+        PRINT("Partial Quicksort:   %7.3fms\n", static_cast<double>((end - start).count()) / 1000000.0);
     };
 
     for (unsigned long long int size = 0; size < (1 << 18); size = (!size) + (size << 4)) {

@@ -98,9 +98,18 @@ TEST(assume, evaluate, assume) {
             GTL_ASSUME(true);
         }
 
+        #if defined(__clang__)
+            #pragma clang diagnostic push
+            #pragma clang diagnostic ignored "-Wunreachable-code-loop-increment"
+        #endif
+
         for (bool loop = false; loop; loop = false) {
             GTL_ASSUME(false);
         }
+
+        #if defined(__clang__)
+            #pragma clang diagnostic pop
+        #endif
     }
     
     // Assuming in a for loop, without {}.
@@ -108,8 +117,17 @@ TEST(assume, evaluate, assume) {
         for (bool loop = true; loop; loop = false)
             GTL_ASSUME(true);
 
+        #if defined(__clang__)
+            #pragma clang diagnostic push
+            #pragma clang diagnostic ignored "-Wunreachable-code-loop-increment"
+        #endif
+
         for (bool loop = false; loop; loop = false)
             GTL_ASSUME(false);
+
+        #if defined(__clang__)
+            #pragma clang diagnostic pop
+        #endif
     }
     
     // Assuming in a while loop, with {}.
