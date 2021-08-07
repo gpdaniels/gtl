@@ -22,58 +22,10 @@ THE SOFTWARE
 #ifndef GTL_BENCHMARK_TESTS_HPP
 #define GTL_BENCHMARK_TESTS_HPP
 
-#include "abort.tests.hpp"
 #include "lambda.tests.hpp"
-#include "optimise.tests.hpp"
 
 namespace testbench {
-    long long int get_timestamp_nanoseconds();
-
-    double get_difference_seconds(long long int start_nanoseconds, long long int end_nanoseconds);
-
-    template <typename type>
-    double benchmark(lambda<type()>&& testFunction, unsigned long long int minimum_iterations = 1) {
-        // Warmup
-        do_not_optimise_away(testFunction);
-
-        // Monitoring variables.
-        long long int start_nanoseconds = get_timestamp_nanoseconds();
-        long long int end_nanoseconds = start_nanoseconds;
-        unsigned long long int iterations = 0;
-
-        // Testing
-        while (iterations < minimum_iterations) {
-
-            do_not_optimise_away(testFunction);
-
-            ++iterations;
-            end_nanoseconds = get_timestamp_nanoseconds();
-        }
-
-        return get_difference_seconds(end_nanoseconds, start_nanoseconds) / static_cast<double>(iterations);
-    }
-
-    template <typename type>
-    unsigned long long int benchmark(lambda<type()>&& testFunction, double minimum_runtime) {
-        // Warmup
-        do_not_optimise_away(testFunction);
-
-        // Monitoring variables.
-        long long int start_nanoseconds = get_timestamp_nanoseconds();
-        long long int end_nanoseconds = start_nanoseconds;
-        unsigned long long int iterations = 0;
-
-        // Testing
-        while (get_difference_seconds(end_nanoseconds, start_nanoseconds) < minimum_runtime) {
-
-            do_not_optimise_away(testFunction);
-
-            ++iterations;
-            end_nanoseconds = get_timestamp_nanoseconds();
-        }
-
-        return iterations;
-    }
+    double benchmark(lambda<void()>&& testFunction, unsigned long long int minimum_iterations = 1, double minimum_runtime = 0.0);
 }
 
 #endif // GTL_BENCHMARK_TESTS_HPP

@@ -46,27 +46,6 @@ namespace testbench {
     void use_character(char character) {
         putchar(character);
     }
-
-    template <>
-    void do_not_optimise_away(lambda<void()>&& function) {
-        // Call function.
-        function();
-
-        // To prevent value and function being optimised away they must be used somwhere.
-        // When using the value and function they must not impact the benchmark being performed.
-        // Therefore, use the value and function inside a never executed if block.
-        // However, compilers are smart enough that using an if(false) block is not enough.
-        // An if block is required that will never execute and complex enough that the compiler cannot remove it.
-        // Enter std::thread::id, the compiler cannot know that the current thread id will never match std::thread::id().
-        if (check_thread_id()) {
-            // Once inside the if block we must now "use" the function.
-            for (unsigned long long int index = 0; index < sizeof(lambda<void()>); ++index) {
-                use_character(reinterpret_cast<char*>(&function)[index]);
-            }
-            // To sanity check that this block of code is never reached, abort.
-            testbench::abort();
-        }
-    }
 }
 
 #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
