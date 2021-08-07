@@ -57,7 +57,7 @@ FOREACH(GUARDED_FILE ${GUARDED_FILES})
     # Create a new list from the file lines.
     LIST(GET GUARDED_FILE_LINES 20 21 22 ${GUARDED_FILE_LENGTH} GUARDED_FILE_GUARD_LINES)
     
-    # Determine the include guard name of the file.
+    # Determine the include guard name from the file name.
     GET_FILENAME_COMPONENT(GUARDED_FILE_NAME "${GUARDED_FILE}" NAME)
     STRING(REGEX REPLACE "\\.hpp$" "" GUARDED_FILE_NAME "${GUARDED_FILE_NAME}")
     STRING(TOUPPER "${GUARDED_FILE_NAME}" GUARDED_FILE_NAME)

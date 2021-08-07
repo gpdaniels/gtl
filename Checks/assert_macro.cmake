@@ -42,9 +42,6 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     # Replace special list chars.
     STRING(REGEX REPLACE "([[]|[]])" "\\\\1" SOURCE_FILE_CONTENT "${SOURCE_FILE_CONTENT}")
     
-    # Replace newlines.
-    STRING(REGEX REPLACE "[\r]?[\n]" ";" SOURCE_FILE_LINES "${SOURCE_FILE_CONTENT}")
-    
     # Determine the include guard name of the file.
     GET_FILENAME_COMPONENT(SOURCE_FILE_NAME "${SOURCE_FILE}" NAME)
     STRING(TOUPPER "${SOURCE_FILE_NAME}" SOURCE_FILE_NAME_UPPER)
@@ -67,6 +64,9 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
         "^#   define GTL_${SOURCE_FILE_NAME_UPPER}_ASSERT\\(ASSERTION, MESSAGE\\) static_cast<void>\\(0\\)$"
         "^#endif$"
     )
+    
+    # Replace newlines.
+    STRING(REGEX REPLACE "[\r]?[\n]" ";" SOURCE_FILE_LINES "${SOURCE_FILE_CONTENT}")
     
     # Create a new list from the file lines.
     LIST(GET SOURCE_FILE_LINES 24 25 26 27 28 29 30 31 32 33 SOURCE_FILE_ASSERT_LINES)
