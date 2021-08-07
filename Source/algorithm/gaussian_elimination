@@ -70,21 +70,28 @@ namespace gtl {
 
             problem_type problem_pivoted = problem;
 
+            constexpr static const auto abs = [](float value) -> float {
+                if (value > 0) {
+                    return value;
+                }
+                return -value;
+            };
+
             // Pivot array if required using the "first non-zero pivot" strategy.
             // Warning: This strategy can fail for valid sets of equations, resulting in no solution.
             for (unsigned long long int i = 0; i < variable_count; ++i) {
                 // If this equation needs to be swapped.
-                if (problem_pivoted.equations[i].coefficients[i] == 0) {
+                if (abs(problem_pivoted.equations[i].coefficients[i]) < 1e-6f) {
                     // Find a suitable equation from the remaining.
                     for (unsigned long long int j = i + 1; j < variable_count; ++j) {
-                        if (problem_pivoted.equations[i].coefficients[j] != 0) {
+                        if (abs(problem_pivoted.equations[i].coefficients[j]) > 1e-6f) {
                             equation_type temp = problem_pivoted.equations[i];
                             problem_pivoted.equations[i] = problem_pivoted.equations[j];
                             problem_pivoted.equations[j] = temp;
                             break;
                         }
                     }
-                    if (problem_pivoted.equations[i].coefficients[i] == 0) {
+                    if (abs(problem_pivoted.equations[i].coefficients[i]) < 1e-6f) {
                         // Couldn't swap equation below current equation.
                         return false;
                     }
