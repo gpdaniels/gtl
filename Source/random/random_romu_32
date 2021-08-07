@@ -72,9 +72,11 @@ namespace gtl {
             this->seed(seed_value);
         }
 
-        /// @brief  Constructor using an array of 32 bit integers as the seed.
-        /// @param  seed_values Seed value used to initialise the state.
-        /// @param  size Number of entried in the array.
+        /// @brief  Constructor using four 32 bit values as seed.
+        /// @param  seed_value_0 Seed value used to initialise part of the state.
+        /// @param  seed_value_1 Seed value used to initialise part of the state.
+        /// @param  seed_value_2 Seed value used to initialise part of the state.
+        /// @param  seed_value_3 Seed value used to initialise part of the state.
         random_romu_32(unsigned int seed_value_0, unsigned int seed_value_1, unsigned int seed_value_2, unsigned int seed_value_3) {
             this->seed(seed_value_0, seed_value_1, seed_value_2, seed_value_3);
         }
@@ -88,7 +90,7 @@ namespace gtl {
             this->state[3] = seed_value ^ 0x00FF00FFu;
         }
 
-        /// @brief  Initialise the state from an array of 32 bit ints as seed.
+        /// @brief  Initialise the state from four 32 bit values as seed.
         /// @param  seed_value_0 Seed value used to initialise part of the state.
         /// @param  seed_value_1 Seed value used to initialise part of the state.
         /// @param  seed_value_2 Seed value used to initialise part of the state.
@@ -122,13 +124,13 @@ namespace gtl {
             return (static_cast<double>(this->get_random_raw()) + 0.5) * (1.0 / static_cast<double>(1ull << 32));
         }
 
-        /// @brief  Get a random number in the half-open interval 0 <= x < 1.
+        /// @brief  Get a random number in the half-open interval 0 <= value < 1.
         /// @return A pseudo-random number.
         double get_random_exclusive_top() {
             return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>(1ull << 32));
         }
 
-        /// @brief  Get a random number in the closed interval 0 <= x <= 1.
+        /// @brief  Get a random number in the closed interval 0 <= value <= 1.
         /// @return A pseudo-random number.
         double get_random_inclusive() {
             return static_cast<double>(this->get_random_raw()) * (1.0 / static_cast<double>((1ull << 32) - 1));
