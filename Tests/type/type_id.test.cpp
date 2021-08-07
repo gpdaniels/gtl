@@ -45,7 +45,10 @@ TEST(type_id, traits, standard) {
     #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         REQUIRE(std::is_trivially_copyable<gtl::type_id>::value == true, "Expected std::is_trivially_copyable to be true.");
     #elif defined(_MSC_VER)
-        REQUIRE(std::is_trivially_copyable<gtl::type_id>::value == false, "Expected std::is_trivially_copyable to be false.");
+        #if 0
+            // Not reliable across compiler / os.
+            REQUIRE(std::is_trivially_copyable<gtl::type_id>::value == false, "Expected std::is_trivially_copyable to be false.");
+        #endif
     #endif
 
     REQUIRE(std::is_standard_layout<gtl::type_id>::value == true, "Expected std::is_standard_layout to be true.");

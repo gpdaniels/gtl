@@ -140,7 +140,10 @@ TEST(access, traits, standard) {
     #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
         REQUIRE(std::is_trivially_copyable<test_class>::value == true);
     #elif defined(_MSC_VER)
-        REQUIRE(std::is_trivially_copyable<test_class>::value == false);
+        #if 0
+            // Not reliable across compiler / os.
+            REQUIRE(std::is_trivially_copyable<test_class>::value == false);
+        #endif
     #endif
 
     REQUIRE(std::is_trivially_copyable<test_class_access>::value == false);

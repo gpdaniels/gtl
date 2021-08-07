@@ -41,7 +41,10 @@ TEST(error, traits, standard) {
     REQUIRE((std::is_trivial<gtl::error>::value == false));
 
     #if defined(_MSC_VER)
-        REQUIRE((std::is_trivially_copyable<gtl::error>::value == false));
+        #if 0
+            // Not reliable across compiler / os.
+            REQUIRE((std::is_trivially_copyable<gtl::error>::value == false));
+        #endif
     #else
         REQUIRE((std::is_trivially_copyable<gtl::error>::value == true));
     #endif
