@@ -33,7 +33,7 @@ THE SOFTWARE
 #   define GTL_BIG_INTEGER_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
-#include "big_unsigned"
+#include <math/big_unsigned>
 
 namespace gtl {
     class big_integer final {
@@ -157,6 +157,13 @@ namespace gtl {
             , magnitude(value) {
         }
 
+        /// @brief  Conversion constructor from an unsigned big number.
+        /// @param  value The value to store.
+        big_integer(const big_unsigned& value)
+            : sign(value > 0)
+            , magnitude(value) {
+        }
+
         /// @brief  Conversion constructor from a string value in base 10.
         /// @param  value The value to store.
         /// @param  length The length of the string.
@@ -234,7 +241,6 @@ namespace gtl {
             return (this->sign != 0);
         }
 
-    public:
     public:
         /// @brief  Unary plus operator returns a copy of the big number.
         big_integer operator+() const {
@@ -505,6 +511,21 @@ namespace gtl {
         /// @return true if the lhs is not equal to the rhs, false otherwise.
         static bool not_equal_to(const big_integer& lhs, const big_integer& rhs) {
             return ((lhs.sign != rhs.sign) || (lhs.magnitude != rhs.magnitude));
+        }
+
+    public:
+        /// @brief Get the sign of the big number as represented as a signed number.
+        /// @param value The big number to process.
+        /// @return Plus one if value is positive, zero if value is zero, or negative one if value is negative.
+        static signed int signum(const big_integer& value) {
+            return value.sign;
+        }
+
+        /// @brief Get the magnitude of the big number as represented as an unsigned big number.
+        /// @param value The big number to process.
+        /// @return The magnitude of the big number as an unsigned big number.
+        static big_unsigned abs(const big_integer& value) {
+            return value.magnitude;
         }
 
     public:
