@@ -162,14 +162,14 @@ namespace gtl {
         /// @brief  Deleted copy constructor.
         thread_pool(const thread_pool&) = delete;
 
-        /// @brief  Defaulted move constructor.
-        thread_pool(thread_pool&&) = default;
+        /// @brief  Deleted move constructor.
+        thread_pool(thread_pool&&) = delete;
 
         /// @brief  Deleted copy assignment operator.
         thread_pool& operator=(const thread_pool&) = delete;
 
-        /// @brief  Defaulted move assignment operator.
-        thread_pool& operator=(thread_pool&&) = default;
+        /// @brief  Deleted move assignment operator.
+        thread_pool& operator=(thread_pool&&) = delete;
 
     private:
         /// @brief  The core loop that is run on each thread_pool thread.

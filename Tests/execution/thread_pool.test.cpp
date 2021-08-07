@@ -352,7 +352,7 @@ TEST(thread_pool, evaluate, benchmark) {
 
         delete[] values;
 
-        PRINT("For loop:   %7.3fms\n", (end - start).count() / 1000000.0);
+        PRINT("For loop:   %7.3fms\n", static_cast<double>((end - start).count()) / 1000000.0);
     };
 
     static auto threadpool_test = []() {
@@ -380,7 +380,7 @@ TEST(thread_pool, evaluate, benchmark) {
 
         delete[] values;
 
-        PRINT("Threadpool: %7.3fms\n", (end - start).count() / 1000000.0);
+        PRINT("Threadpool: %7.3fms\n", static_cast<double>((end - start).count()) / 1000000.0);
 
         thread_pool.join();
     };
@@ -408,7 +408,7 @@ TEST(thread_pool, evaluate, benchmark) {
 
         delete[] values;
 
-        PRINT("Dispatch:   %7.3fms\n", (end - start).count() / 1000000.0);
+        PRINT("Dispatch:   %7.3fms\n", static_cast<double>((end - start).count()) / 1000000.0);
     };
 #endif
 

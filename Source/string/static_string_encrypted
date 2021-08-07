@@ -121,7 +121,7 @@ namespace static_string_encrypted {
             return (state_shift_xor_shift >> rotation) | (state_shift_xor_shift << ((-rotation) & 31));
         };
         unsigned long long int state = 0;
-        unsigned long long int increment = (seed << 1) | 1;;
+        unsigned long long int increment = (seed << 1) | 1;
         generate(state, increment);
         state += seed;
         generate(state, increment);
