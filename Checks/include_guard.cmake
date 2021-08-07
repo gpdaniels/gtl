@@ -18,7 +18,14 @@
 # THE SOFTWARE
 #
 
+# Define the minimum version of CMake that is required.
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
+CMAKE_POLICY(VERSION 3.5.1)
+
 MESSAGE(STATUS "Checking include guards...")
+
+# Get parameters passed from the main CMakeLists.txt.
+SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 
 # Find all source files, test headers, and testbench headers.
 FILE(GLOB_RECURSE GUARDED_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DIR}/Source/*" "${CMAKE_SOURCE_DIR}/Tests/*.hpp" "${CMAKE_SOURCE_DIR}/Testbench/*.hpp")
@@ -38,14 +45,19 @@ FOREACH(GUARDED_FILE ${GUARDED_FILES})
     # Replace newlines.
     STRING(REGEX REPLACE "[\r]?[\n]" ";" GUARDED_FILE_LINES "${GUARDED_FILE_CONTENT}")
     
-    # Calculate the end guard lines location.
+    # Get the number of lines in the file.
     LIST(LENGTH GUARDED_FILE_LINES GUARDED_FILE_LENGTH)
+    IF(GUARDED_FILE_LENGTH LESS 24)
+        MESSAGE(FATAL_ERROR "Include guard in file '${GUARDED_FILE}' is not correct: The file is too short.")
+    ENDIF()
+
+    # Calculate the end guard lines location.
     MATH(EXPR GUARDED_FILE_LENGTH "${GUARDED_FILE_LENGTH}-2")
     
     # Create a new list from the file lines.
     LIST(GET GUARDED_FILE_LINES 20 21 22 ${GUARDED_FILE_LENGTH} GUARDED_FILE_GUARD_LINES)
     
-    # Determine the include guard name of the file.
+    # Determine the include guard name from the file name.
     GET_FILENAME_COMPONENT(GUARDED_FILE_NAME "${GUARDED_FILE}" NAME)
     STRING(REGEX REPLACE "\\.hpp$" "" GUARDED_FILE_NAME "${GUARDED_FILE_NAME}")
     STRING(TOUPPER "${GUARDED_FILE_NAME}" GUARDED_FILE_NAME)

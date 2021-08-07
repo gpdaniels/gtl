@@ -36,15 +36,17 @@ SET(BUILD_SANITIZE_MEMORY OFF CACHE BOOL "Enable building with clang sanitizer f
 SET(BUILD_SANITIZE_THREAD OFF CACHE BOOL "Enable building with clang sanitizer flags thread checking.")
 SET(BUILD_SANITIZE_UNDEFINED_BEHAVIOR OFF CACHE BOOL "Enable building with clang sanitizer flags for undefined behavior checking.")
 
-SET(BUILD_TESTING_PARALLELISM 4 CACHE INT "The number of tests to run in parallel.")
+SET(BUILD_TESTING_PARALLELISM 4 CACHE STRING "The number of tests to run in parallel.")
 MARK_AS_ADVANCED(BUILD_TESTING_PARALLELISM)
-SET(BUILD_TESTING_TIMEOUT 30 CACHE INT "The allowed run time of a test executable.")
+SET(BUILD_TESTING_TIMEOUT 30 CACHE STRING "The allowed run time of a test executable.")
 MARK_AS_ADVANCED(BUILD_TESTING_TIMEOUT)
 
-SET(BUILD_MEMCHECK_PARALLELISM 4 CACHE INT "The number of memcheck tests to run in parallel.")
+SET(BUILD_MEMCHECK_PARALLELISM 4 CACHE STRING "The number of memcheck tests to run in parallel.")
 MARK_AS_ADVANCED(BUILD_MEMCHECK_PARALLELISM)
-SET(BUILD_MEMCHECK_TIMEOUT 60 CACHE INT "The allowed run time of a memcheck test executable.")
+SET(BUILD_MEMCHECK_TIMEOUT 60 CACHE STRING "The allowed run time of a memcheck test executable.")
 MARK_AS_ADVANCED(BUILD_MEMCHECK_TIMEOUT)
+
+SET(BUILD_TARGET_SEARCHPATH "*" CACHE STRING "A filter used to select which targets to include, default is everything.")
 
 # Print status.
 MESSAGE(STATUS "Configuring ${PROJECT_NAME}...")
@@ -349,10 +351,10 @@ INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/Source/")
 INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/Tests/")
 
 # Find all library source files in the test directory recursively.
-FILE(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Source/*")
+FILE(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Source/${BUILD_TARGET_SEARCHPATH}/*")
 
 # Find all test source files in the test directory recursively.
-FILE(GLOB_RECURSE TEST_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Tests/*.test.cpp")
+FILE(GLOB_RECURSE TEST_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Tests/${BUILD_TARGET_SEARCHPATH}/*.test.cpp")
 
 # Get the auxiliary testbench files.
 FILE(GLOB_RECURSE TESTBENCH_HEADERS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Testbench/*.tests.hpp")
@@ -386,18 +388,17 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     STRING(REGEX REPLACE "\n[ \t]*//+[^\n]+" "\n" TEST_CODE_NOCOMMENTS "${TEST_CODE_NOCOMMENTS}")
 
     # Find all pragmas.
-    STRING(REGEX MATCHALL "[#][ \t]*pragma[ \t]*comment[ \t]*[\\(][ \t]*CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}[ \t]*[,][ \t]*[\"]((-l|-framework )[0-9a-zA-Z_]*)[\"][ \t]*[\\)]" DETECTED_PRAGMAS "${TEST_CODE_NOCOMMENTS}")
+    STRING(REGEX MATCHALL "[#][ \t]*pragma[ \t]*CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}[ \t]*[\\(][ \t]*lib[ \t]*[,][ \t]*[\"]((-l|-framework )[0-9a-zA-Z_]*)[\"][ \t]*[\\)]" DETECTED_PRAGMAS "${TEST_CODE_NOCOMMENTS}")
 
     # Replace newlines.
     STRING(REGEX REPLACE "[\r]*[\n]+" ";" DETECTED_PRAGMAS "${DETECTED_PRAGMAS}")
 
     # Extract information from matches.
     FOREACH(DETECTED_PRAGMA ${DETECTED_PRAGMAS})
-        IF("${DETECTED_PRAGMA}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*[#][ \t]*pragma[ \t]*comment[ \t]*[\\(][ \t]*CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}[ \t]*[,][ \t]*[\"]((-l|-framework )[0-9a-zA-Z_]*)[\"][ \t]*[\\)]")
+        IF("${DETECTED_PRAGMA}" MATCHES "^[ \t]*[^/]*[^/]*[ \t]*[#][ \t]*pragma[ \t]*CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}[ \t]*[\\(][ \t]*lib[ \t]*[,][ \t]*[\"]((-l|-framework )[0-9a-zA-Z_]*)[\"][ \t]*[\\)]")
             LIST(APPEND CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME} ${CMAKE_MATCH_1})
         ENDIF()
     ENDFOREACH()
-
 ENDFOREACH()
 
 IF(NOT "'${CMAKE_LINKER_FLAG_${UPPER_CMAKE_SYSTEM_NAME}}'" STREQUAL "''")
@@ -441,7 +442,7 @@ IF(BUILD_TESTING)
         TARGET_INCLUDE_DIRECTORIES(${TEST_TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/Source/)
         TARGET_INCLUDE_DIRECTORIES(${TEST_TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/Testbench/)
 
-        # Set the folder for the test libraray equal to it's name.
+        # Set the folder for the test library equal to it's name.
         SET_TARGET_PROPERTIES(${TEST_TARGET_NAME} PROPERTIES FOLDER ${TEST_FILE_NAME})
         
         # The Xcode generator automatically adds extra warning suppression flags, clear these.
@@ -632,11 +633,27 @@ IF(BUILD_CHECKS)
     # Find all check scripts in the checks directory.
     FILE(GLOB CHECK_FILES "${CMAKE_SOURCE_DIR}/Checks/*.[Cc][Mm][Aa][Kk][Ee]")
     
+    # Add a checking target to attach all the post builds to and add it to the ALL target.
+    ADD_CUSTOM_TARGET(gtl_check ALL
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running checks..."
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+    
     # Include all found scripts.
     FOREACH(CHECK_FILE ${CHECK_FILES})
-        INCLUDE("${CHECK_FILE}")
+        ADD_CUSTOM_COMMAND(
+            TARGET gtl_check
+            POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_SOURCE_DIR}" "-P" "${CHECK_FILE}"
+            COMMENT "Running ${CHECK_FILE}..."
+        )
     ENDFOREACH()
-    
+ELSE()
+    # Add a dummy checking target so that the target exists.
+    ADD_CUSTOM_TARGET(gtl_check
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "No checks found."
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
 ENDIF()
 
 ###############################################################################

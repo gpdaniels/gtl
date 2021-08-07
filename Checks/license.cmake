@@ -18,7 +18,14 @@
 # THE SOFTWARE
 #
 
+# Define the minimum version of CMake that is required.
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
+CMAKE_POLICY(VERSION 3.5.1)
+
 MESSAGE(STATUS "Checking file licenses...")
+
+# Get parameters passed from the main CMakeLists.txt.
+SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 
 # Find all source files, test files, and testbench files.
 FILE(GLOB_RECURSE LICENSED_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DIR}/Source/*" "${CMAKE_SOURCE_DIR}/Tests/*" "${CMAKE_SOURCE_DIR}/Testbench/*")
@@ -38,11 +45,17 @@ FOREACH(LICENSED_FILE ${LICENSED_FILES})
     # Replace newlines.
     STRING(REGEX REPLACE "[\r]?[\n]" ";" LICENSED_FILE_LINES "${LICENSED_FILE_CONTENT}")
     
+    # Get the number of lines in the file.
+    LIST(LENGTH LICENSED_FILE_LINES LICENSED_FILE_LENGTH)
+    IF(LICENSED_FILE_LENGTH LESS 18)
+        MESSAGE(FATAL_ERROR "License in file '${LICENSED_FILE}' does not match: The file is too short.")
+    ENDIF()
+
     # Prepare the license regex.
     SET(LICENSE_REGEX_LINES
         "^/\\*$"
         "^The MIT License$"
-        "^Copyright \\(c\\) (2018)|(2019)|(2020) Geoffrey Daniels\\. http://gpdaniels\\.com/$"
+        "^Copyright \\(c\\) (2018)|(2019)|(2020)|(2021) Geoffrey Daniels\\. http://gpdaniels\\.com/$"
         "^Permission is hereby granted, free of charge, to any person obtaining a copy$"
         "^of this software and associated documentation files \\(the \"Software\"\\), to deal$"
         "^in the Software without restriction, including without limitation the rights$"
