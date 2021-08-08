@@ -3,7 +3,7 @@
 
 This repository is a collection of useful cross-platform, well-commented, self-contained, simple, and interesting C++ classes in the style of the standard template library.
 
-[![Build Status](https://travis-ci.org/gpdaniels/gtl.svg?branch=master)](https://travis-ci.org/gpdaniels/gtl) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/gpdaniels/gtl.svg)](https://lgtm.com/projects/g/gpdaniels/gtl/context:cpp) [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT) 
+[![Build Status](https://github.com/gpdaniels/gtl/actions/workflows/main.yml/badge.svg)](https://github.com/gpdaniels/gtl/actions/workflows/main.yml) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/gpdaniels/gtl.svg)](https://lgtm.com/projects/g/gpdaniels/gtl/context:cpp) [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT) 
 
 ## Content ##
 
@@ -127,17 +127,6 @@ The current classes are as described below:
 |                   **error** | Composable error class that can be returned down a call stack.                          |
 |                   **event** | Thread safe multi-in/multi-out event/messaging system.                                  |
 |                   **pimpl** | Statically sized pointer to implementation wrapper.                                     |
-
-## Build matrix ##
-
-| Operating System    | Version                                                           | Compiler   | Status |
-|:--------------------|:------------------------------------------------------------------|:-----------|:------:|
-| Linux               | Ubuntu 14.04 Trusty                                               | Clang 6.0  | [![Build Status](https://travis-matrix-badges.herokuapp.com/repos/gpdaniels/gtl/branches/master/1)](https://travis-ci.org/gpdaniels/gtl) |
-| Linux               | Ubuntu 14.04 Trusty                                               | GCC 7      | [![Build Status](https://travis-matrix-badges.herokuapp.com/repos/gpdaniels/gtl/branches/master/2)](https://travis-ci.org/gpdaniels/gtl) |
-| Linux               | Ubuntu 16.04 Xenial                                               | GCC 7      | [![Build Status](https://travis-matrix-badges.herokuapp.com/repos/gpdaniels/gtl/branches/master/3)](https://travis-ci.org/gpdaniels/gtl) |
-| Macintosh           | macOS 10.13                                                       | XCode 9.3  | [![Build Status](https://travis-matrix-badges.herokuapp.com/repos/gpdaniels/gtl/branches/master/4)](https://travis-ci.org/gpdaniels/gtl) |
-| Macintosh           | macOS 10.13                                                       | XCode 9.4  | [![Build Status](https://travis-matrix-badges.herokuapp.com/repos/gpdaniels/gtl/branches/master/5)](https://travis-ci.org/gpdaniels/gtl) |
-| Windows             | Windows Server, version 1803                                      | VS 2017    | [![Build Status](https://travis-matrix-badges.herokuapp.com/repos/gpdaniels/gtl/branches/master/6)](https://travis-ci.org/gpdaniels/gtl) |
 
 ## License ##
 
