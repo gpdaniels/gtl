@@ -88,6 +88,12 @@ The current classes are as described below:
 |             **big_integer** | Arbitrary sized signed integers.                                                        |
 |            **big_unsigned** | Arbitrary sized unsigned integers.                                                      |
 
+### Platform ###
+
+|                       Class | Description                                                                             |
+|----------------------------:|:----------------------------------------------------------------------------------------|
+|                     **cpu** | Class to extract cpuid information to determine supported instructions at runtime.      |
+
 ### Protection ###
 
 |                       Class | Description                                                                             |
@@ -105,13 +111,13 @@ The current classes are as described below:
 |         **random_splitmix** | Splitmix pseudo-random number generator.                                                |
 |         **random_xorshift** | Xorshift pseudo-random number generator.                                                |
 
-### Strings ###
+### String ###
 
 |                       Class | Description                                                                             |
 |----------------------------:|:----------------------------------------------------------------------------------------|
 | **static_string_encrypted** | Compile-time string encryption with runtime decryption to obfuscate strings.            |
 
-### Type Information ###
+### Type ###
 
 |                       Class | Description                                                                             |
 |----------------------------:|:----------------------------------------------------------------------------------------|
@@ -123,7 +129,6 @@ The current classes are as described below:
 
 |                       Class | Description                                                                             |
 |----------------------------:|:----------------------------------------------------------------------------------------|
-|                     **cpu** | Class to extract cpuid information to determine supported instructions at runtime.      |
 |                   **error** | Composable error class that can be returned down a call stack.                          |
 |                   **event** | Thread safe multi-in/multi-out event/messaging system.                                  |
 |                   **pimpl** | Statically sized pointer to implementation wrapper.                                     |
