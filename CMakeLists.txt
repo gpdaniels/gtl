@@ -347,18 +347,18 @@ ENDIF()
 ################################################################################
 
 # Add the source and test folder to the include path.
-INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/Source/")
-INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/Tests/")
+INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/source/")
+INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/tests/")
 
 # Find all library source files in the test directory recursively.
-FILE(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Source/${BUILD_TARGET_SEARCHPATH}/*")
+FILE(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/source/${BUILD_TARGET_SEARCHPATH}/*")
 
 # Find all test source files in the test directory recursively.
-FILE(GLOB_RECURSE TEST_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Tests/${BUILD_TARGET_SEARCHPATH}/*.test.cpp")
+FILE(GLOB_RECURSE TEST_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/${BUILD_TARGET_SEARCHPATH}/*.test.cpp")
 
 # Get the auxiliary testbench files.
-FILE(GLOB_RECURSE TESTBENCH_HEADERS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Testbench/*.tests.hpp")
-FILE(GLOB_RECURSE TESTBENCH_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Testbench/*.tests.cpp")
+FILE(GLOB_RECURSE TESTBENCH_HEADERS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/testbench/*.tests.hpp")
+FILE(GLOB_RECURSE TESTBENCH_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/testbench/*.tests.cpp")
 
 ################################################################################
 
@@ -425,12 +425,12 @@ IF(BUILD_TESTING)
     FOREACH(TEST_FILE ${TEST_FILES})
 
         # Extract the name of the source and test files.
-        FILE(RELATIVE_PATH TEST_FILE_NAME "${CMAKE_SOURCE_DIR}/Tests/" ${TEST_FILE})
+        FILE(RELATIVE_PATH TEST_FILE_NAME "${CMAKE_SOURCE_DIR}/tests/" ${TEST_FILE})
         STRING(REPLACE ".test.cpp" "" SOURCE_FILE_NAME ${TEST_FILE_NAME})
-        SET(SOURCE_FILE "${CMAKE_SOURCE_DIR}/Source/${SOURCE_FILE_NAME}")
+        SET(SOURCE_FILE "${CMAKE_SOURCE_DIR}/source/${SOURCE_FILE_NAME}")
         STRING(REPLACE "/" "_" TEST_TARGET_NAME ${SOURCE_FILE_NAME})
 
-        FILE(RELATIVE_PATH TEST_FILE_NAME "${CMAKE_SOURCE_DIR}/Tests/" ${TEST_FILE})
+        FILE(RELATIVE_PATH TEST_FILE_NAME "${CMAKE_SOURCE_DIR}/tests/" ${TEST_FILE})
 
         # Print status.
         MESSAGE(STATUS "Preparing tests for '${TEST_TARGET_NAME}'...")
@@ -439,8 +439,8 @@ IF(BUILD_TESTING)
         ADD_EXECUTABLE(${TEST_TARGET_NAME} ${TEST_FILE} ${SOURCE_FILE})
 
         # Include the source and the testbench directory.
-        TARGET_INCLUDE_DIRECTORIES(${TEST_TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/Source/)
-        TARGET_INCLUDE_DIRECTORIES(${TEST_TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/Testbench/)
+        TARGET_INCLUDE_DIRECTORIES(${TEST_TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/source/)
+        TARGET_INCLUDE_DIRECTORIES(${TEST_TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/testbench/)
 
         # Set the folder for the test library equal to it's name.
         SET_TARGET_PROPERTIES(${TEST_TARGET_NAME} PROPERTIES FOLDER ${TEST_FILE_NAME})
@@ -466,7 +466,7 @@ IF(BUILD_TESTING)
         SET_TESTS_PROPERTIES(${TEST_TARGET_NAME} PROPERTIES REQUIRED_FILES $<TARGET_FILE:${TEST_TARGET_NAME}> WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
         # Set the code coverage output path.
-        SET_TESTS_PROPERTIES(${TEST_TARGET_NAME} PROPERTIES ENVIRONMENT "LLVM_PROFILE_FILE=${CMAKE_BINARY_DIR}/Coverage/Data/${TEST_TARGET_NAME}-%p.profraw")
+        SET_TESTS_PROPERTIES(${TEST_TARGET_NAME} PROPERTIES ENVIRONMENT "LLVM_PROFILE_FILE=${CMAKE_BINARY_DIR}/coverage/data/${TEST_TARGET_NAME}-%p.profraw")
 
         # Create a list of coverage objects.
         LIST(APPEND BUILD_COVERAGE_OBJECTS $<TARGET_FILE:${TEST_TARGET_NAME}>)
@@ -589,10 +589,10 @@ IF(BUILD_TESTING AND BUILD_COVERAGE)
 
         ADD_CUSTOM_TARGET(gtl_coverage
             COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Generating code coverage report..."
-            COMMAND "${LLVM_PROFDATA_EXECUTABLE}" "merge" "-output=./Coverage/Data/Coverage.profdata" "./Coverage/Data/*.profraw"
-            COMMAND "${LLVM_COV_EXECUTABLE}" "report" "-format=text" "-instr-profile=./Coverage/Data/Coverage.profdata" ${BUILD_COVERAGE_OBJECTS} ${SOURCE_FILES} ${TEST_FILES}
-            COMMAND "${LLVM_COV_EXECUTABLE}" "show" "-format=html" "-instr-profile=./Coverage/Data/Coverage.profdata" "-output-dir=./Coverage/" ${BUILD_COVERAGE_OBJECTS} ${SOURCE_FILES} ${TEST_FILES}
-            COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Detailed code coverage results are in '${CMAKE_BINARY_DIR}/Coverage/index.html'."
+            COMMAND "${LLVM_PROFDATA_EXECUTABLE}" "merge" "-output=./coverage/data/coverage.profdata" "./coverage/data/*.profraw"
+            COMMAND "${LLVM_COV_EXECUTABLE}" "report" "-format=text" "-instr-profile=./coverage/data/coverage.profdata" ${BUILD_COVERAGE_OBJECTS} ${SOURCE_FILES} ${TEST_FILES}
+            COMMAND "${LLVM_COV_EXECUTABLE}" "show" "-format=html" "-instr-profile=./coverage/data/coverage.profdata" "-output-dir=./coverage/" ${BUILD_COVERAGE_OBJECTS} ${SOURCE_FILES} ${TEST_FILES}
+            COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Detailed code coverage results are in '${CMAKE_BINARY_DIR}/coverage/index.html'."
             DEPENDS gtl_build gtl_test
             WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
         )
@@ -633,7 +633,7 @@ ENDIF()
 
 IF(BUILD_CHECKS)
     # Find all check scripts in the checks directory.
-    FILE(GLOB CHECK_FILES "${CMAKE_SOURCE_DIR}/Checks/*.[Cc][Mm][Aa][Kk][Ee]")
+    FILE(GLOB CHECK_FILES "${CMAKE_SOURCE_DIR}/checks/*.[Cc][Mm][Aa][Kk][Ee]")
     
     # Add a checking target to attach all the post builds to and add it to the ALL target.
     ADD_CUSTOM_TARGET(gtl_check ALL
