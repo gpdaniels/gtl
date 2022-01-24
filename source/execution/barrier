@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_BARRIER_HPP
 #define GTL_BARRIER_HPP
 
+// Summary: Thread syncronisation barrier.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

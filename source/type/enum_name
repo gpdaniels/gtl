@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_ENUM_NAME_HPP
 #define GTL_ENUM_NAME_HPP
 
+// Summary: Compile-time enum value name as a string with -fno-rtti.
+
 namespace gtl {
     /// @brief  The enum_name class provides a name function for a given enum type and value.
     template<typename enum_type, enum_type enum_value>

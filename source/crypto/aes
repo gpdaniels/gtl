@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_AES_HPP
 #define GTL_AES_HPP
 
+// Summary: An implementation of the aes encryption algorithm for 128, 196, and 256 bits.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

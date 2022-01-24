@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_BIG_UNSIGNED_HPP
 #define GTL_BIG_UNSIGNED_HPP
 
+// Summary: Arbitrary sized unsigned integers.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

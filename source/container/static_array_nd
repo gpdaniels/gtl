@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_STATIC_ARRAY_ND_HPP
 #define GTL_STATIC_ARRAY_ND_HPP
 
+// Summary: N-dimensional statically sized array.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

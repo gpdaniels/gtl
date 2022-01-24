@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_EVENT_HPP
 #define GTL_EVENT_HPP
 
+// Summary: Thread safe multi-in/multi-out event/messaging system.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

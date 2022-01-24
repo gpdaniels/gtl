@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_THREAD_POOL_HPP
 #define GTL_THREAD_POOL_HPP
 
+// Summary: Multi-queue thread-pool that performs jobs in priority order.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

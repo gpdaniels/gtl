@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_HMM_HPP
 #define GTL_HMM_HPP
 
+// Summary: Hidden markov model using the Baum-Welch algorithm for training.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

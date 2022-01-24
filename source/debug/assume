@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_ASSUME_HPP
 #define GTL_ASSUME_HPP
 
+// Summary: Macro that hints to the compiler when a statement should be assumed true.
+
 namespace gtl {
 namespace assume {
 

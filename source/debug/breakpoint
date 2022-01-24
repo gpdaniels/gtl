@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_BREAKPOINT_HPP
 #define GTL_BREAKPOINT_HPP
 
+// Summary: Macro for creating a breakpoint.
+
 namespace gtl {
 namespace breakpoint {
     #if defined(_MSC_VER)

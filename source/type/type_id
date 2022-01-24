@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_TYPE_ID_HPP
 #define GTL_TYPE_ID_HPP
 
+// Summary: Simple run-time-type-information (rtti) with -fno-rtti.
+
 namespace gtl {
     /// @brief  The type_id class creates and holds a unique identifier for a type.
     class type_id final {

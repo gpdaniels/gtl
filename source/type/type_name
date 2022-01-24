@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_TYPE_NAME_HPP
 #define GTL_TYPE_NAME_HPP
 
+// Summary: Compile-time type name as a string with -fno-rtti.
+
 namespace gtl {
     /// @brief  The type_name class provides a name function for a given type.
     template<typename type>

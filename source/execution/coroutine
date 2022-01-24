@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_COROUTINE_HPP
 #define GTL_COROUTINE_HPP
 
+// Summary: Setjump/Longjump implementation of stackful coroutines.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

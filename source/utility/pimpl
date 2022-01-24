@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_PIMPL_HPP
 #define GTL_PIMPL_HPP
 
+// Summary: Statically sized pointer to implementation wrapper.
+
 namespace gtl {
     // Forward declare class to allow a unique definition of operator new using it as a parameter.
     template <typename implemented_class, unsigned long long int implementation_size, unsigned long long alignment_size>

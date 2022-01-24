@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_CPU_HPP
 #define GTL_CPU_HPP
 
+// Summary: Class to extract cpuid information to determine supported instructions at runtime.
+
 #if defined(_MSC_VER)
 #   include <intrin.h>
 #else

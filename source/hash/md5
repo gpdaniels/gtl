@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_MD5_HPP
 #define GTL_MD5_HPP
 
+// Summary: An implementation of the md5 hashing function.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

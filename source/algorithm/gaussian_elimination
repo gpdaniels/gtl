@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_GAUSSIAN_ELIMINATION_HPP
 #define GTL_GAUSSIAN_ELIMINATION_HPP
 
+// Summary: Linear simultaneous equation solver.
+
 namespace gtl {
     /// @brief  Gaussian elimination is an algorithm for solving sets of linear simultaneous equations.
     /// @tparam scalar_type The floating point type used to represent values in the equations.

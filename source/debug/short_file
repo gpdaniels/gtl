@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_SHORT_FILE_HPP
 #define GTL_SHORT_FILE_HPP
 
+// Summary: Replacement for the __FILE__ macro to prevent build path being leaked into the binary.
+
 namespace gtl {
 namespace short_file {
     /// @brief  Template struct that holds a sequence of integers, derived from http://stackoverflow.com/a/32223343.

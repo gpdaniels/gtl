@@ -28,7 +28,7 @@ MESSAGE(STATUS "Checking file licenses...")
 SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 
 # Find all source files, test files, and testbench files.
-FILE(GLOB_RECURSE LICENSED_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DIR}/Source/*" "${CMAKE_SOURCE_DIR}/Tests/*" "${CMAKE_SOURCE_DIR}/Testbench/*")
+FILE(GLOB_RECURSE LICENSED_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DIR}/source/*" "${CMAKE_SOURCE_DIR}/tests/*" "${CMAKE_SOURCE_DIR}/testbench/*")
 
 # Check each file for the correct license text.
 FOREACH(LICENSED_FILE ${LICENSED_FILES})
@@ -40,7 +40,7 @@ FOREACH(LICENSED_FILE ${LICENSED_FILES})
     FILE(READ "${CMAKE_SOURCE_DIR}/${LICENSED_FILE}" LICENSED_FILE_CONTENT)
     
     # Replace special list chars.
-    STRING(REGEX REPLACE "([[]|[]])" "\\\\1" GUARDED_FILE_CONTENT "${GUARDED_FILE_CONTENT}")
+    STRING(REGEX REPLACE "([[]|[]])" "\\1" GUARDED_FILE_CONTENT "${GUARDED_FILE_CONTENT}")
     
     # Replace newlines.
     STRING(REGEX REPLACE "[\r]?[\n]" ";" LICENSED_FILE_LINES "${LICENSED_FILE_CONTENT}")
@@ -51,11 +51,13 @@ FOREACH(LICENSED_FILE ${LICENSED_FILES})
         MESSAGE(FATAL_ERROR "License in file '${LICENSED_FILE}' does not match: The file is too short.")
     ENDIF()
 
+    SET(YEARS_REGEX "(2018)|(2019)|(2020)|(2021)|(2022)")
+    
     # Prepare the license regex.
     SET(LICENSE_REGEX_LINES
         "^/\\*$"
         "^The MIT License$"
-        "^Copyright \\(c\\) (2018)|(2019)|(2020)|(2021) Geoffrey Daniels\\. http://gpdaniels\\.com/$"
+        "^Copyright \\(c\\) ${YEARS_REGEX} Geoffrey Daniels\\. http://gpdaniels\\.com/$"
         "^Permission is hereby granted, free of charge, to any person obtaining a copy$"
         "^of this software and associated documentation files \\(the \"Software\"\\), to deal$"
         "^in the Software without restriction, including without limitation the rights$"
@@ -79,6 +81,7 @@ FOREACH(LICENSED_FILE ${LICENSED_FILES})
         LIST(GET LICENSED_FILE_LINES ${LICENSE_LINE} LICENSED_FILE_LINE)
         LIST(GET LICENSE_REGEX_LINES ${LICENSE_LINE} LICENSE_REGEX_LINE)
         IF(NOT LICENSED_FILE_LINE MATCHES "${LICENSE_REGEX_LINE}")
+            MATH(EXPR LICENSE_LINE "${LICENSE_LINE}+1")
             MESSAGE(FATAL_ERROR "License in file '${LICENSED_FILE}' does not match on line ${LICENSE_LINE}:\n'${LICENSED_FILE_LINE}' != '${LICENSE_REGEX_LINE}'.")
         ENDIF()
     ENDFOREACH()

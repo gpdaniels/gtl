@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_STATIC_LAMBDA_HPP
 #define GTL_STATIC_LAMBDA_HPP
 
+// Summary: Lambda function class that uses the stack for storage.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

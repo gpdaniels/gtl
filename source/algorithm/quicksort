@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_QUICKSORT_HPP
 #define GTL_QUICKSORT_HPP
 
+// Summary: Recursive quicksort algorithm, both full and partial versions.
+
 namespace gtl {
     /// @brief  The quicksort sorting algorithm to sort arrays of values using a comparitor function.
     class quicksort final {

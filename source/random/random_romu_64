@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_RANDOM_ROMU_64_HPP
 #define GTL_RANDOM_ROMU_64_HPP
 
+// Summary: Romu 64 bit pseudo-random number generator.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

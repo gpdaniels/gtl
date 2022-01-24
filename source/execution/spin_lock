@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_SPIN_LOCK_HPP
 #define GTL_SPIN_LOCK_HPP
 
+// Summary: Spin lock implemented using an atomic flag.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_SHA2_HPP
 #define GTL_SHA2_HPP
 
+// Summary: An implementation of the sha2 hashing function for 224, 256, 384, and 512 bits.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

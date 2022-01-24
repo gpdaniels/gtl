@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_UNUSED_HPP
 #define GTL_UNUSED_HPP
 
+// Summary: Macro for hiding unused variable warnings.
+
 namespace gtl {
 namespace unused {
 

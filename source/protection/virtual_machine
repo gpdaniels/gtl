@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_VIRTUAL_MACHINE_HPP
 #define GTL_VIRTUAL_MACHINE_HPP
 
+// Summary: A simple stack based virtual machine allowing easy creation of custom operands.
+
 // Forward declare to allow the syscall functions for input and output to work.
 extern "C" int getchar(void);
 extern "C" int putchar(int);

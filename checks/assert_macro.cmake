@@ -28,7 +28,7 @@ MESSAGE(STATUS "Checking assert macros...")
 SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 
 # Find all source files.
-FILE(GLOB_RECURSE SOURCE_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DIR}/Source/*")
+FILE(GLOB_RECURSE SOURCE_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DIR}/source/*")
 
 # Check each file for assert macros.
 FOREACH(SOURCE_FILE ${SOURCE_FILES})
@@ -40,7 +40,7 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     FILE(READ "${CMAKE_SOURCE_DIR}/${SOURCE_FILE}" SOURCE_FILE_CONTENT)
     
     # Replace special list chars.
-    STRING(REGEX REPLACE "([[]|[]])" "\\\\1" SOURCE_FILE_CONTENT "${SOURCE_FILE_CONTENT}")
+    STRING(REGEX REPLACE "([[]|[]])" "\\1" SOURCE_FILE_CONTENT "${SOURCE_FILE_CONTENT}")
     
     # Determine the include guard name of the file.
     GET_FILENAME_COMPONENT(SOURCE_FILE_NAME "${SOURCE_FILE}" NAME)
@@ -63,13 +63,20 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
         "^/// @brief At release time the assert macro is implemented as a nop\\.$"
         "^#   define GTL_${SOURCE_FILE_NAME_UPPER}_ASSERT\\(ASSERTION, MESSAGE\\) static_cast<void>\\(0\\)$"
         "^#endif$"
+        "^$"
     )
     
     # Replace newlines.
     STRING(REGEX REPLACE "[\r]?[\n]" ";" SOURCE_FILE_LINES "${SOURCE_FILE_CONTENT}")
     
+    # Get the number of lines in the file.
+    LIST(LENGTH SOURCE_FILE_LINES SOURCE_FILE_LENGTH)
+    IF(SOURCE_FILE_LENGTH LESS 35)
+        MESSAGE(FATAL_ERROR "Assert macro in file '${SOURCE_FILE}' is not correct: The file is too short.")
+    ENDIF()
+    
     # Create a new list from the file lines.
-    LIST(GET SOURCE_FILE_LINES 24 25 26 27 28 29 30 31 32 33 SOURCE_FILE_ASSERT_LINES)
+    LIST(GET SOURCE_FILE_LINES 26 27 28 29 30 31 32 33 34 35 SOURCE_FILE_ASSERT_LINES)
     
     # Check each line.
     FOREACH(ASSERT_LINE 0 1 2 3 4 5 6 7 8 9)

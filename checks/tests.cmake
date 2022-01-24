@@ -28,8 +28,8 @@ MESSAGE(STATUS "Checking for tests...")
 SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 
 # Find all source files and test headers.
-FILE(GLOB_RECURSE SOURCE_FILES RELATIVE "${CMAKE_SOURCE_DIR}/Source/" "${CMAKE_SOURCE_DIR}/Source/*")
-FILE(GLOB_RECURSE TEST_FILES RELATIVE "${CMAKE_SOURCE_DIR}/Tests/" "${CMAKE_SOURCE_DIR}/Tests/*.test.cpp")
+FILE(GLOB_RECURSE SOURCE_FILES RELATIVE "${CMAKE_SOURCE_DIR}/source/" "${CMAKE_SOURCE_DIR}/source/*")
+FILE(GLOB_RECURSE TEST_FILES RELATIVE "${CMAKE_SOURCE_DIR}/tests/" "${CMAKE_SOURCE_DIR}/tests/*.test.cpp")
 
 # Check if each source file has a test file.
 FOREACH(SOURCE_FILE ${SOURCE_FILES})

@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_CRC_HPP
 #define GTL_CRC_HPP
 
+// Summary: An implementation of the crc hashing function for 8, 16, 32, and 64 bits.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

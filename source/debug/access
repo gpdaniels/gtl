@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_ACCESS_HPP
 #define GTL_ACCESS_HPP
 
+// Summary: Classes and macros for accessing class private members.
+
 #if defined(_MSC_VER)
 #   pragma warning(push, 0)
 #endif

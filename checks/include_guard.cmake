@@ -28,7 +28,7 @@ MESSAGE(STATUS "Checking include guards...")
 SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 
 # Find all source files, test headers, and testbench headers.
-FILE(GLOB_RECURSE GUARDED_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DIR}/Source/*" "${CMAKE_SOURCE_DIR}/Tests/*.hpp" "${CMAKE_SOURCE_DIR}/Testbench/*.hpp")
+FILE(GLOB_RECURSE GUARDED_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DIR}/source/*" "${CMAKE_SOURCE_DIR}/tests/*.hpp" "${CMAKE_SOURCE_DIR}/testbench/*.hpp")
 
 # Check each file for include guard correctness.
 FOREACH(GUARDED_FILE ${GUARDED_FILES})
@@ -40,7 +40,7 @@ FOREACH(GUARDED_FILE ${GUARDED_FILES})
     FILE(READ "${CMAKE_SOURCE_DIR}/${GUARDED_FILE}" GUARDED_FILE_CONTENT)
     
     # Replace special list chars.
-    STRING(REGEX REPLACE "([[]|[]])" "\\\\1" GUARDED_FILE_CONTENT "${GUARDED_FILE_CONTENT}")
+    STRING(REGEX REPLACE "([[]|[]])" "\\1" GUARDED_FILE_CONTENT "${GUARDED_FILE_CONTENT}")
     
     # Replace newlines.
     STRING(REGEX REPLACE "[\r]?[\n]" ";" GUARDED_FILE_LINES "${GUARDED_FILE_CONTENT}")

@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_SEMAPHORE_HPP
 #define GTL_SEMAPHORE_HPP
 
+// Summary: Semaphore made using a mutex and condition variable.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_RANDOM_XORSHIFT_HPP
 #define GTL_RANDOM_XORSHIFT_HPP
 
+// Summary: Xorshift pseudo-random number generator.
+
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
 #       define __builtin_trap() __debugbreak()

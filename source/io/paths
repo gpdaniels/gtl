@@ -22,6 +22,8 @@ THE SOFTWARE
 #ifndef GTL_PATHS_HPP
 #define GTL_PATHS_HPP
 
+// Summary: Collection of cross platform functions to provide useful paths.
+
 #if defined(linux) || defined(__linux) || defined(__linux__)
 #   include <cstring>
 #   include <dirent.h>
