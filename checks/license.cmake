@@ -39,9 +39,6 @@ FOREACH(LICENSED_FILE ${LICENSED_FILES})
     # Get content.
     FILE(READ "${CMAKE_SOURCE_DIR}/${LICENSED_FILE}" LICENSED_FILE_CONTENT)
     
-    # Replace special list chars.
-    STRING(REGEX REPLACE "([[]|[]])" "\\1" GUARDED_FILE_CONTENT "${GUARDED_FILE_CONTENT}")
-    
     # Replace newlines.
     STRING(REGEX REPLACE "[\r]?[\n]" ";" LICENSED_FILE_LINES "${LICENSED_FILE_CONTENT}")
     

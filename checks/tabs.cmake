@@ -44,9 +44,6 @@ FOREACH(PROJECT_FILE ${PROJECT_FILES})
     # Get content.
     FILE(READ "${CMAKE_SOURCE_DIR}/${PROJECT_FILE}" PROJECT_FILE_CONTENT)
     
-    # Replace special list chars.
-    STRING(REGEX REPLACE "([[]|[]])" "\\1" PROJECT_FILE_CONTENT "${PROJECT_FILE_CONTENT}")
-    
     # Search for tab characters.
     STRING(FIND "${PROJECT_FILE_CONTENT}" "\t" FOUND_TAB_LOCATION)
     

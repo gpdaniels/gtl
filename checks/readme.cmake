@@ -52,9 +52,6 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     # Get content.
     FILE(READ "${CMAKE_SOURCE_DIR}/source/${SOURCE_FILE}" SOURCE_FILE_CONTENT)
     
-    # Replace special list chars.
-    STRING(REGEX REPLACE "([[]|[]])" "\\1" SOURCE_FILE_CONTENT "${SOURCE_FILE_CONTENT}")
-    
     # Replace newlines.
     STRING(REGEX REPLACE "[\r]?[\n]" ";" SOURCE_FILE_LINES "${SOURCE_FILE_CONTENT}")
     
@@ -80,6 +77,9 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     SET(DESCRIPTION_CELL "${CMAKE_MATCH_2}")
     SET(COMPLETION_CELL "${CMAKE_MATCH_3}")
     
+    # Escape markdown in the description.
+    STRING(REGEX REPLACE "([_-])" "\\\\\\1" DESCRIPTION_CELL "${DESCRIPTION_CELL}")
+    
     # Convert the wip status into an emoji.
     IF(NOT COMPLETION_CELL MATCHES "\\[[Ww][Ii][Pp]\\]")
         SET(COMPLETION_CELL ":heavy_check_mark:")
@@ -101,9 +101,6 @@ LIST(LENGTH README_TABLE_LINES README_TABLE_LENGTH)
 
 # Get README.md content.
 FILE(READ "${CMAKE_SOURCE_DIR}/README.md" README_FILE_CONTENT)
-
-# Replace special list chars.
-STRING(REGEX REPLACE "([[]|[]])" "\\1" README_FILE_CONTENT "${README_FILE_CONTENT}")
 
 # Replace newlines.
 STRING(REGEX REPLACE "[\r]?[\n]" ";" README_FILE_LINES "${README_FILE_CONTENT}")

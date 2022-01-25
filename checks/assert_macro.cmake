@@ -39,9 +39,6 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     # Get content.
     FILE(READ "${CMAKE_SOURCE_DIR}/${SOURCE_FILE}" SOURCE_FILE_CONTENT)
     
-    # Replace special list chars.
-    STRING(REGEX REPLACE "([[]|[]])" "\\1" SOURCE_FILE_CONTENT "${SOURCE_FILE_CONTENT}")
-    
     # Determine the include guard name of the file.
     GET_FILENAME_COMPONENT(SOURCE_FILE_NAME "${SOURCE_FILE}" NAME)
     STRING(TOUPPER "${SOURCE_FILE_NAME}" SOURCE_FILE_NAME_UPPER)
