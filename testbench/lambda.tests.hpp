@@ -128,6 +128,11 @@ namespace testbench {
         lambda& operator=(const lambda& other) = delete;
 
     public:
+        constexpr operator bool() const {
+            return (this->function != nullptr);
+        }
+
+    public:
         constexpr return_type operator()(argument_types... arguments) const {
             return this->executor(this->function, arguments...);
         }
