@@ -1,0 +1,101 @@
+/*
+The MIT License
+Copyright (c) 2021 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_KMEANS_HPP
+#define GTL_KMEANS_HPP
+
+// Summary: Implementation of the KMeans clustering algorithm. [wip]
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <vector>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace gtl {
+    template <typename data_type, typename distance_type>
+    class kmeans final {
+    private:
+        using distance_function_type = distance_type(const data_type&, const data_type&);
+
+    public:
+        static std::vector<int> compute(
+            const std::vector<data_type>& data,
+            int cluster_count,
+            int max_iterations,
+            distance_type min_delta,
+            distance_function_type distance_function
+        ) {
+            std::vector<data_type> cluster_centroids(cluster_count);
+            std::vector<int> cluster_data(data.size());
+
+            // TODO: ASSERT there is enough data.
+
+            // Initialise cluster centroids using data (could be done using random points).
+            for (int i = 0; i < cluster_count; ++i) {
+                cluster_centroids[i] = data[i];
+            }
+
+            // Iteratively improve the clusters.
+            for (int iteration = 0; iteration < max_iterations; ++iteration) {
+                // Allocate points to clusters.
+                for (size_t i = 0; i < data.size(); ++i) {
+                    // Assume first cluster.
+                    cluster_data[i] = 0;
+                    distance_type cluster_distance = distance_function(data[i], cluster_centroids[cluster_data[i]]);
+                    // Search remaining clusters for closer centroids.
+                    for (int j = 1; j < cluster_count; ++j) {
+                        distance_type distance = distance_function(data[i], cluster_centroids[j]);
+                        if (distance < cluster_distance) {
+                            cluster_data[i] = j;
+                            cluster_distance = distance;
+                        }
+                    }
+                }
+                // Recalculate cluster centroids.
+                std::vector<data_type> centroid_data_sum(cluster_count);
+                std::vector<int> centroid_data_count(cluster_count);
+                for (size_t i = 0; i < data.size(); ++i) {
+                    centroid_data_sum[cluster_data[i]] = centroid_data_sum[cluster_data[i]] + data[i];
+                    ++centroid_data_count[cluster_data[i]];
+                }
+                // TODO: If data count is zero, should I move the centroid?
+                distance_type delta = 0;
+                for (int i = 0; i < cluster_count; ++i) {
+                    data_type centroid = centroid_data_sum[i] / centroid_data_count[i];
+                    delta += distance_function(cluster_centroids[i], centroid);
+                    cluster_centroids[i] = centroid;
+                }
+                if (delta < min_delta) {
+                    break;
+                }
+            }
+
+            return cluster_data;
+        }
+    };
+}
+
+#endif // GTL_KMEANS_HPP
