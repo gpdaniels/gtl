@@ -1,0 +1,176 @@
+/*
+The MIT License
+Copyright (c) 2020 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_MAXN_HPP
+#define GTL_MAXN_HPP
+
+// Summary: The MaxN search algorithm to find the best possible moves for an N player game with known information. [wip]
+
+#include <array>
+#include <vector>
+
+namespace gtl {
+    template <typename state_type>
+    class abstract_state {
+    public:
+        constexpr static const unsigned int entities = state_type::entities;
+    public:
+        virtual unsigned int get_entity_id() const = 0;
+        virtual std::vector<state_type> get_options() const = 0;
+        virtual std::array<int, abstract_state::entities> get_scores() const = 0;
+    };
+
+    template <typename state_type>
+    class maxn final {
+    public:
+        constexpr static const unsigned int entities = state_type::entities;
+
+    private:
+        class evaluation_type {
+        public:
+            unsigned int entity;
+            std::vector<state_type> options;
+            std::vector<std::array<int, maxn::entities>> scores;
+            unsigned int current_option_index;
+
+        public:
+            evaluation_type() = default;
+            evaluation_type(const state_type& state, int max_score) {
+                this->entity = state.get_entity_id();
+                this->options = state.get_options();
+                std::array<int, maxn::entities> default_score;
+                default_score.fill(-(max_score + 1));
+                this->scores = std::vector<std::array<int, maxn::entities>>(this->options.size(), default_score);
+                this->current_option_index = 0;
+            }
+        };
+
+    public:
+        bool search(const state_type& state, unsigned int max_depth, int max_score, state_type& option) {
+            // Need to be able to create a larger score.
+            if (max_score <= -(max_score + 1)) {
+                // TODO: Should be an assert.
+                return false;
+            }
+
+            unsigned int depth = 0;
+            bool heading_down = true;
+
+            std::vector<evaluation_type> stack(max_depth);
+
+            // Insert initial state.
+            evaluation_type& root = stack[0];
+            root = evaluation_type(state, max_score);
+            ++depth;
+
+            if (stack[0].options.empty()) {
+                return false;
+            }
+
+            while (true) {
+                unsigned int depth_parent = depth - 1;
+                // If we just moved down.
+                if (heading_down) {
+
+                    // Handy variables.
+                    evaluation_type& current = stack[depth];
+                    evaluation_type& parent = stack[depth_parent];
+                    const state_type& current_state = parent.options[parent.current_option_index];
+
+                    // Check if we have reached max depth yet.
+                    if (depth < max_depth) {
+                        // Save to the stack for further processing.
+                        current = evaluation_type(current_state, max_score);
+                        // Check if there is more depth to search.
+                        if (!current.options.empty()) {
+                            // Keep heading down.
+                            ++depth;
+                            continue;
+                        }
+                    }
+
+                    // Can't/Won't go down, because either we're at max depth or have no moves, so score the state.
+                    parent.scores[parent.current_option_index] = current_state.get_scores();
+
+                    // We're going up now.
+                    heading_down = false;
+
+                    // Reduce the depth.
+                    --depth;
+                }
+                else {
+                    // Check if we have no more options left to try.
+                    if (stack[depth].current_option_index == stack[depth].options.size() - 1) {
+
+                        // If we're back at the top we're done!
+                        if (depth == 0) {
+                            break;
+                        }
+
+                        // Handy variables.
+                        const evaluation_type& current = stack[depth];
+                        evaluation_type& parent = stack[depth - 1];
+
+                        // Calculate move on this level.
+                        unsigned int index_max = 0;
+                        for (unsigned int index = 1; index < current.options.size(); ++index) {
+                            if (current.scores[index_max][current.entity] < current.scores[index][current.entity]) {
+                                index_max = index;
+                            }
+                            // TODO: Could make it min opponents if ties are found.
+                        }
+
+                        // Save best to parent.
+                        parent.scores[parent.current_option_index] = current.scores[index_max];
+
+                        // Keep heading up.
+                        --depth;
+                        continue;
+                    }
+                    // Otherwise go down the next branch.
+                    else {
+                        // Finally increment the current option index of the current depth.
+                        ++(stack[depth].current_option_index);
+
+                        // We're going down now.
+                        heading_down = true;
+
+                        // Increase the depth.
+                        ++depth;
+                    }
+                }
+            }
+
+            unsigned int index_max = 0;
+            for (unsigned int index = 1; index < root.options.size(); ++index) {
+                if (root.scores[index_max][root.entity] < root.scores[index][root.entity]) {
+                    index_max = index;
+                }
+                // TODO: Could make it min opponents if ties are found.
+            }
+
+            option = root.options[index_max];
+            return true;
+        }
+    };
+}
+
+#endif // GTL_MAXN_HPP

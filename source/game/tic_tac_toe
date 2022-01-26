@@ -1,0 +1,265 @@
+/*
+The MIT License
+Copyright (c) 2020 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_TIC_TAC_TOE_HPP
+#define GTL_TIC_TAC_TOE_HPP
+
+// Summary: Solver for the game tic-tac-toe on a 3x3 board. [wip]
+
+#include <vector>
+
+namespace gtl {
+    class tic_tac_toe final {
+    public:
+        constexpr static const unsigned int grid_width = 3;
+        constexpr static const unsigned int grid_height = 3;
+        constexpr static const unsigned int winning_chain = 3;
+
+    public:
+        enum class symbol_type : unsigned char {
+            empty,
+            nought,
+            cross
+        };
+
+        class state_type {
+        public:
+            symbol_type next_symbol;
+            symbol_type grid[tic_tac_toe::grid_height][tic_tac_toe::grid_width];
+        };
+
+        class score_type {
+        public:
+            int move;
+            int oppertunity;
+        };
+
+    public:
+        static state_type new_game() {
+            state_type game;
+            game.next_symbol = symbol_type::cross;
+            for (unsigned int row = 0; row < tic_tac_toe::grid_height; ++row) {
+                for (unsigned int column = 0; column < tic_tac_toe::grid_width; ++column) {
+                    game.grid[row][column] = symbol_type::empty;
+                }
+            }
+            return game;
+        }
+
+    public:
+        static bool try_move(state_type& game) {
+            // Get all possible moves.
+            std::vector<state_type> moves = find_moves(game);
+            // If there are none, then we cannot move.
+            if (moves.empty()) {
+                return false;
+            }
+            // Score all moves.
+            std::vector<score_type> scores(moves.size());
+            for (unsigned long long int index = 0; index < moves.size(); ++index) {
+                // Get the score of each move.
+                scores[index] = score_move(moves[index], game.next_symbol);
+            }
+            // Get best score.
+            score_type best_score = scores[0];
+            for (const score_type& score : scores) {
+                if (score.move > best_score.move) {
+                    best_score = score;
+                }
+                else if (score.move == best_score.move) {
+                    if (score.oppertunity > best_score.oppertunity) {
+                        best_score = score;
+                    }
+                }
+            }
+            // Remove any moves less than the best score.
+            unsigned int bad_moves = 0;
+            for (unsigned long long int index = 0; index < moves.size() - bad_moves; ++index) {
+                if ((scores[index].move != best_score.move) || (scores[index].oppertunity != best_score.oppertunity)) {
+                    std::swap(scores[index], scores[moves.size() - 1 - bad_moves]);
+                    std::swap(moves[index], moves[moves.size() - 1 - bad_moves]);
+                    ++bad_moves;
+                    --index;
+                }
+            }
+            moves.erase(moves.begin() + static_cast<long long int>(moves.size() - bad_moves), moves.end());
+            // Select one of the best moves.
+            // TODO: This the oppertunity to add some variation to the perfect player.
+            state_type best_move = moves[0];
+            // Apply the best move.
+            game = best_move;
+            return true;
+        }
+
+        static bool check_win(const state_type& game) {
+            // Horizontal wins.
+            for (unsigned int row_start = 0; row_start < tic_tac_toe::grid_height; ++row_start) {
+                for (unsigned int column_start = 0; column_start < tic_tac_toe::grid_width - tic_tac_toe::winning_chain + 1; ++column_start) {
+                    symbol_type start = game.grid[row_start][column_start];
+                    if (start == symbol_type::empty) {
+                        continue;
+                    }
+                    unsigned int chain_length = 1;
+                    for (unsigned int column = 1; column < tic_tac_toe::winning_chain; ++column) {
+                        chain_length += (game.grid[row_start + 0][column_start + column] == start);
+                        if (chain_length == tic_tac_toe::winning_chain) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            // Vertical wins.
+            for (unsigned int row_start = 0; row_start < tic_tac_toe::grid_height - tic_tac_toe::winning_chain + 1; ++row_start) {
+                for (unsigned int column_start = 0; column_start < tic_tac_toe::grid_width; ++column_start) {
+                    symbol_type start = game.grid[row_start][column_start];
+                    if (start == symbol_type::empty) {
+                        continue;
+                    }
+                    unsigned int chain_length = 1;
+                    for (unsigned int row = 1; row < tic_tac_toe::winning_chain; ++row) {
+                        chain_length += (game.grid[row_start + row][column_start + 0] == start);
+                        if (chain_length == tic_tac_toe::winning_chain) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            // Leading diagonal wins.
+            for (unsigned int row_start = 0; row_start < tic_tac_toe::grid_height - tic_tac_toe::winning_chain + 1; ++row_start) {
+                for (unsigned int column_start = 0; column_start < tic_tac_toe::grid_width - tic_tac_toe::winning_chain + 1; ++column_start) {
+                    symbol_type start = game.grid[row_start][column_start];
+                    if (start == symbol_type::empty) {
+                        continue;
+                    }
+                    unsigned int chain_length = 1;
+                    for (unsigned int cell = 1; cell < tic_tac_toe::winning_chain; ++cell) {
+                        chain_length += (game.grid[row_start + cell][column_start + cell] == start);
+                        if (chain_length == tic_tac_toe::winning_chain) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            // Counterdiagonal diagonal wins.
+            for (unsigned int row_start = 0; row_start < tic_tac_toe::grid_height - tic_tac_toe::winning_chain + 1; ++row_start) {
+                for (unsigned int column_start = 0; column_start < tic_tac_toe::grid_width - tic_tac_toe::winning_chain + 1; ++column_start) {
+                    symbol_type start = game.grid[row_start][tic_tac_toe::grid_width - 1 - column_start];
+                    if (start == symbol_type::empty) {
+                        continue;
+                    }
+                    unsigned int chain_length = 1;
+                    for (unsigned int cell = 1; cell < tic_tac_toe::winning_chain; ++cell) {
+                        chain_length += (game.grid[row_start + cell][tic_tac_toe::grid_width - 1 - column_start - cell] == start);
+                        if (chain_length == tic_tac_toe::winning_chain) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            // No wins.
+            return false;
+        }
+
+    private:
+        static symbol_type flip_symbol(const symbol_type& symbol) {
+            switch (symbol) {
+                case symbol_type::empty: return symbol_type::empty;
+                case symbol_type::nought: return symbol_type::cross;
+                case symbol_type::cross: return symbol_type::nought;
+            }
+            return symbol;
+        }
+
+        static std::vector<state_type> find_moves(const state_type& game) {
+            // Check if the game is already over.
+            if (check_win(game)) {
+                return {};
+            }
+            std::vector<state_type> moves;
+            moves.reserve(tic_tac_toe::grid_width * tic_tac_toe::grid_height);
+            // Every empty square is a potential move.
+            for (unsigned int row = 0; row < tic_tac_toe::grid_height; ++row) {
+                for (unsigned int column = 0; column < tic_tac_toe::grid_width; ++column) {
+                    if (game.grid[row][column] == symbol_type::empty) {
+                        moves.push_back(game);
+                        moves.back().grid[row][column] = moves.back().next_symbol;
+                        moves.back().next_symbol = flip_symbol(moves.back().next_symbol);
+                    }
+                }
+            }
+            return moves;
+        }
+
+        static score_type score_move(const state_type& move, symbol_type player_symbol) {
+            // Check if the game ends.
+            if (check_win(move)) {
+                // If the player wins.
+                if (move.next_symbol != player_symbol) {
+                    return {
+                        (tic_tac_toe::grid_width * tic_tac_toe::grid_height) + 1,
+                        0
+                    };
+                }
+                else {
+                    return {
+                        -static_cast<int>((tic_tac_toe::grid_width * tic_tac_toe::grid_height) + 1),
+                        0
+                    };
+                }
+            }
+            // Get the opponents next moves.
+            std::vector<state_type> next_moves = find_moves(move);
+            if (next_moves.empty()) {
+                // If the other player cannot move, this is a tie.
+                return { 0, 0 };
+            }
+            // Score the opponents next moves.
+            const symbol_type opponent_symbol = flip_symbol(player_symbol);
+            std::vector<score_type> scores(next_moves.size());
+            for (unsigned long long int index = 0; index < next_moves.size(); ++index) {
+                scores[index] = score_move(next_moves[index], opponent_symbol);
+            }
+            // Get best score.
+            score_type best_score = scores[0];
+            for (const score_type& score : scores) {
+                if (score.move > best_score.move) {
+                    best_score = score;
+                }
+                else if (score.move == best_score.move) {
+                    if (score.oppertunity > best_score.oppertunity) {
+                        best_score = score;
+                    }
+                }
+            }
+            // Count how many scores there are at the best score value.
+            int oppertunity_count = 0;
+            for (const score_type& score : scores) {
+                oppertunity_count += (score.move == best_score.move);
+            }
+            return {
+                -best_score.move,
+                -(best_score.oppertunity + oppertunity_count)
+            };
+        }
+    };
+}
+
+#endif // GTL_TIC_TAC_TOE_HPP
