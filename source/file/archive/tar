@@ -1,0 +1,272 @@
+/*
+The MIT License
+Copyright (c) 2019 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_TAR_HPP
+#define GTL_TAR_HPP
+
+// Summary: Tar format archive reader and writer. [wip]
+
+/*
+Header:
+
+location  size  field
+0         100   File name
+100       8     File mode
+108       8     Owner's numeric user ID
+116       8     Group's numeric user ID
+124       12    File size in bytes
+136       12    Last modification time in numeric Unix time format
+148       8     Checksum for header block
+156       1     Link indicator (file type)
+157       100   Name of linked file
+
+*/
+
+namespace gtl {
+    class tar final {
+    public:
+        constexpr static const int size_block = 512;
+
+    private:
+        class header_type final {
+        public:
+            char file_name[100];
+            char file_mode[8];
+            char file_uid[8];
+            char file_gid[8];
+            char file_size[12];
+            char file_modification_time[12];
+            char checksum[8];
+            char record_identifier;
+            char file_name_long[100];
+            // USTar specific fields.
+            char ustar_magic[6];
+            char ustar_version[2]; // 00
+            char ustar_owner_user_name[32];
+            char ustar_owner_group_name[32];
+            char ustar_device_major_number[8];
+            char ustar_device_minor_number[8];
+            char ustar_file_prefix[155];
+            // Pad the file structure to reach a block size.
+            char padding[12];
+
+        public:
+            header_type(const char* __restrict block_data) {
+                char* __restrict header_data = reinterpret_cast<char*>(this);
+                for (int index = 0; index < tar::size_block; ++index) {
+                    *header_data++ = *block_data++;
+                }
+            }
+
+        public:
+            long long int get_file_size() const {
+                return tar::decode_octal(this->file_size, 12);
+            }
+
+            bool validate_checksum() const {
+                // Pre-compute the details of the checksum location in the header structure.
+                constexpr int checksum_length = 8;
+                constexpr int checksum_index_start = 100 + 8 + 8 + 8 + 12 + 12;
+                constexpr int checksum_index_end = checksum_index_start + checksum_length;
+                // Prepare signed and unsigned pointers to the header data.
+                const signed char* __restrict header_signed = reinterpret_cast<const signed char*>(this);
+                const unsigned char* __restrict header_unsigned = reinterpret_cast<const unsigned char*>(this);
+                // The checksum will be equal to either the signed or the unsigned sum of almost all header bytes.
+                // The checksum itself is excluded from the sum, and instead replaced with spaces.
+                // To account for this start the computed sums with the value of the spaces that should be in the checksum.
+                long long int sum_signed = static_cast<int>(static_cast<signed char>(' ')) * checksum_length;
+                long long int sum_unsigned = static_cast<int>(static_cast<unsigned char>(' ')) * checksum_length;
+                // Add in the bytes before the checksum.
+                for (int index = 0; index < checksum_index_start; ++index) {
+                    sum_signed += *header_signed++;
+                    sum_unsigned += *header_unsigned++;
+                }
+                // Skip the checksum bytes.
+                header_signed += checksum_length;
+                header_unsigned += checksum_length;
+                // Add in the bytes after the checksum.
+                for (int index = checksum_index_end; index < tar::size_block; ++index) {
+                    sum_signed += *header_signed++;
+                    sum_unsigned += *header_unsigned++;
+                }
+                // Decode the actual checksum bytes.
+                long long int decoded_checksum = tar::decode_octal(this->checksum, checksum_length);
+                return ((decoded_checksum == sum_signed) || (decoded_checksum == sum_unsigned));
+            }
+
+            enum class record_type {
+                file,
+                hard_link,
+                symbolic_link,
+                device_file,
+                block_device,
+                directory,
+                named_pipe,
+                long_file_name,
+                long_symbolic_link,
+                unknown
+            };
+
+            constexpr record_type get_record_type() const {
+                switch (this->record_identifier) {
+                    case 0:   return record_type::file;
+                    case '0': return record_type::file;
+                    case '1': return record_type::hard_link;
+                    case '2': return record_type::symbolic_link;
+                    case '3': return record_type::device_file;
+                    case '4': return record_type::block_device;
+                    case '5': return record_type::directory;
+                    case '6': return record_type::named_pipe;
+                    case 'L': return record_type::long_file_name;
+                    case 'K': return record_type::long_symbolic_link;
+                    default:  return record_type::unknown;
+                }
+                return record_type::unknown;
+            }
+
+            constexpr bool validate_ustar_magic() const {
+                constexpr const int alternate_count = 2;
+                constexpr const int length_expected = 6;
+                constexpr const char expected[alternate_count][length_expected] = {
+                    { 'u', 's', 't', 'a', 'r', 0 },
+                    { 'u', 's', 't', 'a', 'r', ' ' }
+                };
+                for (int alternate_index = 0; alternate_index < alternate_count; ++alternate_index) {
+                    const char* __restrict string_expected = &expected[alternate_index][0];
+                    const char* __restrict string_header = this->ustar_magic;
+                    int length_remaining = length_expected;
+                    while (length_remaining--) {
+                        if (*string_expected++ != *string_header++) {
+                            break;
+                        }
+                    }
+                    // Only return true if we've matched all characters.
+                    if (length_remaining < 0) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            constexpr bool validate_ustar_version() const {
+                constexpr const int alternate_count = 2;
+                constexpr const int length_expected = 2;
+                constexpr const char expected[alternate_count][length_expected] = {
+                    { '0', '0' },
+                    { ' ', 0 }
+                };
+                for (int alternate_index = 0; alternate_index < alternate_count; ++alternate_index) {
+                    const char* __restrict string_expected = &expected[alternate_index][0];
+                    const char* __restrict string_header = this->ustar_version;
+                    int length_remaining = length_expected;
+                    while (length_remaining--) {
+                        if (*string_expected++ != *string_header++) {
+                            break;
+                        }
+                    }
+                    // Only return true if we've matched all characters.
+                    if (length_remaining < 0) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
+
+        static_assert(sizeof(header_type) == tar::size_block);
+
+    private:
+        constexpr static long long int decode_octal(const char* __restrict data, int length) {
+            long long int value = 0;
+            while (length--) {
+                // Break at first null or space character.
+                if ((*data) == 0 || (*data) == ' ') {
+                    break;
+                }
+                value = (value * 8) + ((*data++) - '0');
+            }
+            return value;
+        }
+
+    private:
+        const char* const __restrict data;
+        const long long int length;
+
+    public:
+        ~tar() {
+        }
+
+        constexpr tar()
+            : data(nullptr)
+            , length(0) {
+        }
+
+        constexpr tar(const char* const __restrict file_data, long long int file_length)
+            : data(file_data)
+            , length(file_length) {
+            // TODO: When a block of zeros is found the archive ends.
+            // TODO: By default ignore these null blocks if we've not reached the length (some people cat tar files together)
+        }
+
+        bool validate() const {
+            // The length must be greater than zero.
+            if (this->length <= 0) {
+                return false;
+            }
+            // A valid tar file is comprised of a collection of blocks.
+            if (this->length % tar::size_block != 0) {
+                return false;
+            }
+            // Check all the file headers, skip the last block which has to be all zeros.
+            long long int index = 0;
+            while (index < this->length - tar::size_block * 2) {
+                // Load a header.
+                header_type header(this->data + index);
+                // Validate the data.
+                if (!header.validate_checksum()) {
+                    return false;
+                }
+                if (!header.validate_ustar_magic()) {
+                    return false;
+                }
+                if (!header.validate_ustar_version()) {
+                    return false;
+                }
+                // Advance the index by the file size.
+                index += header.get_file_size();
+
+                // Ensure block size is a power of two.
+                static_assert(tar::size_block && ((tar::size_block & (tar::size_block - 1)) == 0));
+
+                // Move to the next block and round to the next block.
+                index = (tar::size_block + index + tar::size_block - 1) & -tar::size_block;
+            }
+            for (;index < this->length; ++index) {
+                if (this->data[index] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    };
+}
+
+#endif // GTL_TAR_HPP
