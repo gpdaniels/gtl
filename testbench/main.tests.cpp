@@ -158,13 +158,20 @@ int main(int argument_count, char* arguments[]) {
             int result = testbench::launch_process(testbench::get_executable(), test_arguments);
             if (result != 0) {
                 ++TEST_FAILURE_COUNT;
+                if (!quiet) {
+                    PRINT("FAILURE.\n");
+                }
             }
         }
         else {
+            testbench::REQUIRE_COUNT = 0;
             testbench::REQUIRE_FAILURE_COUNT = 0;
             current_test->get_function()();
             if (testbench::REQUIRE_FAILURE_COUNT > 0) {
                 ++TEST_FAILURE_COUNT;
+            }
+            if (!quiet) {
+                PRINT("REQUIRES: [TOTAL: %lld] [PASSED: %lld] [FAILED: %lld].\n", testbench::REQUIRE_COUNT, testbench::REQUIRE_COUNT - testbench::REQUIRE_FAILURE_COUNT, testbench::REQUIRE_FAILURE_COUNT);
             }
         }
         if (!quiet) {
