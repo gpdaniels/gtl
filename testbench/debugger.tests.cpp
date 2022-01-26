@@ -104,7 +104,7 @@ namespace testbench {
             };
             kinfo_proc info = {};
             size_t info_size = sizeof(info);
-            int return_code = sysctl(mib, sizeof(mib) / sizeof(*mib), &info, &info_size, NULL, 0);
+            int return_code = sysctl(mib, sizeof(mib) / sizeof(*mib), &info, &info_size, nullptr, 0);
             // Check if the syscall failed.
             if (return_code == 0) {
                 return false;

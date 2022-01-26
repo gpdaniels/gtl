@@ -45,6 +45,6 @@ TEST(sentinel, traits, standard) {
 }
 
 TEST(sentinel, constructor, empty) {
-    gtl::sentinel sentinel;
+    gtl::sentinel<> sentinel;
     testbench::do_not_optimise_away(sentinel);
 }
