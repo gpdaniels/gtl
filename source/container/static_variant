@@ -1,0 +1,327 @@
+/*
+The MIT License
+Copyright (c) 2019 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_STATIC_VARIANT_HPP
+#define GTL_STATIC_VARIANT_HPP
+
+// Summary: A static_variant class that can contain any one of its listed template types. [wip]
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the static_variant is misused.
+#   define GTL_STATIC_VARIANT_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_STATIC_VARIANT_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+
+namespace gtl {
+    // Forward declare class to allow a unique definition of operator new using it as a parameter.
+    template <typename first_type, typename... remaining_types>
+    class static_variant;
+}
+
+namespace {
+    // Operator new requires the size_t type for its size argument.
+    using size_t = decltype(sizeof(1));
+}
+
+/// @brief  Custom placement operator new to avoid including the (massive) <new> header.
+/// @tparam implemented_class The class type that is being extended by the pimpl.
+/// @tparam implementation_size The size of the internal pimpl implementataion.
+/// @tparam alignment_size Alignment of the data in the pimpl implementation.
+/// @param  size The size of the data to placement new on.
+/// @param  pointer The pointer of the data to placement new on.
+/// @param  unused_type_tag An unused type tag used to make this placement new operator function unique.
+template <typename first_type, typename... remaining_types>
+inline void* operator new(size_t size, void* pointer, gtl::static_variant<first_type, remaining_types...>* unused_type_tag) {
+    static_cast<void>(size);
+    static_cast<void>(unused_type_tag);
+    return pointer;
+}
+
+/// @brief  Custom placement operator delete to avoid compilers complaing about potential memory leaks.
+/// @tparam implemented_class The class type that is being extended by the pimpl.
+/// @tparam implementation_size The size of the internal pimpl implementataion.
+/// @tparam alignment_size Alignment of the data in the pimpl implementation.
+/// @param  pointer The pointer of the data to placement delete on.
+/// @param  unused_type_tag An unused type tag used to make this placement delete operator function unique.
+template <typename first_type, typename... remaining_types>
+inline void operator delete(void* pointer, gtl::static_variant<first_type, remaining_types...>* unused_type_tag) {
+    static_cast<void>(pointer);
+    static_cast<void>(unused_type_tag);
+}
+
+namespace gtl {
+    template <typename first_type, typename... remaining_types>
+    class static_variant final {
+    private:
+        /// @brief  By making the templated static_variant class friends with all other static_variant classes private members can be accessed in all member functions.
+        template <typename type, typename... types>
+        friend class static_variant;
+
+    private:
+        template <typename type>
+        struct type_identifier_generator final {
+            /// @brief  The actual bit of unique type information.
+            constexpr static const auto identifier = [](){};
+        };
+
+    private:
+        /// @brief  Recursive function to iterate over the types to find the largest one.
+        constexpr static unsigned long long int get_largest_type_size() {
+            if constexpr (sizeof...(remaining_types) == 0) {
+                return sizeof(first_type);
+            }
+            else {
+                if constexpr (sizeof(first_type) > static_variant<remaining_types...>::get_largest_type_size()) {
+                    return sizeof(first_type);
+                }
+                else {
+                    return static_variant<remaining_types...>::get_largest_type_size();
+                }
+            }
+        }
+
+        template <typename lhs_type, class rhs_type>
+        struct is_same_type {
+            constexpr static const bool value = false;
+        };
+
+        template <typename type>
+        struct is_same_type<type, type> {
+            constexpr static const bool value = true;
+        };
+
+    private:
+        unsigned long long int active_type_id = 0;
+        alignas(static_variant::get_largest_type_size()) unsigned char data[static_variant::get_largest_type_size()] = {};
+
+    public:
+        ~static_variant() {
+            if (!this->empty()) {
+                this->destruct<first_type, remaining_types...>();
+            }
+        }
+
+        constexpr static_variant() = default;
+
+        template <typename type>
+        constexpr static_variant(const type& value) {
+            static_assert(is_same_type<type, first_type>::value || (is_same_type<type, remaining_types>::value || ...), "Value type is not in the list of valid variant types.");
+            this->active_type_id = reinterpret_cast<const unsigned long long int>(&static_variant<void*>::type_identifier_generator<type>::identifier);
+            new (this->data, static_cast<static_variant*>(nullptr)) type(value);
+        }
+
+        constexpr static_variant(const static_variant& other) {
+            this->construct_copy<first_type, remaining_types...>(other);
+        }
+
+        constexpr static_variant(static_variant&& other) {
+            this->construct_move<first_type, remaining_types...>(other);
+        }
+
+        constexpr static_variant& operator=(const static_variant& other) {
+            if ((!this->empty()) && (!other.empty())) {
+                // Both valid.
+                if (this->active_type_id != other.active_type_id) {
+                    this->destruct<first_type, remaining_types...>();
+                    this->assign_copy<first_type, remaining_types...>(other);
+                }
+                else {
+                    this->destruct<first_type, remaining_types...>();
+                    this->construct_copy<first_type, remaining_types...>(other);
+                }
+            }
+            else if (!other.empty()) {
+                // Only other valid.
+                this->construct_copy<first_type, remaining_types...>(other);
+            }
+            else {
+                // Only this valid.
+                this->destruct<first_type, remaining_types...>();
+            }
+        }
+
+        constexpr static_variant& operator=(static_variant&& other) {
+            if ((!this->empty()) && (!other.empty())) {
+                // Both valid.
+                if (this->active_type_id != other.active_type_id) {
+                    this->destruct<first_type, remaining_types...>();
+                    this->assign_move<first_type, remaining_types...>(static_cast<static_variant&&>(other));
+                }
+                else {
+                    this->destruct<first_type, remaining_types...>();
+                    this->construct_move<first_type, remaining_types...>(static_cast<static_variant&&>(other));
+                }
+            }
+            else if (!other.empty()) {
+                // Only other valid.
+                this->construct_move<first_type, remaining_types...>(static_cast<static_variant&&>(other));
+            }
+            else {
+                // Only this valid.
+                this->destruct<first_type, remaining_types...>();
+            }
+        }
+
+    private:
+        template <typename type, typename... types>
+        constexpr void construct_copy(const static_variant& other) {
+            if (other.is<type>()) {
+                this->active_type_id = reinterpret_cast<const unsigned long long int>(&static_variant<void*>::type_identifier_generator<type>::identifier);
+                type& other_data = *reinterpret_cast<type*>(other.data);
+                new (this->data, static_cast<static_variant*>(nullptr)) type(other_data);
+            }
+            else {
+                if constexpr (sizeof...(types) != 0) {
+                    this->construct_copy<types...>(other);
+                }
+                else {
+                    GTL_STATIC_VARIANT_ASSERT(false, "Failed to copy construct variants with no matching type.");
+                }
+            }
+        }
+
+        template <typename type, typename... types>
+        constexpr void construct_move(static_variant&& other) {
+            if (other.is<type>()) {
+                this->active_type_id = reinterpret_cast<const unsigned long long int>(&static_variant<void*>::type_identifier_generator<type>::identifier);
+                type& other_data = *reinterpret_cast<type*>(other.data);
+                new (this->data, static_cast<static_variant*>(nullptr)) type(static_cast<type&&>(other_data));
+            }
+            else {
+                if constexpr (sizeof...(types) != 0) {
+                    this->construct_move<types...>(static_cast<static_variant&&>(other));
+                }
+                else {
+                    GTL_STATIC_VARIANT_ASSERT(false, "Failed to move construct variants with no matching type.");
+                }
+            }
+        }
+
+        template <typename type, typename... types>
+        constexpr void assign_copy(const static_variant& other) {
+            if (other.is<type>()) {
+                this->active_type_id = reinterpret_cast<const unsigned long long int>(&static_variant<void*>::type_identifier_generator<type>::identifier);
+                type& thus_data = *reinterpret_cast<type*>(this->data);
+                type& other_data = *reinterpret_cast<type*>(other.data);
+                thus_data = other_data;
+            }
+            else {
+                if constexpr (sizeof...(types) != 0) {
+                    this->assign_copy<types...>(other);
+                }
+                else {
+                    GTL_STATIC_VARIANT_ASSERT(false, "Failed to copy between variants with no matching type.");
+                }
+            }
+        }
+
+        template <typename type, typename... types>
+        constexpr void assign_move(static_variant&& other) {
+            if (other.is<type>()) {
+                this->active_type_id = reinterpret_cast<const unsigned long long int>(&static_variant<void*>::type_identifier_generator<type>::identifier);
+                type& thus_data = *reinterpret_cast<type*>(this->data);
+                type& other_data = *reinterpret_cast<type*>(other.data);
+                thus_data = static_cast<type&&>(other_data);
+            }
+            else {
+                if constexpr (sizeof...(types) != 0) {
+                    this->assign_move<types...>(static_cast<static_variant&&>(other));
+                }
+                else {
+                    GTL_STATIC_VARIANT_ASSERT(false, "Failed to move between variants with no matching type.");
+                }
+            }
+        }
+
+        template <typename type, typename... types>
+        constexpr void destruct() {
+            if (this->is<type>()) {
+                this->active_type_id = 0;
+                reinterpret_cast<type*>(this->data)->~type();
+            }
+            else {
+                if constexpr (sizeof...(types) != 0) {
+                    this->destruct<types...>();
+                }
+                else {
+                    GTL_STATIC_VARIANT_ASSERT(false, "Failed to destruct variant with no matching type.");
+                }
+            }
+        }
+
+        template <typename return_type, typename type, typename... types>
+        constexpr return_type cast() const {
+            if (this->is<type>()) {
+                return static_cast<return_type>(*reinterpret_cast<const type*>(this->data));
+            }
+            else {
+                if constexpr (sizeof...(types) != 0) {
+                    return this->cast<return_type, types...>();
+                }
+                else {
+                    GTL_STATIC_VARIANT_ASSERT(false, "Failed to cast variant with no matching type.");
+                }
+            }
+            return {};
+        }
+
+    public:
+        constexpr bool empty() const {
+            return (this->active_type_id == 0);
+        }
+
+        template <typename type>
+        constexpr bool is() const {
+            return (this->active_type_id == reinterpret_cast<const unsigned long long int>(&static_variant<void*>::type_identifier_generator<type>::identifier));
+        }
+
+        template <typename type>
+        constexpr type as() const {
+            GTL_STATIC_VARIANT_ASSERT(!this->empty(), "Attempting to get the value of an empty variant.");
+            return this->cast<type, first_type, remaining_types...>();
+        }
+
+        template <typename type>
+        constexpr const type& get() const {
+            GTL_STATIC_VARIANT_ASSERT(!this->empty(), "Attempting to get the value of an empty variant.");
+            return *reinterpret_cast<const type*>(this->data);
+        }
+
+        template <typename type>
+        constexpr void set(const type& value) {
+            if (!this->empty()) {
+                this->destruct<first_type, remaining_types...>();
+            }
+            this->active_type_id = reinterpret_cast<const unsigned long long int>(&static_variant<void*>::type_identifier_generator<type>::identifier);
+            new (this->data, static_cast<static_variant*>(nullptr)) type(value);
+        }
+    };
+}
+
+#undef GTL_STATIC_VARIANT_ASSERT
+
+#endif // GTL_STATIC_VARIANT_HPP
