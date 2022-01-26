@@ -162,6 +162,7 @@ namespace gtl {
                 // Only this valid.
                 this->destruct<first_type, remaining_types...>();
             }
+            return *this;
         }
 
         constexpr static_variant& operator=(static_variant&& other) {
@@ -184,6 +185,7 @@ namespace gtl {
                 // Only this valid.
                 this->destruct<first_type, remaining_types...>();
             }
+            return *this;
         }
 
     private:
