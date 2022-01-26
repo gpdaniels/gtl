@@ -78,7 +78,7 @@ TEST(barrier, function, sync) {
     barrier.sync();
 }
 
-TEST(barrier, evaluation, set_trigger_count_with_two_threads) {
+TEST(barrier, evaluate, set_trigger_count_with_two_threads) {
     gtl::barrier barrier(2);
 
     std::atomic<int> result = 0;
@@ -105,7 +105,7 @@ TEST(barrier, evaluation, set_trigger_count_with_two_threads) {
     REQUIRE(result == 2, "Expected result to be set to 1 not '%d' after join.", result.load());
 }
 
-TEST(barrier, evaluation, trigger_with_two_threads) {
+TEST(barrier, evaluate, trigger_with_two_threads) {
     gtl::barrier barrier(2);
 
     std::atomic<int> result = 0;
@@ -132,7 +132,7 @@ TEST(barrier, evaluation, trigger_with_two_threads) {
     REQUIRE(result == 2, "Expected result to be set to 1 not '%d' after join.", result.load());
 }
 
-TEST(barrier, evaluation, sync_with_two_threads) {
+TEST(barrier, evaluate, sync_with_two_threads) {
     gtl::barrier barrier(2);
 
     std::atomic<int> result = 0;

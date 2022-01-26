@@ -92,7 +92,7 @@ TEST(cpu, function, has_xxx) {
     cpu.has_bmi2();
 }
 
-TEST(cpu, evaluation, print_flags) {
+TEST(cpu, evaluate, print_flags) {
     gtl::cpu cpu;
     PRINT("get_max_leaf_id:             %d\n", cpu.get_max_leaf_id());
     PRINT("get_max_extended_leaf_id:    %d\n", cpu.get_max_extended_leaf_id());

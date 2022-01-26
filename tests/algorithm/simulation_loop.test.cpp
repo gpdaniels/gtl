@@ -88,7 +88,7 @@ TEST(simulation_loop, function, get_alpha) {
     REQUIRE(simulation_loop.get_alpha<float>() == 0.0f);
 }
 
-TEST(simulation_loop, evaluation, game_loop) {
+TEST(simulation_loop, evaluate, game_loop) {
 
     gtl::simulation_loop<100> simulation_loop;
 

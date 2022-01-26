@@ -68,7 +68,7 @@ TEST(pimpl, traits, standard) {
     REQUIRE(std::is_standard_layout<test_pimpl>::value == true, "Expected std::is_standard_layout to be true.");
 }
 
-TEST(pimpl, evaluation, return_value) {
+TEST(pimpl, evaluate, return_value) {
     test_pimpl pimpl(1);
     REQUIRE(pimpl.return_value() == 1);
 }

@@ -93,7 +93,7 @@ TEST(paths, function, get_application_data_directory) {
     PRINT("application_data_directory: %s\n", application_data_directory.c_str());
 }
 
-TEST(paths, evaluation, print_all) {
+TEST(paths, evaluate, print_all) {
     std::string executable_path;
     REQUIRE(gtl::paths::get_executable_path(executable_path));
     PRINT("executable_path:             %s\n", executable_path.c_str());

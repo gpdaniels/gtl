@@ -79,7 +79,7 @@ void test_class::process() {
     gtl::event_queue<std::function<void(void)>>::process_events();
 }
 
-TEST(event, evaluation, emit_and_process_event) {
+TEST(event, evaluate, emit_and_process_event) {
     test_class test;
 
     REQUIRE(test.value == 0, "Expected the value in the test_class to be initialised to zero.");
@@ -93,7 +93,7 @@ TEST(event, evaluation, emit_and_process_event) {
     REQUIRE(test.value == 1, "Expected the value of the event to have been propadated to the test class.");
 }
 
-TEST(event, evaluation, emit_and_process_invokable_event) {
+TEST(event, evaluate, emit_and_process_invokable_event) {
     test_class test;
 
     REQUIRE(test.value == 0, "Expected the value in the test_class to be initialised to zero.");

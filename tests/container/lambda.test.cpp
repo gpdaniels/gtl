@@ -361,7 +361,7 @@ TEST(lambda, operator, executing_with_return) {
     }
 }
 
-TEST(lambda, evaluation, construction_and_destruction) {
+TEST(lambda, evaluate, construction_and_destruction) {
     static int constructed = 0;
     static int copied = 0;
     static int moved = 0;

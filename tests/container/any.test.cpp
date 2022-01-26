@@ -57,7 +57,7 @@ TEST(any, constructor, value) {
     testbench::do_not_optimise_away(any);
 }
 
-TEST(any, evaluation, any) {
+TEST(any, evaluate, any) {
     gtl::any any(1);
     REQUIRE(static_cast<int>(any) == 1, "Unexpected value '%d' in any, expected %d.", static_cast<int>(any), 1);
 
