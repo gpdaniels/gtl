@@ -30,6 +30,9 @@ SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 # Find all source files.
 FILE(GLOB_RECURSE SOURCE_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DIR}/source/*")
 
+# Sort list of files.
+LIST(SORT SOURCE_FILES)
+
 # Check each file for assert macros.
 FOREACH(SOURCE_FILE ${SOURCE_FILES})
     
@@ -60,7 +63,6 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
         "^/// @brief At release time the assert macro is implemented as a nop\\.$"
         "^#   define GTL_${SOURCE_FILE_NAME_UPPER}_ASSERT\\(ASSERTION, MESSAGE\\) static_cast<void>\\(0\\)$"
         "^#endif$"
-        "^$"
     )
     
     # Replace newlines.

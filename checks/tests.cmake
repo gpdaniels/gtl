@@ -31,6 +31,9 @@ SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 FILE(GLOB_RECURSE SOURCE_FILES RELATIVE "${CMAKE_SOURCE_DIR}/source/" "${CMAKE_SOURCE_DIR}/source/*")
 FILE(GLOB_RECURSE TEST_FILES RELATIVE "${CMAKE_SOURCE_DIR}/tests/" "${CMAKE_SOURCE_DIR}/tests/*.test.cpp")
 
+# Sort list of files.
+LIST(SORT SOURCE_FILES)
+
 # Check if each source file has a test file.
 FOREACH(SOURCE_FILE ${SOURCE_FILES})
     

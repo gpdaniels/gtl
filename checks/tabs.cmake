@@ -35,6 +35,9 @@ LIST(FILTER PROJECT_FILES EXCLUDE REGEX "^.git/.*$")
 LIST(FILTER PROJECT_FILES EXCLUDE REGEX "^[Bb][Uu][Ii][Ll][Dd]/.*$")
 LIST(FILTER PROJECT_FILES EXCLUDE REGEX "^#.*$")
 
+# Sort list of files.
+LIST(SORT PROJECT_FILES)
+
 # Check each file for the correct license text.
 FOREACH(PROJECT_FILE ${PROJECT_FILES})
     

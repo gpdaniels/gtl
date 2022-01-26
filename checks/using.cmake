@@ -30,6 +30,9 @@ SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 # Find all source files.
 FILE(GLOB_RECURSE SOURCE_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DIR}/source/*")
 
+# Sort list of files.
+LIST(SORT SOURCE_FILES)
+
 # Check each file for include guard correctness.
 FOREACH(SOURCE_FILE ${SOURCE_FILES})
     
@@ -38,9 +41,6 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     
     # Get content.
     FILE(READ "${CMAKE_SOURCE_DIR}/${SOURCE_FILE}" SOURCE_FILE_CONTENT)
-    
-    # Replace special list chars.
-    STRING(REGEX REPLACE "([[]|[]])" "\\\\\\1" SOURCE_FILE_CONTENT "${SOURCE_FILE_CONTENT}")
     
     # If 'using namespace' is detected raise an error.
     IF(SOURCE_FILE_CONTENT MATCHES "using namespace")

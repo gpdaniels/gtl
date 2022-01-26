@@ -30,6 +30,13 @@ SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 # Find all source files, test headers, and testbench headers.
 FILE(GLOB_RECURSE GUARDED_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DIR}/source/*" "${CMAKE_SOURCE_DIR}/tests/*.hpp" "${CMAKE_SOURCE_DIR}/testbench/*.hpp")
 
+# Sort list of files.
+LIST(SORT GUARDED_FILES)
+
+# Create an empty database to fill with all the include guard defines.
+SET(GUARD_DATABASE "")
+SET(HEADER_DATABASE "")
+
 # Check each file for include guard correctness.
 FOREACH(GUARDED_FILE ${GUARDED_FILES})
     
@@ -39,6 +46,9 @@ FOREACH(GUARDED_FILE ${GUARDED_FILES})
     # Get content.
     FILE(READ "${CMAKE_SOURCE_DIR}/${GUARDED_FILE}" GUARDED_FILE_CONTENT)
     
+    # Replace special list chars.
+    STRING(REGEX REPLACE "([[]|[]])" "\\\\\\\\1" GUARDED_FILE_CONTENT "${GUARDED_FILE_CONTENT}")
+    
     # Replace newlines.
     STRING(REGEX REPLACE "[\r]?[\n]" ";" GUARDED_FILE_LINES "${GUARDED_FILE_CONTENT}")
     
@@ -47,13 +57,13 @@ FOREACH(GUARDED_FILE ${GUARDED_FILES})
     IF(GUARDED_FILE_LENGTH LESS 24)
         MESSAGE(FATAL_ERROR "Include guard in file '${GUARDED_FILE}' is not correct: The file is too short.")
     ENDIF()
-
+    
     # Calculate the end guard lines location.
     MATH(EXPR GUARDED_FILE_LENGTH "${GUARDED_FILE_LENGTH}-2")
     
     # Create a new list from the file lines.
     LIST(GET GUARDED_FILE_LINES 20 21 22 ${GUARDED_FILE_LENGTH} GUARDED_FILE_GUARD_LINES)
-    
+
     # Determine the include guard name from the file name.
     GET_FILENAME_COMPONENT(GUARDED_FILE_NAME "${GUARDED_FILE}" NAME)
     STRING(REGEX REPLACE "\\.hpp$" "" GUARDED_FILE_NAME "${GUARDED_FILE_NAME}")
@@ -76,6 +86,16 @@ FOREACH(GUARDED_FILE ${GUARDED_FILES})
             MESSAGE(FATAL_ERROR "Include guard in file '${GUARDED_FILE}' is not correct:\n'${GUARDED_FILE_GUARD_LINE}' != '${GUARD_REGEX_LINE}'.")
         ENDIF()
     ENDFOREACH()
+    
+    # Check the guard is unique.
+    LIST(FIND GUARD_DATABASE "GTL_${GUARDED_FILE_NAME}_HPP" INDEX_DATABASE)
+    IF(${INDEX_DATABASE} GREATER -1)
+        LIST(GET HEADER_DATABASE ${INDEX_DATABASE} DUPLICATE_FILE)
+        # TODO: Convert this warning into a FATAL_ERROR.
+        MESSAGE(STATUS "Include guard in file '${GUARDED_FILE}' is not unique, it matches '${DUPLICATE_FILE}'.")
+    ENDIF()
+    LIST(APPEND GUARD_DATABASE "GTL_${GUARDED_FILE_NAME}_HPP")
+    LIST(APPEND HEADER_DATABASE "${GUARDED_FILE}")
     
 ENDFOREACH()
 

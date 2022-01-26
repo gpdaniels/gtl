@@ -30,6 +30,9 @@ SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 # Find all source files, test files, and testbench files.
 FILE(GLOB_RECURSE LICENSED_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DIR}/source/*" "${CMAKE_SOURCE_DIR}/tests/*" "${CMAKE_SOURCE_DIR}/testbench/*")
 
+# Sort list of files.
+LIST(SORT LICENSED_FILES)
+
 # Check each file for the correct license text.
 FOREACH(LICENSED_FILE ${LICENSED_FILES})
     
@@ -47,7 +50,7 @@ FOREACH(LICENSED_FILE ${LICENSED_FILES})
     IF(LICENSED_FILE_LENGTH LESS 18)
         MESSAGE(FATAL_ERROR "License in file '${LICENSED_FILE}' does not match: The file is too short.")
     ENDIF()
-
+    
     SET(YEARS_REGEX "(2018)|(2019)|(2020)|(2021)|(2022)")
     
     # Prepare the license regex.

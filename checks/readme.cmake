@@ -30,7 +30,7 @@ SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 # Find all source files.
 FILE(GLOB_RECURSE SOURCE_FILES RELATIVE "${CMAKE_SOURCE_DIR}/source/" "${CMAKE_SOURCE_DIR}/source/*")
 
-# Sort list of source files.
+# Sort list of files.
 LIST(SORT SOURCE_FILES)
 
 # Prepare a list to hold the lines of the readme table.
