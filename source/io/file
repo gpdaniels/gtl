@@ -1,0 +1,371 @@
+/*
+The MIT License
+Copyright (c) 2019 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_FILE_HPP
+#define GTL_FILE_HPP
+
+// Summary: An RAII file handle that wraps file operation functions. [wip]
+
+namespace {
+    using size_t = decltype(sizeof(1));
+    using ssize_t = decltype(static_cast<char*>(nullptr) - static_cast<char*>(nullptr));
+
+    extern "C" int open(const char* path, int flags, ...);
+    extern "C" int close(int handle);
+    extern "C" ssize_t lseek(int handle, ssize_t offset, int whence);
+    extern "C" ssize_t read(int handle, void* buffer, size_t count);
+    extern "C" ssize_t write(int handle, const void* buffer, size_t count);
+}
+
+namespace gtl {
+    /// @brief A class to hold an RAII file handle and provide member functions to operate on it.
+    class file final {
+    public:
+        using size_type = size_t;
+        using offset_type = ssize_t;
+
+    public:
+        /// @brief Types of file access: reading, writing, or both.
+        enum class access_type {
+            /// @brief Open in read only mode with the cursor positioned at the start of the file.
+            read_only,
+
+            /// @brief Open in write only mode with the cursor positioned at the start of the file.
+            write_only,
+
+            /// @brief Open in both read and write mode with the cursor positioned at the start of the file.
+            read_and_write
+        };
+
+        /// @brief Types of file creation: don't create, only create, or either.
+        enum class creation_type {
+            /// @brief Only open the file if it already exists.
+            open_only,
+
+            /// @brief Only open the file by creating it.
+            create_only,
+
+            /// @brief Open the file either if it exists or by creating it.
+            create_or_open
+        };
+
+        /// @brief Types of file cursor: start or end, and untouched or truncated.
+        enum class cursor_type {
+            /// @brief The cursor is positioned at the start of the current file contents.
+            start_of_file,
+
+            /// @brief The cursor is positioned at the start of the file after its contents have been truncated.
+            start_of_truncated,
+
+            /// @brief The cursor is positioned at the end of the current file contents.
+            /// @note The cursor is reposition at thend end for every write.
+            end_of_file,
+
+            /// @brief The cursor is positioned at the end of the file after its contents have been truncated.
+            /// @note The cursor is reposition at thend end for every write.
+            end_of_truncated
+        };
+
+        /// @brief References for position offsets: from start, from current location, or from end.
+        enum class position_type {
+            /// @brief Offset position from the start of the file.
+            /// @note Using this position the offset should be zero or greater.
+            start,
+
+            /// @brief Offset position from the current location in the file.
+            current,
+
+            /// @brief Offset position from the end of the file.
+            /// @note Using this position the offset should be zero or less.
+            end
+        };
+
+    private:
+        /// @brief handle is the file descriptor which represents the opened file to the operating system.
+        int handle = -1;
+
+    public:
+        /// @brief Destructor ensures the file handle is closed when this class is desctructed.
+        ~file() {
+            this->close();
+        }
+
+        /// @brief Empty constructor is defaulted.
+        file() = default;
+
+        /// @brief Copy constructor is deleted.
+        file(const file& other) = delete;
+
+        /// @brief Move constructor is defaulted.
+        file(file&& other) = default;
+
+        /// @brief Copy assignment operator is deleted.
+        file& operator=(const file& other) = delete;
+
+        /// @brief Move assignment operator is defaulted.
+        file& operator=(file&& other) = default;
+
+        /// @brief Parameterised constructor passes arguments onto the open member function.
+        /// @param path The path to the file to open.
+        /// @param access_mode The access mode used to read or write the file.
+        /// @param creation_mode The creation mode used to create or open the file.
+        /// @param cursor_mode The cursor mode used to position reads and writes, whether to truncate the file, and if all writes should be appended.
+        file(
+            const char* const __restrict path,
+            access_type access_mode = access_type::read_only,
+            creation_type creation_mode = creation_type::open_only,
+            cursor_type cursor_mode = cursor_type::start_of_file
+        ) {
+            this->open(path, access_mode, creation_mode, cursor_mode);
+        }
+
+    public:
+        /// @brief A function which returns the open status of the file handle within this class.
+        /// @return true if a file is open, false otherwise.
+        bool is_open() const {
+            return (this->handle >= 0);
+        }
+
+    public:
+        /// @brief A function to open a file.
+        /// @param path The path to the file to open.
+        /// @param access_mode The access mode used to read or write the file.
+        /// @param creation_mode The creation mode used to create or open the file.
+        /// @param cursor_mode The writing mode used when reading, writing, truncate, or append to the file.
+        /// @return true if the file was successfully opened, false otherwise.
+        bool open(
+            const char* const __restrict path,
+            access_type access_mode = access_type::read_only,
+            creation_type creation_mode = creation_type::open_only,
+            cursor_type cursor_mode = cursor_type::start_of_file
+        ) {
+            if (this->is_open()) {
+                return false;
+            }
+
+            constexpr static const int flag_access_read_only = 0;
+            constexpr static const int flag_access_write_only = 1;
+            constexpr static const int flag_access_read_and_write = 2;
+
+            constexpr static const int flag_creation_open_only = 0;
+            constexpr static const int flag_creation_create_only = 64 | 128;
+            constexpr static const int flag_creation_create_or_open = 64;
+
+            constexpr static const int flag_cursor_start = 0;
+            constexpr static const int flag_cursor_start_truncate = 512;
+            constexpr static const int flag_cursor_end = 1024;
+            constexpr static const int flag_cursor_end_truncate = 512 | 1024;
+
+            int mode_flags = 0;
+            switch (access_mode) {
+                case access_type::read_only:            mode_flags |= flag_access_read_only;        break;
+                case access_type::write_only:           mode_flags |= flag_access_write_only;       break;
+                case access_type::read_and_write:       mode_flags |= flag_access_read_and_write;   break;
+            }
+            switch (creation_mode) {
+                case creation_type::open_only:          mode_flags |= flag_creation_open_only;      break;
+                case creation_type::create_only:        mode_flags |= flag_creation_create_only;    break;
+                case creation_type::create_or_open:     mode_flags |= flag_creation_create_or_open; break;
+            }
+            switch (cursor_mode) {
+                case cursor_type::start_of_file:        mode_flags |= flag_cursor_start;            break;
+                case cursor_type::start_of_truncated:   mode_flags |= flag_cursor_start_truncate;   break;
+                case cursor_type::end_of_file:          mode_flags |= flag_cursor_end;              break;
+                case cursor_type::end_of_truncated:     mode_flags |= flag_cursor_end_truncate;     break;
+            }
+
+            this->handle = ::open(path, mode_flags, 0666);
+
+            return this->is_open();
+        }
+
+        /// @brief A function to close an open file.
+        /// @return true if the file was successfully closed, false otherwise.
+        bool close() {
+            if (!this->is_open()) {
+                return false;
+            }
+
+            if (::close(this->handle) != 0) {
+                this->handle = -1;
+                return false;
+            }
+
+            this->handle = -1;
+            return true;
+        }
+
+    public:
+        /// @brief A function get the internal file handle used to control access to an opened file.
+        /// @return The raw file handle.
+        int get_handle() const {
+            return this->handle;
+        }
+
+    public:
+        /// @brief A function which returns the eof status of the file handle within this class.
+        /// @param[out] eof true if the file position is at the eof, false otherwise.
+        /// @return true if the cursor is at the end of the file, false otherwise.
+        bool is_eof(bool& eof) const {
+            eof = true;
+
+            if (!this->is_open()) {
+                return false;
+            }
+            const ssize_t position_current = ::lseek(this->handle, 0, 1);
+            if (position_current < 0) {
+                return false;
+            }
+            const ssize_t position_end = ::lseek(this->handle, 0, 2);
+            if (position_end < 0) {
+                return false;
+            }
+            const ssize_t position_restored = ::lseek(this->handle, position_current, 0);
+            if (position_restored < 0) {
+                return false;
+            }
+
+            eof = (position_current == position_end);
+            return true;
+        }
+
+    public:
+        /// @brief A function to get the current size of an opened file.
+        /// @param[out] size The current size of the file from the start to the end.
+        /// @return true if the size was successfully calculated, false otherwise.
+        bool get_size(size_type& size) const {
+            size = 0;
+
+            if (!this->is_open()) {
+                return false;
+            }
+
+            const ssize_t position_current = ::lseek(this->handle, 0, 1);
+            if (position_current < 0) {
+                return false;
+            }
+            const ssize_t position_end = ::lseek(this->handle, 0, 2);
+            if (position_end < 0) {
+                return false;
+            }
+            const ssize_t position_restored = ::lseek(this->handle, position_current, 0);
+            if (position_restored < 0) {
+                return false;
+            }
+
+            size = static_cast<size_type>(position_end);
+            return true;
+        }
+
+    public:
+        /// @brief A function to get the current location within an opened file.
+        /// @param[out] position The current position within the file from the start.
+        /// @return true if the position was successfully calculated, false otherwise.
+        bool get_cursor_position(size_type& position) const {
+            position = 0;
+
+            if (!this->is_open()) {
+                return false;
+            }
+
+            ssize_t position_current = ::lseek(this->handle, 0, 1);
+            if (position_current < 0) {
+                return false;
+            }
+
+            position = static_cast<size_type>(position_current);
+            return true;
+        }
+
+        /// @brief A function to set the current location within an opened file.
+        /// @param position The desired offset within the file relative to either the start, end, or the current position.
+        /// @param relative_to The desired position used as a base upon which to apply the offset.
+        /// @return true if the position was successfully set, false otherwise.
+        bool set_cursor_position(offset_type position, position_type relative_to = gtl::file::position_type::start) const {
+            if (!this->is_open()) {
+                return false;
+            }
+
+            int direction_flags = 0;
+            switch (relative_to) {
+                case position_type::start:      direction_flags = 0; break;
+                case position_type::current:    direction_flags = 1; break;
+                case position_type::end:        direction_flags = 2; break;
+            }
+
+            ssize_t position_current = ::lseek(this->handle, position, direction_flags);
+            if (position_current < 0) {
+                return false;
+            }
+
+            return true;
+        }
+
+    public:
+        /// @brief A function to read an array of characters from an opened file.
+        /// @param[out] buffer The array to be filled by characters.
+        /// @param[in,out] length The number of characters to attempt to read, set to the number of characters read.
+        /// @return true if no errors were encountered, false otherwise.
+        bool read(char* const __restrict buffer, size_type& length) const {
+            if (!this->is_open()) {
+                length = 0;
+                return false;
+            }
+
+            if (length == 0) {
+                return true;
+            }
+
+            ssize_t read_length = ::read(this->handle, buffer, length);
+            if (read_length < 0) {
+                return false;
+            }
+
+            length = static_cast<size_type>(read_length);
+            return true;
+        }
+
+        /// @brief A function to write an array of characters to an opened file.
+        /// @param buffer The array of characters to output.
+        /// @param[in,out] length The number of characters to attempt to write, set to the number of characters written.
+        /// @return true if no errors were encountered, false otherwise.
+        bool write(const char* const __restrict buffer, size_type& length) const {
+            if (!this->is_open()) {
+                length = 0;
+                return false;
+            }
+
+            if (length == 0) {
+                return true;
+            }
+
+            ssize_t write_length = ::write(this->handle, buffer, length);
+            if (write_length < 0) {
+                return false;
+            }
+
+            length = static_cast<size_type>(write_length);
+            return true;
+        }
+    };
+}
+
+#endif // GTL_FILE_HPP
