@@ -1,0 +1,71 @@
+/*
+The MIT License
+Copyright (c) 2021 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_SENTINEL_HPP
+#define GTL_SENTINEL_HPP
+
+// Summary: A simple class to help detect stack overflows. [wip]
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the sentinel is misused.
+#   define GTL_SENTINEL_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_SENTINEL_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+namespace gtl {
+    /// @brief  The sentinel class validates a buffer upon destruction.
+    template <int size = 16 * 1024, unsigned char data = 0xDD>
+    class sentinel final {
+    private:
+        static_assert(size > 0, "The buffer size must be greater than zero.");
+
+    private:
+        unsigned char buffer[size];
+
+    public:
+        /// @brief  ...
+        ~sentinel() {
+            #ifndef NDEBUG
+                for (int i = 0; i < size; ++i) {
+                    GTL_SENTINEL_ASSERT(this->buffer[i] == data, "The stack has been corrupted.");
+                }
+            #endif
+        }
+
+        /// @brief  ...
+        sentinel() {
+            #ifndef NDEBUG
+                for (int i = 0; i < size; ++i) {
+                    this->buffer[i] = data;
+                }
+            #endif
+        }
+    };
+}
+
+#undef GTL_SENTINEL_ASSERT
+
+#endif // GTL_SENTINEL_HPP
