@@ -72,7 +72,7 @@ namespace testbench {
 /// @brief  Main require macro.
 #define REQUIRE(...)                                                                                    \
     REQUIRE_IF(REQUIRE_HAS_TWO_ARGUMENTS(__VA_ARGS__))(                                                 \
-        UNUSED((REQUIRE_EXPAND(REQUIRE_ARGUMENT_1(__VA_ARGS__))) || (                                   \
+        UNUSED(((++testbench::REQUIRE_COUNT) && (REQUIRE_EXPAND(REQUIRE_ARGUMENT_1(__VA_ARGS__)))) || ( \
             PRINT("Requirement failure:  #%lld\n",  ++testbench::REQUIRE_FAILURE_COUNT),                \
             PRINT("  Requirement:        %s\n", REQUIRE_TO_STRING(REQUIRE_ARGUMENT_1(__VA_ARGS__,))),   \
             PRINT("  File:               %s\n", __FILE__),                                              \
@@ -84,7 +84,7 @@ namespace testbench {
             0)                                                                                          \
         )                                                                                               \
     /*REQUIRE_ELSE*/,                                                                                   \
-        UNUSED((__VA_ARGS__) || (                                                                       \
+        UNUSED(((++testbench::REQUIRE_COUNT) && (__VA_ARGS__)) || (                                     \
             PRINT("Requirement failure:  #%lld\n",  ++testbench::REQUIRE_FAILURE_COUNT),                \
             PRINT("  Requirement:        %s\n", REQUIRE_TO_STRING(REQUIRE_ARGUMENT_1(__VA_ARGS__,))),   \
             PRINT("  File:               %s\n", __FILE__),                                              \
@@ -97,12 +97,12 @@ namespace testbench {
 /// @brief  Silent version of the require macro.
 #define REQUIRE_SILENT(...)                                                                             \
     REQUIRE_IF(REQUIRE_HAS_TWO_ARGUMENTS(__VA_ARGS__))(                                                 \
-        UNUSED((REQUIRE_EXPAND(REQUIRE_ARGUMENT_1(__VA_ARGS__))) || (                                   \
+        UNUSED(((++testbench::REQUIRE_COUNT) && (REQUIRE_EXPAND(REQUIRE_ARGUMENT_1(__VA_ARGS__)))) || ( \
             (++testbench::REQUIRE_FAILURE_COUNT),                                                       \
             0)                                                                                          \
         )                                                                                               \
     /*REQUIRE_ELSE*/,                                                                                   \
-        UNUSED((__VA_ARGS__) || (                                                                       \
+        UNUSED(((++testbench::REQUIRE_COUNT) && (__VA_ARGS__)) || (                                     \
             (++testbench::REQUIRE_FAILURE_COUNT),                                                       \
             0)                                                                                          \
         )                                                                                               \
