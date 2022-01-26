@@ -51,7 +51,7 @@ namespace gtl {
         /// @brief  Swap two values in place.
         /// @param  lhs The value to replace with rhs
         /// @param  rhs The value to replace with lhs
-        template <class type>
+        template <typename type>
         constexpr static void swap(type& lhs, type& rhs) {
             type lhs_copy = lhs;
             lhs = rhs;
