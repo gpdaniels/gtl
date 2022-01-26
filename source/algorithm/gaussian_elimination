@@ -73,10 +73,10 @@ namespace gtl {
             problem_type problem_pivoted = problem;
 
             constexpr static const auto abs = [](float value) -> float {
-                if (value > 0) {
-                    return value;
+                if ((value + 0.0f) < 0) {
+                    return -value;
                 }
-                return -value;
+                return value;
             };
 
             // Pivot array if required using the "first non-zero pivot" strategy.
