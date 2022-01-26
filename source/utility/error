@@ -34,13 +34,13 @@ namespace gtl {
         };
 
         /// @brief  Template struct declaration that combines two sequences into one.
-        template <typename integer_type, class Sequence1, class Sequence2>
+        template <typename integer_type, typename lhs_sequence, typename rhs_sequence>
         struct merge_sequences;
 
         /// @brief  Template struct definition and partial specialisation for merging two interger_sequences.
-        template <typename integer_type, integer_type... indexes1, integer_type... indexes2>
-        struct merge_sequences<integer_type, integer_sequence<integer_type, indexes1...>, integer_sequence<integer_type, indexes2...>>
-            : integer_sequence<integer_type, indexes1..., (sizeof...(indexes1) + indexes2)...> {
+        template <typename integer_type, integer_type... lhs_indexes, integer_type... rhs_indexes>
+        struct merge_sequences<integer_type, integer_sequence<integer_type, lhs_indexes...>, integer_sequence<integer_type, rhs_indexes...>>
+            : integer_sequence<integer_type, lhs_indexes..., (sizeof...(lhs_indexes) + rhs_indexes)...> {
         };
 
         /// @brief  Template struct to create an integer_sequence from zero to the given length.
