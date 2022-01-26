@@ -23,7 +23,6 @@ THE SOFTWARE
 #define GTL_OPTIMISE_TESTS_HPP
 
 #include "abort.tests.hpp"
-#include "lambda.tests.hpp"
 
 #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
 #   pragma GCC diagnostic push
@@ -39,9 +38,10 @@ namespace testbench {
         // To prevent value being optimised away it needs to be used somwhere.
         // When using the value it must not impact the benchmark being performed.
         // Therefore, use the value inside a never executed if block.
-        // However, compilers are smart enough that using an if(false) block is not enough.
+
+        // Compilers are smart enough that using an if(false) block is not enough.
         // An if block is required that will never execute and complex enough that the compiler cannot remove it.
-        // Enter std::thread::id, the compiler cannot know that the current thread id will never match std::thread::id().
+        // By checking against the current thread id the compiler cannot know ahead of time if the test will pass.
         if (check_thread_id()) {
             // Once inside the if block we must now "use" the value.
             for (unsigned long long int index = 0; index < sizeof(type); ++index) {
@@ -51,33 +51,6 @@ namespace testbench {
             testbench::abort();
         }
     }
-
-    template <typename type>
-    void do_not_optimise_away(lambda<type()>&& function) {
-        // Call function and get returned value.
-        volatile type value = function();
-
-        // To prevent value and function being optimised away they must be used somwhere.
-        // When using the value and function they must not impact the benchmark being performed.
-        // Therefore, use the value and function inside a never executed if block.
-        // However, compilers are smart enough that using an if(false) block is not enough.
-        // An if block is required that will never execute and complex enough that the compiler cannot remove it.
-        // Enter std::thread::id, the compiler cannot know that the current thread id will never match std::thread::id().
-        if (check_thread_id()) {
-            // Once inside the if block we must now "use" the function and value.
-            for (unsigned long long int index = 0; index < sizeof(type); ++index) {
-                use_character(reinterpret_cast<char*>(&value)[index]);
-            }
-            for (unsigned long long int index = 0; index < sizeof(lambda<type()>); ++index) {
-                use_character(reinterpret_cast<char*>(&function)[index]);
-            }
-            // To sanity check that this block of code is never reached, abort.
-            testbench::abort();
-        }
-    }
-
-    template <>
-    void do_not_optimise_away(lambda<void()>&& function);
 }
 
 #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))

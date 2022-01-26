@@ -25,7 +25,6 @@ THE SOFTWARE
 #endif
 
 #include <cstdio>
-#include <functional>
 #include <thread>
 
 #if defined(_MSC_VER)
