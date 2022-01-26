@@ -22,9 +22,9 @@ TYPE_NAME_UPPER=$(echo "$1" | tr '[:lower:]' '[:upper:]')
 CLASS_NAME_LOWER=$(echo "$2" | tr '[:upper:]' '[:lower:]')
 CLASS_NAME_UPPER=$(echo "$2" | tr '[:lower:]' '[:upper:]')
 
-mkdir -p Source/${TYPE_NAME_LOWER}
+mkdir -p source/${TYPE_NAME_LOWER}
 
-cat << EOF > Source/${TYPE_NAME_LOWER}/${CLASS_NAME_LOWER}
+cat << EOF > source/${TYPE_NAME_LOWER}/${CLASS_NAME_LOWER}
 /*
 The MIT License
 Copyright (c) 2022 Geoffrey Daniels. http://gpdaniels.com/
@@ -60,9 +60,9 @@ namespace gtl {
 #endif // GTL_${CLASS_NAME_UPPER}_HPP
 EOF
 
-mkdir -p Tests/${TYPE_NAME_LOWER}
+mkdir -p tests/${TYPE_NAME_LOWER}
 
-cat << EOF > Tests/${TYPE_NAME_LOWER}/${CLASS_NAME_LOWER}.test.cpp
+cat << EOF > tests/${TYPE_NAME_LOWER}/${CLASS_NAME_LOWER}.test.cpp
 /*
 The MIT License
 Copyright (c) 2022 Geoffrey Daniels. http://gpdaniels.com/
@@ -84,7 +84,7 @@ THE SOFTWARE
 */
 
 #include <main.tests.hpp>
-#include <benchmark.tests.hpp>
+#include <optimise.tests.hpp>
 #include <require.tests.hpp>
 
 #include <${TYPE_NAME_LOWER}/${CLASS_NAME_LOWER}>
@@ -113,7 +113,7 @@ TEST(${CLASS_NAME_LOWER}, traits, standard) {
 
 TEST(${CLASS_NAME_LOWER}, constructor, empty) {
     gtl::${CLASS_NAME_LOWER} ${CLASS_NAME_LOWER};
-    do_not_optimise_away(${CLASS_NAME_LOWER});
+    testbench::do_not_optimise_away(${CLASS_NAME_LOWER});
 }
 
 EOF
