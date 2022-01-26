@@ -1,0 +1,119 @@
+/*
+The MIT License
+Copyright (c) 2020 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_DIJKSTRA_HPP
+#define GTL_DIJKSTRA_HPP
+
+// Summary: Implementation of Dijkstra's algorithm used to solve pathfinding problems. [wip]
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <functional>
+#include <vector>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+// TODO: Update this to use better containers.
+
+namespace gtl {
+    template <typename coordinate_type>
+    class dijkstra final {
+    public:
+        using search_type = std::function<std::vector<coordinate_type>(const coordinate_type& current)>;
+
+    private:
+        class node_type final {
+        public:
+            coordinate_type coordinate_self;
+            coordinate_type coordinate_parent;
+            bool operator==(const node_type& other) const {
+                return (this->coordinate_self == other.coordinate_self);
+            }
+        };
+
+    public:
+        static bool solve(const coordinate_type& start, const coordinate_type& end, const search_type& search, std::vector<coordinate_type>& path) {
+            // Clear outputs.
+            path.clear();
+
+            // Prepare structures.
+            std::vector<node_type> open;
+            std::vector<node_type> closed;
+
+            // Add start node to open list.
+            open.emplace_back(node_type{start, start});
+
+            // Search every node.
+            while (!open.empty()) {
+                // Get next node.
+                const node_type current = open.front();
+                open.erase(open.begin());
+                closed.push_back(current);
+
+                // Get next nodes.
+                std::vector<coordinate_type> next_coordinates = search(current.coordinate_self);
+
+                // See if we need to add these new nodes to the open list.
+                for (const coordinate_type& next_coordinate : next_coordinates) {
+                    // Create a temporary node.
+                    node_type next = { next_coordinate, current.coordinate_self };
+
+                    // Check if the node is already in the closed list.
+                    if (std::find(closed.begin(), closed.end(), next) != closed.end()) {
+                        // It is assumed you have an admissible heuristic.
+                        // Therefore if the node is already closed there is no better path to it.
+                        // So we skip adding it to the open list.
+                        // If you have an inadmissible heuristic.
+                        // Need to check the cost of the node here.
+                        // If `next` is lower cost we need to remove it from the closed list.
+                        continue;
+                    }
+
+                    // Check if the node is already in the open list.
+                    typename std::vector<node_type>::iterator iterator = std::find(open.begin(), open.end(), next);
+                    if (iterator == open.end()) {
+                        // If not, add it to be searched in a future iteration.
+                        open.push_back(next);
+                    }
+                }
+            }
+
+            // Check for end in the closed list.
+            if (std::find(closed.begin(), closed.end(), node_type{ end, end }) == closed.end()) {
+                return false;
+            }
+
+            // Rebuild path.
+            path.push_back(end);
+            while ((path.back() == start) == false) {
+                path.push_back(std::find(closed.begin(), closed.end(), node_type{path.back(), coordinate_type()})->coordinate_parent);
+            }
+            std::reverse(path.begin(), path.end());
+            return true;
+        }
+    };
+}
+
+#endif // GTL_DIJKSTRA_HPP
