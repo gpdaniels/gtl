@@ -39,7 +39,6 @@ THE SOFTWARE
 #pragma warning(push, 0)
 #endif
 
-#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -509,13 +508,20 @@ namespace gtl {
                 return log_lhs + log_rhs;
             }
             const scalar_type difference = std::abs(log_rhs - log_lhs);
+            // Simple lambda to calculate min.
+            constexpr const auto min = [](scalar_type lhs, scalar_type rhs)->scalar_type{
+                if (lhs < rhs) {
+                    return lhs;
+                }
+                return rhs;
+            };
             // To avoid floating point overflow when using the exp function, round log(1 + exp(log_lhs)) to log(exp(log_lhs)) = log_lhs.
             if (difference > 50) {
-                return std::min(log_lhs, log_rhs) + difference;
+                return min(log_lhs, log_rhs) + difference;
             }
             // Otherwise return the log sum exp:
             //   log(lhs + rhs) = log( exp(log(lhs)) + exp(log(rhs)) ) = log(lhs) + log ( 1 + exp(log(rhs) - log(lhs)) )
-            return std::min(log_lhs, log_rhs) + std::log(1 + std::exp(std::abs(log_rhs - log_lhs)));
+            return min(log_lhs, log_rhs) + std::log(1 + std::exp(std::abs(log_rhs - log_lhs)));
         }
 
         /// @brief  The forward algorithm estimates the probability of being in each hidden state for each observable symbol moving forward over the provided sequence.
