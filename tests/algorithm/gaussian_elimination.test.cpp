@@ -97,10 +97,10 @@ TEST(gaussian_elimination, function, solve_3) {
 TEST(gaussian_elimination, function, solve_4) {
     using ge = gtl::gaussian_elimination<float, 4>;
     ge::problem_type problem;
-    problem.equations[0].coefficients[0] = 0.0f;
+    problem.equations[0].coefficients[0] = -0.0f;
     problem.equations[0].coefficients[1] = 1.0f;
     problem.equations[0].coefficients[2] = 1.0f;
-    problem.equations[0].coefficients[3] = 0.0f;
+    problem.equations[0].coefficients[3] = -0.0f;
     problem.equations[0].result = -1.0f;
     problem.equations[1].coefficients[0] = 2.0f;
     problem.equations[1].coefficients[1] = 2.0f;
