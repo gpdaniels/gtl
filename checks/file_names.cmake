@@ -38,9 +38,6 @@ LIST(FILTER PROJECT_FILES EXCLUDE REGEX "^#.*$")
 # Sort list of files.
 LIST(SORT PROJECT_FILES)
 
-# Get the system path separator.
-FILE(TO_NATIVE_PATH "/" PATH_SEPARATOR)
-
 # Check if each filename is lowercase.
 FOREACH(PROJECT_FILE ${PROJECT_FILES})
     
@@ -48,7 +45,7 @@ FOREACH(PROJECT_FILE ${PROJECT_FILES})
     #MESSAGE(STATUS "Processing '${PROJECT_FILE}'...")
     
     # Special files.
-    IF("${PROJECT_FILE}" MATCHES "^(CMakeLists.txt)|(CODE_OF_CONDUCT.md)|(LICENSE)|(README.md)|(.github${PATH_SEPARATOR}.+)$")
+    IF("${PROJECT_FILE}" MATCHES "^(CMakeLists.txt)|(CODE_OF_CONDUCT.md)|(LICENSE)|(README.md)|(.github/.+)$")
         CONTINUE()
     ENDIF()
     
@@ -57,13 +54,13 @@ FOREACH(PROJECT_FILE ${PROJECT_FILES})
     # Root files.
     ELSEIF("${PROJECT_FILE}" MATCHES "^[a-z]+[a-z_0-9]*[.][a-z]+$")
     # Check files.
-    ELSEIF("${PROJECT_FILE}" MATCHES "^checks${PATH_SEPARATOR}[a-z]+[a-z_0-9]*[.]cmake$")
+    ELSEIF("${PROJECT_FILE}" MATCHES "^checks/[a-z]+[a-z_0-9]*[.]cmake$")
     # Source files.
-    ELSEIF("${PROJECT_FILE}" MATCHES "^source${PATH_SEPARATOR}([a-z]+[a-z_0-9]*${PATH_SEPARATOR})+[a-z]+[a-z_0-9]*$")
+    ELSEIF("${PROJECT_FILE}" MATCHES "^source/([a-z]+[a-z_0-9]*/)+[a-z]+[a-z_0-9]*$")
     # Test files.
-    ELSEIF("${PROJECT_FILE}" MATCHES "^tests${PATH_SEPARATOR}([a-z]+[a-z_0-9]*${PATH_SEPARATOR})+[a-z]+[a-z_0-9]*[.]test[.][ch]pp$")
+    ELSEIF("${PROJECT_FILE}" MATCHES "^tests/([a-z]+[a-z_0-9]*/)+[a-z]+[a-z_0-9]*[.]test[.][ch]pp$")
     # Testbench files.
-    ELSEIF("${PROJECT_FILE}" MATCHES "^testbench${PATH_SEPARATOR}[a-z]+[a-z_0-9]*[.]tests[.][ch]pp$")
+    ELSEIF("${PROJECT_FILE}" MATCHES "^testbench/[a-z]+[a-z_0-9]*[.]tests[.][ch]pp$")
     # Otherwise.
     ELSE()
         MESSAGE(FATAL_ERROR "Found invalid file name: '${PROJECT_FILE}'")
