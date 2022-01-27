@@ -41,48 +41,15 @@ TEST(static_variant, traits, standard) {
         [](auto test_type_1)->void {
             using type1 = typename decltype(test_type_1)::type;
             REQUIRE((std::is_pod<gtl::static_variant<type1> >::value == false), "Expected std::is_pod to be false.");
-            testbench::test_template<testbench::test_types>(
-                [](auto test_type_2)->void {
-                    using type2 = typename decltype(test_type_2)::type;
-                    REQUIRE((std::is_pod<gtl::static_variant<type1, type2> >::value == false), "Expected std::is_pod to be false.");
-                }
-            );
-        }
-    );
-
-    testbench::test_template<testbench::test_types>(
-        [](auto test_type_1)->void {
-            using type1 = typename decltype(test_type_1)::type;
             REQUIRE((std::is_trivial<gtl::static_variant<type1> >::value == false), "Expected std::is_trivial to be false.");
-            testbench::test_template<testbench::test_types>(
-                [](auto test_type_2)->void {
-                    using type2 = typename decltype(test_type_2)::type;
-                    REQUIRE((std::is_trivial<gtl::static_variant<type1, type2> >::value == false), "Expected std::is_trivial to be false.");
-                }
-            );
-        }
-    );
-
-    testbench::test_template<testbench::test_types>(
-        [](auto test_type_1)->void {
-            using type1 = typename decltype(test_type_1)::type;
             REQUIRE((std::is_trivially_copyable<gtl::static_variant<type1> >::value == false), "Expected std::is_trivially_copyable to be false.");
-            testbench::test_template<testbench::test_types>(
-                [](auto test_type_2)->void {
-                    using type2 = typename decltype(test_type_2)::type;
-                    REQUIRE((std::is_trivially_copyable<gtl::static_variant<type1, type2> >::value == false), "Expected std::is_trivially_copyable to be false.");
-                }
-            );
-        }
-    );
-
-    testbench::test_template<testbench::test_types>(
-        [](auto test_type_1)->void {
-            using type1 = typename decltype(test_type_1)::type;
             REQUIRE((std::is_standard_layout<gtl::static_variant<type1> >::value == true), "Expected std::is_standard_layout to be true.");
             testbench::test_template<testbench::test_types>(
                 [](auto test_type_2)->void {
                     using type2 = typename decltype(test_type_2)::type;
+                    REQUIRE((std::is_pod<gtl::static_variant<type1, type2> >::value == false), "Expected std::is_pod to be false.");
+                    REQUIRE((std::is_trivial<gtl::static_variant<type1, type2> >::value == false), "Expected std::is_trivial to be false.");
+                    REQUIRE((std::is_trivially_copyable<gtl::static_variant<type1, type2> >::value == false), "Expected std::is_trivially_copyable to be false.");
                     REQUIRE((std::is_standard_layout<gtl::static_variant<type1, type2> >::value == true), "Expected std::is_standard_layout to be true.");
                 }
             );
