@@ -65,7 +65,8 @@ inline void* operator new(size_t size, void* pointer, gtl::static_lambda<functio
 /// @param  pointer The pointer of the data to placement delete on.
 /// @param  unused_type_tag An unused type tag used to make this placement delete operator function unique.
 template <typename function_type, unsigned long long int static_lambda_size>
-inline void operator delete(void* pointer, gtl::static_lambda<function_type, static_lambda_size>* unused_type_tag) {
+inline void operator delete(void* data, void* pointer, gtl::static_lambda<function_type, static_lambda_size>* unused_type_tag) {
+    static_cast<void>(data);
     static_cast<void>(pointer);
     static_cast<void>(unused_type_tag);
 }

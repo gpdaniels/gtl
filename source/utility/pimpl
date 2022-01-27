@@ -56,7 +56,8 @@ inline void* operator new(size_t size, void* pointer, gtl::pimpl<implemented_cla
 /// @param  pointer The pointer of the data to placement delete on.
 /// @param  unused_type_tag An unused type tag used to make this placement delete operator function unique.
 template <typename implemented_class, unsigned long long int implementation_size, unsigned long long alignment_size = implementation_size>
-inline void operator delete(void* pointer, gtl::pimpl<implemented_class, implementation_size, alignment_size>* unused_type_tag) {
+inline void operator delete(void* data, void* pointer, gtl::pimpl<implemented_class, implementation_size, alignment_size>* unused_type_tag) {
+    static_cast<void>(data);
     static_cast<void>(pointer);
     static_cast<void>(unused_type_tag);
 }
