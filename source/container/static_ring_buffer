@@ -19,21 +19,10 @@ THE SOFTWARE
 */
 
 #pragma once
-#ifndef GTL_RING_BUFFER_HPP
-#define GTL_RING_BUFFER_HPP
+#ifndef GTL_STATIC_RING_BUFFER_HPP
+#define GTL_STATIC_RING_BUFFER_HPP
 
-// Summary: Dynamically sized thread-safe multi-producer multi-consumer ring-buffer.
-
-#ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
-/// @brief A simple assert macro to break the program if the ring_buffer is misused.
-#   define GTL_RING_BUFFER_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
-#else
-/// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_RING_BUFFER_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
-#endif
+// Summary: Statically sized thread-safe multi-producer multi-consumer ring-buffer.
 
 #if defined(_MSC_VER)
 #   pragma warning(push, 0)
@@ -46,12 +35,19 @@ THE SOFTWARE
 #endif
 
 namespace gtl {
-    /// @brief  The ring_buffer class implements a thread-safe multi-producer multi-consumer ring-buffer.
-    template <typename data_type>
-    class ring_buffer final {
+    /// @brief  The static_ring_buffer class implements a thread-safe multi-producer multi-consumer ring-buffer.
+    template <typename data_type, unsigned int static_data_size>
+    class static_ring_buffer final {
+    private:
+        static_assert(static_data_size != 0, "Data size must be greater than 0.");
+        static_assert(static_data_size <= 0x80000000, "Data size must be less than 2^31.");
+
     public:
         /// @brief  Make the data type publically accessible.
         using type = data_type;
+
+        /// @brief  Make the data size publically accessible.
+        constexpr static const unsigned int data_size = static_data_size;
 
     private:
         /// @brief  Structure that holds a read and write index.
@@ -67,33 +63,24 @@ namespace gtl {
         /// @brief  Writer holds the current read and pending write locations.
         std::atomic<index_type> writer;
 
-        /// @brief  The size of the data array.
-        unsigned int data_size;
-
         /// @brief  The ring buffer data array.
-        type* data;
+        type data[data_size];
 
     public:
         /// @brief  Defaulted destructor.
-        ~ring_buffer() {
-            delete[] this->data;
-        }
+        ~static_ring_buffer() = default;
 
         /// @brief  Constructor zeros the atomic reader and writer structures.
-        ring_buffer(unsigned int size)
+        static_ring_buffer()
             : reader{}
-            , writer{}
-            , data_size(size)
-            , data(new type[size]) {
-            GTL_RING_BUFFER_ASSERT(data_size != 0, "Data size must be greater than 0.");
-            GTL_RING_BUFFER_ASSERT(data_size <= 0x80000000, "Data size must be less than 2^31.");
+            , writer{} {
         }
 
-        ring_buffer(const ring_buffer& other) = delete;
-        ring_buffer(ring_buffer&& other) = delete;
+        static_ring_buffer(const static_ring_buffer& other) = delete;
+        static_ring_buffer(static_ring_buffer&& other) = delete;
 
-        ring_buffer& operator=(const ring_buffer& other) = delete;
-        ring_buffer& operator=(ring_buffer&& other) = delete;
+        static_ring_buffer& operator=(const static_ring_buffer& other) = delete;
+        static_ring_buffer& operator=(static_ring_buffer&& other) = delete;
 
     public:
         /// @brief  Get a boolean that represents if the ring buffer is empty, ignoring pending reads and writess.
@@ -217,6 +204,4 @@ namespace gtl {
     };
 }
 
-#undef GTL_RING_BUFFER_ASSERT
-
-#endif // GTL_RING_BUFFER_HPP
+#endif // GTL_STATIC_RING_BUFFER_HPP
