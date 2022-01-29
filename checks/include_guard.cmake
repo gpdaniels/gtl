@@ -1,21 +1,17 @@
 #
-# The MIT License
-# Copyright (c) 2020 Geoffrey Daniels. http://gpdaniels.com/
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE
+# Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3 of the License only.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 # Define the minimum version of CMake that is required.
@@ -54,7 +50,7 @@ FOREACH(GUARDED_FILE ${GUARDED_FILES})
     
     # Get the number of lines in the file.
     LIST(LENGTH GUARDED_FILE_LINES GUARDED_FILE_LENGTH)
-    IF(GUARDED_FILE_LENGTH LESS 24)
+    IF(GUARDED_FILE_LENGTH LESS 20)
         MESSAGE(FATAL_ERROR "Include guard in file '${GUARDED_FILE}' is not correct: The file is too short.")
     ENDIF()
     
@@ -62,7 +58,7 @@ FOREACH(GUARDED_FILE ${GUARDED_FILES})
     MATH(EXPR GUARDED_FILE_LENGTH "${GUARDED_FILE_LENGTH}-2")
     
     # Create a new list from the file lines.
-    LIST(GET GUARDED_FILE_LINES 20 21 22 ${GUARDED_FILE_LENGTH} GUARDED_FILE_GUARD_LINES)
+    LIST(GET GUARDED_FILE_LINES 17 18 19 ${GUARDED_FILE_LENGTH} GUARDED_FILE_GUARD_LINES)
 
     # Determine the include guard name from the file name.
     GET_FILENAME_COMPONENT(GUARDED_FILE_NAME "${GUARDED_FILE}" NAME)
