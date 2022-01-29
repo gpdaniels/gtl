@@ -48,27 +48,24 @@ namespace {
 }
 
 /// @brief  Custom placement operator new to avoid including the (massive) <new> header.
-/// @tparam implemented_class The class type that is being extended by the pimpl.
-/// @tparam implementation_size The size of the internal pimpl implementataion.
-/// @tparam alignment_size Alignment of the data in the pimpl implementation.
+/// @tparam types The types contained within the variant.
 /// @param  size The size of the data to placement new on.
 /// @param  pointer The pointer of the data to placement new on.
 /// @param  unused_type_tag An unused type tag used to make this placement new operator function unique.
-template <typename first_type, typename... remaining_types>
-inline void* operator new(size_t size, void* pointer, gtl::static_variant<first_type, remaining_types...>* unused_type_tag) {
+template <typename... types>
+inline void* operator new(size_t size, void* pointer, gtl::static_variant<types...>* unused_type_tag) {
     static_cast<void>(size);
     static_cast<void>(unused_type_tag);
     return pointer;
 }
 
 /// @brief  Custom placement operator delete to avoid compilers complaing about potential memory leaks.
-/// @tparam implemented_class The class type that is being extended by the pimpl.
-/// @tparam implementation_size The size of the internal pimpl implementataion.
-/// @tparam alignment_size Alignment of the data in the pimpl implementation.
+/// @tparam types The types contained within the variant.
+/// @param  data The pointer of the data to placement delete on.
 /// @param  pointer The pointer of the data to placement delete on.
 /// @param  unused_type_tag An unused type tag used to make this placement delete operator function unique.
-template <typename first_type, typename... remaining_types>
-inline void operator delete(void* data, void* pointer, gtl::static_variant<first_type, remaining_types...>* unused_type_tag) {
+template <typename... types>
+inline void operator delete(void* data, void* pointer, gtl::static_variant<types...>* unused_type_tag) {
     static_cast<void>(data);
     static_cast<void>(pointer);
     static_cast<void>(unused_type_tag);
