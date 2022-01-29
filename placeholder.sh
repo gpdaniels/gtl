@@ -52,7 +52,7 @@ THE SOFTWARE
 // Summary: [wip]
 
 namespace gtl {
-    class ${CLASS_NAME_LOWER} {
+    class ${CLASS_NAME_LOWER} final {
 
     };
 }
