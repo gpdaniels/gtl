@@ -42,109 +42,25 @@ TEST(array_nd, traits, standard) {
         [](auto test_type)->void {
             using type = typename decltype(test_type)::type;
             REQUIRE((std::is_pod<gtl::array_nd<type> >::value == false), "Expected std::is_pod to be false.");
-            testbench::test_template<testbench::value_collection<0, 1, 10>>(
-                [](auto value_1)->void {
-                    using type_value1 = decltype(value_1);
-                    constexpr static const unsigned long long value1 = type_value1::value;
-                    REQUIRE((std::is_pod<gtl::array_nd<type, value1> >::value == false), "Expected std::is_pod to be false.");
-                    testbench::test_template<testbench::value_collection<0, 1, 10>>(
-                        [](auto value_2)->void {
-                            using type_value2 = decltype(value_2);
-                            constexpr static const unsigned long long value1 = type_value1::value;
-                            constexpr static const unsigned long long value2 = type_value2::value;
-                            REQUIRE((std::is_pod<gtl::array_nd<type, value1, value2> >::value == false), "Expected std::is_pod to be false.");
-                            testbench::test_template<testbench::value_collection<0, 1, 10>>(
-                                [](auto value_3)->void {
-                                    using type_value3 = decltype(value_3);
-                                    constexpr static const unsigned long long value1 = type_value1::value;
-                                    constexpr static const unsigned long long value2 = type_value2::value;
-                                    constexpr static const unsigned long long value3 = type_value3::value;
-                                    REQUIRE((std::is_pod<gtl::array_nd<type, value1, value2, value3> >::value == false), "Expected std::is_pod to be false.");
-                                }
-                            );
-                        }
-                    );
-                }
-            );
-        }
-    );
-
-    testbench::test_template<testbench::test_types>(
-        [](auto test_type)->void {
-            using type = typename decltype(test_type)::type;
             REQUIRE((std::is_trivial<gtl::array_nd<type> >::value == false), "Expected std::is_trivial to be false.");
-            testbench::test_template<testbench::value_collection<0, 1, 10>>(
-                [](auto value_1)->void {
-                    using type_value1 = decltype(value_1);
-                    constexpr static const unsigned long long value1 = type_value1::value;
-                    REQUIRE((std::is_trivial<gtl::array_nd<type, value1> >::value == false), "Expected std::is_trivial to be false.");
-                    testbench::test_template<testbench::value_collection<0, 1, 10>>(
-                        [](auto value_2)->void {
-                            using type_value2 = decltype(value_2);
-                            constexpr static const unsigned long long value1 = type_value1::value;
-                            constexpr static const unsigned long long value2 = type_value2::value;
-                            REQUIRE((std::is_trivial<gtl::array_nd<type, value1, value2> >::value == false), "Expected std::is_trivial to be false.");
-                            testbench::test_template<testbench::value_collection<0, 1, 10>>(
-                                [](auto value_3)->void {
-                                    using type_value3 = decltype(value_3);
-                                    constexpr static const unsigned long long value1 = type_value1::value;
-                                    constexpr static const unsigned long long value2 = type_value2::value;
-                                    constexpr static const unsigned long long value3 = type_value3::value;
-                                    REQUIRE((std::is_trivial<gtl::array_nd<type, value1, value2, value3> >::value == false), "Expected std::is_trivial to be false.");
-                                }
-                            );
-                        }
-                    );
-                }
-            );
-        }
-    );
-
-    testbench::test_template<testbench::test_types>(
-        [](auto test_type)->void {
-            using type = typename decltype(test_type)::type;
             REQUIRE((std::is_trivially_copyable<gtl::array_nd<type> >::value == true), "Expected std::is_trivially_copyable to be true.");
-            testbench::test_template<testbench::value_collection<0, 1, 10>>(
-                [](auto value_1)->void {
-                    using type_value1 = decltype(value_1);
-                    constexpr static const unsigned long long value1 = type_value1::value;
-                    REQUIRE((std::is_trivially_copyable<gtl::array_nd<type, value1> >::value == (value1!=0)), "Expected std::is_trivially_copyable to be %d.", (value1==0));
-                    testbench::test_template<testbench::value_collection<0, 1, 10>>(
-                        [](auto value_2)->void {
-                            using type_value2 = decltype(value_2);
-                            constexpr static const unsigned long long value1 = type_value1::value;
-                            constexpr static const unsigned long long value2 = type_value2::value;
-                            REQUIRE((std::is_trivially_copyable<gtl::array_nd<type, value1, value2> >::value == ((value1!=0) && (value2!=0))), "Expected std::is_trivially_copyable to be %d.", ((value1==0) && (value2==0)));
-                            testbench::test_template<testbench::value_collection<0, 1, 10>>(
-                                [](auto value_3)->void {
-                                    using type_value3 = decltype(value_3);
-                                    constexpr static const unsigned long long value1 = type_value1::value;
-                                    constexpr static const unsigned long long value2 = type_value2::value;
-                                    constexpr static const unsigned long long value3 = type_value3::value;
-                                    REQUIRE((std::is_trivially_copyable<gtl::array_nd<type, value1, value2, value3> >::value == ((value1!=0) && (value2!=0) && (value3!=0))), "Expected std::is_trivially_copyable to be %d.", ((value1==0) && (value2==0) && (value3==0)));
-                                }
-                            );
-                        }
-                    );
-                }
-            );
-        }
-    );
-
-    testbench::test_template<testbench::test_types>(
-        [](auto test_type)->void {
-            using type = typename decltype(test_type)::type;
             REQUIRE((std::is_standard_layout<gtl::array_nd<type> >::value == true), "Expected std::is_standard_layout to be true.");
             testbench::test_template<testbench::value_collection<0, 1, 10>>(
                 [](auto value_1)->void {
                     using type_value1 = decltype(value_1);
                     constexpr static const unsigned long long value1 = type_value1::value;
+                    REQUIRE((std::is_pod<gtl::array_nd<type, value1> >::value == false), "Expected std::is_pod to be false.");
+                    REQUIRE((std::is_trivial<gtl::array_nd<type, value1> >::value == false), "Expected std::is_trivial to be false.");
+                    REQUIRE((std::is_trivially_copyable<gtl::array_nd<type, value1> >::value == (value1!=0)), "Expected std::is_trivially_copyable to be %d.", (value1==0));
                     REQUIRE((std::is_standard_layout<gtl::array_nd<type, value1> >::value == true), "Expected std::is_standard_layout to be true.");
                     testbench::test_template<testbench::value_collection<0, 1, 10>>(
                         [](auto value_2)->void {
                             using type_value2 = decltype(value_2);
                             constexpr static const unsigned long long value1 = type_value1::value;
                             constexpr static const unsigned long long value2 = type_value2::value;
+                            REQUIRE((std::is_pod<gtl::array_nd<type, value1, value2> >::value == false), "Expected std::is_pod to be false.");
+                            REQUIRE((std::is_trivial<gtl::array_nd<type, value1, value2> >::value == false), "Expected std::is_trivial to be false.");
+                            REQUIRE((std::is_trivially_copyable<gtl::array_nd<type, value1, value2> >::value == ((value1!=0) && (value2!=0))), "Expected std::is_trivially_copyable to be %d.", ((value1==0) && (value2==0)));
                             REQUIRE((std::is_standard_layout<gtl::array_nd<type, value1, value2> >::value == true), "Expected std::is_standard_layout to be true.");
                             testbench::test_template<testbench::value_collection<0, 1, 10>>(
                                 [](auto value_3)->void {
@@ -152,6 +68,9 @@ TEST(array_nd, traits, standard) {
                                     constexpr static const unsigned long long value1 = type_value1::value;
                                     constexpr static const unsigned long long value2 = type_value2::value;
                                     constexpr static const unsigned long long value3 = type_value3::value;
+                                    REQUIRE((std::is_pod<gtl::array_nd<type, value1, value2, value3> >::value == false), "Expected std::is_pod to be false.");
+                                    REQUIRE((std::is_trivial<gtl::array_nd<type, value1, value2, value3> >::value == false), "Expected std::is_trivial to be false.");
+                                    REQUIRE((std::is_trivially_copyable<gtl::array_nd<type, value1, value2, value3> >::value == ((value1!=0) && (value2!=0) && (value3!=0))), "Expected std::is_trivially_copyable to be %d.", ((value1==0) && (value2==0) && (value3==0)));
                                     REQUIRE((std::is_standard_layout<gtl::array_nd<type, value1, value2, value3> >::value == true), "Expected std::is_standard_layout to be true.");
                                 }
                             );
