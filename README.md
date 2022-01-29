@@ -21,10 +21,12 @@ The current classes are as described below:
 | [container](source/container) | [any](source/container/any) | Class that can hold any variable type. | :heavy_check_mark: |
 | [container](source/container) | [array_nd](source/container/array_nd) | N\-dimensional statically or dynamically sized array. | :heavy_check_mark: |
 | [container](source/container) | [lambda](source/container/lambda) | Lambda function class that uses the heap for storage. | :heavy_check_mark: |
-| [container](source/container) | [ring_buffer](source/container/ring_buffer) | Statically sized thread\-safe multi\-producer multi\-consumer ring\-buffer. | :heavy_check_mark: |
+| [container](source/container) | [ring_buffer](source/container/ring_buffer) | Dynamically sized thread\-safe multi\-producer multi\-consumer ring\-buffer. | :heavy_check_mark: |
 | [container](source/container) | [static_array_nd](source/container/static_array_nd) | N\-dimensional statically sized array. | :heavy_check_mark: |
 | [container](source/container) | [static_lambda](source/container/static_lambda) | Lambda function class that uses the stack for storage. | :heavy_check_mark: |
+| [container](source/container) | [static_ring_buffer](source/container/static_ring_buffer) | Statically sized thread\-safe multi\-producer multi\-consumer ring\-buffer. | :heavy_check_mark: |
 | [container](source/container) | [static_variant](source/container/static_variant) | A static\_variant class that can contain any one of its listed template types. | :x: |
+| [container](source/container) | [static_view](source/container/static_view) | A non\-owning static\_view into multi\-dimensional memory. | :x: |
 | [crypto](source/crypto) | [aes](source/crypto/aes) | An implementation of the aes encryption algorithm for 128, 196, and 256 bits. | :heavy_check_mark: |
 | [debug](source/debug) | [access](source/debug/access) | Classes and macros for accessing class private members. | :heavy_check_mark: |
 | [debug](source/debug) | [assert](source/debug/assert) | Macros that define an assert macro that optionally takes a format string and parameters. | :heavy_check_mark: |
