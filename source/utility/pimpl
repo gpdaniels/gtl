@@ -53,6 +53,7 @@ inline void* operator new(size_t size, void* pointer, gtl::pimpl<implemented_cla
 /// @tparam implemented_class The class type that is being extended by the pimpl.
 /// @tparam implementation_size The size of the internal pimpl implementataion.
 /// @tparam alignment_size Alignment of the data in the pimpl implementation.
+/// @param  data The pointer of the data to placement delete on.
 /// @param  pointer The pointer of the data to placement delete on.
 /// @param  unused_type_tag An unused type tag used to make this placement delete operator function unique.
 template <typename implemented_class, unsigned long long int implementation_size, unsigned long long alignment_size = implementation_size>

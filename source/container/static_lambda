@@ -62,6 +62,7 @@ inline void* operator new(size_t size, void* pointer, gtl::static_lambda<functio
 /// @brief  Custom placement operator delete to avoid compilers complaing about potential memory leaks.
 /// @tparam function_type Type required by the unused static_lambda parameter.
 /// @tparam static_lambda_size Value required by the unused static_lambda parameter.
+/// @param  data The pointer of the data to placement delete on.
 /// @param  pointer The pointer of the data to placement delete on.
 /// @param  unused_type_tag An unused type tag used to make this placement delete operator function unique.
 template <typename function_type, unsigned long long int static_lambda_size>
