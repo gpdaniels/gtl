@@ -1,0 +1,167 @@
+/*
+The MIT License
+Copyright (c) 2022 Geoffrey Daniels. http://gpdaniels.com/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE
+*/
+
+#pragma once
+#ifndef GTL_STATIC_VIEW_HPP
+#define GTL_STATIC_VIEW_HPP
+
+// Summary: A non-owning static_view into multi-dimensional memory. [wip]
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the static_view is misused.
+#   define GTL_STATIC_VIEW_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_STATIC_VIEW_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+namespace gtl {
+    template <typename type, unsigned int... dimension_sizes>
+    class static_view final {
+    private:
+        template <unsigned int... all_dimension_sizes>
+        struct slice_type_generator final {
+            using slice_type = type*;
+        };
+        template <unsigned int first_dimension_size, unsigned int... remaining_dimension_sizes>
+        struct slice_type_generator<first_dimension_size, remaining_dimension_sizes...> final {
+            using slice_type = static_view<type, remaining_dimension_sizes...>;
+        };
+        using slice_type = typename slice_type_generator<dimension_sizes...>::slice_type;
+
+    private:
+        type* slice;
+
+    public:
+        /// @brief  Constructor that takes a pointer to the memory to static_view.
+        static_view(type* memory)
+            : slice(memory) {
+        }
+
+    public:
+        /// @brief  Get the number of dimensions of the static_view.
+        /// @return The number of dimensions of the static_view.
+        constexpr static unsigned int dimensions() {
+            return (sizeof...(dimension_sizes));
+        }
+
+        /// @brief  Get the total size of the static_view.
+        /// @return The size of memory in the static_view.
+        constexpr static unsigned int size() {
+            if constexpr (dimensions() == 0) {
+                return 0;
+            }
+            else {
+                return ((dimensions() > 0) * ... * dimension_sizes);
+            }
+        }
+
+        /// @brief  Get the size of a specified dimension in the static_view.
+        /// @param  dimension_index The index of the dimension we want the size of.
+        /// @return The size of dimension in the static_view specified by index.
+        constexpr static unsigned int size(unsigned int dimension_index) {
+            if constexpr (dimensions() == 0) {
+                static_cast<void>(dimension_index);
+                return 0;
+            }
+            else {
+                GTL_STATIC_VIEW_ASSERT(dimension_index < dimensions(), "Dimension index must be within number of dimensions of the array");
+                const unsigned int dimension_array[dimensions()] = { dimension_sizes... };
+                return dimension_array[dimension_index];
+            }
+        }
+
+    public:
+        constexpr type* data() {
+            return this->slice;
+        }
+
+    public:
+        /// @brief  Get a const reference to either the array or value of this level.
+        /// @param  index Used to specify the location to get within the current dimension size.
+        /// @return A const reference to either the array or value of this level.
+        constexpr decltype(auto) operator[](unsigned int index) const {
+            GTL_STATIC_VIEW_ASSERT(index < size(0), "Array index must be less than the maximum size of the dimension.");
+            if constexpr (dimensions() == 0) {
+                return nullptr;
+            }
+            else if constexpr (dimensions() == 1) {
+                return static_cast<const type&>(*(this->data + index));
+            }
+            else {
+                return slice_type(this->slice + index * slice_type::size());
+            }
+        }
+
+        /// @brief  Get a non-const reference to either the array or value of this level.
+        /// @param  index Used to specify the location to get within the current dimension size.
+        /// @return A non-const reference to either the array or value of this level.
+        constexpr decltype(auto) operator[](unsigned int index) {
+            GTL_STATIC_VIEW_ASSERT(index < size(0), "Array index must be less than the maximum size of the dimension.");
+            if constexpr (dimensions() == 0) {
+                return nullptr;
+            }
+            else if constexpr (dimensions() == 1) {
+                return static_cast<type&>(*(this->slice + index));
+            }
+            else {
+                return slice_type(this->slice + index * slice_type::size());
+            }
+        }
+
+    public:
+        /// @brief  Get a const reference to the slice_type of the level argument-count below.
+        /// @param  first_index Used to specify the location to get within the current dimension size.
+        /// @param  remaining_indexes Used to specify the locations for the argument-count dimension sizes below.
+        /// @return A const reference to either the array or value of the level argument-count below.
+        template <typename... index_types>
+        constexpr const type& operator()(unsigned int first_index, index_types... remaining_indexes) const {
+            static_assert(1 + sizeof...(remaining_indexes) == sizeof...(dimension_sizes), "Number of indexes must be equal to the number of dimensions.");
+            if constexpr (dimensions() == 1) {
+                return this->operator[](first_index);
+            }
+            else {
+                return this->operator[](first_index)(remaining_indexes...);
+            }
+        }
+
+        /// @brief  Get a non-const reference to the slice_type of the level argument-count below.
+        /// @param  first_index Used to specify the location to get within the current dimension size.
+        /// @param  remaining_indexes Used to specify the locations for the argument-count dimension sizes below.
+        /// @return A non-const reference to either the array or value of the level argument-count below.
+        template <typename... index_types>
+        constexpr type& operator()(unsigned int first_index, index_types... remaining_indexes) {
+            static_assert(1 + sizeof...(remaining_indexes) == sizeof...(dimension_sizes), "Number of indexes must be equal to the number of dimensions.");
+            if constexpr (dimensions() == 1) {
+                return this->operator[](first_index);
+            }
+            else {
+                return this->operator[](first_index).operator()(remaining_indexes...);
+            }
+        }
+    };
+}
+
+#undef GTL_STATIC_VIEW_ASSERT
+
+#endif // GTL_STATIC_VIEW_HPP
