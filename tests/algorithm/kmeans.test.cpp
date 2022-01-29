@@ -43,7 +43,7 @@ TEST(kmeans, evaluate, data) {
         xy operator+(const xy& other) const {
             return { x + other.x, y + other.y };
         }
-        xy operator/(const float other) const {
+        xy operator/(const int other) const {
             return { x / other, y / other };
         }
     };
@@ -70,9 +70,9 @@ TEST(kmeans, evaluate, data) {
         {+10.0f - 0.5f, +10.0f - 0.5f}
     };
 
-    std::vector<int> clusters;
+    std::vector<size_t> clusters;
 
-    clusters = gtl::kmeans<xy, float>::compute(data, 2, 100, 0.001, [](const xy& lhs, const xy& rhs){
+    clusters = gtl::kmeans<xy, float>::compute(data, 2, 100, 0.001f, [](const xy& lhs, const xy& rhs){
         return std::sqrt((lhs.x - rhs.x) * (lhs.x - rhs.x) + ((lhs.y - rhs.y) * (lhs.y - rhs.y)));
     });
 
