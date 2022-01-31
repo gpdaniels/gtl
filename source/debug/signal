@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_SIGNAL_HPP
-#define GTL_SIGNAL_HPP
+#ifndef GTL_DEBUG_SIGNAL_HPP
+#define GTL_DEBUG_SIGNAL_HPP
 
 // Summary: Class to wrap signal handlers allowing the use of lambdas with scope.
 
@@ -111,4 +111,4 @@ namespace gtl {
     };
 }
 
-#endif // GTL_SIGNAL_HPP
+#endif // GTL_DEBUG_SIGNAL_HPP

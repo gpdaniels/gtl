@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_AES_HPP
-#define GTL_AES_HPP
+#ifndef GTL_CRYPTO_AES_HPP
+#define GTL_CRYPTO_AES_HPP
 
 // Summary: An implementation of the aes encryption algorithm for 128, 196, and 256 bits.
 
@@ -571,4 +571,4 @@ namespace gtl {
 
 #undef GTL_AES_ASSERT
 
-#endif // GTL_AES_HPP
+#endif // GTL_CRYPTO_AES_HPP

@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_TIC_TAC_TOE_HPP
-#define GTL_TIC_TAC_TOE_HPP
+#ifndef GTL_GAME_TIC_TAC_TOE_HPP
+#define GTL_GAME_TIC_TAC_TOE_HPP
 
 // Summary: Solver for the game tic-tac-toe on a 3x3 board. [wip]
 
@@ -258,4 +258,4 @@ namespace gtl {
     };
 }
 
-#endif // GTL_TIC_TAC_TOE_HPP
+#endif // GTL_GAME_TIC_TAC_TOE_HPP

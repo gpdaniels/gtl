@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_EVENT_HPP
-#define GTL_EVENT_HPP
+#ifndef GTL_UTILITY_EVENT_HPP
+#define GTL_UTILITY_EVENT_HPP
 
 // Summary: Thread safe multi-in/multi-out event/messaging system.
 
@@ -271,4 +271,4 @@ namespace gtl {
 
 #undef GTL_EVENT_ASSERT
 
-#endif // GTL_EVENT_HPP
+#endif // GTL_UTILITY_EVENT_HPP

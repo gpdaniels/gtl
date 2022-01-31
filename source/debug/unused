@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_UNUSED_HPP
-#define GTL_UNUSED_HPP
+#ifndef GTL_DEBUG_UNUSED_HPP
+#define GTL_DEBUG_UNUSED_HPP
 
 // Summary: Macro for hiding unused variable warnings.
 
@@ -27,4 +27,4 @@ namespace unused {
 
 }}
 
-#endif // GTL_UNUSED_HPP
+#endif // GTL_DEBUG_UNUSED_HPP

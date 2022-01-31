@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_ACCESS_HPP
-#define GTL_ACCESS_HPP
+#ifndef GTL_DEBUG_ACCESS_HPP
+#define GTL_DEBUG_ACCESS_HPP
 
 // Summary: Classes and macros for accessing class private members.
 
@@ -296,4 +296,4 @@ namespace access {
         }
 }}
 
-#endif // GTL_ACCESS_HPP
+#endif // GTL_DEBUG_ACCESS_HPP

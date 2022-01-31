@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_JSON_HPP
-#define GTL_JSON_HPP
+#ifndef GTL_FILE_TEXT_JSON_HPP
+#define GTL_FILE_TEXT_JSON_HPP
 
 // Summary: A small json parser and composer. [wip]
 
@@ -446,4 +446,4 @@ namespace gtl {
     template <> json::value::contains json::value::convert_to_contains_enum<json::value::array_type>() { return value::contains::array_type; }
 }
 
-#endif // GTL_JSON_HPP
+#endif // GTL_FILE_TEXT_JSON_HPP

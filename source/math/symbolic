@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_SYMBOLIC_HPP
-#define GTL_SYMBOLIC_HPP
+#ifndef GTL_MATH_SYMBOLIC_HPP
+#define GTL_MATH_SYMBOLIC_HPP
 
 // Summary: Compile time symbolic differentiation using template metaprogramming. [wip]
 
@@ -2618,4 +2618,4 @@ namespace symbolic {
 #endif // ALTERNATIVES
 }}
 
-#endif // GTL_SYMBOLIC_HPP
+#endif // GTL_MATH_SYMBOLIC_HPP

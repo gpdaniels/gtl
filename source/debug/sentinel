@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_SENTINEL_HPP
-#define GTL_SENTINEL_HPP
+#ifndef GTL_DEBUG_SENTINEL_HPP
+#define GTL_DEBUG_SENTINEL_HPP
 
 // Summary: A simple class to help detect stack overflows. [wip]
 
@@ -64,4 +64,4 @@ namespace gtl {
 
 #undef GTL_SENTINEL_ASSERT
 
-#endif // GTL_SENTINEL_HPP
+#endif // GTL_DEBUG_SENTINEL_HPP

@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_DIJKSTRA_HPP
-#define GTL_DIJKSTRA_HPP
+#ifndef GTL_ALGORITHM_DIJKSTRA_HPP
+#define GTL_ALGORITHM_DIJKSTRA_HPP
 
 // Summary: Implementation of Dijkstra's algorithm used to solve pathfinding problems. [wip]
 
@@ -112,4 +112,4 @@ namespace gtl {
     };
 }
 
-#endif // GTL_DIJKSTRA_HPP
+#endif // GTL_ALGORITHM_DIJKSTRA_HPP

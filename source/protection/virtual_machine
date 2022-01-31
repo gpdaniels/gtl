@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_VIRTUAL_MACHINE_HPP
-#define GTL_VIRTUAL_MACHINE_HPP
+#ifndef GTL_PROTECTION_VIRTUAL_MACHINE_HPP
+#define GTL_PROTECTION_VIRTUAL_MACHINE_HPP
 
 // Summary: A simple stack based virtual machine allowing easy creation of custom operands.
 
@@ -469,4 +469,4 @@ namespace gtl {
     namespace vmo = virtual_machine_opcodes;
 }
 
-#endif // GTL_VIRTUAL_MACHINE_HPP
+#endif // GTL_PROTECTION_VIRTUAL_MACHINE_HPP

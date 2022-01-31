@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_SIZEOF_BITFIELD_HPP
-#define GTL_SIZEOF_BITFIELD_HPP
+#ifndef GTL_UTILITY_SIZEOF_BITFIELD_HPP
+#define GTL_UTILITY_SIZEOF_BITFIELD_HPP
 
 // Summary: Macro to get the size in bits of a bitfield. [wip]
 
@@ -45,4 +45,4 @@ namespace sizeof_bitset {
         }()
 }}
 
-#endif // GTL_SIZEOF_BITFIELD_HPP
+#endif // GTL_UTILITY_SIZEOF_BITFIELD_HPP

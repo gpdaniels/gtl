@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_ASSERT_HPP
-#define GTL_ASSERT_HPP
+#ifndef GTL_DEBUG_ASSERT_HPP
+#define GTL_DEBUG_ASSERT_HPP
 
 // Summary: Macros that define an assert macro that optionally takes a format string and parameters.
 
@@ -198,4 +198,4 @@ namespace assert {
 
 }}
 
-#endif // GTL_ASSERT_HPP
+#endif // GTL_DEBUG_ASSERT_HPP

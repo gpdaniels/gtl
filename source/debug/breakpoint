@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_BREAKPOINT_HPP
-#define GTL_BREAKPOINT_HPP
+#ifndef GTL_DEBUG_BREAKPOINT_HPP
+#define GTL_DEBUG_BREAKPOINT_HPP
 
 // Summary: Macro for creating a breakpoint.
 
@@ -69,4 +69,4 @@ namespace breakpoint {
     #endif
 }}
 
-#endif // GTL_BREAKPOINT_HPP
+#endif // GTL_DEBUG_BREAKPOINT_HPP

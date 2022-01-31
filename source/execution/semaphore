@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_SEMAPHORE_HPP
-#define GTL_SEMAPHORE_HPP
+#ifndef GTL_EXECUTION_SEMAPHORE_HPP
+#define GTL_EXECUTION_SEMAPHORE_HPP
 
 // Summary: Semaphore made using a mutex and condition variable.
 
@@ -112,4 +112,4 @@ namespace gtl {
 
 #undef GTL_SEMAPHORE_ASSERT
 
-#endif // GTL_SEMAPHORE_HPP
+#endif // GTL_EXECUTION_SEMAPHORE_HPP

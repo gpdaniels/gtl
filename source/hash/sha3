@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_SHA3_HPP
-#define GTL_SHA3_HPP
+#ifndef GTL_HASH_SHA3_HPP
+#define GTL_HASH_SHA3_HPP
 
 // Summary: An implementation of the sha3 hashing function for 224, 256, 384, and 512 bits.
 
@@ -329,4 +329,4 @@ namespace gtl {
 
 #undef GTL_SHA3_ASSERT
 
-#endif // GTL_SHA3_HPP
+#endif // GTL_HASH_SHA3_HPP

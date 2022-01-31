@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_ENUM_NAME_HPP
-#define GTL_ENUM_NAME_HPP
+#ifndef GTL_TYPE_ENUM_NAME_HPP
+#define GTL_TYPE_ENUM_NAME_HPP
 
 // Summary: Compile-time enum value name as a string with -fno-rtti.
 
@@ -280,4 +280,4 @@ namespace gtl {
     };
 }
 
-#endif // GTL_ENUM_NAME_HPP
+#endif // GTL_TYPE_ENUM_NAME_HPP

@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_HMM_HPP
-#define GTL_HMM_HPP
+#ifndef GTL_AI_HMM_HPP
+#define GTL_AI_HMM_HPP
 
 // Summary: Hidden markov model using the Baum-Welch algorithm for training.
 
@@ -578,4 +578,4 @@ namespace gtl {
 
 #undef GTL_HMM_ASSERT
 
-#endif // GTL_HMM_HPP
+#endif // GTL_AI_HMM_HPP

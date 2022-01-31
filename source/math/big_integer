@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_BIG_INTEGER_HPP
-#define GTL_BIG_INTEGER_HPP
+#ifndef GTL_MATH_BIG_INTEGER_HPP
+#define GTL_MATH_BIG_INTEGER_HPP
 
 // Summary: Arbitrary sized signed integers.
 
@@ -774,4 +774,4 @@ namespace gtl {
 
 #undef GTL_BIG_INTEGER_ASSERT
 
-#endif // GTL_BIG_INTEGER_HPP
+#endif // GTL_MATH_BIG_INTEGER_HPP

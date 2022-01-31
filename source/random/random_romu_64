@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_RANDOM_ROMU_64_HPP
-#define GTL_RANDOM_ROMU_64_HPP
+#ifndef GTL_RANDOM_RANDOM_ROMU_64_HPP
+#define GTL_RANDOM_RANDOM_ROMU_64_HPP
 
 // Summary: Romu 64 bit pseudo-random number generator.
 
@@ -135,4 +135,4 @@ namespace gtl {
 
 #undef GTL_RANDOM_ROMU_64_ASSERT
 
-#endif // GTL_RANDOM_ROMU_64_HPP
+#endif // GTL_RANDOM_RANDOM_ROMU_64_HPP

@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_ANY_HPP
-#define GTL_ANY_HPP
+#ifndef GTL_CONTAINER_ANY_HPP
+#define GTL_CONTAINER_ANY_HPP
 
 // Summary: Class that can hold any variable type.
 
@@ -179,4 +179,4 @@ namespace gtl {
     #pragma clang diagnostic pop
 #endif
 
-#endif // GTL_ANY_HPP
+#endif // GTL_CONTAINER_ANY_HPP

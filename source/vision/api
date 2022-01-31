@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_API_HPP
-#define GTL_API_HPP
+#ifndef GTL_VISION_API_HPP
+#define GTL_VISION_API_HPP
 
 // Summary: An API for a computer vision system that consumes sensor data to perform localisation and mapping. [wip]
 
@@ -232,4 +232,4 @@ gtl_vision_get_map_chunk(
 // TODO: Evaluate if this pragma is needed.
 #pragma pack()
 
-#endif // GTL_API_HPP
+#endif // GTL_VISION_API_HPP

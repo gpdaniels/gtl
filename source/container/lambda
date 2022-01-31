@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_LAMBDA_HPP
-#define GTL_LAMBDA_HPP
+#ifndef GTL_CONTAINER_LAMBDA_HPP
+#define GTL_CONTAINER_LAMBDA_HPP
 
 // Summary: Lambda function class that uses the heap for storage.
 
@@ -242,4 +242,4 @@ namespace gtl {
 
 #undef GTL_LAMBDA_ASSERT
 
-#endif // GTL_LAMBDA_HPP
+#endif // GTL_CONTAINER_LAMBDA_HPP

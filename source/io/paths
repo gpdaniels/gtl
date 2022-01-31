@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_PATHS_HPP
-#define GTL_PATHS_HPP
+#ifndef GTL_IO_PATHS_HPP
+#define GTL_IO_PATHS_HPP
 
 // Summary: Collection of cross platform functions to provide useful paths.
 
@@ -407,4 +407,4 @@ namespace gtl {
     };
 }
 
-#endif // GTL_PATHS_HPP
+#endif // GTL_IO_PATHS_HPP

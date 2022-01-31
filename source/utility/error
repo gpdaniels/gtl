@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_ERROR_HPP
-#define GTL_ERROR_HPP
+#ifndef GTL_UTILITY_ERROR_HPP
+#define GTL_UTILITY_ERROR_HPP
 
 // Summary: Composable error class that can be returned down a call stack.
 
@@ -163,4 +163,4 @@ namespace gtl {
     };
 }
 
-#endif // GTL_ERROR_HPP
+#endif // GTL_UTILITY_ERROR_HPP

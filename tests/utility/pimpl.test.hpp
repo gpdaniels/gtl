@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_PIMPL_TEST_HPP
-#define GTL_PIMPL_TEST_HPP
+#ifndef GTL_UTILITY_PIMPL_TEST_HPP
+#define GTL_UTILITY_PIMPL_TEST_HPP
 
 #include <utility/pimpl>
 
@@ -28,4 +28,4 @@ public:
     int return_value() const;
 };
 
-#endif // GTL_PIMPL_TEST_HPP
+#endif // GTL_UTILITY_PIMPL_TEST_HPP

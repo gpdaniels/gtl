@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_COROUTINE_HPP
-#define GTL_COROUTINE_HPP
+#ifndef GTL_EXECUTION_COROUTINE_HPP
+#define GTL_EXECUTION_COROUTINE_HPP
 
 // Summary: Setjump/Longjump implementation of stackful coroutines.
 
@@ -718,4 +718,4 @@ namespace gtl {
 #undef GTL_COROUTINE_HAVE_VALGRIND
 #undef GTL_COROUTINE_ASSERT
 
-#endif // GTL_COROUTINE_HPP
+#endif // GTL_EXECUTION_COROUTINE_HPP

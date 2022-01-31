@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_KMEANS_HPP
-#define GTL_KMEANS_HPP
+#ifndef GTL_ALGORITHM_KMEANS_HPP
+#define GTL_ALGORITHM_KMEANS_HPP
 
 // Summary: Implementation of the KMeans clustering algorithm. [wip]
 
@@ -94,4 +94,4 @@ namespace gtl {
     };
 }
 
-#endif // GTL_KMEANS_HPP
+#endif // GTL_ALGORITHM_KMEANS_HPP

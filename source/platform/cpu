@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_CPU_HPP
-#define GTL_CPU_HPP
+#ifndef GTL_PLATFORM_CPU_HPP
+#define GTL_PLATFORM_CPU_HPP
 
 // Summary: Class to extract cpuid information to determine supported instructions at runtime.
 
@@ -446,4 +446,4 @@ namespace gtl {
     };
 }
 
-#endif // GTL_CPU_HPP
+#endif // GTL_PLATFORM_CPU_HPP

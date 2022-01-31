@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_CRC_HPP
-#define GTL_CRC_HPP
+#ifndef GTL_HASH_CRC_HPP
+#define GTL_HASH_CRC_HPP
 
 // Summary: An implementation of the crc hashing function for 8, 16, 32, and 64 bits.
 
@@ -302,4 +302,4 @@ namespace gtl {
 
 #undef GTL_CRC_ASSERT
 
-#endif // GTL_CRC_HPP
+#endif // GTL_HASH_CRC_HPP

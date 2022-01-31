@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_ARRAY_ND_HPP
-#define GTL_ARRAY_ND_HPP
+#ifndef GTL_CONTAINER_ARRAY_ND_HPP
+#define GTL_CONTAINER_ARRAY_ND_HPP
 
 // Summary: N-dimensional statically or dynamically sized array.
 
@@ -330,4 +330,4 @@ namespace gtl {
 
 #undef GTL_ARRAY_ND_ASSERT
 
-#endif // GTL_ARRAY_ND_HPP
+#endif // GTL_CONTAINER_ARRAY_ND_HPP

@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_BARRIER_HPP
-#define GTL_BARRIER_HPP
+#ifndef GTL_EXECUTION_BARRIER_HPP
+#define GTL_EXECUTION_BARRIER_HPP
 
 // Summary: Thread syncronisation barrier.
 
@@ -178,4 +178,4 @@ namespace gtl {
 
 #undef GTL_BARRIER_ASSERT
 
-#endif // GTL_BARRIER_HPP
+#endif // GTL_EXECUTION_BARRIER_HPP

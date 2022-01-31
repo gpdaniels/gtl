@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_ASSUME_HPP
-#define GTL_ASSUME_HPP
+#ifndef GTL_DEBUG_ASSUME_HPP
+#define GTL_DEBUG_ASSUME_HPP
 
 // Summary: Macro that hints to the compiler when a statement should be assumed true.
 
@@ -44,4 +44,4 @@ namespace assume {
 
 }}
 
-#endif // GTL_ASSUME_HPP
+#endif // GTL_DEBUG_ASSUME_HPP

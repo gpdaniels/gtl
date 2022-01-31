@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_GAUSSIAN_ELIMINATION_HPP
-#define GTL_GAUSSIAN_ELIMINATION_HPP
+#ifndef GTL_ALGORITHM_GAUSSIAN_ELIMINATION_HPP
+#define GTL_ALGORITHM_GAUSSIAN_ELIMINATION_HPP
 
 // Summary: Linear simultaneous equation solver.
 
@@ -126,4 +126,4 @@ namespace gtl {
     };
 }
 
-#endif // GTL_GAUSSIAN_ELIMINATION_HPP
+#endif // GTL_ALGORITHM_GAUSSIAN_ELIMINATION_HPP

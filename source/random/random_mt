@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_RANDOM_MT_HPP
-#define GTL_RANDOM_MT_HPP
+#ifndef GTL_RANDOM_RANDOM_MT_HPP
+#define GTL_RANDOM_RANDOM_MT_HPP
 
 // Summary: Mersenne twister pseudo-random number generator.
 
@@ -202,4 +202,4 @@ namespace gtl {
 
 #undef GTL_RANDOM_MT_ASSERT
 
-#endif // GTL_RANDOM_MT_HPP
+#endif // GTL_RANDOM_RANDOM_MT_HPP

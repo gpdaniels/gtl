@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_SHA2_HPP
-#define GTL_SHA2_HPP
+#ifndef GTL_HASH_SHA2_HPP
+#define GTL_HASH_SHA2_HPP
 
 // Summary: An implementation of the sha2 hashing function for 224, 256, 384, and 512 bits.
 
@@ -465,4 +465,4 @@ namespace gtl {
 
 #undef GTL_SHA2_ASSERT
 
-#endif // GTL_SHA2_HPP
+#endif // GTL_HASH_SHA2_HPP

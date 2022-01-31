@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_THREAD_POOL_HPP
-#define GTL_THREAD_POOL_HPP
+#ifndef GTL_EXECUTION_THREAD_POOL_HPP
+#define GTL_EXECUTION_THREAD_POOL_HPP
 
 // Summary: Multi-queue thread-pool that performs jobs in priority order.
 
@@ -325,4 +325,4 @@ namespace gtl {
 
 #undef GTL_THREAD_POOL_ASSERT
 
-#endif // GTL_THREAD_POOL_HPP
+#endif // GTL_EXECUTION_THREAD_POOL_HPP

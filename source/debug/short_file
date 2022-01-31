@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_SHORT_FILE_HPP
-#define GTL_SHORT_FILE_HPP
+#ifndef GTL_DEBUG_SHORT_FILE_HPP
+#define GTL_DEBUG_SHORT_FILE_HPP
 
 // Summary: Replacement for the __FILE__ macro to prevent build path being leaked into the binary.
 
@@ -211,4 +211,4 @@ namespace short_file {
 
 }}
 
-#endif // GTL_SHORT_FILE_HPP
+#endif // GTL_DEBUG_SHORT_FILE_HPP

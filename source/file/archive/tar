@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_TAR_HPP
-#define GTL_TAR_HPP
+#ifndef GTL_FILE_ARCHIVE_TAR_HPP
+#define GTL_FILE_ARCHIVE_TAR_HPP
 
 // Summary: Tar format archive reader and writer. [wip]
 
@@ -265,4 +265,4 @@ namespace gtl {
     };
 }
 
-#endif // GTL_TAR_HPP
+#endif // GTL_FILE_ARCHIVE_TAR_HPP

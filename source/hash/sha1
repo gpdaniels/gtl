@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_SHA1_HPP
-#define GTL_SHA1_HPP
+#ifndef GTL_HASH_SHA1_HPP
+#define GTL_HASH_SHA1_HPP
 
 // Summary: An implementation of the sha1 hashing function.
 
@@ -232,4 +232,4 @@ namespace gtl {
 
 #undef GTL_SHA1_ASSERT
 
-#endif // GTL_SHA1_HPP
+#endif // GTL_HASH_SHA1_HPP

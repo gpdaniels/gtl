@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_STANDARD_HPP
-#define GTL_STANDARD_HPP
+#ifndef GTL_TYPE_STANDARD_HPP
+#define GTL_TYPE_STANDARD_HPP
 
 // Summary: Standard type size sanity. [wip]
 
@@ -50,4 +50,4 @@ namespace gtl {
     static_assert(sizeof(f64) == 8);
 }
 
-#endif // GTL_STANDARD_HPP
+#endif // GTL_TYPE_STANDARD_HPP

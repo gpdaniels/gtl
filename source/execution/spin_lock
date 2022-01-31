@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_SPIN_LOCK_HPP
-#define GTL_SPIN_LOCK_HPP
+#ifndef GTL_EXECUTION_SPIN_LOCK_HPP
+#define GTL_EXECUTION_SPIN_LOCK_HPP
 
 // Summary: Spin lock implemented using an atomic flag.
 
@@ -89,4 +89,4 @@ namespace gtl {
 
 #undef GTL_SPIN_LOCK_ASSERT
 
-#endif // GTL_SPIN_LOCK_HPP
+#endif // GTL_EXECUTION_SPIN_LOCK_HPP

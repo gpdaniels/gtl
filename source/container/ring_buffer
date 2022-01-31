@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_RING_BUFFER_HPP
-#define GTL_RING_BUFFER_HPP
+#ifndef GTL_CONTAINER_RING_BUFFER_HPP
+#define GTL_CONTAINER_RING_BUFFER_HPP
 
 // Summary: Dynamically sized thread-safe multi-producer multi-consumer ring-buffer.
 
@@ -215,4 +215,4 @@ namespace gtl {
 
 #undef GTL_RING_BUFFER_ASSERT
 
-#endif // GTL_RING_BUFFER_HPP
+#endif // GTL_CONTAINER_RING_BUFFER_HPP

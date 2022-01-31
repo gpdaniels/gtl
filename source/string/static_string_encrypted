@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_STATIC_STRING_ENCRYPTED_HPP
-#define GTL_STATIC_STRING_ENCRYPTED_HPP
+#ifndef GTL_STRING_STATIC_STRING_ENCRYPTED_HPP
+#define GTL_STRING_STATIC_STRING_ENCRYPTED_HPP
 
 // Summary: Compile-time string encryption with runtime decryption to obfuscate strings.
 
@@ -334,4 +334,4 @@ namespace static_string_encrypted {
 
 }}
 
-#endif // GTL_STATIC_STRING_ENCRYPTED_HPP
+#endif // GTL_STRING_STATIC_STRING_ENCRYPTED_HPP

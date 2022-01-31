@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_MD5_HPP
-#define GTL_MD5_HPP
+#ifndef GTL_HASH_MD5_HPP
+#define GTL_HASH_MD5_HPP
 
 // Summary: An implementation of the md5 hashing function.
 
@@ -255,4 +255,4 @@ namespace gtl {
 
 #undef GTL_MD5_ASSERT
 
-#endif // GTL_MD5_HPP
+#endif // GTL_HASH_MD5_HPP
