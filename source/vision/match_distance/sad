@@ -1,0 +1,62 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_MATCH_DISTANCE_SAD_HPP
+#define GTL_VISION_MATCH_DISTANCE_SAD_HPP
+
+// Summary: Sum of absolute distances between two patches. [wip]
+
+namespace gtl {
+    template<
+        int patch_width = 8,
+        int patch_height = 8,
+        typename type_lhs = unsigned char,
+        typename type_rhs = unsigned char
+    >
+    float sad(
+        const type_lhs* __restrict data_lhs,
+        const int stride_lhs,
+        const type_rhs* __restrict data_rhs,
+        const int stride_rhs
+    ) {
+        constexpr static const auto abs = [](float value) -> float {
+            if ((value + 0.0f) < 0) {
+                return -value;
+            }
+            return value;
+        };
+
+        const int step_lhs = stride_lhs - patch_width;
+        const int step_rhs = stride_rhs - patch_width;
+
+        float sum = 0;
+
+        for (int y = 0; y < patch_height; ++y, data_lhs += step_lhs, data_rhs += step_rhs) {
+            for (int x = 0; x < patch_width; ++x, ++data_lhs, ++data_rhs) {
+                const float pixel_lhs = *data_lhs;
+                const float pixel_rhs = *data_rhs;
+                const float difference = pixel_lhs - pixel_rhs;
+                const float difference_absolute = abs(difference);
+                sum += difference_absolute;
+            }
+        }
+
+        return sum;
+    }
+}
+
+#endif // GTL_VISION_MATCH_DISTANCE_SAD_HPP
