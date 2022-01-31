@@ -41,11 +41,14 @@ FOREACH(CLASS_FILE ${CLASS_FILES})
     # Determine the class name from the file name.
     GET_FILENAME_COMPONENT(CLASS_FILE_NAME "${CLASS_FILE}" NAME)
     
-    # If there is no class definition then error.
+    # If there is no definition then error.
     IF(NOT CLASS_FILE_CONTENT MATCHES "class ${CLASS_FILE_NAME}")
         IF(NOT CLASS_FILE_CONTENT MATCHES "namespace ${CLASS_FILE_NAME}")
-            # TODO: Convert this warning into a FATAL_ERROR.
-            MESSAGE(STATUS "Missing definition of 'class ${CLASS_FILE_NAME}' or 'namespace ${CLASS_FILE_NAME}' in ${CLASS_FILE}.")
+            STRING(TOUPPER "${CLASS_FILE_NAME}" CLASS_FILE_NAME_UPPER)
+            IF(NOT CLASS_FILE_CONTENT MATCHES "#define GTL_${CLASS_FILE_NAME_UPPER}")
+                # TODO: Convert this warning into a FATAL_ERROR.
+                MESSAGE(STATUS "Missing definition of class, namespace, or #define including '${CLASS_FILE_NAME}' in ${CLASS_FILE}.")
+            ENDIF()
         ENDIF()
     ENDIF()
     
