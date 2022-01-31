@@ -75,6 +75,7 @@ The current classes are as described below:
 | [utility](source/utility) | [event](source/utility/event) | Thread safe multi\-in/multi\-out event/messaging system. | :heavy_check_mark: |
 | [utility](source/utility) | [pimpl](source/utility/pimpl) | Statically sized pointer to implementation wrapper. | :heavy_check_mark: |
 | [utility](source/utility) | [sizeof_bitfield](source/utility/sizeof_bitfield) | Macro to get the size in bits of a bitfield. | :x: |
+| [vision](source/vision) | [api](source/vision/api) | An API for a computer vision system that consumes sensor data to perform localisation and mapping. | :x: |
 
 ## License ##
 

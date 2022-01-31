@@ -1,0 +1,233 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_API_HPP
+#define GTL_API_HPP
+
+// Summary: An API for a computer vision system that consumes sensor data to perform localisation and mapping. [wip]
+
+#pragma pack(1)
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+#if defined(_MSC_VER)
+    #if defined(GTL_API_EXPORT)
+        #define GTL_API_VISIBILITY __declspec(dllexport)
+    #else
+        #define GTL_API_VISIBILITY __declspec(dllimport)
+    #endif
+
+    #define GTL_API_CALL __stdcall
+
+    #define GTL_API_STATIC_ASSERT(ASSERTION, MESSAGE) static_assert(ASSERTION, MESSAGE);
+#else
+    #define GTL_API_VISIBILITY __attribute__((visibility("default")))
+
+    #define GTL_API_CALL
+
+    #if defined(__cplusplus)
+        #define GTL_API_STATIC_ASSERT(ASSERTION, MESSAGE) static_assert(ASSERTION, MESSAGE);
+    #else
+        #define GTL_API_STATIC_ASSERT(ASSERTION, MESSAGE) _Static_assert(ASSERTION, MESSAGE);
+    #endif
+#endif
+
+GTL_API_STATIC_ASSERT(sizeof(char) == 1,            "For ABI compatibility the sizeof(char) must be 1 byte.")
+GTL_API_STATIC_ASSERT(sizeof(short int) == 2,       "For ABI compatibility the sizeof(short int) must be 2 bytes.")
+GTL_API_STATIC_ASSERT(sizeof(int) == 4,             "For ABI compatibility the sizeof(int) must be 4 bytes.")
+GTL_API_STATIC_ASSERT(sizeof(long long int) == 8,   "For ABI compatibility the sizeof(long long int) must be 8 bytes.")
+
+typedef enum gtl_vision_return_enum {
+    gtl_vision_return_success                          = 0x00000000,
+    gtl_vision_return_failure_insufficient_data_length = 0x00000001,
+    gtl_vision_return_failure_invalid_system           = 0x00000010,
+    gtl_vision_return_failure_invalid_argument         = 0x00000100,
+    gtl_vision_return_failure_invalid_license          = 0x00001000,
+    gtl_vision_return_failure_invalid_configuration    = 0x00010000,
+    gtl_vision_return_failure_invalid_rig_sensor       = 0x00100000,
+    gtl_vision_return_failure_invalid_sensor_data      = 0x01000000,
+    gtl_vision_return_invalid                          = 0xFFFFFFFF
+} gtl_vision_return_enum;
+
+GTL_API_STATIC_ASSERT(sizeof(gtl_vision_return_enum) == 4, "For ABI compatibility the sizeof(gtl_vision_return_enum) must be 4 bytes.")
+
+typedef struct gtl_vision_system gtl_vision_system;
+
+GTL_API_VISIBILITY
+gtl_vision_return_enum
+GTL_API_CALL
+gtl_vision_create(
+    gtl_vision_system* __restrict* __restrict system
+);
+
+GTL_API_VISIBILITY
+gtl_vision_return_enum
+GTL_API_CALL
+gtl_vision_destroy(
+    gtl_vision_system* __restrict* __restrict system
+);
+
+GTL_API_VISIBILITY
+gtl_vision_return_enum
+GTL_API_CALL gtl_vision_get_timestamp(
+    gtl_vision_system* __restrict system,
+    long long int* __restrict timestamp
+);
+
+GTL_API_VISIBILITY
+gtl_vision_return_enum
+GTL_API_CALL gtl_vision_get_license(
+    gtl_vision_system* __restrict system,
+    char* __restrict license, int* __restrict length
+);
+
+GTL_API_VISIBILITY
+gtl_vision_return_enum
+GTL_API_CALL gtl_vision_set_license(
+    gtl_vision_system* __restrict system,
+    const char* __restrict license, int length
+);
+
+GTL_API_VISIBILITY
+gtl_vision_return_enum
+GTL_API_CALL gtl_vision_get_configuration(
+    gtl_vision_system* __restrict system,
+    char* __restrict configuration, int* __restrict length
+);
+
+GTL_API_VISIBILITY
+gtl_vision_return_enum
+GTL_API_CALL gtl_vision_set_configuration(
+        gtl_vision_system* __restrict system,
+        const char* __restrict configuration, int length);
+
+typedef enum gtl_vision_sensor_emum {
+    gtl_vision_sensor_map                               = 0x00000000,
+    gtl_vision_sensor_remote                            = 0x00000010,
+    gtl_vision_sensor_local_scale                       = 0x00000100,
+    gtl_vision_sensor_local_position                    = 0x00001000,
+    gtl_vision_sensor_local_position_velocity           = 0x00002000,
+    gtl_vision_sensor_local_position_acceleration       = 0x00004000,
+    gtl_vision_sensor_local_orientation                 = 0x00010000,
+    gtl_vision_sensor_local_orientation_velocity        = 0x00020000,
+    gtl_vision_sensor_local_orientation_acceleration    = 0x00040000,
+    gtl_vision_sensor_invalid                           = 0xFFFFFFFF
+} gtl_vision_sensor_emum;
+
+GTL_API_STATIC_ASSERT(sizeof(gtl_vision_sensor_emum) == 4, "For ABI compatibility the sizeof(gtl_vision_sensor_emum) must be 4 bytes.")
+
+typedef struct gtl_vision_sensor_rig_struct {
+    gtl_vision_sensor_emum type;
+    int sensor_id;
+    int parameters_length;
+    void* parameters_data;
+} gtl_vision_sensor_rig_struct;
+GTL_API_STATIC_ASSERT(sizeof(gtl_vision_sensor_rig_struct) == 12 + sizeof(void*), "For ABI compatibility the sizeof(gtl_vision_sensor_rig_struct) must be 12+sizeof(void*) bytes.")
+
+GTL_API_VISIBILITY
+gtl_vision_return_enum
+GTL_API_CALL
+gtl_vision_set_sensor_rig(
+    gtl_vision_system* __restrict system,
+    const gtl_vision_sensor_rig_struct* __restrict rig,
+    int length
+);
+
+typedef struct gtl_vision_sensor_data_struct {
+    long long int timestamp;
+    int sensor_id;
+    int measurment_length;
+    void* measurment_data;
+} gtl_vision_sensor_data_struct;
+GTL_API_STATIC_ASSERT(sizeof(gtl_vision_sensor_data_struct) == 16 + sizeof(void*), "For ABI compatibility the sizeof(gtl_vision_sensor_data_struct) must be 16+sizeof(void*) bytes.")
+
+GTL_API_VISIBILITY
+gtl_vision_return_enum
+GTL_API_CALL
+gtl_vision_set_sensor_data(
+    gtl_vision_system* __restrict system,
+    const gtl_vision_sensor_data_struct* __restrict data,
+    int length
+);
+
+typedef struct gtl_vision_pose_struct {
+    long long int timestamp;
+    float pose[7];
+    float velocity[7];
+    float acceleration[7];
+    float pose_confidence[7];
+    float velocity_confidence[7];
+    float acceleration_confidence[7];
+} gtl_vision_pose_struct;
+GTL_API_STATIC_ASSERT(sizeof(gtl_vision_pose_struct) == 176, "For ABI compatibility the sizeof(gtl_vision_pose_struct) must be 176 bytes.")
+
+GTL_API_VISIBILITY
+gtl_vision_return_enum
+GTL_API_CALL
+gtl_vision_get_pose(
+    gtl_vision_system* __restrict system,
+    gtl_vision_pose_struct* __restrict pose
+);
+
+GTL_API_VISIBILITY
+gtl_vision_return_enum
+GTL_API_CALL
+gtl_vision_get_pose_at_timestamp(
+    gtl_vision_system* __restrict system,
+    gtl_vision_pose_struct* __restrict pose,
+    long long int timestamp
+);
+
+typedef struct gtl_vision_point_struct {
+    float x, y, z;
+    float confidence;
+    float r, g, b;
+    float a;
+} gtl_vision_point_struct;
+GTL_API_STATIC_ASSERT(sizeof(gtl_vision_point_struct) == 32, "For ABI compatibility the sizeof(gtl_vision_point_struct) must be 32 bytes.")
+
+typedef struct gtl_vision_map_chunk_struct {
+    long long int timestamp;
+    float min_x, min_y, min_z;
+    float max_x, max_y, max_z;
+    int points_length;
+    gtl_vision_point_struct* points;
+} gtl_vision_map_chunk_struct;
+GTL_API_STATIC_ASSERT(sizeof(gtl_vision_map_chunk_struct) == 36 + sizeof(void*), "For ABI compatibility the sizeof(gtl_vision_map_chunk_struct) must be 36+sizeof(void*) bytes.")
+
+GTL_API_VISIBILITY
+gtl_vision_return_enum
+GTL_API_CALL
+gtl_vision_get_map_chunk(
+    gtl_vision_system* __restrict system,
+    float x,
+    float y,
+    float z,
+    gtl_vision_map_chunk_struct* __restrict chunk
+);
+
+#undef GTL_API_STATIC_ASSERT
+
+#if defined(__cplusplus)
+}
+#endif
+
+#pragma pack()
+
+#endif // GTL_API_HPP
