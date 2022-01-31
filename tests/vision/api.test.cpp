@@ -50,7 +50,7 @@ extern "C" struct gtl_vision_system {
     }
 };
 
-extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_create(gtl_vision_system* __restrict* __restrict system) {
+extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_create(gtl_vision_system** system) {
     if (!system) {
         return gtl_vision_return_failure_invalid_system;
     }
@@ -58,7 +58,7 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_cre
     return gtl_vision_return_success;
 }
 
-extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_destroy(gtl_vision_system* __restrict* __restrict system) {
+extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_destroy(gtl_vision_system** system) {
     if (!system) {
         return gtl_vision_return_failure_invalid_system;
     }
@@ -70,7 +70,7 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_des
     return gtl_vision_return_success;
 }
 
-extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get_timestamp(gtl_vision_system* __restrict system, long long int* __restrict timestamp) {
+extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get_timestamp(gtl_vision_system* system, long long int* timestamp) {
     if (!system) {
         return gtl_vision_return_failure_invalid_system;
     }
@@ -81,7 +81,7 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get
     return gtl_vision_return_success;
 }
 
-extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get_license(gtl_vision_system* __restrict system, char* __restrict license, int* __restrict length) {
+extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get_license(gtl_vision_system* system, char* license, int* length) {
     if (!system) {
         return gtl_vision_return_failure_invalid_system;
     }
@@ -104,7 +104,7 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get
     return gtl_vision_return_success;
 }
 
-extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_set_license(gtl_vision_system* __restrict system, const char* __restrict license, int length) {
+extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_set_license(gtl_vision_system* system, const char* license, int length) {
     if (!system) {
         return gtl_vision_return_failure_invalid_system;
     }
@@ -122,7 +122,7 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_set
     return gtl_vision_return_success;
 }
 
-extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get_configuration(gtl_vision_system* __restrict system, char* __restrict configuration, int* __restrict length) {
+extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get_configuration(gtl_vision_system* system, char* configuration, int* length) {
     if (!system) {
         return gtl_vision_return_failure_invalid_system;
     }
@@ -147,7 +147,7 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get
     return gtl_vision_return_success;
 }
 
-extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_set_configuration(gtl_vision_system* __restrict system, const char* __restrict configuration, int length) {
+extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_set_configuration(gtl_vision_system* system, const char* configuration, int length) {
     if (!system) {
         return gtl_vision_return_failure_invalid_system;
     }
@@ -165,7 +165,7 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_set
     return gtl_vision_return_success;
 }
 
-extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_set_sensor_rig(gtl_vision_system* __restrict system, const gtl_vision_sensor_rig_struct* __restrict rig, int length) {
+extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_set_sensor_rig(gtl_vision_system* system, const gtl_vision_sensor_rig_struct* rig, int length) {
     if (!system) {
         return gtl_vision_return_failure_invalid_system;
     }
@@ -180,7 +180,7 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_set
     return gtl_vision_return_success;
 }
 
-extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_set_sensor_data(gtl_vision_system* __restrict system, const gtl_vision_sensor_data_struct* __restrict data, int length) {
+extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_set_sensor_data(gtl_vision_system* system, const gtl_vision_sensor_data_struct* data, int length) {
     if (!system) {
         return gtl_vision_return_failure_invalid_system;
     }
@@ -195,7 +195,7 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_set
     return gtl_vision_return_success;
 }
 
-extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get_pose(gtl_vision_system* __restrict system, gtl_vision_pose_struct* __restrict pose) {
+extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get_pose(gtl_vision_system* system, gtl_vision_pose_struct* pose) {
     if (!system) {
         return gtl_vision_return_failure_invalid_system;
     }
@@ -209,7 +209,7 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get
     return gtl_vision_return_success;
 }
 
-extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get_pose_at_timestamp(gtl_vision_system* __restrict system, gtl_vision_pose_struct* __restrict pose, long long int timestamp) {
+extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get_pose_at_timestamp(gtl_vision_system* system, gtl_vision_pose_struct* pose, long long int timestamp) {
     if (!system) {
         return gtl_vision_return_failure_invalid_system;
     }
@@ -227,7 +227,7 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get
     return gtl_vision_return_success;
 }
 
-extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get_map_chunk(gtl_vision_system* __restrict system, float x, float y, float z, gtl_vision_map_chunk_struct* __restrict chunk) {
+extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get_map_chunk(gtl_vision_system* system, float x, float y, float z, gtl_vision_map_chunk_struct* chunk) {
     if (!system) {
         return gtl_vision_return_failure_invalid_system;
     }

@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Summary: An API for a computer vision system that consumes sensor data to perform localisation and mapping. [wip]
 
+// TODO: Evaluate if this pragma is needed.
 #pragma pack(1)
 
 #if defined(__cplusplus)
@@ -73,49 +74,49 @@ GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL
 gtl_vision_create(
-    gtl_vision_system* __restrict* __restrict system
+    gtl_vision_system** system
 );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL
 gtl_vision_destroy(
-    gtl_vision_system* __restrict* __restrict system
+    gtl_vision_system** system
 );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL gtl_vision_get_timestamp(
-    gtl_vision_system* __restrict system,
-    long long int* __restrict timestamp
+    gtl_vision_system* system,
+    long long int* timestamp
 );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL gtl_vision_get_license(
-    gtl_vision_system* __restrict system,
-    char* __restrict license, int* __restrict length
+    gtl_vision_system* system,
+    char* license, int* length
 );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL gtl_vision_set_license(
-    gtl_vision_system* __restrict system,
-    const char* __restrict license, int length
+    gtl_vision_system* system,
+    const char* license, int length
 );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL gtl_vision_get_configuration(
-    gtl_vision_system* __restrict system,
-    char* __restrict configuration, int* __restrict length
+    gtl_vision_system* system,
+    char* configuration, int* length
 );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL gtl_vision_set_configuration(
-        gtl_vision_system* __restrict system,
-        const char* __restrict configuration, int length);
+    gtl_vision_system* system,
+    const char* configuration, int length);
 
 typedef enum gtl_vision_sensor_emum {
     gtl_vision_sensor_map                               = 0x00000000,
@@ -144,8 +145,8 @@ GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL
 gtl_vision_set_sensor_rig(
-    gtl_vision_system* __restrict system,
-    const gtl_vision_sensor_rig_struct* __restrict rig,
+    gtl_vision_system* system,
+    const gtl_vision_sensor_rig_struct* rig,
     int length
 );
 
@@ -161,8 +162,8 @@ GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL
 gtl_vision_set_sensor_data(
-    gtl_vision_system* __restrict system,
-    const gtl_vision_sensor_data_struct* __restrict data,
+    gtl_vision_system* system,
+    const gtl_vision_sensor_data_struct* data,
     int length
 );
 
@@ -181,16 +182,16 @@ GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL
 gtl_vision_get_pose(
-    gtl_vision_system* __restrict system,
-    gtl_vision_pose_struct* __restrict pose
+    gtl_vision_system* system,
+    gtl_vision_pose_struct* pose
 );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL
 gtl_vision_get_pose_at_timestamp(
-    gtl_vision_system* __restrict system,
-    gtl_vision_pose_struct* __restrict pose,
+    gtl_vision_system* system,
+    gtl_vision_pose_struct* pose,
     long long int timestamp
 );
 
@@ -215,11 +216,11 @@ GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL
 gtl_vision_get_map_chunk(
-    gtl_vision_system* __restrict system,
+    gtl_vision_system* system,
     float x,
     float y,
     float z,
-    gtl_vision_map_chunk_struct* __restrict chunk
+    gtl_vision_map_chunk_struct* chunk
 );
 
 #undef GTL_API_STATIC_ASSERT
@@ -228,6 +229,7 @@ gtl_vision_get_map_chunk(
 }
 #endif
 
+// TODO: Evaluate if this pragma is needed.
 #pragma pack()
 
 #endif // GTL_API_HPP
