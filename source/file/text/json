@@ -1,0 +1,449 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_JSON_HPP
+#define GTL_JSON_HPP
+
+// Summary: A small json parser and composer. [wip]
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <cstdio>
+#include <cstdlib>
+#include <map>
+#include <string>
+#include <vector>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace gtl {
+    class json final {
+    private:
+        class value final {
+        public:
+            using null_type = decltype(nullptr);
+            using bool_type = bool;
+            using number_type = double;
+            using string_type = std::string;
+            using object_type = std::map<value::string_type, value>;
+            using array_type = std::vector<value>;
+        private:
+            enum class contains {
+                null_type,
+                bool_type,
+                number_type,
+                string_type,
+                object_type,
+                array_type
+            };
+        private:
+            contains type;
+            union {
+                null_type   null_value;
+                bool_type   bool_value;
+                number_type number_value;
+                string_type string_value;
+                object_type object_value;
+                array_type  array_value;
+            };
+        public:
+            ~value() {
+                switch (this->type) {
+                    case contains::null_type  : { null_value.~null_type(); } break;
+                    case contains::bool_type  : { bool_value.~bool_type(); } break;
+                    case contains::number_type: { number_value.~number_type(); } break;
+                    case contains::string_type: { string_value.~string_type(); } break;
+                    case contains::object_type: { object_value.~object_type(); } break;
+                    case contains::array_type : { array_value.~array_type(); } break;
+                }
+            }
+            value()
+                : type(contains::null_type) {
+                new (&null_value) null_type(nullptr);
+            }
+            value(const value& other)
+                : type(other.type) {
+                switch (this->type) {
+                    case contains::null_type  : { new (&null_value) null_type(other.null_value); } break;
+                    case contains::bool_type  : { new (&bool_value) bool_type(other.bool_value); } break;
+                    case contains::number_type: { new (&number_value) number_type(other.number_value); } break;
+                    case contains::string_type: { new (&string_value) string_type(other.string_value); } break;
+                    case contains::object_type: { new (&object_value) object_type(other.object_value); } break;
+                    case contains::array_type : { new (&array_value) array_type(other.array_value); } break;
+                }
+            }
+            value(value&& other)
+                : type(other.type) {
+                switch (this->type) {
+                    case contains::null_type  : { new (&null_value) null_type(static_cast<null_type&&>(other.null_value)); } break;
+                    case contains::bool_type  : { new (&bool_value) bool_type(static_cast<bool_type&&>(other.bool_value)); } break;
+                    case contains::number_type: { new (&number_value) number_type(static_cast<number_type&&>(other.number_value)); } break;
+                    case contains::string_type: { new (&string_value) string_type(static_cast<string_type&&>(other.string_value)); } break;
+                    case contains::object_type: { new (&object_value) object_type(static_cast<object_type&&>(other.object_value)); } break;
+                    case contains::array_type : { new (&array_value) array_type(static_cast<array_type&&>(other.array_value)); } break;
+                }
+            }
+            value& operator=(const value& other) {
+                switch (this->type) {
+                    case contains::null_type  : { null_value.~null_type(); } break;
+                    case contains::bool_type  : { bool_value.~bool_type(); } break;
+                    case contains::number_type: { number_value.~number_type(); } break;
+                    case contains::string_type: { string_value.~string_type(); } break;
+                    case contains::object_type: { object_value.~object_type(); } break;
+                    case contains::array_type : { array_value.~array_type(); } break;
+                }
+                this->type = other.type;
+                switch (this->type) {
+                    case contains::null_type  : { new (&null_value) null_type(other.null_value); } break;
+                    case contains::bool_type  : { new (&bool_value) bool_type(other.bool_value); } break;
+                    case contains::number_type: { new (&number_value) number_type(other.number_value); } break;
+                    case contains::string_type: { new (&string_value) string_type(other.string_value); } break;
+                    case contains::object_type: { new (&object_value) object_type(other.object_value); } break;
+                    case contains::array_type : { new (&array_value) array_type(other.array_value); } break;
+                }
+                return *this;
+            }
+            value& operator=(value&& other) {
+                switch (this->type) {
+                    case contains::null_type  : { null_value.~null_type(); } break;
+                    case contains::bool_type  : { bool_value.~bool_type(); } break;
+                    case contains::number_type: { number_value.~number_type(); } break;
+                    case contains::string_type: { string_value.~string_type(); } break;
+                    case contains::object_type: { object_value.~object_type(); } break;
+                    case contains::array_type : { array_value.~array_type(); } break;
+                }
+                this->type = other.type;
+                switch (this->type) {
+                    case contains::null_type  : { new (&null_value) null_type(static_cast<null_type&&>(other.null_value)); } break;
+                    case contains::bool_type  : { new (&bool_value) bool_type(static_cast<bool_type&&>(other.bool_value)); } break;
+                    case contains::number_type: { new (&number_value) number_type(static_cast<number_type&&>(other.number_value)); } break;
+                    case contains::string_type: { new (&string_value) string_type(static_cast<string_type&&>(other.string_value)); } break;
+                    case contains::object_type: { new (&object_value) object_type(static_cast<object_type&&>(other.object_value)); } break;
+                    case contains::array_type : { new (&array_value) array_type(static_cast<array_type&&>(other.array_value)); } break;
+                }
+                return *this;
+            }
+            value(null_type value)          : type(contains::null_type)   { new (&null_value) null_type(value); }
+            value(bool_type value)          : type(contains::bool_type)   { new (&bool_value) bool_type(value); }
+            value(number_type value)        : type(contains::number_type) { new (&number_value) number_type(value); }
+            value(const string_type& value) : type(contains::string_type) { new (&string_value) string_type(value); }
+            value(const object_type& value) : type(contains::object_type) { new (&object_value) object_type(value); }
+            value(const array_type& value)  : type(contains::array_type)  { new (&array_value) array_type(value); }
+        private:
+            template <typename contains_type>
+            constexpr static contains convert_to_contains_enum();
+        public:
+            template <typename is_type>
+            bool is() const {
+                return (this->type == convert_to_contains_enum<is_type>());
+            }
+        public:
+            template <typename as_type>
+            const as_type& as() const {
+                if constexpr (convert_to_contains_enum<as_type>() == contains::null_type) { return null_value; }
+                else if constexpr (convert_to_contains_enum<as_type>() == contains::bool_type) { return bool_value; }
+                else if constexpr (convert_to_contains_enum<as_type>() == contains::number_type) { return number_value; }
+                else if constexpr (convert_to_contains_enum<as_type>() == contains::string_type) { return string_value; }
+                else if constexpr (convert_to_contains_enum<as_type>() == contains::object_type) { return object_value; }
+                else if constexpr (convert_to_contains_enum<as_type>() == contains::array_type) { return array_value; }
+            }
+            template <typename as_type>
+            as_type& as() {
+                if constexpr (convert_to_contains_enum<as_type>() == contains::null_type) { return null_value; }
+                else if constexpr (convert_to_contains_enum<as_type>() == contains::bool_type) { return bool_value; }
+                else if constexpr (convert_to_contains_enum<as_type>() == contains::number_type) { return number_value; }
+                else if constexpr (convert_to_contains_enum<as_type>() == contains::string_type) { return string_value; }
+                else if constexpr (convert_to_contains_enum<as_type>() == contains::object_type) { return object_value; }
+                else if constexpr (convert_to_contains_enum<as_type>() == contains::array_type) { return array_value; }
+            }
+        public:
+            string_type to_string() const {
+                constexpr static const auto replace = [](string_type& string, const string_type& from, const string_type& to){
+                    string_type::size_type position = 0;
+                    while(true) {
+                        string_type::size_type start = string.find(from, position);
+                        if(start == string_type::npos) {
+                            return;
+                        }
+                        string.replace(start, from.size(), to);
+                        position += to.size();
+                    }
+                };
+                switch (this->type) {
+                    case contains::null_type  : {
+                        return "null";
+                    } break;
+                    case contains::bool_type  : {
+                        if (bool_value) {
+                            return "true";
+                        }
+                        return "false";
+                    } break;
+                    case contains::number_type: {
+                        char buffer[25] = {};
+                        const int length = std::snprintf(&buffer[0], 25, "%g", number_value);
+                        if ((length < 0) || (length >= 25)) {
+                            return "";
+                        }
+                        return std::string(&buffer[0]);
+                    } break;
+                    case contains::string_type: {
+                        string_type string = this->string_value;
+                        replace(string, "\\", "\\\\");
+                        replace(string, "\b", "\\\b");
+                        replace(string, "\f", "\\\f");
+                        replace(string, "\n", "\\\n");
+                        replace(string, "\r", "\\\r");
+                        replace(string, "\t", "\\\t");
+                        replace(string, "\"", "\\\"");
+                        return "\"" + string + "\"";
+                    } break;
+                    case contains::object_type: {
+                        string_type string = "{";
+                        for (const auto& [key, item] : this->object_value) {
+                            string_type key_escaped = key;
+                            replace(key_escaped, "\\", "\\\\");
+                            replace(key_escaped, "\b", "\\\b");
+                            replace(key_escaped, "\f", "\\\f");
+                            replace(key_escaped, "\n", "\\\n");
+                            replace(key_escaped, "\r", "\\\r");
+                            replace(key_escaped, "\t", "\\\t");
+                            replace(key_escaped, "\"", "\\\"");
+                            if (string.size() == 1) {
+                                string += "\"" + key_escaped + "\":" + item.to_string();
+                            }
+                            else {
+                                string += ",\"" + key_escaped + "\":" + item.to_string();
+                            }
+                        }
+                        return string + "}";
+                    } break;
+                    case contains::array_type : {
+                        string_type string = "[";
+                        for (const auto& value : this->array_value) {
+                            if (string.size() == 1) {
+                                string += value.to_string();
+                            }
+                            else {
+                                string += "," + value.to_string();
+                            }
+                        }
+                        return string + "]";
+                    } break;
+                }
+                return "";
+            }
+        };
+
+    private:
+        value root;
+
+    private:
+        value parse_recursive(const std::string& data, std::string::size_type& index) {
+            skip_whitespace(data, index);
+            if (parse_null(data, index)) { return value(nullptr); }
+            value::bool_type boolean;
+            if (parse_bool(data, index, boolean)) { return value(boolean); }
+            value::number_type number;
+            if (parse_number(data, index, number)) { return value(number); }
+            value::string_type string;
+            if (parse_string(data, index, string)) { return value(string); }
+            value::object_type object;
+            if (parse_object(data, index, object)) { return value(object); }
+            value::array_type array;
+            if (parse_array(data, index, array)) { return value(array); }
+            return value(nullptr);
+        }
+        void skip_whitespace(const std::string& data, std::string::size_type& index) {
+            for (; index < data.size(); ++index) {
+                switch (data[index]) {
+                    case '\f': break;
+                    case '\n': break;
+                    case '\r': break;
+                    case '\t': break;
+                    case ' ': break;
+                    default: return;
+                }
+            }
+        }
+        bool parse_null(const std::string& data, std::string::size_type& index) {
+            if (data.substr(index, 4) == "null") {
+                index += 4;
+                return true;
+            }
+            return false;
+        }
+        bool parse_bool(const std::string& data, std::string::size_type& index, value::bool_type& boolean) {
+            if (data.substr(index, 4) == "true") {
+                boolean = true;
+                index += 4;
+                return true;
+            }
+            if (data.substr(index, 5) == "false") {
+                boolean = false;
+                index += 5;
+                return true;
+            }
+            return false;
+        }
+        bool parse_number(const std::string& data, std::string::size_type& index, value::number_type& number) {
+            std::string number_string = "0123456789-+eE.";
+            std::string::size_type length = 0;
+            while ((index + length < data.size()) && (number_string.find(data[index + length]) < number_string.size())) {
+                ++length;
+            }
+            if (length == 0) {
+                return false;
+            }
+            char* end_pointer = nullptr;
+            number = std::strtod(data.substr(index, length).c_str(), &end_pointer);
+            if (*end_pointer == 0) {
+                index += length;
+                return true;
+            }
+            return false;
+        }
+        bool parse_string(const std::string& data, std::string::size_type& index, value::string_type& string) {
+            if (data[index] != '"') {
+                return false;
+            }
+            std::string::size_type length = 1;
+            while ((index + length < data.size()) && (data[index + length - 1] != '\\') && (data[index + length] != '"')) {
+                if (data[index + length] == '\b') {
+                    return false;
+                }
+                if (data[index + length] == '\f') {
+                    return false;
+                }
+                if (data[index + length] == '\n') {
+                    return false;
+                }
+                if (data[index + length] == '\r') {
+                    return false;
+                }
+                if (data[index + length] == '\t') {
+                    return false;
+                }
+                ++length;
+            }
+            if (index + length == data.size()) {
+                return false;
+            }
+            string = data.substr(index + 1, length - 1);
+            index += length + 1;
+            return true;
+        }
+        bool parse_object(const std::string& data, std::string::size_type& index, value::object_type& object) {
+            if (data[index] != '{') {
+                return false;
+            }
+            std::string::size_type index_object = index + 1;
+            object = value::object_type();
+            if (index_object >= data.size()) {
+                return false;
+            }
+            if (data[index_object] == '}') {
+                index = index_object + 1;
+                return true;
+            }
+            while (index_object < data.size()) {
+                skip_whitespace(data, index_object);
+                value::string_type key;
+                if (!parse_string(data, index_object, key)) {
+                    return false;
+                }
+                skip_whitespace(data, index_object);
+                if ((index_object >= data.size()) || (data[index_object] != ':')) {
+                    return false;
+                }
+                ++index_object;
+                skip_whitespace(data, index_object);
+                value item = parse_recursive(data, index_object);
+                object.insert({key, item});
+                skip_whitespace(data, index_object);
+                if (index_object >= data.size()) {
+                    return false;
+                }
+                if (data[index_object] == '}') {
+                    index = index_object + 1;
+                    return true;
+                }
+                if (data[index_object] != ',') {
+                    return false;
+                }
+                ++index_object;
+            }
+            return false;
+        }
+        bool parse_array(const std::string& data, std::string::size_type& index, value::array_type& array) {
+            if (data[index] != '[') {
+                return false;
+            }
+            std::string::size_type index_array = index + 1;
+            array = value::array_type();
+            if (index_array >= data.size()) {
+                return false;
+            }
+            if (data[index_array] == ']') {
+                index = index_array + 1;
+                return true;
+            }
+            while (index_array < data.size()) {
+                skip_whitespace(data, index_array);
+                value item = parse_recursive(data, index_array);
+                array.push_back(item);
+                skip_whitespace(data, index_array);
+                if (index_array >= data.size()) {
+                    return false;
+                }
+                if (data[index_array] == ']') {
+                    index = index_array + 1;
+                    return true;
+                }
+                if (data[index_array] != ',') {
+                    return false;
+                }
+                ++index_array;
+            }
+            return false;
+        }
+
+
+    public:
+        bool parse(const std::string& data) {
+            std::string::size_type index = 0;
+            this->root = parse_recursive(data, index);
+            return (index == data.size());
+        }
+        std::string compose() const {
+            return this->root.to_string();
+        }
+    };
+
+    template <> json::value::contains json::value::convert_to_contains_enum<json::value::null_type>() { return value::contains::null_type; }
+    template <> json::value::contains json::value::convert_to_contains_enum<json::value::bool_type>() { return value::contains::bool_type; }
+    template <> json::value::contains json::value::convert_to_contains_enum<json::value::number_type>() { return value::contains::number_type; }
+    template <> json::value::contains json::value::convert_to_contains_enum<json::value::string_type>() { return value::contains::string_type; }
+    template <> json::value::contains json::value::convert_to_contains_enum<json::value::object_type>() { return value::contains::object_type; }
+    template <> json::value::contains json::value::convert_to_contains_enum<json::value::array_type>() { return value::contains::array_type; }
+}
+
+#endif // GTL_JSON_HPP
