@@ -1,0 +1,163 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_FEATURE_DETECTOR_FAST_HPP
+#define GTL_VISION_FEATURE_DETECTOR_FAST_HPP
+
+// Summary: Implemetation of feature detection from the paper "Faster and better: A machine learning approach to corner detection". IEEE transactions on pattern analysis and machine intelligence (2008). [wip]
+
+#include <vision/feature/feature>
+
+namespace gtl {
+    int fast(
+        const unsigned char* __restrict const data,
+        const int width,
+        const int height,
+        const int stride,
+        const int threshold,
+        const int feature_point_buffer_size,
+        gtl::feature* __restrict feature_point_buffer
+    );
+    int fast(
+        const unsigned char* __restrict const data,
+        const int width,
+        const int height,
+        const int stride,
+        const int threshold,
+        const int feature_point_buffer_size,
+        gtl::feature* __restrict feature_point_buffer
+    ) {
+        constexpr static const int patch_size = 7;
+        constexpr static const int patch_radius = 3;
+        constexpr static const int pattern_size = 16;
+        constexpr static const int pattern_size_half = pattern_size / 2;
+
+        static_cast<void>(patch_size);
+
+        // A FAST patch (radius 3):
+        //
+        //  *  *  9  8  7  *  *
+        //  *  A  X  X  X  6  *
+        //  B  X  X  X  X  X  5
+        //  C  X  X  O  X  X  4
+        //  D  X  X  X  X  X  3
+        //  *  E  X  X  X  2  *
+        //  *  *  F  0  1  *  *
+
+        // The pattern loops from 0 to F and back to 7 so that every pixel can be compared against one 8 ahead of it.
+        const int pattern_offset[24] = {
+             patch_radius * stride + 0,  patch_radius * stride + 1, +2 * stride + 2,  patch_radius + stride + 0,
+             patch_radius,               patch_radius - stride + 0, -2 * stride + 2, -patch_radius * stride + 1,
+            -patch_radius * stride + 0, -patch_radius * stride - 1, -2 * stride - 2, -patch_radius - stride + 0,
+            -patch_radius,              -patch_radius + stride + 0, +2 * stride - 2,  patch_radius * stride - 1,
+             patch_radius * stride + 0,  patch_radius * stride + 1, +2 * stride + 2,  patch_radius + stride + 0,
+             patch_radius,               patch_radius - stride + 0, -2 * stride + 2, -patch_radius * stride + 1
+        };
+
+        // A threshold lookup table for pixel intensities.
+        unsigned char threshold_map[255 + 1 + 255];
+        for (int value = -255; value <= 255; ++value) {
+            threshold_map[value + 255] = (value < -threshold) + 2 * (value > threshold);
+        }
+
+        // Count the number of detected features.
+        int feature_count = 0;
+
+        // Process the entire data buffer, keeping half the patch size from every edge.
+        for (int y = patch_radius; y < height - patch_radius; ++y) {
+
+            const unsigned char* data_pointer = data + y * stride + patch_radius;
+
+            for (int x = patch_radius; x < width - patch_radius; ++x, ++data_pointer) {
+                // Offset into the threshold_map using the value of the centre pixel.
+                const unsigned char* threshold_pointer = &threshold_map[255] - data_pointer[0];
+
+                // Comapare pattern pixels against threshold using the offset threshold map, to determine if this is a potential corner.
+                unsigned char threshold_accumulator = 1 | 2;
+                threshold_accumulator &= threshold_pointer[data_pointer[pattern_offset[0]]] | threshold_pointer[data_pointer[pattern_offset[8]]];
+                threshold_accumulator &= threshold_pointer[data_pointer[pattern_offset[1]]] | threshold_pointer[data_pointer[pattern_offset[9]]];
+                threshold_accumulator &= threshold_pointer[data_pointer[pattern_offset[2]]] | threshold_pointer[data_pointer[pattern_offset[10]]];
+                threshold_accumulator &= threshold_pointer[data_pointer[pattern_offset[3]]] | threshold_pointer[data_pointer[pattern_offset[11]]];
+                threshold_accumulator &= threshold_pointer[data_pointer[pattern_offset[4]]] | threshold_pointer[data_pointer[pattern_offset[12]]];
+                threshold_accumulator &= threshold_pointer[data_pointer[pattern_offset[5]]] | threshold_pointer[data_pointer[pattern_offset[13]]];
+                threshold_accumulator &= threshold_pointer[data_pointer[pattern_offset[6]]] | threshold_pointer[data_pointer[pattern_offset[14]]];
+                threshold_accumulator &= threshold_pointer[data_pointer[pattern_offset[7]]] | threshold_pointer[data_pointer[pattern_offset[15]]];
+
+                // If this is a potential corner the accumulator will not be zero.
+                // If the pixels have been less than the threshold, it will contain a 1.
+                if (threshold_accumulator & 1) {
+                    unsigned int valid_pixels = 0;
+                    const int pixel_threshold = static_cast<int>(data_pointer[0]) - threshold;
+
+                    // Check each pattern pixel against the thresholded centre pixel, need a continuous set of passes greater than half the pattern size.
+                    for (unsigned int index = 0; index < pattern_size + pattern_size_half; ++index) {
+                        const int pixel = data_pointer[pattern_offset[index]];
+                        if (pixel < pixel_threshold) {
+                            ++valid_pixels;
+                            if (valid_pixels > pattern_size_half) {
+                                feature_point_buffer[feature_count++] = { x, y, 0, 0 };
+                                if (feature_count == feature_point_buffer_size) {
+                                    return feature_count;
+                                }
+                                break;
+                            }
+                        }
+                        else {
+                            // No longer possible to have a large enough continuous set of passes.
+                            if (index > pattern_size) {
+                                break;
+                            }
+                            valid_pixels = 0;
+                        }
+                    }
+                }
+
+                // If the pixels have been greater than the threshold, it will contain a 2.
+                if (threshold_accumulator & 2) {
+                    unsigned int valid_pixels = 0;
+                    const int pixel_threshold = static_cast<int>(data_pointer[0]) + threshold;
+
+                    // Check each pattern pixel against the thresholded centre pixel, need a continuous set of passes greater than half the pattern size.
+                    for (unsigned int index = 0; index < pattern_size + pattern_size_half; ++index) {
+                        const int pixel = data_pointer[pattern_offset[index]];
+                        if (pixel > pixel_threshold) {
+                            ++valid_pixels;
+                            if (valid_pixels > pattern_size_half) {
+                                feature_point_buffer[feature_count++] = { x, y, 0, 0 };
+                                if (feature_count == feature_point_buffer_size) {
+                                    return feature_count;
+                                }
+                                break;
+                            }
+                        }
+                        else {
+                            // No longer possible to have a large enough continuous set of passes.
+                            if (index > pattern_size) {
+                                break;
+                            }
+                            valid_pixels = 0;
+                        }
+                    }
+                }
+            }
+        }
+
+        return feature_count;
+    }
+}
+
+#endif // GTL_VISION_FEATURE_DETECTOR_FAST_HPP

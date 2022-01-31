@@ -1,0 +1,167 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_FEATURE_REFINEMENT_GOLDEN_SECTION_HPP
+#define GTL_VISION_FEATURE_REFINEMENT_GOLDEN_SECTION_HPP
+
+// Summary: Golden section search method for the best match between two patches. [wip]
+
+namespace gtl {
+    using sub_pixel_function_type = void (*)(
+        const unsigned char* __restrict data,
+        const int stride,
+        const float offset_x,
+        const float offset_y,
+        float* __restrict patch
+    );
+
+    using score_function_type = float (*)(
+        const unsigned char* __restrict data_lhs,
+        const int stride_lhs,
+        const float* __restrict data_rhs,
+        const int stride_rhs
+    );
+
+    template<
+        unsigned int patch_width = 8,
+        unsigned int patch_height = 8,
+        sub_pixel_function_type sub_pixel_function,
+        score_function_type score_function,
+        int tolerance_x_inverse = 100,
+        int tolerance_y_inverse = 100
+    >
+    float golden_section_2d(
+        const unsigned char* __restrict data_lhs,
+        const int stride_lhs,
+        const unsigned char* __restrict data_rhs,
+        const int stride_rhs,
+        float& offset_rhs_x,
+        float& offset_rhs_y
+    ) {
+        constexpr static const float tolerance_x = 1.0f / static_cast<float>(tolerance_x_inverse);
+        constexpr static const float tolerance_y = 1.0f / static_cast<float>(tolerance_y_inverse);
+
+        // Golden ratio.
+        constexpr static const float sqrt_5 = 2.2360679775f;
+        constexpr static const float golden_ratio =(sqrt_5 + 1.0f) / 2.0f;
+        constexpr static const float golden_ratio_inverse = 1.0f / golden_ratio;
+
+        offset_rhs_x = 0.0f;
+        offset_rhs_y = 0.0f;
+
+        // Keep track of 4 points for x and y.
+        float x[4] = { -1.0f, 1.0f - (2.0f * golden_ratio_inverse), -1.0f + (2.0f * golden_ratio_inverse), 1.0f };
+        float y[4] = { -1.0f, 1.0f - (2.0f * golden_ratio_inverse), -1.0f + (2.0f * golden_ratio_inverse), 1.0f };
+
+        // Keep track of best score.
+        float best_score = 1e35f;
+
+        float sub_pixel_patch[patch_width][patch_height];
+
+        constexpr static const auto abs = [](float value) -> float {
+            if (value > 0) {
+                return value;
+            }
+            return -value;
+        };
+
+        // Iterate.
+        while (true) {
+            // First if check x range needs to be improved.
+            float range_x = x[3] - x[0];
+            if (abs(range_x) > tolerance_x * (abs(x[1]) + abs(x[2]))) {
+                // Use midpoint of y for x improvement.
+                const float y_min = (y[1] + y[2]) / 2.0f;
+
+                // Calculate the patch from the rhs when offset by the lower boundary x.
+                sub_pixel_function(data_rhs, stride_rhs, x[1], y_min, &sub_pixel_patch[0][0]);
+                // Score the difference between the lhs and the patch.
+                const float score_lower = score_function(data_lhs, stride_lhs, &sub_pixel_patch[0][0], patch_width);
+
+                // Calculate the patch from the rhs when offset by the upper boundary x.
+                sub_pixel_function(data_rhs, stride_rhs, x[2], y_min, &sub_pixel_patch[0][0]);
+                // Score the difference between the lhs and the patch.
+                const float score_upper = score_function(data_lhs, stride_lhs, &sub_pixel_patch[0][0], patch_width);
+
+                // Depending on which score is smaller move x boundaries tighter.
+                if (score_lower < score_upper) {
+                    x[3] = x[2];
+                    best_score = score_lower;
+                }
+                else {
+                    x[0] = x[1];
+                    best_score = score_upper;
+                }
+
+                // Update the range.
+                range_x = x[3] - x[0];
+
+                // Recalculate the values of the test points.
+                x[1] = x[3] - (range_x * golden_ratio_inverse);
+                x[2] = x[0] + (range_x * golden_ratio_inverse);
+            }
+
+            // Next if check y range needs to be improved.
+            float range_y = y[3] - y[0];
+            if (abs(range_y) > tolerance_y * (abs(y[1]) + abs(y[2]))) {
+                // Use midpoint of x for y improvement.
+                const float x_min = (x[1] + x[2]) / 2.0f;
+
+                // Calculate the patch from the rhs when offset by the lower boundary x.
+                sub_pixel_function(data_rhs, stride_rhs, x_min, y[1], &sub_pixel_patch[0][0]);
+                // Score the difference between the lhs and the patch.
+                const float score_lower = score_function(data_lhs, stride_lhs, &sub_pixel_patch[0][0], patch_width);
+
+                // Calculate the patch from the rhs when offset by the upper boundary x.
+                sub_pixel_function(data_rhs, stride_rhs, x_min, y[2], &sub_pixel_patch[0][0]);
+                // Score the difference between the lhs and the patch.
+                const float score_upper = score_function(data_lhs, stride_lhs, &sub_pixel_patch[0][0], patch_width);
+
+                // Depending on which score is smaller move x boundaries tighter.
+                if (score_lower < score_upper) {
+                    y[3] = y[2];
+                    best_score = score_lower;
+                }
+                else {
+                    y[0] = y[1];
+                    best_score = score_upper;
+                }
+
+                // Update the range.
+                range_y = y[3] - y[0];
+
+                // Recalculate the values of the test points.
+                y[1] = y[3] - (range_y * golden_ratio_inverse);
+                y[2] = y[0] + (range_y * golden_ratio_inverse);
+            }
+
+            // Break when the range is smaller than the tolerance times the sum of the inner test points.
+            if (abs(range_x) < tolerance_x * (abs(x[1]) + abs(x[2]))) {
+                if (abs(range_y) < tolerance_y * (abs(y[1]) + abs(y[2]))) {
+                    break;
+                }
+            }
+        }
+
+        // Return midpoints of inner test points.
+        offset_rhs_x = (x[1] + x[2]) / 2.0f;
+        offset_rhs_y = (y[1] + y[2]) / 2.0f;
+        return best_score;
+    }
+}
+
+#endif // GTL_VISION_FEATURE_REFINEMENT_GOLDEN_SECTION_HPP

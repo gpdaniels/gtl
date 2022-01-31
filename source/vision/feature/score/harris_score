@@ -1,0 +1,76 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_FEATURE_SCORE_HARRIS_SCORE_HPP
+#define GTL_VISION_FEATURE_SCORE_HARRIS_SCORE_HPP
+
+// Summary: Implemetation of feature quality score from the paper "A Combined Corner and Edge Detector". Alvey Vision Conference (1988). [wip]
+
+namespace gtl {
+    float harris_score(
+        const unsigned char* __restrict data,
+        const int stride
+    );
+    float harris_score(
+        const unsigned char* __restrict data,
+        const int stride
+    ) {
+        constexpr static const int patch_size = 7;
+        constexpr static const float sensitivity = 0.04f;
+        constexpr static const float scale_inverse = 1.0f / static_cast<float>(patch_size * patch_size);
+        constexpr static const float scale_inverse_squared = scale_inverse * scale_inverse;
+
+        const int step = stride - patch_size;
+
+        float sum_dxdx = 0;
+        float sum_dxdy = 0;
+        float sum_dydy = 0;
+
+        for (int y = 0; y < patch_size; ++y, data += step) {
+            for (int x = 0; x < patch_size; ++x, ++data) {
+                const int dx =
+                    (data[1] - data[-1]) * 2 +
+                    (data[-stride + 1] - data[-stride - 1]) +
+                    (data[ stride + 1] - data[ stride - 1]);
+                const int dy =
+                    (data[stride] - data[-stride]) * 2 +
+                    (data[stride - 1] - data[-stride - 1]) +
+                    (data[stride + 1] - data[-stride + 1]);
+                sum_dxdx += static_cast<float>(dx * dx);
+                sum_dxdy += static_cast<float>(dx * dy);
+                sum_dydy += static_cast<float>(dy * dy);
+            }
+        }
+
+        sum_dxdx *= scale_inverse_squared;
+        sum_dxdy *= scale_inverse_squared;
+        sum_dydy *= scale_inverse_squared;
+
+        constexpr static const auto abs = [](float value) -> float {
+            if ((value + 0.0f) < 0) {
+                return -value;
+            }
+            return value;
+        };
+
+        const float determinant = static_cast<float>((sum_dxdx * sum_dydy) - (sum_dxdy * sum_dxdy));
+        const float trace = static_cast<float>(sum_dxdx + sum_dydy);
+        return abs(determinant - sensitivity * trace * trace);
+    }
+}
+
+#endif // GTL_VISION_FEATURE_SCORE_HARRIS_SCORE_HPP

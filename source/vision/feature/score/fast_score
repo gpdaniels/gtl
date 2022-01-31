@@ -1,0 +1,115 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_FEATURE_SCORE_FAST_SCORE_HPP
+#define GTL_VISION_FEATURE_SCORE_FAST_SCORE_HPP
+
+// Summary: Implemetation of feature quality score from the paper "Faster and better: A machine learning approach to corner detection". IEEE transactions on pattern analysis and machine intelligence (2008). [wip]
+
+namespace gtl {
+    float fast_score(
+        const unsigned char* __restrict const data,
+        const int stride
+    );
+    float fast_score(
+        const unsigned char* __restrict const data,
+        const int stride
+    ) {
+        constexpr static const int patch_size = 7;
+        constexpr static const int patch_radius = patch_size / 2;
+        constexpr static const int pattern_size = 16;
+        constexpr static const int pattern_size_half = pattern_size / 2;
+
+        // A FAST patch (radius 3):
+        //
+        //  *  *  9  8  7  *  *
+        //  *  A  X  X  X  6  *
+        //  B  X  X  X  X  X  5
+        //  C  X  X  O  X  X  4
+        //  D  X  X  X  X  X  3
+        //  *  E  X  X  X  2  *
+        //  *  *  F  0  1  *  *
+
+        // The pattern loops from 0 to F and back to 7 so that every pixel can be compared against one 8 ahead of it.
+        const int pattern_offset[24] = {
+             patch_radius * stride + 0,  patch_radius * stride + 1, +2 * stride + 2,  patch_radius + stride + 0,
+             patch_radius,               patch_radius - stride + 0, -2 * stride + 2, -patch_radius * stride + 1,
+            -patch_radius * stride + 0, -patch_radius * stride - 1, -2 * stride - 2, -patch_radius - stride + 0,
+            -patch_radius,              -patch_radius + stride + 0, +2 * stride - 2,  patch_radius * stride - 1,
+             patch_radius * stride + 0,  patch_radius * stride + 1, +2 * stride + 2,  patch_radius + stride + 0,
+             patch_radius,               patch_radius - stride + 0, -2 * stride + 2, -patch_radius * stride + 1
+        };
+
+        // Compute the differences between each pattern pixel and the center pixel.
+        int pattern_differences[pattern_size + pattern_size_half];
+        for (unsigned int i = 0; i < pattern_size + pattern_size_half; ++i) {
+            pattern_differences[i] = static_cast<int>(data[0]) - static_cast<int>(data[pattern_offset[i]]);
+        }
+
+        constexpr static const auto min = [](int lhs, int rhs)->int{
+            if (lhs < rhs) {
+                return lhs;
+            }
+            return rhs;
+        };
+
+        constexpr static const auto max = [](int lhs, int rhs)->int{
+            if (lhs > rhs) {
+                return lhs;
+            }
+            return rhs;
+        };
+
+        // Calculate maximal minimal pixel intensity difference.
+        int threshold_min = 0;
+        for (int i = 0; i < pattern_size; i += 2) {
+            // Find the min of a set of 8 pixels around the pattern.
+            int pixel_min = pattern_differences[i + 1];
+            pixel_min = min(pixel_min, pattern_differences[i + 2]);
+            pixel_min = min(pixel_min, pattern_differences[i + 3]);
+            pixel_min = min(pixel_min, pattern_differences[i + 4]);
+            pixel_min = min(pixel_min, pattern_differences[i + 5]);
+            pixel_min = min(pixel_min, pattern_differences[i + 6]);
+            pixel_min = min(pixel_min, pattern_differences[i + 7]);
+            pixel_min = min(pixel_min, pattern_differences[i + 8]);
+            // The set of 8 pixels can be used to calculate the min of a set of 9 by including the prior or former.
+            threshold_min = max(threshold_min, min(pixel_min, pattern_differences[i + 0]));
+            threshold_min = max(threshold_min, min(pixel_min, pattern_differences[i + 9]));
+        }
+
+        // Calculate minimal maximal pixel intensity difference.
+        int threshold_max = -threshold_min;
+        for (int i = 0; i < pattern_size; i += 2) {
+            // Find the max of a set of 8 pixels around the pattern.
+            int pixel_max = pattern_differences[i + 1];
+            pixel_max = max(pixel_max, pattern_differences[i + 2]);
+            pixel_max = max(pixel_max, pattern_differences[i + 3]);
+            pixel_max = max(pixel_max, pattern_differences[i + 4]);
+            pixel_max = max(pixel_max, pattern_differences[i + 5]);
+            pixel_max = max(pixel_max, pattern_differences[i + 6]);
+            pixel_max = max(pixel_max, pattern_differences[i + 7]);
+            pixel_max = max(pixel_max, pattern_differences[i + 8]);
+            // The set of 8 pixels can be used to calculate the max of a set of 9 by including the prior or former.
+            threshold_max = min(threshold_max, max(pixel_max, pattern_differences[i + 0]));
+            threshold_max = min(threshold_max, max(pixel_max, pattern_differences[i + 9]));
+        }
+
+        return static_cast<float>(-threshold_max - 1);
+    }
+}
+
+#endif // GTL_VISION_FEATURE_SCORE_FAST_SCORE_HPP

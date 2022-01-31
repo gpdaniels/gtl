@@ -1,0 +1,107 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_FEATURE_REFINEMENT_QUADRATIC_FITTING_HPP
+#define GTL_VISION_FEATURE_REFINEMENT_QUADRATIC_FITTING_HPP
+
+// Summary: Quadratic fitting search method for the best match between two patches. [wip]
+
+namespace gtl {
+    using score_function_type = float (*)(
+        const unsigned char* __restrict data_lhs,
+        const int stride_lhs,
+        const unsigned char* __restrict data_rhs,
+        const int stride_rhs
+    );
+
+    template<
+        int patch_width = 8,
+        int patch_height = 8,
+        score_function_type score_function,
+        int iterations_x = 2,
+        int iterations_y = 2
+    >
+    float quadratic_fitting_2d(
+        const unsigned char* __restrict data_lhs,
+        const int stride_lhs,
+        const unsigned char* __restrict data_rhs,
+        const int stride_rhs,
+        float& offset_rhs_x,
+        float& offset_rhs_y
+    ) {
+        float best_score = 1e35f;
+        offset_rhs_x = 0.0f;
+        offset_rhs_y = 0.0f;
+
+        float scores[iterations_y + 1 + iterations_y][iterations_x + 1 + iterations_x];
+
+        int best_offset_x = 0;
+        int best_offset_y = 0;
+
+        for (int offset_y = -iterations_y; offset_y <= iterations_y; ++offset_y) {
+            for (int offset_x = -iterations_x; offset_x <= iterations_x; ++offset_x) {
+                // Score the difference between the lhs and the rhs.
+                const float score = score_function(data_lhs, stride_lhs, data_rhs + stride_rhs * offset_y + offset_x, stride_rhs);
+                // Save the best score and offsets.
+                if (score < best_score) {
+                    best_score = score;
+                    best_offset_x = offset_x;
+                    best_offset_y = offset_y;
+                }
+                // Save all scores to be used for curve fitting.
+                scores[iterations_y + offset_y][iterations_x + offset_x] = score;
+            }
+        }
+
+        // Can only fit parabola if the best location is not the corner/edge.
+        if ((best_offset_y == -iterations_y) || (best_offset_y == iterations_y) || (best_offset_x == -iterations_x) || (best_offset_x == iterations_x)) {
+            return best_score;
+        }
+
+        // Parabola fitting.
+        const float score_curve_y[3] = {
+            scores[iterations_y + best_offset_y - 1][iterations_x + best_offset_x],
+            scores[iterations_y + best_offset_y + 0][iterations_x + best_offset_x],
+            scores[iterations_y + best_offset_y + 1][iterations_x + best_offset_x]
+        };
+
+        const float delta_y = (score_curve_y[0] - score_curve_y[2]) / (2.0f * (score_curve_y[0] + score_curve_y[2] - 2.0f * score_curve_y[1]));
+
+        if ((delta_y < -1.0f) || (delta_y > 1.0f)) {
+            return best_score;
+        }
+
+        const float score_curve_x[3] = {
+            scores[iterations_y + best_offset_y][iterations_x + best_offset_x - 1],
+            scores[iterations_y + best_offset_y][iterations_x + best_offset_x + 0],
+            scores[iterations_y + best_offset_y][iterations_x + best_offset_x + 1]
+        };
+
+        const float delta_x = (score_curve_x[0] - score_curve_x[2]) / (2.0f * (score_curve_x[0] + score_curve_x[2] - 2.0f * score_curve_x[1]));
+
+        if ((delta_x < -1.0f) || (delta_x > 1.0f)) {
+            return best_score;
+        }
+
+        offset_rhs_x = static_cast<float>(best_offset_x) + delta_x;
+        offset_rhs_y = static_cast<float>(best_offset_y) + delta_y;
+
+        return best_score;
+    }
+}
+
+#endif // GTL_VISION_FEATURE_REFINEMENT_QUADRATIC_FITTING_HPP

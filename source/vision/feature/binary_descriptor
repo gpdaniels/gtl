@@ -1,0 +1,44 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_FEATURE_BINARY_DESCRIPTOR_HPP
+#define GTL_VISION_FEATURE_BINARY_DESCRIPTOR_HPP
+
+// Summary: Simple structure to hold a buffer of binary data that describes a feature. [wip]
+
+namespace gtl {
+    template <unsigned long long int size_bytes>
+    class binary_descriptor final {
+    public:
+        constexpr static const unsigned long long int size = size_bytes;
+
+    public:
+        unsigned char data[size];
+
+        template <typename index_type>
+        const unsigned char& operator[](index_type index) const {
+            return this->data[index];
+        }
+
+        template <typename index_type>
+        unsigned char& operator[](index_type index) {
+            return this->data[index];
+        }
+    };
+}
+
+#endif // GTL_VISION_FEATURE_BINARY_DESCRIPTOR_HPP

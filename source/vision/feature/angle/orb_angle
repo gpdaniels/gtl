@@ -1,0 +1,71 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_FEATURE_ANGLE_ORB_ANGLE_HPP
+#define GTL_VISION_FEATURE_ANGLE_ORB_ANGLE_HPP
+
+// Summary: Implemetation of feature angle from the paper "ORB: An efficient alternative to SIFT or SURF". IEEE International Conference on Computer Vision (2011). [wip]
+
+#if defined(_MSC_VER)
+    #pragma warning(push, 0)
+#endif
+
+#include <cmath>
+
+#if defined(_MSC_VER)
+    #pragma warning(pop)
+#endif
+
+namespace gtl {
+    float orb_angle(
+        const unsigned char* __restrict const data,
+        const int stride
+    );
+    float orb_angle(
+        const unsigned char* __restrict const data,
+        const int stride
+    ) {
+        // This is the standard set of pattern sample locations for a patch size of 31.
+        constexpr static const int patch_size = 31;
+        constexpr static const int patch_radius = patch_size / 2;
+        constexpr static const int patch_width[patch_radius + 1] = { 15, 15, 15, 15, 14, 14, 14, 13, 13, 12, 11, 10, 9, 8, 6, 3 };
+
+
+        // Sum the pixel weighted centre row.
+        int sum_x = 0;
+        for (int x = -patch_radius; x <= patch_radius; ++x) {
+            sum_x += x * data[x];
+        }
+
+        // Sum the remaining pixel weighted rows in pairs above and below.
+        int sum_y = 0;
+        for (int y = 1; y <= patch_radius; ++y) {
+            int sum = 0;
+            for (int x = -patch_width[y]; x <= patch_width[y]; ++x) {
+                const int above = data[x - y * stride];
+                const int below = data[x + y * stride];
+                sum += (below - above);
+                sum_x += x * (below + above);
+            }
+            sum_y += y * sum;
+        }
+
+        return std::atan2(static_cast<float>(sum_y), static_cast<float>(sum_x));
+    }
+}
+
+#endif // GTL_VISION_FEATURE_ANGLE_ORB_ANGLE_HPP

@@ -1,0 +1,82 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_FEATURE_SCORE_SHI_TOMASI_SCORE_HPP
+#define GTL_VISION_FEATURE_SCORE_SHI_TOMASI_SCORE_HPP
+
+// Summary: Implemetation of feature quality score from the paper "Good Features to Track". IEEE Conference on Computer Vision and Pattern Recognition (1994). [wip]
+
+#if defined(_MSC_VER)
+    #pragma warning(push, 0)
+#endif
+
+#include <cmath>
+
+#if defined(_MSC_VER)
+    #pragma warning(pop)
+#endif
+
+namespace gtl {
+    float shi_tomasi_score(
+        const unsigned char* __restrict data,
+        const int stride
+    );
+    float shi_tomasi_score(
+        const unsigned char* __restrict data,
+        const int stride
+    ) {
+        constexpr static const int patch_size = 7;
+        constexpr static const float scale_inverse = 1.0f / static_cast<float>(patch_size * patch_size);
+        constexpr static const float scale_inverse_squared = scale_inverse * scale_inverse;
+
+        const int step = stride - patch_size;
+
+        float sum_dxdx = 0;
+        float sum_dydy = 0;
+        float sum_dxdy = 0;
+
+        for (int y = 0; y < patch_size; ++y, data += step) {
+            for (int x = 0; x < patch_size; ++x, ++data) {
+                const int dx =
+                    (data[1] - data[-1]) * 2 +
+                    (data[-stride + 1] - data[-stride - 1]) +
+                    (data[ stride + 1] - data[ stride - 1]);
+                const int dy =
+                    (data[stride] - data[-stride]) * 2 +
+                    (data[stride - 1] - data[-stride - 1]) +
+                    (data[stride + 1] - data[-stride + 1]);
+                sum_dxdx += static_cast<float>(dx * dx);
+                sum_dxdy += static_cast<float>(dx * dy);
+                sum_dydy += static_cast<float>(dy * dy);
+            }
+        }
+
+        sum_dxdx *= scale_inverse_squared;
+        sum_dxdy *= scale_inverse_squared;
+        sum_dydy *= scale_inverse_squared;
+
+        const float determinant = static_cast<float>((sum_dxdx * sum_dydy) - (sum_dxdy * sum_dxdy));
+        const float trace = static_cast<float>(sum_dxdx + sum_dydy);
+        const float discriminant = (trace * trace) - (4.0f * determinant);
+        if (discriminant > 0) {
+            return 0.5f * (trace - std::sqrt(discriminant));
+        }
+        return 0;
+    }
+}
+
+#endif // GTL_VISION_FEATURE_SCORE_SHI_TOMASI_SCORE_HPP

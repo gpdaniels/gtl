@@ -1,0 +1,82 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_FEATURE_REFINEMENT_EXHAUSTIVE_HPP
+#define GTL_VISION_FEATURE_REFINEMENT_EXHAUSTIVE_HPP
+
+// Summary: Exhaustive search method for the best match between two patches. [wip]
+
+namespace gtl {
+    using sub_pixel_function_type = void (*)(
+        const unsigned char* __restrict data,
+        const int stride,
+        const float offset_x,
+        const float offset_y,
+        float* __restrict patch
+    );
+
+    using score_function_type = float (*)(
+        const unsigned char* __restrict data_lhs,
+        const int stride_lhs,
+        const float* __restrict data_rhs,
+        const int stride_rhs
+    );
+
+    template<
+        int patch_width = 8,
+        int patch_height = 8,
+        sub_pixel_function_type sub_pixel_function,
+        score_function_type score_function,
+        int iterations_x = 10,
+        int iterations_y = 10
+    >
+    float exhaustive_2d(
+        const unsigned char* __restrict data_lhs,
+        const int stride_lhs,
+        const unsigned char* __restrict data_rhs,
+        const int stride_rhs,
+        float& offset_rhs_x,
+        float& offset_rhs_y
+    ) {
+        float best_score = 1e35f;
+        offset_rhs_x = 0.0f;
+        offset_rhs_y = 0.0f;
+
+        float sub_pixel_patch[patch_width][patch_height];
+
+        for (int y = -iterations_y; y <= iterations_y; ++y) {
+            const float offset_y = static_cast<float>(y) / static_cast<float>(iterations_y);
+            for (int x = -iterations_x; x <= iterations_x; ++x) {
+                const float offset_x = static_cast<float>(x) / static_cast<float>(iterations_x);
+                // Calculate the patch from the rhs when offset.
+                sub_pixel_function(data_rhs, stride_rhs, offset_x, offset_y, &sub_pixel_patch[0][0]);
+                // Score the difference between the lhs and the patch.
+                const float score = score_function(data_lhs, stride_lhs, &sub_pixel_patch[0][0], patch_width);
+                // Save the best score and offsets.
+                if (score < best_score) {
+                    best_score = score;
+                    offset_rhs_x = offset_x;
+                    offset_rhs_y = offset_y;
+                }
+            }
+        }
+
+        return best_score;
+    }
+}
+
+#endif // GTL_VISION_FEATURE_REFINEMENT_EXHAUSTIVE_HPP

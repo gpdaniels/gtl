@@ -1,0 +1,177 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_FEATURE_DISTRIBUTOR_SQUARE_COVERING_HPP
+#define GTL_VISION_FEATURE_DISTRIBUTOR_SQUARE_COVERING_HPP
+
+// Summary: Implemetation of feature distribution from the paper "Efficient adaptive non-maximal suppression algorithms for homogeneous spatial keypoint distribution". Pattern Recognition Letters (2018). [wip]
+
+#if defined(_MSC_VER)
+    #pragma warning(push, 0)
+#endif
+
+#include <cmath>
+
+#if defined(_MSC_VER)
+    #pragma warning(pop)
+#endif
+
+#include <vision/feature/feature>
+
+namespace gtl {
+    int square_covering(
+        const gtl::feature* __restrict const features_detected_sorted,
+        const int features_detected_sorted_size,
+        const int max_width,
+        const int max_height,
+        const int min_features,
+        const int max_features,
+        gtl::feature* __restrict features_distributed
+    );
+    int square_covering(
+        const gtl::feature* __restrict const features_detected_sorted,
+        const int features_detected_sorted_size,
+        const int max_width,
+        const int max_height,
+        const int min_features,
+        const int max_features,
+        gtl::feature* __restrict features_distributed
+    ) {
+        constexpr static const int square_covering_radius = 2;
+
+        // When we want more features than there are, just return all.
+        if (max_features >= features_detected_sorted_size) {
+            for (int i = 0; i < features_detected_sorted_size; ++i) {
+                features_distributed[i] = features_detected_sorted[i];
+            }
+            return features_detected_sorted_size;
+        }
+
+        constexpr static const auto min = [](int lhs, int rhs)->int{
+            if (lhs < rhs) {
+                return lhs;
+            }
+            return rhs;
+        };
+
+        constexpr static const auto max = [](int lhs, int rhs)->int{
+            if (lhs > rhs) {
+                return lhs;
+            }
+            return rhs;
+        };
+
+        // Calculate the initial binary search range.
+        const int delta =
+            4 * max_width +
+            4 * max_features +
+            4 * max_height * max_features +
+            1 * max_height * max_height +
+            1 * max_width * max_width -
+            2 * max_height * max_width +
+            4 * max_height * max_width * max_features;
+        const int delta_sqrt = static_cast<int>(std::sqrt(delta));
+        const int numerator = delta_sqrt - (max_width + max_height + 2 * max_features);
+        const int denominator = 2 * (max_features - 1);
+        int square_size_max = numerator / denominator;
+        int square_size_min = max(1, static_cast<int>(std::sqrt(static_cast<float>(features_detected_sorted_size) / static_cast<float>(2 * max_features))));
+
+        // Two dimensional array to mark grid squares that have been covered.
+        bool* covered_squares = new bool[static_cast<unsigned long int>((max_width + 1) * (max_height + 1))];
+
+        // Array of result feature indexes.
+        int* indexes = new int[static_cast<unsigned long int>(features_detected_sorted_size)];
+        int indexes_size = 0;
+
+        // Variable to cache the previously tested square size.
+        // Checking the next tested square size against this allows up to confim progress is being made in the search.
+        int square_size_previous = 0;
+
+        // Binary search for the optimum square size.
+        while ((indexes_size < min_features) || (indexes_size > max_features)) {
+
+            // Calculate the next square size to test.
+            const int square_size = (square_size_max + square_size_min) / 2;
+            // Check we have a valid width, and that we are not repeating the same again.
+            if (square_size == square_size_previous) {
+                // If it is invalid, just return the keypoints from the previous iteration.
+                break;
+            }
+            // Save previous square size.
+            square_size_previous = square_size;
+
+            // Clear the current indexes array.
+            indexes_size = 0;
+
+            // Initialize a grid.
+            const int grid_width = max_width / square_size;
+            const int grid_height = max_height / square_size;
+            // Reinitialise the covered_squares bool vector to false.
+            for (int i = 0; i < (grid_width + 1) * (grid_height + 1); ++i) {
+                covered_squares[i] = false;
+            }
+
+            // Loop through every feature and cover their, and their surrounding, cells.
+            for (int i = 0; i < features_detected_sorted_size; ++i) {
+                // Get position of the cell that the current feature is located within.
+                const int cell_x = features_detected_sorted[i].x / square_size;
+                const int cell_y = features_detected_sorted[i].y / square_size;
+                // Check if the cell is is uncovered.
+                if (covered_squares[cell_y * grid_width + cell_x] == false) {
+                    // If the cell is not covered add it to the results.
+                    indexes[indexes_size++] = i;
+                    // Check if we have too many features already.
+                    //if (indexes_size > max_features) {
+                    //    break;
+                    //}
+                    // Get the range of squares around the center up to the radius.
+                    const int cell_x_min = max(0, cell_x - square_covering_radius);
+                    const int cell_x_max = min(grid_width, cell_x + square_covering_radius);
+                    const int cell_y_min = max(0, cell_y - square_covering_radius);
+                    const int cell_y_max = min(grid_height, cell_y + square_covering_radius);
+                    // Mark all squares within as covered.
+                    for (int y = cell_y_min; y <= cell_y_max; ++y){
+                        for (int x = cell_x_min; x <= cell_x_max; ++x){
+                            covered_squares[y * grid_width + x] = true;
+                        }
+                    }
+                }
+            }
+
+            // Update binary search boundaries.
+            if (indexes_size < min_features) {
+                square_size_max = square_size;
+            }
+            else if (indexes_size > max_features) {
+                square_size_min = square_size;
+            }
+        }
+
+        // Retrieve final keypoints.
+        for (int i = 0; i < indexes_size; ++i) {
+            features_distributed[i] = features_detected_sorted[indexes[i]];
+        }
+
+        // Free memory.
+        delete[] indexes;
+        delete[] covered_squares;
+
+        return indexes_size;
+    }
+}
+
+#endif // GTL_VISION_FEATURE_DISTRIBUTOR_SQUARE_COVERING_HPP
