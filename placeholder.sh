@@ -42,8 +42,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_${CLASS_NAME_UPPER}_HPP
-#define GTL_${CLASS_NAME_UPPER}_HPP
+#ifndef GTL_${TYPE_NAME_UPPER}_${CLASS_NAME_UPPER}_HPP
+#define GTL_${TYPE_NAME_UPPER}_${CLASS_NAME_UPPER}_HPP
 
 // Summary: [wip]
 
