@@ -76,6 +76,8 @@ The current classes are as described below:
 | [utility](source/utility) | [pimpl](source/utility/pimpl) | Statically sized pointer to implementation wrapper. | :heavy_check_mark: |
 | [utility](source/utility) | [sizeof_bitfield](source/utility/sizeof_bitfield) | Macro to get the size in bits of a bitfield. | :x: |
 | [vision](source/vision) | [api](source/vision/api) | An API for a computer vision system that consumes sensor data to perform localisation and mapping. | :x: |
+| [vision/image_processing](source/vision/image_processing) | [integral](source/vision/image_processing/integral) | Simple integral image processor. | :x: |
+| [vision/image_processing](source/vision/image_processing) | [sub_pixel_patch](source/vision/image_processing/sub_pixel_patch) | Generation of a sub\-pixel patch for match refinement. | :x: |
 | [vision/match_distance](source/vision/match_distance) | [hamming](source/vision/match_distance/hamming) | Simple hamming matching without the popcount instruction. | :x: |
 | [vision/match_distance](source/vision/match_distance) | [ncc](source/vision/match_distance/ncc) | Normalised cross correleation between two patches. | :x: |
 | [vision/match_distance](source/vision/match_distance) | [sad](source/vision/match_distance/sad) | Sum of absolute distances between two patches. | :x: |

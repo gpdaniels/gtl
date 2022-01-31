@@ -1,0 +1,63 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_IMAGE_PROCESSING_SUB_PIXEL_PATCH_HPP
+#define GTL_VISION_IMAGE_PROCESSING_SUB_PIXEL_PATCH_HPP
+
+// Summary: Generation of a sub-pixel patch for match refinement. [wip]
+
+namespace gtl {
+    template <
+        int patch_width = 8,
+        int patch_height = 8,
+        typename type
+    >
+    void sub_pixel_patch(
+        const type* __restrict const data,
+        const int stride,
+        const float offset_x,
+        const float offset_y,
+        float* __restrict patch
+    ) {
+        // Offset the data pointer by the whole
+        const int data_offset_x = static_cast<int>(-offset_x) + (offset_x < 0);
+        const int data_offset_y = static_cast<int>(-offset_y) + (offset_y < 0);
+        const type* __restrict data_patch = data + data_offset_y * stride + data_offset_x;
+
+        const float fractional_x = offset_x + static_cast<float>(data_offset_x);
+        const float fractional_y = offset_y + static_cast<float>(data_offset_y);
+
+        const float interpolation_00 = (1.0f - fractional_x) * (1.0f - fractional_y);
+        const float interpolation_01 = (fractional_x) * (1.0f - fractional_y);
+        const float interpolation_10 = (1.0f - fractional_x) * (fractional_y);
+        const float interpolation_11 = (fractional_x) * (fractional_y);
+
+        for (int y = 0; y < patch_height; ++y) {
+            for (int x = 0; x < patch_width; ++x) {
+                const type pixel_00 = *(data_patch);
+                const type pixel_01 = *(data_patch + 1);
+                const type pixel_10 = *(data_patch + stride);
+                const type pixel_11 = *(data_patch + stride + 1);
+                *patch++ = interpolation_00 * pixel_00 + interpolation_01 * pixel_01 + interpolation_10 * pixel_10 + interpolation_11 * pixel_11;
+                ++data_patch;
+            }
+            data_patch += stride - patch_width;
+        }
+    }
+}
+
+#endif // GTL_VISION_IMAGE_PROCESSING_SUB_PIXEL_PATCH_HPP
