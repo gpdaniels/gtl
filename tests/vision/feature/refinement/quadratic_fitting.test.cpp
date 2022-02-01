@@ -75,7 +75,7 @@ TEST(quadratic_fitting, function, search_2d) {
     float offset_rhs_x;
     float offset_rhs_y;
 
-    const float best_score_nnc = gtl::quadratic_fitting_2d<patch_width, patch_height, &gtl::ncc<patch_width, patch_height>, 5, 5>(
+    const float best_score_nnc = gtl::quadratic_fitting_2d<patch_width, patch_height, &gtl::ncc<patch_width, patch_height>>(
         &data_lhs[start_lhs_y][start_lhs_x],
         data_width,
         &data_rhs[start_rhs_y][start_rhs_x],
@@ -108,7 +108,7 @@ TEST(quadratic_fitting, function, search_2d) {
     REQUIRE(testbench::is_value_approx(best_score_ssd, 0.25f, 1E-1f));
 #endif
 
-    const float best_score_zncc = gtl::quadratic_fitting_2d<patch_width, patch_height, &gtl::zncc<patch_width, patch_height>, 5, 5>(
+    const float best_score_zncc = gtl::quadratic_fitting_2d<patch_width, patch_height, &gtl::zncc<patch_width, patch_height>>(
         &data_lhs[start_lhs_y][start_lhs_x],
         data_width,
         &data_rhs[start_rhs_y][start_rhs_x],
