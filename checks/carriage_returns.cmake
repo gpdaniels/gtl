@@ -41,10 +41,10 @@ FOREACH(PROJECT_FILE ${PROJECT_FILES})
     #MESSAGE(STATUS "Processing '${PROJECT_FILE}'...")
     
     # Get content.
-    FILE(READ "${CMAKE_SOURCE_DIR}/${PROJECT_FILE}" PROJECT_FILE_CONTENT)
+    FILE(READ "${CMAKE_SOURCE_DIR}/${PROJECT_FILE}" PROJECT_FILE_CONTENT HEX)
     
     # Search for carriage return characters.
-    STRING(FIND "${PROJECT_FILE_CONTENT}" "\r" FOUND_CARRIAGE_RETURN_LOCATION)
+    STRING(FIND "${PROJECT_FILE_CONTENT}" "0d" FOUND_CARRIAGE_RETURN_LOCATION)
     
     # If any are found the match location will be something other than -1.
     IF(NOT "${FOUND_CARRIAGE_RETURN_LOCATION}" MATCHES "-1")
