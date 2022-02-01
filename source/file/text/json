@@ -305,17 +305,18 @@ namespace gtl {
             return false;
         }
         bool parse_number(const std::string& data, std::string::size_type& index, value::number_type& number) {
-            std::string number_string = "0123456789-+eE.";
+            std::string valid_number_characters = "0123456789-+eE.";
             std::string::size_type length = 0;
-            while ((index + length < data.size()) && (number_string.find(data[index + length]) < number_string.size())) {
+            while ((index + length < data.size()) && (valid_number_characters.find(data[index + length]) < valid_number_characters.size())) {
                 ++length;
             }
             if (length == 0) {
                 return false;
             }
             char* end_pointer = nullptr;
-            number = std::strtod(data.substr(index, length).c_str(), &end_pointer);
-            if (*end_pointer == 0) {
+            std::string number_string = data.substr(index, length);
+            number = std::strtod(number_string.c_str(), &end_pointer);
+            if ((end_pointer != nullptr) && (*end_pointer == 0)) {
                 index += length;
                 return true;
             }
