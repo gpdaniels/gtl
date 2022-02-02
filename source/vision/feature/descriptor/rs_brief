@@ -65,11 +65,11 @@ namespace gtl {
                 const float angle_cos = angle_table[i / 8][1];
                 for (int j = 0; j < 8; ++j) {
                     // Start x and y.
-                    pattern_builder.data[i + j][0][0] = round(pattern_sample[j][0][0] * angle_cos - pattern_sample[j][0][1] * angle_sin);
-                    pattern_builder.data[i + j][0][1] = round(pattern_sample[j][0][0] * angle_sin + pattern_sample[j][0][1] * angle_cos);
+                    pattern_builder.data[i + j][0][0] = round(static_cast<float>(pattern_sample[j][0][0]) * angle_cos - static_cast<float>(pattern_sample[j][0][1]) * angle_sin);
+                    pattern_builder.data[i + j][0][1] = round(static_cast<float>(pattern_sample[j][0][0]) * angle_sin + static_cast<float>(pattern_sample[j][0][1]) * angle_cos);
                     // End x and y.
-                    pattern_builder.data[i + j][1][0] = round(pattern_sample[j][1][0] * angle_cos - pattern_sample[j][1][1] * angle_sin);
-                    pattern_builder.data[i + j][1][1] = round(pattern_sample[j][1][0] * angle_sin + pattern_sample[j][1][1] * angle_cos);
+                    pattern_builder.data[i + j][1][0] = round(static_cast<float>(pattern_sample[j][1][0]) * angle_cos - static_cast<float>(pattern_sample[j][1][1]) * angle_sin);
+                    pattern_builder.data[i + j][1][1] = round(static_cast<float>(pattern_sample[j][1][0]) * angle_sin + static_cast<float>(pattern_sample[j][1][1]) * angle_cos);
                 }
             }
             return pattern_builder;

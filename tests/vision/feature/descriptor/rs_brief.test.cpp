@@ -114,7 +114,7 @@ TEST(rs_brief, function, gradient) {
 
     gtl::binary_descriptor<32> descriptors_backwards[36];
     for (int angle = 0; angle < 360; angle += 10) {
-        gtl::rs_brief(&data[data_height / 2][data_width / 2], data_width, static_cast<float>(-angle)-360.0, descriptors_backwards[((360 - angle) % 360) / 10]);
+        gtl::rs_brief(&data[data_height / 2][data_width / 2], data_width, static_cast<float>(-angle)-360.0f, descriptors_backwards[((360 - angle) % 360) / 10]);
     }
 
     for (int angle = 0; angle < 360; angle += 10) {

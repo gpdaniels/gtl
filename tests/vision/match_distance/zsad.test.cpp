@@ -132,6 +132,7 @@ void test_set(const unsigned char lhs[data_height][data_width], const unsigned c
         [&lhs, &rhs, &results](auto value_1)->void {
             using type_value1 = decltype(value_1);
             constexpr static const unsigned long long value1 = type_value1::value;
+            static_cast<void>(value1);
             #if defined(_MSC_VER)
                 test<value1, 1>(lhs, rhs, results);
                 test<value1, 2>(lhs, rhs, results);
@@ -193,20 +194,20 @@ TEST(zsad, function, same_lhs_and_rhs) {
 
 TEST(zsad, function, checker) {
     const float results_empty_checker[data_height][data_width] = {
-        {   0, 255*1,  340.000000, 255* 2,  612.000000 },
-        { 255, 255*2,  765.000000, 255* 4, 1275.000000 },
-        { 340, 255*3, 1133.333374, 255* 6, 1904.000000 },
-        { 510, 255*4, 1530.000000, 255* 8, 2550.000000 },
-        { 612, 255*5, 1904.000000, 255*10, 3182.399902 }
+        {   0.0f, 255.0f*1.0f,  340.000000f, 255.0f* 2.0f,  612.000000f },
+        { 255.0f, 255.0f*2.0f,  765.000000f, 255.0f* 4.0f, 1275.000000f },
+        { 340.0f, 255.0f*3.0f, 1133.333374f, 255.0f* 6.0f, 1904.000000f },
+        { 510.0f, 255.0f*4.0f, 1530.000000f, 255.0f* 8.0f, 2550.000000f },
+        { 612.0f, 255.0f*5.0f, 1904.000000f, 255.0f*10.0f, 3182.399902f }
     };
     test_set(data_empty, data_chequer1, results_empty_checker);
     test_set(data_chequer1, data_empty, results_empty_checker);
     const float results_full_checker[data_height][data_width] = {
-        {   0, 255*1,  340.000000, 255* 2,  612.000000 },
-        { 255, 255*2,  765.000000, 255* 4, 1275.000000 },
-        { 340, 255*3, 1133.333374, 255* 6, 1904.000000 },
-        { 510, 255*4, 1530.000000, 255* 8, 2550.000000 },
-        { 612, 255*5, 1904.000000, 255*10, 3182.399902 }
+        {   0.0f, 255.0f*1.0f,  340.000000f, 255.0f* 2.0f,  612.000000f },
+        { 255.0f, 255.0f*2.0f,  765.000000f, 255.0f* 4.0f, 1275.000000f },
+        { 340.0f, 255.0f*3.0f, 1133.333374f, 255.0f* 6.0f, 1904.000000f },
+        { 510.0f, 255.0f*4.0f, 1530.000000f, 255.0f* 8.0f, 2550.000000f },
+        { 612.0f, 255.0f*5.0f, 1904.000000f, 255.0f*10.0f, 3182.399902f }
     };
     test_set(data_full, data_chequer1, results_full_checker);
     test_set(data_chequer1, data_full, results_full_checker);
@@ -218,11 +219,11 @@ TEST(zsad, function, checker) {
     test_set(data_chequer2, data_full, results_empty_checker);
 
     const float results_checker_checker[data_height][data_width] = {
-        {    0, 255* 2,  680.000000, 255* 4, 1224.000000 },
-        {  510, 255* 4, 1530.000000, 255* 8, 2550.000000 },
-        {  680, 255* 6, 2266.666748, 255*12, 3808.000000 },
-        { 1020, 255* 8, 3060.000000, 255*16, 5100.000000 },
-        { 1224, 255*10, 3808.000000, 255*20, 6364.799805 }
+        {    0.0f, 255.0f* 2.0f,  680.000000f, 255.0f* 4.0f, 1224.000000f },
+        {  510.0f, 255.0f* 4.0f, 1530.000000f, 255.0f* 8.0f, 2550.000000f },
+        {  680.0f, 255.0f* 6.0f, 2266.666748f, 255.0f*12.0f, 3808.000000f },
+        { 1020.0f, 255.0f* 8.0f, 3060.000000f, 255.0f*16.0f, 5100.000000f },
+        { 1224.0f, 255.0f*10.0f, 3808.000000f, 255.0f*20.0f, 6364.799805f }
     };
     test_set(data_chequer1, data_chequer2, results_checker_checker);
     test_set(data_chequer2, data_chequer1, results_checker_checker);
@@ -230,30 +231,30 @@ TEST(zsad, function, checker) {
 
 TEST(zsad, function, gradient_1d) {
     const float results_gradient_x[data_height][data_width] = {
-        { 0, 127*1, 255.33333*1, 511*1, 766*1 },
-        { 0, 127*2, 255.33334*2, 511*2, 766*2 },
-        { 0, 127*3, 255.33333*3, 511*3, 766*3 },
-        { 0, 127*4, 255.33333*4, 511*4, 766*4 },
-        { 0, 127*5, 255.33333*5, 511*5, 766*5 }
+        { 0.0f, 127.0f*1.0f, 255.33333f*1.0f, 511.0f*1.0f, 766.0f*1.0f },
+        { 0.0f, 127.0f*2.0f, 255.33334f*2.0f, 511.0f*2.0f, 766.0f*2.0f },
+        { 0.0f, 127.0f*3.0f, 255.33333f*3.0f, 511.0f*3.0f, 766.0f*3.0f },
+        { 0.0f, 127.0f*4.0f, 255.33333f*4.0f, 511.0f*4.0f, 766.0f*4.0f },
+        { 0.0f, 127.0f*5.0f, 255.33333f*5.0f, 511.0f*5.0f, 766.0f*5.0f }
     };
     test_set(data_x_empty, data_x_fill, results_gradient_x);
     const float results_gradient_y[data_height][data_width] = {
-        {           0,           0,           0,           0,           0 },
-        {       127*1,       127*2,       127*3,       127*4,       127*5 },
-        { 255.33333*1, 255.33334*2, 255.33333*3, 255.33333*4, 255.33331*5 },
-        {       511*1,       511*2,       511*3,       511*4,       511*5 },
-        {       766*1,       766*2,       766*3,       766*4,       766*5 }
+        {            0.0f,            0.0f,            0.0f,            0.0f,            0.0f },
+        {     127.0f*1.0f,     127.0f*2.0f,     127.0f*3.0f,     127.0f*4.0f,     127.0f*5.0f },
+        { 255.33333f*1.0f, 255.33334f*2.0f, 255.33333f*3.0f, 255.33333f*4.0f, 255.33331f*5.0f },
+        {     511.0f*1.0f,     511.0f*2.0f,     511.0f*3.0f,     511.0f*4.0f,     511.0f*5.0f },
+        {     766.0f*1.0f,     766.0f*2.0f,     766.0f*3.0f,     766.0f*4.0f,     766.0f*5.0f }
     };
     test_set(data_y_empty, data_y_fill, results_gradient_y);
 }
 
 TEST(zsad, function, gradient_2d) {
     const float results_gradient[data_height][data_width] = {
-        {          0,     63,  127.333328,         255,  383.200012 },
-        {         63,  127.5,         319,      511.25,  831.000122 },
-        { 127.333328,    319,  511.333344,  895.000061, 1279.199951 },
-        {        255, 511.25,  895.000061,     1279.25, 1918.999756 },
-        { 383.200012,    831, 1279.199951, 1918.999634, 2558.000061 }
+        {        0.0f,   63.0f,  127.333328f,       255.0f,  383.200012f },
+        {       63.0f,  127.5f,       319.0f,      511.25f,  831.000122f },
+        { 127.333328f,  319.0f,  511.333344f,  895.000061f, 1279.199951f },
+        {      255.0f, 511.25f,  895.000061f,     1279.25f, 1918.999756f },
+        { 383.200012f,  831.0f, 1279.199951f, 1918.999634f, 2558.000061f }
     };
     test_set(data_xy_empty, data_xy_fill, results_gradient);
     test_set(data_xy_fill, data_xy_empty, results_gradient);

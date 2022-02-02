@@ -137,6 +137,7 @@ void test_set(const unsigned char lhs[data_height][data_width], const unsigned c
         [&lhs, &rhs, &results](auto value_1)->void {
             using type_value1 = decltype(value_1);
             constexpr static const unsigned long long value1 = type_value1::value;
+            static_cast<void>(value1);
             #if defined(_MSC_VER)
                 test<value1, 1>(lhs, rhs, results);
                 test<value1, 2>(lhs, rhs, results);

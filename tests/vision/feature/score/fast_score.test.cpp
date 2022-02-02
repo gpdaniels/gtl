@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <main.tests.hpp>
+#include <comparison.tests.hpp>
 #include <optimise.tests.hpp>
 #include <require.tests.hpp>
 
@@ -54,7 +55,7 @@ TEST(fast_score, function, gradient_with_inverted_square) {
 
     for (unsigned int i = 0; i < features_count; ++i) {
         const float response = gtl::fast_score(&data[features[i].y][features[i].x], data_width);
-        REQUIRE(features[i].response == response);
+        REQUIRE(testbench::is_value_equal(features[i].response, response));
     }
 }
 
@@ -236,6 +237,6 @@ TEST(fast_score, function, random) {
 
     for (unsigned int i = 0; i < features_count; ++i) {
         const float response = gtl::fast_score(&data[features[i].y][features[i].x], data_width);
-        REQUIRE(features[i].response == response);
+        REQUIRE(testbench::is_value_equal(features[i].response, response));
     }
 }

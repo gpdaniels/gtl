@@ -93,10 +93,10 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get
     }
     // TODO: This probably should return a description of the license rather than its contents.
     if (static_cast<std::string::size_type>(*length) < system->license.size() + 1) {
-        *length = system->license.size() + 1;
+        *length = static_cast<int>(system->license.size() + 1);
         return gtl_vision_return_failure_insufficient_data_length;
     }
-    *length = system->license.size() + 1;
+    *length = static_cast<int>(system->license.size() + 1);
     for (char c : system->license) {
         *license++ = c;
     }
@@ -112,7 +112,7 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_set
         return gtl_vision_return_failure_invalid_argument;
     }
     system->license.clear();
-    system->license.reserve(length);
+    system->license.reserve(static_cast<std::string::size_type>(length));
     for (int i = 0; i < length; ++i) {
         system->license.push_back(*license++);
     }
@@ -136,10 +136,10 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get
     // TODO: This probably should return a generated configuration from settings (and/or license information).
 
     if (static_cast<std::string::size_type>(*length) < system->configuration.size() + 1) {
-        *length = system->configuration.size() + 1;
+        *length = static_cast<int>(system->configuration.size() + 1);
         return gtl_vision_return_failure_insufficient_data_length;
     }
-    *length = system->configuration.size() + 1;
+    *length = static_cast<int>(system->configuration.size() + 1);
     for (char c : system->configuration) {
         *configuration++ = c;
     }
@@ -155,7 +155,7 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_set
         return gtl_vision_return_failure_invalid_argument;
     }
     system->configuration.clear();
-    system->configuration.reserve(length);
+    system->configuration.reserve(static_cast<std::string::size_type>(length));
     for (int i = 0; i < length; ++i) {
         system->configuration.push_back(*configuration++);
     }

@@ -43,7 +43,7 @@ TEST(square_covering, function, zero_points) {
     REQUIRE(features == 0, "Number of features distributed %d of %d", features, max_features);
     REQUIRE(features_distributed[0].x == 0);
     REQUIRE(features_distributed[0].y == 0);
-    REQUIRE(features_distributed[0].response == 0);
+    REQUIRE(testbench::is_value_equal(features_distributed[0].response, 0.0f));
     REQUIRE(testbench::is_value_equal(features_distributed[0].angle, 0.0f));
 }
 
@@ -59,7 +59,7 @@ TEST(square_covering, function, one_point) {
     REQUIRE(features == 1, "Number of features distributed %d of %d", features, max_features);
     REQUIRE(features_distributed[0].x == 2);
     REQUIRE(features_distributed[0].y == 3);
-    REQUIRE(features_distributed[0].response == 16);
+    REQUIRE(testbench::is_value_equal(features_distributed[0].response, 16.0f));
     REQUIRE(testbench::is_value_equal(features_distributed[0].angle, 0.7f));
 }
 
@@ -110,7 +110,7 @@ TEST(square_covering, function, square_ten_points) {
             const int distributed_index = distributed_indexes[i][j];
             REQUIRE(features_distributed[j].x == features_detected_sorted[distributed_index].x);
             REQUIRE(features_distributed[j].y == features_detected_sorted[distributed_index].y);
-            REQUIRE(features_distributed[j].response == features_detected_sorted[distributed_index].response);
+            REQUIRE(testbench::is_value_equal(features_distributed[j].response, features_detected_sorted[distributed_index].response));
             REQUIRE(testbench::is_value_equal(features_distributed[j].angle, features_detected_sorted[distributed_index].angle));
         }
     }

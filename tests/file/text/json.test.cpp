@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <main.tests.hpp>
+#include <comparison.tests.hpp>
 #include <optimise.tests.hpp>
 #include <require.tests.hpp>
 
@@ -48,7 +49,7 @@ TEST(json, constructor, empty) {
     testbench::do_not_optimise_away(json);
 }
 
-std::string valid_strings[] = {
+constexpr static const char* valid_strings[] = {
     R"(null)",
     R"(true)",
     R"(false)",
@@ -72,8 +73,8 @@ TEST(json, function, parse) {
 
 TEST(json, function, compose) {
     gtl::json json;
-    for (const std::string& string : valid_strings) {
-        REQUIRE(json.parse(string), "Failed to parse json: %s", string.c_str());
-        REQUIRE(json.compose() == string, "Failed to compose json: parse(%s) != %s", string.c_str(), json.compose().c_str());
+    for (const char* string : valid_strings) {
+        REQUIRE(json.parse(string), "Failed to parse json: %s", string);
+        REQUIRE(testbench::is_string_same(json.compose().c_str(), string), "Failed to compose json: parse(%s) != %s", string, json.compose().c_str());
     }
 }

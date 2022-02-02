@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <main.tests.hpp>
+#include <comparison.tests.hpp>
 #include <optimise.tests.hpp>
 #include <require.tests.hpp>
 
@@ -48,11 +49,11 @@ TEST(shi_tomasi_score, function, gradient_with_inverted_square) {
 
     constexpr static const unsigned int features_count = 4;
     gtl::feature features[features_count] = {
-        { 95, 19, 0.93951416, 0 }, { 35, 47, 0.932922363, 0 }, { 95, 47, 33.5926666, 0 }, { 35, 19, 0, 0 }
+        { 95, 19, 0.93951416f, 0.0f }, { 35, 47, 0.932922363f, 0.0f }, { 95, 47, 33.5926666f, 0.0f }, { 35, 19, 0.0f, 0.0f }
     };
 
     for (unsigned int i = 0; i < features_count; ++i) {
         const float response = gtl::shi_tomasi_score(&data[features[i].y][features[i].x], data_width);
-        REQUIRE(features[i].response == response);
+        REQUIRE(testbench::is_value_equal(features[i].response, response));
     }
 }

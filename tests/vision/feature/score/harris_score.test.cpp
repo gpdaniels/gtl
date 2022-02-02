@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <main.tests.hpp>
+#include <comparison.tests.hpp>
 #include <optimise.tests.hpp>
 #include <require.tests.hpp>
 
@@ -48,11 +49,11 @@ TEST(harris_score, function, gradient_with_inverted_square) {
 
     constexpr static const unsigned int features_count = 4;
     gtl::feature features[features_count] = {
-        { 95, 19, 67668.1641, 0 }, { 35, 47, 18971.5957, 0 }, { 95, 47, 5728.00928, 0 }, { 35, 19, 0, 0 }
+        { 95, 19, 67668.1641f, 0.0f }, { 35, 47, 18971.5957f, 0.0f }, { 95, 47, 5728.00928f, 0.0f }, { 35, 19, 0.0f, 0.0f }
     };
 
     for (unsigned int i = 0; i < features_count; ++i) {
         const float response = gtl::harris_score(&data[features[i].y][features[i].x], data_width);
-        REQUIRE(features[i].response == response);
+        REQUIRE(testbench::is_value_equal(features[i].response, response));
     }
 }

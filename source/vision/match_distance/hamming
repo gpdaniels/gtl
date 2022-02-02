@@ -66,7 +66,7 @@ namespace gtl {
         unsigned short internal_rhs;
         unsigned char* __restrict const data_internal_lhs = reinterpret_cast<unsigned char*>(&internal_lhs);
         unsigned char* __restrict const data_internal_rhs = reinterpret_cast<unsigned char*>(&internal_rhs);
-        for (int i = 0; i < sizeof(unsigned short); ++i) {
+        for (decltype(sizeof(unsigned short)) i = 0; i < sizeof(unsigned short); ++i) {
             data_internal_lhs[i] = data_lhs[i];
             data_internal_rhs[i] = data_rhs[i];
         }
@@ -98,7 +98,7 @@ namespace gtl {
         unsigned int internal_rhs;
         unsigned char* __restrict const data_internal_lhs = reinterpret_cast<unsigned char*>(&internal_lhs);
         unsigned char* __restrict const data_internal_rhs = reinterpret_cast<unsigned char*>(&internal_rhs);
-        for (int i = 0; i < sizeof(unsigned int); ++i) {
+        for (decltype(sizeof(unsigned int)) i = 0; i < sizeof(unsigned int); ++i) {
             data_internal_lhs[i] = data_lhs[i];
             data_internal_rhs[i] = data_rhs[i];
         }
@@ -130,7 +130,7 @@ namespace gtl {
         unsigned long long int internal_rhs;
         unsigned char* __restrict const data_internal_lhs = reinterpret_cast<unsigned char*>(&internal_lhs);
         unsigned char* __restrict const data_internal_rhs = reinterpret_cast<unsigned char*>(&internal_rhs);
-        for (int i = 0; i < sizeof(unsigned long long int); ++i) {
+        for (decltype(sizeof(unsigned long long int)) i = 0; i < sizeof(unsigned long long int); ++i) {
             data_internal_lhs[i] = data_lhs[i];
             data_internal_rhs[i] = data_rhs[i];
         }

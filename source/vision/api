@@ -38,7 +38,11 @@ extern "C" {
 
     #define GTL_API_STATIC_ASSERT(ASSERTION, MESSAGE) static_assert(ASSERTION, MESSAGE);
 #else
-    #define GTL_API_VISIBILITY __attribute__((visibility("default")))
+    #if defined(GTL_API_EXPORT)
+        #define GTL_API_VISIBILITY __attribute__((visibility("default")))
+    #else
+        #define GTL_API_VISIBILITY __attribute__((visibility("default")))
+    #endif
 
     #define GTL_API_CALL
 
