@@ -75,7 +75,7 @@ TEST(exhaustive, function, search_2d) {
     float offset_rhs_x;
     float offset_rhs_y;
 
-    const float best_score_nnc = gtl::exhaustive_2d<patch_width, patch_height, &gtl::sub_pixel_patch<patch_width, patch_height>, &gtl::ncc<patch_width, patch_height>>(
+    const float best_score_nnc = gtl::exhaustive_2d<patch_width, patch_height, &gtl::sub_pixel_patch<patch_width, patch_height, unsigned char>, &gtl::ncc<patch_width, patch_height, unsigned char, float>>(
         &data_lhs[start_lhs_y][start_lhs_x],
         data_width,
         &data_rhs[start_rhs_y][start_rhs_x],
@@ -90,7 +90,7 @@ TEST(exhaustive, function, search_2d) {
     REQUIRE(testbench::is_value_approx(offset_rhs_y, 0.5f, 1E-6f));
     REQUIRE(testbench::is_value_approx(best_score_nnc, -1.0f, 1E-5f));
 
-    const float best_score_ssd = gtl::exhaustive_2d<patch_width, patch_height, &gtl::sub_pixel_patch<patch_width, patch_height>, &gtl::ssd<patch_width, patch_height>>(
+    const float best_score_ssd = gtl::exhaustive_2d<patch_width, patch_height, &gtl::sub_pixel_patch<patch_width, patch_height, unsigned char>, &gtl::ssd<patch_width, patch_height, unsigned char, float>>(
         &data_lhs[start_lhs_y][start_lhs_x],
         data_width,
         &data_rhs[start_rhs_y][start_rhs_x],
@@ -105,7 +105,7 @@ TEST(exhaustive, function, search_2d) {
     REQUIRE(testbench::is_value_approx(offset_rhs_y, 0.5f, 1E-6f));
     REQUIRE(testbench::is_value_approx(best_score_ssd, 0.25f, 1E-6f));
 
-    const float best_score_zncc = gtl::exhaustive_2d<patch_width, patch_height, &gtl::sub_pixel_patch<patch_width, patch_height>, &gtl::zncc<patch_width, patch_height>>(
+    const float best_score_zncc = gtl::exhaustive_2d<patch_width, patch_height, &gtl::sub_pixel_patch<patch_width, patch_height, unsigned char>, &gtl::zncc<patch_width, patch_height, unsigned char, float>>(
         &data_lhs[start_lhs_y][start_lhs_x],
         data_width,
         &data_rhs[start_rhs_y][start_rhs_x],
