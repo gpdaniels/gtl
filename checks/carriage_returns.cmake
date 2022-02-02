@@ -20,38 +20,42 @@ CMAKE_POLICY(VERSION 3.5.1)
 
 MESSAGE(STATUS "Checking for carriage returns...")
 
-# Get parameters passed from the main CMakeLists.txt.
-SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
+IF(CMAKE_HOST_WIN32)
+    MESSAGE(STATUS "Skipping carriage returns check on windows host.")
+ELSE()
+    # Get parameters passed from the main CMakeLists.txt.
+    SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 
-# Find all project files.
-FILE(GLOB_RECURSE PROJECT_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DIR}/*")
+    # Find all project files.
+    FILE(GLOB_RECURSE PROJECT_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DIR}/*")
 
-# Ignore git and build directories.
-LIST(FILTER PROJECT_FILES EXCLUDE REGEX "^.git/.*$")
-LIST(FILTER PROJECT_FILES EXCLUDE REGEX "^[Bb][Uu][Ii][Ll][Dd]/.*$")
-LIST(FILTER PROJECT_FILES EXCLUDE REGEX "^#.*$")
+    # Ignore git and build directories.
+    LIST(FILTER PROJECT_FILES EXCLUDE REGEX "^.git/.*$")
+    LIST(FILTER PROJECT_FILES EXCLUDE REGEX "^[Bb][Uu][Ii][Ll][Dd]/.*$")
+    LIST(FILTER PROJECT_FILES EXCLUDE REGEX "^#.*$")
 
-# Sort list of files.
-LIST(SORT PROJECT_FILES)
+    # Sort list of files.
+    LIST(SORT PROJECT_FILES)
 
-# Check each file for the correct license text.
-FOREACH(PROJECT_FILE ${PROJECT_FILES})
-    
-    # Print progress.
-    #MESSAGE(STATUS "Processing '${PROJECT_FILE}'...")
-    
-    # Get content.
-    FILE(READ "${CMAKE_SOURCE_DIR}/${PROJECT_FILE}" PROJECT_FILE_CONTENT HEX)
-    
-    # Search for carriage return characters.
-    STRING(FIND "${PROJECT_FILE_CONTENT}" "0d" FOUND_CARRIAGE_RETURN_LOCATION)
-    
-    # If any are found the match location will be something other than -1.
-    IF(NOT "${FOUND_CARRIAGE_RETURN_LOCATION}" MATCHES "-1")
-        MESSAGE(FATAL_ERROR "Found a carriage return in file '${PROJECT_FILE}'.")
-    ENDIF()
+    # Check each file for the correct license text.
+    FOREACH(PROJECT_FILE ${PROJECT_FILES})
         
-ENDFOREACH()
+        # Print progress.
+        #MESSAGE(STATUS "Processing '${PROJECT_FILE}'...")
+        
+        # Get content.
+        FILE(READ "${CMAKE_SOURCE_DIR}/${PROJECT_FILE}" PROJECT_FILE_CONTENT HEX)
+        
+        # Search for carriage return characters.
+        STRING(FIND "${PROJECT_FILE_CONTENT}" "0d" FOUND_CARRIAGE_RETURN_LOCATION)
+        
+        # If any are found the match location will be something other than -1.
+        IF(NOT "${FOUND_CARRIAGE_RETURN_LOCATION}" MATCHES "-1")
+            MESSAGE(FATAL_ERROR "Found a carriage return in file '${PROJECT_FILE}'.")
+        ENDIF()
+            
+    ENDFOREACH()
+ENDIF()
 
 MESSAGE(STATUS "Finished carriage return check.")
 
