@@ -45,8 +45,12 @@ namespace gtl {
         const float angle_degrees,
         gtl::binary_descriptor<32>& descriptor
     ) {
+        constexpr static const int pattern_size = 256;
+        constexpr static const auto round = [](float value) -> int {
+            return (value > 0.0f) ? static_cast<int>(value + 0.5f) : static_cast<int>(value - 0.5f);
+        };
         // This is the standard set of pattern sample locations for a patch size of 31.
-        constexpr static const int pattern[256][2][2] = {
+        constexpr static const int pattern[pattern_size][2][2] = {
             {{  8, -3}, {  9,  5}}, {{  4,  2}, {  7,-12}}, {{-11,  9}, { -8,  2}}, {{  7,-12}, { 12,-13}},
             {{  2,-13}, {  2, 12}}, {{  1, -7}, {  1,  6}}, {{ -2,-10}, { -2, -4}}, {{-13,-13}, {-11, -8}},
             {{-13, -3}, {-12, -9}}, {{ 10,  4}, { 11,  9}}, {{-13, -8}, { -8, -9}}, {{-11,  7}, { -9, 12}},
@@ -121,27 +125,27 @@ namespace gtl {
 
         // The descriptor is comprised of 32 sets of 8 comparisons on the input image data.
         // Note: The input data should be a gaussian blurred version of the original image for orb calculation.
-        for (int index = 0; index < 256; index += 8) {
+        for (int index = 0; index < pattern_size; index += 8) {
             const unsigned char pixels_lhs[8] = {
-                data[(std::lrint(pattern[index + 0][0][0] * angle_sin + pattern[index + 0][0][1] * angle_cos)) * stride + (std::lrint(pattern[index + 0][0][0] * angle_cos - pattern[index + 0][0][1] * angle_sin))],
-                data[(std::lrint(pattern[index + 1][0][0] * angle_sin + pattern[index + 1][0][1] * angle_cos)) * stride + (std::lrint(pattern[index + 1][0][0] * angle_cos - pattern[index + 1][0][1] * angle_sin))],
-                data[(std::lrint(pattern[index + 2][0][0] * angle_sin + pattern[index + 2][0][1] * angle_cos)) * stride + (std::lrint(pattern[index + 2][0][0] * angle_cos - pattern[index + 2][0][1] * angle_sin))],
-                data[(std::lrint(pattern[index + 3][0][0] * angle_sin + pattern[index + 3][0][1] * angle_cos)) * stride + (std::lrint(pattern[index + 3][0][0] * angle_cos - pattern[index + 3][0][1] * angle_sin))],
-                data[(std::lrint(pattern[index + 4][0][0] * angle_sin + pattern[index + 4][0][1] * angle_cos)) * stride + (std::lrint(pattern[index + 4][0][0] * angle_cos - pattern[index + 4][0][1] * angle_sin))],
-                data[(std::lrint(pattern[index + 5][0][0] * angle_sin + pattern[index + 5][0][1] * angle_cos)) * stride + (std::lrint(pattern[index + 5][0][0] * angle_cos - pattern[index + 5][0][1] * angle_sin))],
-                data[(std::lrint(pattern[index + 6][0][0] * angle_sin + pattern[index + 6][0][1] * angle_cos)) * stride + (std::lrint(pattern[index + 6][0][0] * angle_cos - pattern[index + 6][0][1] * angle_sin))],
-                data[(std::lrint(pattern[index + 7][0][0] * angle_sin + pattern[index + 7][0][1] * angle_cos)) * stride + (std::lrint(pattern[index + 7][0][0] * angle_cos - pattern[index + 7][0][1] * angle_sin))],
+                data[(round(pattern[index + 0][0][0] * angle_sin + pattern[index + 0][0][1] * angle_cos)) * stride + (round(pattern[index + 0][0][0] * angle_cos - pattern[index + 0][0][1] * angle_sin))],
+                data[(round(pattern[index + 1][0][0] * angle_sin + pattern[index + 1][0][1] * angle_cos)) * stride + (round(pattern[index + 1][0][0] * angle_cos - pattern[index + 1][0][1] * angle_sin))],
+                data[(round(pattern[index + 2][0][0] * angle_sin + pattern[index + 2][0][1] * angle_cos)) * stride + (round(pattern[index + 2][0][0] * angle_cos - pattern[index + 2][0][1] * angle_sin))],
+                data[(round(pattern[index + 3][0][0] * angle_sin + pattern[index + 3][0][1] * angle_cos)) * stride + (round(pattern[index + 3][0][0] * angle_cos - pattern[index + 3][0][1] * angle_sin))],
+                data[(round(pattern[index + 4][0][0] * angle_sin + pattern[index + 4][0][1] * angle_cos)) * stride + (round(pattern[index + 4][0][0] * angle_cos - pattern[index + 4][0][1] * angle_sin))],
+                data[(round(pattern[index + 5][0][0] * angle_sin + pattern[index + 5][0][1] * angle_cos)) * stride + (round(pattern[index + 5][0][0] * angle_cos - pattern[index + 5][0][1] * angle_sin))],
+                data[(round(pattern[index + 6][0][0] * angle_sin + pattern[index + 6][0][1] * angle_cos)) * stride + (round(pattern[index + 6][0][0] * angle_cos - pattern[index + 6][0][1] * angle_sin))],
+                data[(round(pattern[index + 7][0][0] * angle_sin + pattern[index + 7][0][1] * angle_cos)) * stride + (round(pattern[index + 7][0][0] * angle_cos - pattern[index + 7][0][1] * angle_sin))],
             };
 
             const unsigned char pixels_rhs[8] = {
-                data[(std::lrint(pattern[index + 0][1][0] * angle_sin + pattern[index + 0][1][1] * angle_cos)) * stride + (std::lrint(pattern[index + 0][1][0] * angle_cos - pattern[index + 0][1][1] * angle_sin))],
-                data[(std::lrint(pattern[index + 1][1][0] * angle_sin + pattern[index + 1][1][1] * angle_cos)) * stride + (std::lrint(pattern[index + 1][1][0] * angle_cos - pattern[index + 1][1][1] * angle_sin))],
-                data[(std::lrint(pattern[index + 2][1][0] * angle_sin + pattern[index + 2][1][1] * angle_cos)) * stride + (std::lrint(pattern[index + 2][1][0] * angle_cos - pattern[index + 2][1][1] * angle_sin))],
-                data[(std::lrint(pattern[index + 3][1][0] * angle_sin + pattern[index + 3][1][1] * angle_cos)) * stride + (std::lrint(pattern[index + 3][1][0] * angle_cos - pattern[index + 3][1][1] * angle_sin))],
-                data[(std::lrint(pattern[index + 4][1][0] * angle_sin + pattern[index + 4][1][1] * angle_cos)) * stride + (std::lrint(pattern[index + 4][1][0] * angle_cos - pattern[index + 4][1][1] * angle_sin))],
-                data[(std::lrint(pattern[index + 5][1][0] * angle_sin + pattern[index + 5][1][1] * angle_cos)) * stride + (std::lrint(pattern[index + 5][1][0] * angle_cos - pattern[index + 5][1][1] * angle_sin))],
-                data[(std::lrint(pattern[index + 6][1][0] * angle_sin + pattern[index + 6][1][1] * angle_cos)) * stride + (std::lrint(pattern[index + 6][1][0] * angle_cos - pattern[index + 6][1][1] * angle_sin))],
-                data[(std::lrint(pattern[index + 7][1][0] * angle_sin + pattern[index + 7][1][1] * angle_cos)) * stride + (std::lrint(pattern[index + 7][1][0] * angle_cos - pattern[index + 7][1][1] * angle_sin))],
+                data[(round(pattern[index + 0][1][0] * angle_sin + pattern[index + 0][1][1] * angle_cos)) * stride + (round(pattern[index + 0][1][0] * angle_cos - pattern[index + 0][1][1] * angle_sin))],
+                data[(round(pattern[index + 1][1][0] * angle_sin + pattern[index + 1][1][1] * angle_cos)) * stride + (round(pattern[index + 1][1][0] * angle_cos - pattern[index + 1][1][1] * angle_sin))],
+                data[(round(pattern[index + 2][1][0] * angle_sin + pattern[index + 2][1][1] * angle_cos)) * stride + (round(pattern[index + 2][1][0] * angle_cos - pattern[index + 2][1][1] * angle_sin))],
+                data[(round(pattern[index + 3][1][0] * angle_sin + pattern[index + 3][1][1] * angle_cos)) * stride + (round(pattern[index + 3][1][0] * angle_cos - pattern[index + 3][1][1] * angle_sin))],
+                data[(round(pattern[index + 4][1][0] * angle_sin + pattern[index + 4][1][1] * angle_cos)) * stride + (round(pattern[index + 4][1][0] * angle_cos - pattern[index + 4][1][1] * angle_sin))],
+                data[(round(pattern[index + 5][1][0] * angle_sin + pattern[index + 5][1][1] * angle_cos)) * stride + (round(pattern[index + 5][1][0] * angle_cos - pattern[index + 5][1][1] * angle_sin))],
+                data[(round(pattern[index + 6][1][0] * angle_sin + pattern[index + 6][1][1] * angle_cos)) * stride + (round(pattern[index + 6][1][0] * angle_cos - pattern[index + 6][1][1] * angle_sin))],
+                data[(round(pattern[index + 7][1][0] * angle_sin + pattern[index + 7][1][1] * angle_cos)) * stride + (round(pattern[index + 7][1][0] * angle_cos - pattern[index + 7][1][1] * angle_sin))],
             };
 
             descriptor[index / 8] = static_cast<unsigned char>(

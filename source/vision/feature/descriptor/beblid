@@ -46,7 +46,9 @@ namespace gtl {
         gtl::binary_descriptor<32>& descriptor
     ) {
         constexpr static const int pattern_size = 256;
-
+        constexpr static const auto round = [](float value) -> int {
+            return static_cast<int>(value + 0.5f);
+        };
         // A collection six parameters to define an Average Box Weak-Learner for each bit of the description.
         struct sample_point {
             int offset_x;
@@ -138,11 +140,11 @@ namespace gtl {
                 const abwl_parameters* abwl = &pattern[i * 8 + bit];
                 // Rotate the pattern boxes.
                 const sample_point boxes_rotated[2] = { {
-                        static_cast<int>((angle_cos * static_cast<float>(abwl->boxes[0].offset_x) - angle_sin * static_cast<float>(abwl->boxes[0].offset_y)) + 0.5f),
-                        static_cast<int>((angle_sin * static_cast<float>(abwl->boxes[0].offset_x) + angle_cos * static_cast<float>(abwl->boxes[0].offset_y)) + 0.5f)
+                        round(angle_cos * static_cast<float>(abwl->boxes[0].offset_x) - angle_sin * static_cast<float>(abwl->boxes[0].offset_y)),
+                        round(angle_sin * static_cast<float>(abwl->boxes[0].offset_x) + angle_cos * static_cast<float>(abwl->boxes[0].offset_y))
                     }, {
-                        static_cast<int>((angle_cos * static_cast<float>(abwl->boxes[1].offset_x) - angle_sin * static_cast<float>(abwl->boxes[1].offset_y)) + 0.5f),
-                        static_cast<int>((angle_sin * static_cast<float>(abwl->boxes[1].offset_x) + angle_cos * static_cast<float>(abwl->boxes[1].offset_y)) + 0.5f)
+                        round(angle_cos * static_cast<float>(abwl->boxes[1].offset_x) - angle_sin * static_cast<float>(abwl->boxes[1].offset_y)),
+                        round(angle_sin * static_cast<float>(abwl->boxes[1].offset_x) + angle_cos * static_cast<float>(abwl->boxes[1].offset_y))
                     }
                 };
                 // Calculate the box margins by adding and subtracting the box radius from the rotated boxes.

@@ -35,11 +35,12 @@ namespace gtl {
         const float angle_degrees,
         gtl::binary_descriptor<32>& descriptor
     ) {
+        constexpr static const int pattern_size = 256;
         constexpr static const auto round = [](float value) -> int {
             return (value > 0.0f) ? static_cast<int>(value + 0.5f) : static_cast<int>(value - 0.5f);
         };
         struct pattern_type final {
-            int data[256][2][2];
+            int data[pattern_size][2][2];
         };
         constexpr static const pattern_type pattern = [](){
             pattern_type pattern_builder = {};
@@ -60,7 +61,7 @@ namespace gtl {
                 {-0.7071f,  0.7071f }, {-0.5556f,  0.8315f }, {-0.3827f,  0.9239f }, {-0.1951f,  0.9808f }
             };
             // The computed full pattern is found by rotating the initial pattern.
-            for (int i = 0; i < 256; i+=8) {
+            for (int i = 0; i < pattern_size; i+=8) {
                 const float angle_sin = angle_table[i / 8][0];
                 const float angle_cos = angle_table[i / 8][1];
                 for (int j = 0; j < 8; ++j) {
@@ -77,7 +78,7 @@ namespace gtl {
 
         // The descriptor is comprised of 32 sets of 8 comparisons on the input image data.
         gtl::binary_descriptor<32> descriptor_unrotated;
-        for (int index = 0; index < 256; index += 8) {
+        for (int index = 0; index < pattern_size; index += 8) {
             const unsigned char pixels_lhs[8] = {
                 data[pattern.data[index + 0][0][1] * stride + pattern.data[index + 0][0][0]],
                 data[pattern.data[index + 1][0][1] * stride + pattern.data[index + 1][0][0]],

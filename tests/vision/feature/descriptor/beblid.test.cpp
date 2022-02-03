@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #   pragma warning(pop)
 #endif
 
+#include <vision/match_distance/hamming>
 #include <vision/image_processing/integral>
 
 // Assuming scale = 1.0
@@ -98,28 +99,26 @@ TEST(beblid, function, gradient) {
         gtl::beblid(&data_integral[data_height / 2][data_width / 2], data_width, static_cast<float>(angle), descriptors[angle / 10]);
     }
 
-    for (unsigned int angle = 0; angle < 360; angle += 10) {
-        REQUIRE_SILENT(testbench::is_memory_same(&descriptors[angle / 10][0], &descriptors_opencv[angle / 10][0], 32));
+    constexpr static const int acceptance_threshold = 8;
 
-        if (!testbench::is_memory_same(&descriptors[angle / 10][0], &descriptors_opencv[angle / 10][0], 32)) {
-            PRINT("Angle %u:\n", angle);
-            for (unsigned int byte = 0; byte < 32; ++byte) {
-                PRINT("0x%02x, ", descriptors_opencv[angle / 10][byte]);
-            }
-            PRINT("\n");
-            for (unsigned int byte = 0; byte < 32; ++byte) {
-                PRINT("0x%02x, ", descriptors[angle / 10][byte]);
-            }
-            PRINT("\n");
-            for (unsigned int byte = 0; byte < 32; ++byte) {
-                if (descriptors_opencv[angle / 10][byte] != descriptors[angle / 10][byte]) {
-                    PRINT("^^^^^ ");
-                }
-                else {
-                    PRINT("      ");
-                }
-            }
-            PRINT("\n");
+    for (int angle = 0; angle < 360; angle += 10) {
+        const int bits_different = gtl::hamming<256>(&descriptors[angle / 10][0], &descriptors_opencv[angle / 10][0]);
+        if (bits_different != 0) {
+            PRINT("Warning: Angle %d has %d bits different\n", angle, bits_different);
+        }
+        REQUIRE(bits_different < acceptance_threshold);
+    }
+
+    gtl::binary_descriptor<32> descriptors_backwards[36];
+    for (int angle = 0; angle < 360; angle += 10) {
+        gtl::beblid(&data_integral[data_height / 2][data_width / 2], data_width, static_cast<float>(-angle), descriptors_backwards[((360 - angle) % 360) / 10]);
+    }
+
+    for (int angle = 0; angle < 360; angle += 10) {
+        const int bits_different = gtl::hamming<256>(&descriptors_backwards[angle / 10][0], &descriptors_opencv[angle / 10][0]);
+        REQUIRE(bits_different < acceptance_threshold);
+        if (bits_different != 0) {
+            PRINT("Warning: Reverse angle %d has %d bits different\n", angle, bits_different);
         }
     }
 }
@@ -246,28 +245,13 @@ TEST(beblid, function, random) {
         gtl::beblid(&data_integral[data_height / 2][data_width / 2], data_width, static_cast<float>(angle), descriptors[angle / 10]);
     }
 
-    for (unsigned int angle = 0; angle < 360; angle += 10) {
-        REQUIRE_SILENT(testbench::is_memory_same(&descriptors[angle / 10][0], &descriptors_opencv[angle / 10][0], 32));
+    constexpr static const int acceptance_threshold = 8;
 
-        if (!testbench::is_memory_same(&descriptors[angle / 10][0], &descriptors_opencv[angle / 10][0], 32)) {
-            PRINT("Angle %u:\n", angle);
-            for (unsigned int byte = 0; byte < 32; ++byte) {
-                PRINT("0x%02x, ", descriptors_opencv[angle / 10][byte]);
-            }
-            PRINT("\n");
-            for (unsigned int byte = 0; byte < 32; ++byte) {
-                PRINT("0x%02x, ", descriptors[angle / 10][byte]);
-            }
-            PRINT("\n");
-            for (unsigned int byte = 0; byte < 32; ++byte) {
-                if (descriptors_opencv[angle / 10][byte] != descriptors[angle / 10][byte]) {
-                    PRINT("^^^^  ");
-                }
-                else {
-                    PRINT("      ");
-                }
-            }
-            PRINT("\n");
+    for (int angle = 0; angle < 360; angle += 10) {
+        const int bits_different = gtl::hamming<256>(&descriptors[angle / 10][0], &descriptors_opencv[angle / 10][0]);
+        if (bits_different != 0) {
+            PRINT("Warning: Angle %d has %d bits different\n", angle, bits_different);
         }
+        REQUIRE(bits_different < acceptance_threshold);
     }
 }
