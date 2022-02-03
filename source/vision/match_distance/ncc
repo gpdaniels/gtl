@@ -65,7 +65,7 @@ namespace gtl {
         // Check if every pixel in the lhs or the rhs was zero.
         if (std::abs(denominator_squared) < 1e-6f) {
             // If both sides were zero, return -1.0f, if only one side return 0.0f.
-            return -(std::abs(denominator_lhs - denominator_rhs) < 1e-6f);
+            return -static_cast<float>(std::abs(denominator_lhs - denominator_rhs) < 1e-6f);
         }
 
         return -(numerator / std::sqrt(denominator_squared));
