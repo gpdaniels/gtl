@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef GTL_VISION_FEATURE_DESCRIPTOR_ORB_HPP
 #define GTL_VISION_FEATURE_DESCRIPTOR_ORB_HPP
 
-// Summary: [wip]
 // Summary: Implemetation of feature description from the paper "ORB: An efficient alternative to SIFT or SURF". IEEE International Conference on Computer Vision (2011). [wip]
 
 #if defined(_MSC_VER)
