@@ -17,6 +17,7 @@ The current classes are as described below:
 | [algorithm](source/algorithm) | [gaussian_elimination](source/algorithm/gaussian_elimination) | Linear simultaneous equation solver. | :heavy_check_mark: |
 | [algorithm](source/algorithm) | [kmeans](source/algorithm/kmeans) | Implementation of the KMeans clustering algorithm. | :x: |
 | [algorithm](source/algorithm) | [quicksort](source/algorithm/quicksort) | Recursive quicksort algorithm, both full and partial versions. | :heavy_check_mark: |
+| [algorithm](source/algorithm) | [satisfiability](source/algorithm/satisfiability) | A simple SAT solver. | :x: |
 | [algorithm](source/algorithm) | [simulation_loop](source/algorithm/simulation_loop) | Fixed time step helper class for creating game loops. | :heavy_check_mark: |
 | [container](source/container) | [any](source/container/any) | Class that can hold any variable type. | :heavy_check_mark: |
 | [container](source/container) | [array_nd](source/container/array_nd) | N\-dimensional statically or dynamically sized array. | :heavy_check_mark: |

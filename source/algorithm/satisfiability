@@ -1,0 +1,217 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_ALGORITHM_SATISFIABILITY_HPP
+#define GTL_ALGORITHM_SATISFIABILITY_HPP
+
+// Summary: A simple SAT solver. [wip]
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the satisfiability is misused.
+#   define GTL_SATISFIABILITY_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_SATISFIABILITY_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <algorithm>
+#include <vector>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace gtl {
+    class satisfiability final {
+    private:
+        int variables = 0;
+        std::vector<std::vector<int>> clauses;
+        std::vector<int> assignment;
+
+    public:
+        satisfiability(int variable_count = 0)
+            : variables(variable_count) {
+        }
+
+    public:
+        void add_clause(const std::vector<int>& clause) {
+            if (clause.empty()) {
+                return;
+            }
+            GTL_SATISFIABILITY_ASSERT([&]()->bool{
+                for (int variable : clause) {
+                    if ((variable < -this->variables) || (variable == 0) || (variable > this->variables)) {
+                        return false;
+                    }
+                }
+                return true;
+            }(), "All literal ids must be valid.");
+            this->clauses.push_back(clause);
+        }
+
+    private:
+        void remove_new_assignments(std::vector<std::vector<int>>& current_clauses, const std::vector<int>& new_assignments) const {
+            // If a clause contains a variable matching the assignment that entire clause has been satisfied and can be removed.
+            current_clauses.erase(std::remove_if(current_clauses.begin(), current_clauses.end(), [&new_assignments](const std::vector<int>& clause){
+                for (int variable : clause) {
+                    for (int assignment_variable : new_assignments) {
+                        if (variable == assignment_variable) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }), current_clauses.end());
+            // If a clause contains an inverse variable matching the assignment that variable is unsatisfiable and can be removed from the clause.
+            for (std::vector<int>& clause : current_clauses) {
+                clause.erase(std::remove_if(clause.begin(), clause.end(), [&new_assignments](int variable){
+                    for (int assignment_variable : new_assignments) {
+                        if (variable == -assignment_variable) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }), clause.end());
+            }
+        }
+
+        void propagate_unit_clauses(std::vector<std::vector<int>>& current_clauses, std::vector<int>& current_assignment) const {
+            // Find clauses that only have one variable remaining.
+            std::vector<int> pending_assignments;
+            pending_assignments.reserve(current_clauses.size());
+            do {
+                // Remove the unit clauses and save them as pending assignments.
+                pending_assignments.clear();
+                current_clauses.erase(std::remove_if(current_clauses.begin(), current_clauses.end(), [&pending_assignments](const std::vector<int>& clause){
+                    if (clause.size() == 1) {
+                        int variable = clause.front();
+                        for (int assignment_variable : pending_assignments) {
+                            if (variable == -assignment_variable) {
+                                return false;
+                            }
+                        }
+                        pending_assignments.push_back(clause.front());
+                        return true;
+                    }
+                    return false;
+                }), current_clauses.end());
+
+                // Add the pending assignments to the main assignments list.
+                current_assignment.insert(current_assignment.end(), pending_assignments.begin(), pending_assignments.end());
+
+                // Remove all the pending assignments from the clauses.
+                remove_new_assignments(current_clauses, pending_assignments);
+
+                // If any new assignments were added, search the clauses again.
+            } while (!pending_assignments.empty());
+        }
+
+        void assign_pure_literals(std::vector<std::vector<int>>& current_clauses, std::vector<int>& current_assignment) const {
+            // Calculate the frequency of occurance of each variable, we only really care if it appears exactly one time.
+            std::vector<int> variable_frequency(this->variables + 1, 0);
+            for (const std::vector<int>& clause : current_clauses) {
+                for (int variable : clause) {
+                    const int sign = (0 < variable) - (variable < 0);
+                    if (variable_frequency[variable * sign] == 0) {
+                        variable_frequency[variable * sign] = sign;
+                    }
+                    else {
+                        variable_frequency[variable * sign] = 2;
+                    }
+                }
+            }
+
+            // Find variables that appear exactly once.
+            std::vector<int> pending_assignments;
+            pending_assignments.reserve(this->variables);
+            for (int variable = 1; variable <= this->variables; ++variable) {
+                if ((variable_frequency[variable] == 1) || (variable_frequency[variable] == -1)) {
+                    pending_assignments.push_back(variable * variable_frequency[variable]);
+                }
+            }
+
+            // Add the pending assignments to the main assignments list.
+            current_assignment.insert(current_assignment.end(), pending_assignments.begin(), pending_assignments.end());
+
+            // Remove all the pending assignments from the clauses.
+            remove_new_assignments(current_clauses, pending_assignments);
+        }
+
+        bool any_empty_clauses(const std::vector<std::vector<int>>& current_clauses) const {
+            for (const std::vector<int>& clause : current_clauses) {
+                if (clause.empty()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        bool dpll(std::vector<std::vector<int>> current_clauses, std::vector<int> current_assignment = {}, int next_assignment = 0) {
+            // If there has been an assignment, add it to the current assignment list and remove it from clauses.
+            if (next_assignment != 0) {
+                current_assignment.push_back(next_assignment);
+                remove_new_assignments(current_clauses, { next_assignment });
+            }
+
+            // Propagate the requirements of any unit clauses.
+            propagate_unit_clauses(current_clauses, current_assignment);
+
+            // Detect pure literals, and add them to the current assignement.
+            assign_pure_literals(current_clauses, current_assignment);
+
+            // Check if we have satisfied every clause.
+            if (current_clauses.empty()){
+                this->assignment = current_assignment;
+                return true;
+            }
+
+            // Check for empty clauses.
+            for (const std::vector<int>& clause : current_clauses) {
+                if (clause.empty()) {
+                    return false;
+                }
+            }
+
+            // Select the next assignment variable.
+            next_assignment = current_clauses[0].front();
+
+            // Recursively try and solve both the true and false paths for the variable.
+            return (dpll(current_clauses, current_assignment, +next_assignment) || dpll(current_clauses, current_assignment, -next_assignment));
+        }
+
+    public:
+        bool solve() {
+            this->assignment.clear();
+            return dpll(this->clauses);
+        }
+
+        bool get_value(int variable) const {
+            return (std::find(this->assignment.begin(), this->assignment.end(), variable) != this->assignment.end());
+        }
+    };
+}
+
+#undef GTL_SATISFIABILITY_ASSERT
+
+#endif // GTL_ALGORITHM_SATISFIABILITY_HPP
