@@ -1,0 +1,167 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_GAME_SUDOKU_HPP
+#define GTL_GAME_SUDOKU_HPP
+
+// Summary: A sudoku solver for standard 9x9 grids. [wip]
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the sudoku is misused.
+#   define GTL_SUDOKU_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_SUDOKU_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+#include <algorithm/satisfiability>
+
+namespace gtl {
+    class sudoku final {
+    public:
+        class board_type final {
+        public:
+            constexpr static const int height = 9;
+            constexpr static const int width = 9;
+            constexpr static const int values = 9;
+        public:
+            int cells[height][width]{};
+        };
+
+    private:
+        gtl::satisfiability solver;
+
+    private:
+        static int get_variable_id(int x, int y, int value) {
+            GTL_SUDOKU_ASSERT((x >= 0) && (x < board_type::width), "Attempt to get variable id for invalid x");
+            GTL_SUDOKU_ASSERT((y >= 0) && (y < board_type::height), "Attempt to get variable id for invalid y");
+            GTL_SUDOKU_ASSERT((value >= 0) && (value < board_type::values), "Attempt to get variable id for invalid value");
+            return (y * board_type::width * board_type::values) + (x * board_type::values) + (value) + 1;
+        }
+
+    public:
+        sudoku() {
+            // Initialize the this->solver.
+            this->solver = gtl::satisfiability(9 * 9 * 9);
+
+            // One square can only contain one value.
+            for (int y = 0; y < board_type::height; ++y) {
+                for (int x = 0; x < board_type::width; ++x) {
+                    std::vector<int> variables;
+                    for (int value = 0; value < board_type::values; ++value) {
+                        variables.push_back(get_variable_id(x, y, value));
+                    }
+                    // exactly one true.
+                    this->solver.add_clause(variables);
+                    for (size_t i = 0; i < variables.size(); ++i) {
+                        for (size_t j = i + 1; j < variables.size(); ++j) {
+                            this->solver.add_clause(std::vector<int>{-variables[i], -variables[j]});
+                        }
+                    }
+                }
+            }
+
+            // In each y, for each value, forbid two x sharing that value
+            for (int y = 0; y < board_type::height; ++y) {
+                for (int value = 0; value < board_type::values; ++value) {
+                    std::vector<int> variables;
+                    for (int x = 0; x < board_type::width; ++x) {
+                        variables.push_back(get_variable_id(x, y, value));
+                    }
+                    // exactly one true.
+                    this->solver.add_clause(variables);
+                    for (size_t i = 0; i < variables.size(); ++i) {
+                        for (size_t j = i + 1; j < variables.size(); ++j) {
+                            this->solver.add_clause(std::vector<int>{-variables[i], -variables[j]});
+                        }
+                    }
+                }
+            }
+            // In each x, for each value, forbid two height sharing that value
+            for (int x = 0; x < board_type::width; ++x) {
+                for (int value = 0; value < board_type::values; ++value) {
+                    std::vector<int> variables;
+                    for (int y = 0; y < board_type::height; ++y) {
+                        variables.push_back(get_variable_id(x, y, value));
+                    }
+                    // exactly one true.
+                    this->solver.add_clause(variables);
+                    for (size_t i = 0; i < variables.size(); ++i) {
+                        for (size_t j = i + 1; j < variables.size(); ++j) {
+                            this->solver.add_clause(std::vector<int>{-variables[i], -variables[j]});
+                        }
+                    }
+                }
+            }
+            // Now forbid sharing in the 3x3 boxes
+            for (int y = 0; y < 9; y += 3) {
+                for (int x = 0; x < 9; x += 3) {
+                    for (int value = 0; value < board_type::values; ++value) {
+                        std::vector<int> variables;
+                        for (int yy = 0; yy < 3; ++yy) {
+                            for (int xx = 0; xx < 3; ++xx) {
+                                variables.push_back(get_variable_id(y + yy, x + xx, value));
+                            }
+                        }
+                        // exactly one true.
+                        this->solver.add_clause(variables);
+                        for (size_t i = 0; i < variables.size(); ++i) {
+                            for (size_t j = i + 1; j < variables.size(); ++j) {
+                                this->solver.add_clause(std::vector<int>{-variables[i], -variables[j]});
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        void apply_board(const board_type& board) {
+            for (int y = 0; y < board_type::height; ++y) {
+                for (int x = 0; x < board_type::width; ++x) {
+                    if (board.cells[y][x] != 0) {
+                        this->solver.add_clause(std::vector<int>{get_variable_id(x, y, board.cells[y][x] - 1)});
+                    }
+                }
+            }
+        }
+
+        bool solve() {
+            return this->solver.solve();
+        }
+
+        board_type get_solution() const {
+            board_type board;
+            for (int y = 0; y < board_type::height; ++y) {
+                for (int x = 0; x < board_type::width; ++x) {
+                    for (int value = 0; value < board_type::values; ++value) {
+                        if (this->solver.get_value(get_variable_id(x, y, value))) {
+                            board.cells[y][x] = value + 1;
+                        }
+                    }
+                }
+            }
+            return board;
+        }
+    };
+}
+
+#undef GTL_SUDOKU_ASSERT
+
+#endif // GTL_GAME_SUDOKU_HPP
