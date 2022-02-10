@@ -16,7 +16,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "benchmark.tests.hpp"
 #include "abort.tests.hpp"
-#include "optimise.tests.hpp"
 
 #if defined(_MSC_VER)
 #   pragma warning(push, 0)
@@ -42,7 +41,7 @@ namespace testbench {
 
     double benchmark(lambda<void()>&& testFunction, unsigned long long int minimum_iterations, double minimum_runtime) {
         // Warmup
-        do_not_optimise_away(testFunction);
+        testFunction();
 
         // Monitoring variables.
         long long int start_nanoseconds = get_timestamp_nanoseconds();
@@ -52,7 +51,7 @@ namespace testbench {
         // Testing
         while ((iterations < minimum_iterations) || (get_difference_seconds(start_nanoseconds, end_nanoseconds) < minimum_runtime)) {
 
-            do_not_optimise_away(testFunction);
+            testFunction();
 
             ++iterations;
             end_nanoseconds = get_timestamp_nanoseconds();

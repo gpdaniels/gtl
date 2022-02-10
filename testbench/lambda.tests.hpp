@@ -19,9 +19,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define GTL_LAMBDA_TESTS_HPP
 
 namespace testbench {
+    /// @brief  Class declaration to enable expansion of the function_type in template specialisation.
+    /// @tparam function_type The lambda type to store.
     template <typename function_type>
     class lambda;
 
+    /// @brief  An optionally capturing lambda that is stored on the stack.
+    /// @tparam return_type The return type of the lambda to store.
+    /// @tparam argument_types The argument types of the lambda to store.
     template <typename return_type, typename... argument_types>
     class lambda<return_type(argument_types...)> final {
     private:
@@ -56,41 +61,111 @@ namespace testbench {
         };
 
     private:
-        void* function;
-        return_type (*executor)(const void*, argument_types...);
-        void (*destructor)(void*&);
+        /// @brief  The type used to store and modify the passed in lambda function.
+        using erased_type       = void*;
+
+        /// @brief  The type used to store and access the passed in lambda function.
+        using erased_type_const = const void*;
+
+        /// @brief  The type of the copier function created on construction of the internal lambda.
+        using copier_type       = void (*)(erased_type_const, erased_type&);
+
+        /// @brief  The type of the executer function created on construction of the internal lambda.
+        using executor_type     = return_type (*)(erased_type_const, argument_types...);
+
+        /// @brief  The type of the destructor function created on construction of the internal lambda.
+        using destructor_type   = void (*)(erased_type&);
+
+    private:
+        /// @brief  An allocated buffer to store the lambda function.
+        erased_type function;
+
+        /// @brief  A function pointer to a lambda to copy the function.
+        copier_type copier;
+
+        /// @brief  A function pointer to a lambda to execute the function.
+        executor_type executor;
+
+        /// @brief  A function pointer to a lambda to destruct the function.
+        destructor_type destructor;
+
+    private:
+        /// @brief  Swap function to simplify constructors by following the copy-and-swap idiom.
+        /// @param  lhs The left hand side lambda to swap.
+        /// @param  rhs The right hand side lambda to swap.
+        constexpr static void swap(lambda& lhs, lambda& rhs) {
+            erased_type function = lhs.function;
+            lhs.function = rhs.function;
+            rhs.function = function;
+
+            copier_type copier = lhs.copier;
+            lhs.copier = rhs.copier;
+            rhs.copier = copier;
+
+            executor_type executor = lhs.executor;
+            lhs.executor = rhs.executor;
+            rhs.executor = executor;
+
+            destructor_type destructor = lhs.destructor;
+            lhs.destructor = rhs.destructor;
+            rhs.destructor = destructor;
+        }
 
     public:
+        /// @brief  Destructor function to cleanup the internal type erased lambda.
         ~lambda() {
             if (this->destructor) {
                 this->destructor(this->function);
             }
         }
 
+        /// @brief  Empty constructor.
         constexpr lambda()
             : function(nullptr)
+            , copier(nullptr)
             , executor(nullptr)
             , destructor(nullptr) {
         }
 
-    private:
-        constexpr static void swap(lambda& lhs, lambda& rhs) {
-            void* function = lhs.function;
-            lhs.function = rhs.function;
-            rhs.function = function;
+        /// @brief  Copy constructor for const lambda types.
+        /// @param  other The lambda to copy.
+        constexpr lambda(const lambda& other)
+            : function(nullptr)
+            , copier(other.copier)
+            , executor(other.executor)
+            , destructor(other.destructor) {
+            if (this->copier) {
+                this->copier(other.function, this->function);
+            }
+        }
 
-            return_type (*executor)(const void*, argument_types...) = lhs.executor;
-            lhs.executor = rhs.executor;
-            rhs.executor = executor;
+        /// @brief  Move constructor.
+        /// @param  other The lambda to move.
+        constexpr lambda(lambda&& other)
+            : lambda() {
+            lambda::swap(*this, other);
+        }
 
-            void (*destructor)(void*&) = lhs.destructor;
-            lhs.destructor = rhs.destructor;
-            rhs.destructor = destructor;
+        /// @brief  Copy assignment operator for const lambda types.
+        /// @param  other The lambda to copy.
+        constexpr lambda& operator=(const lambda& other) {
+            lambda::swap(*this, lambda(other));
+            return *this;
+        }
+
+        /// @brief  Move assignment operator.
+        /// @param  other The lambda to move.
+        constexpr lambda& operator=(lambda&& other) {
+            lambda::swap(*this, other);
+            return *this;
         }
 
     public:
+        /// @brief  Universal constructor from a template type.
+        /// @tparam function_type The lambda type to store.
+        /// @param  raw_function The lambda to store.
         template <typename function_type>
-        constexpr lambda(const function_type& raw_function)
+        constexpr lambda(function_type&& raw_function)
             : lambda() {
             // First get real function type.
             using real_function_type = decltype(raw_function);
@@ -109,26 +184,42 @@ namespace testbench {
                 }
             }
             else {
-                this->executor = [](const void* function_pointer, argument_types... arguments) -> return_type {
+                this->copier = [](erased_type_const source, erased_type& destination) -> void {
+                    constexpr bool is_move = is_same_type<real_function_type, pure_function_type&&>::value;
+                    if constexpr (is_move) {
+                        destination = new pure_function_type(static_cast<function_type&&>(*static_cast<pure_function_type*>(const_cast<erased_type>(source))));
+                    }
+                    else {
+                        destination = new pure_function_type(static_cast<const function_type&>(*static_cast<pure_function_type*>(const_cast<erased_type>(source))));
+                    }
+                };
+                this->executor = [](erased_type_const function_pointer, argument_types... arguments) -> return_type {
                     return static_cast<const pure_function_type*>(function_pointer)->operator()(arguments...);
                 };
-                this->destructor = [](void*& function_pointer) -> void {
+                this->destructor = [](erased_type& function_pointer) -> void {
                     delete static_cast<pure_function_type*>(function_pointer);
                     function_pointer = nullptr;
                 };
+                this->copier(&raw_function, this->function);
             }
         }
 
-    private:
-        lambda(const lambda& other) = delete;
-        lambda& operator=(const lambda& other) = delete;
-
-    public:
-        constexpr operator bool() const {
-            return (this->function != nullptr);
+        /// @brief  Asignment operator from a null pointer.
+        constexpr lambda& operator=(decltype(nullptr)) {
+            lambda other;
+            lambda::swap(*this, other);
+            return *this;
         }
 
     public:
+        /// @brief  Boolean operator to check if the internal lambda is valid.
+        constexpr operator bool() const {
+            return (this->executor != nullptr);
+        }
+
+    public:
+        /// @brief  The function call operator is overloaded to call the internal lambda function.
+        /// @param  arguments Any required internal lambda function arguments.
         constexpr return_type operator()(argument_types... arguments) const {
             return this->executor(this->function, arguments...);
         }
