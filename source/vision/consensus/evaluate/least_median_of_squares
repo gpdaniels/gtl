@@ -1,0 +1,133 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_CONSENSUS_EVALUATE_LEAST_MEDIAN_OF_SQUARES_HPP
+#define GTL_VISION_CONSENSUS_EVALUATE_LEAST_MEDIAN_OF_SQUARES_HPP
+
+// Summary: Implementation of a model evaulator that calculates the LMedS score. [wip]
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the least_median_of_squares is misused.
+#   define GTL_LEAST_MEDIAN_OF_SQUARES_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_LEAST_MEDIAN_OF_SQUARES_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <cmath>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+#include <vision/consensus/evaluator>
+
+namespace {
+    using size_t = decltype(sizeof(1));
+}
+
+namespace gtl {
+    class least_median_of_squares final
+        : public evaluator {
+    private:
+        const size_t sample_size;
+
+    public:
+        least_median_of_squares(const size_t minimum_sample_size)
+            : sample_size(minimum_sample_size) {
+        }
+
+    public:
+        virtual float evaluate(
+            const float* const __restrict residuals,
+            const size_t residuals_size,
+            size_t* const __restrict inliers,
+            size_t& inliers_size
+        ) override final {
+            GTL_LEAST_MEDIAN_OF_SQUARES_ASSERT(this->sample_size < residuals_size, "");
+            // Square residuals.
+            float* residuals_squared = new float[residuals_size];
+            for (size_t i = 0; i < residuals_size; ++i) {
+                residuals_squared[i] = (residuals[i] * residuals[i]);
+            }
+            // Calculate median.
+            float median_squared = this->nth_element(residuals_squared, residuals_size, residuals_size / 2);
+            if ((residuals_size % 2) != 0) {
+                median_squared = 0.5 * (median_squared + this->nth_element(residuals_squared, residuals_size, (residuals_size / 2) - 1));
+            }
+            // Calculate inliers.
+            const float threshold = 2.5f * 1.4826f * (1.0f + (5.0f / (residuals_size - this->sample_size))) * std::sqrt(median_squared);
+            const float threshold_squared = (threshold * threshold);
+            inliers_size = 0;
+            for (size_t i = 0; i < residuals_size; ++i) {
+                if (residuals_squared[i] < threshold_squared) {
+                    inliers[inliers_size++] = i;
+                }
+            }
+            delete[] residuals_squared;
+            return median_squared;
+        }
+
+    private:
+        float nth_element(float* __restrict data, size_t data_size, size_t n) {
+            size_t maxid = static_cast<size_t>(-1);
+            size_t start = 0;
+            size_t end = data_size - 1;
+            // Separate values into two parts based on a pivot value.
+            // Those that are max are in left and the others in right.
+            while (n != maxid) {
+                if (end == start) {
+                    maxid = end;
+                    break;
+                }
+                // Move all values that are max or equal to the pivot to the left.
+                maxid = start - 1;
+                const float pivot = data[end];
+                for (size_t i = start; i < end; ++i) {
+                    // Compare to the pivot value and make sure we won't swap the same index
+                    if ((data[i] >= pivot) && (++maxid != i)) {
+                        // Swap the value to the left
+                        const float temp = data[maxid];
+                        data[maxid] = data[i];
+                        data[i] = temp;
+                    }
+                }
+                // Swap the pivot value
+                data[end] = data[++maxid];
+                data[maxid] = pivot;
+                if (n < maxid) {
+                    end = maxid - 1;
+                }
+                else {
+                    start = maxid + 1;
+                }
+            }
+            return data[maxid];
+        }
+    };
+}
+
+#undef GTL_LEAST_MEDIAN_OF_SQUARES_ASSERT
+
+#endif // GTL_VISION_CONSENSUS_EVALUATE_LEAST_MEDIAN_OF_SQUARES_HPP

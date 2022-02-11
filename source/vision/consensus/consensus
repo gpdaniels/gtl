@@ -1,0 +1,195 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_CONSENSUS_CONSENSUS_HPP
+#define GTL_VISION_CONSENSUS_CONSENSUS_HPP
+
+// Summary: A generic consensus system composed of templated dataset sampler, model estimator, and model evaluator. [wip]
+
+#include <vision/consensus/sampler>
+#include <vision/consensus/estimator>
+#include <vision/consensus/evaluator>
+
+namespace {
+    using size_t = decltype(sizeof(1));
+}
+
+namespace gtl {
+    template <
+        typename template_sampler_type,
+        typename template_estimator_type,
+        typename template_evaluator_type
+    >
+    class consensus final {
+    private:
+        static_assert(template_sampler_type::sample_size == template_estimator_type::required_sample_size, "Sampler sample size must match estimator sample size.");
+
+    public:
+        constexpr static const size_t sample_size = template_estimator_type::required_sample_size;
+        constexpr static const size_t models_size = template_estimator_type::potential_models_size;
+
+        using sampler_type = template_sampler_type;
+        using estimator_type = template_estimator_type;
+        using evaluator_type = template_evaluator_type;
+
+        using data_type = typename template_estimator_type::data_type;
+        using model_type = typename template_estimator_type::model_type;
+
+    private:
+        sampler_type consensus_sampler;
+        estimator_type consensus_estimator;
+        evaluator_type consensus_evaluator;
+
+        // Criteria for early exit: Reached a minimal model inlier ratio.
+        float criteria_inlier_ratio;
+
+        // Criteria for early exit: The failure probability a given model, e.g. 0.01 means a 1% chance of incorrect result.
+        float criteria_probability_failure;
+
+        // The minimum number of iterations before exiting.
+        size_t criteria_iterations_minimum;
+
+        // The maximum number of iterations before exiting.
+        size_t criteria_iterations_maximum;
+
+    public:
+        ~consensus() = default;
+        consensus(
+            sampler_type& sampler,
+            estimator_type& estimator,
+            evaluator_type& evaluator,
+            const float inlier_ratio,
+            const float probability_failure,
+            const size_t iterations_minimum,
+            const size_t iterations_maximum
+        ) : consensus_sampler(sampler)
+          , consensus_estimator(estimator)
+          , consensus_evaluator(evaluator)
+          , criteria_inlier_ratio(inlier_ratio)
+          , criteria_probability_failure(probability_failure)
+          , criteria_iterations_minimum(iterations_minimum)
+          , criteria_iterations_maximum(constrain_max_iterations(inlier_ratio, probability_failure, iterations_minimum, iterations_maximum)) {
+        }
+
+    private:
+        template <size_t raised_to_value>
+        static float constexpr power(const float value) {
+            if constexpr (raised_to_value == 0) return 1;
+            if constexpr (raised_to_value == 1) return value;
+            const float temp = power<raised_to_value / 2>(value);
+            if constexpr ((raised_to_value % 2) == 0) { return temp * temp; }
+            else { return value * temp * temp; }
+        }
+
+        static size_t constrain_max_iterations(
+            const float inlier_ratio,
+            const float probability_failure,
+            const size_t iterations_minimum,
+            const size_t iterations_maximum) {
+
+            if (inlier_ratio <= 0) {
+                return iterations_maximum;
+            }
+
+            constexpr static const auto log_approx = [](float value) -> float {
+                const float temp = static_cast<float>(static_cast<double>(static_cast<float>(((*reinterpret_cast<int*>(&value)) & 8388607) - 4074142)) * 5.828231702537851E-8);
+                return static_cast<float>(static_cast<double>(static_cast<float>(*reinterpret_cast<int*>(&value))) * 8.262958294867817E-8 - static_cast<double>(temp  * temp ) - 87.96988524938206);
+            };
+
+            constexpr static const auto abs = [](float value) -> float {
+                if ((value + 0.0f) < 0) {
+                    return -value;
+                }
+                return value;
+            };
+
+            const float log_probability = log_approx(1.0f - power<sample_size>(inlier_ratio));
+            if (abs(log_probability) < 1e-5f) {
+                return iterations_maximum;
+            }
+
+            const float log_probability_failure = log_approx(probability_failure);
+            const size_t iterations = log_probability_failure / log_probability;
+
+            // Constrain the iterations estimate by the max and min parameters.
+            if (iterations > iterations_maximum) {
+                return iterations_maximum;
+            }
+            if (iterations < iterations_minimum) {
+                return iterations_minimum;
+            }
+            return iterations;
+        }
+
+    public:
+        bool estimate(const data_type* const __restrict data, size_t data_size, model_type& best_model) {
+            bool solution_found = false;
+            float best_cost = 0;
+            float* residuals = new float[data_size];
+            size_t* inliers = new size_t[data_size];
+            this->consensus_sampler.prepare(data_size);
+            for (size_t i = 0; i < this->criteria_iterations_maximum; ++i) {
+                size_t subset_indices[sample_size];
+                this->consensus_sampler.sample(&subset_indices[0]);
+                data_type subset_data[sample_size];
+                for (size_t j = 0; j < sample_size; ++j) {
+                    subset_data[j] = data[subset_indices[j]];
+                }
+                model_type models[models_size];
+                size_t model_count = this->consensus_estimator.generate_models(subset_data, sample_size, models);
+                for (size_t j = 0; j < model_count; ++j) {
+                    const model_type& model = models[j];
+                    this->consensus_estimator.compute_residuals(data, data_size, model, residuals);
+                    size_t inliers_size = 0;
+                    const float cost = this->consensus_evaluator.evaluate(residuals, data_size, inliers, inliers_size);
+                    if ((cost < best_cost) || (solution_found == false)) {
+                        solution_found = true;
+                        best_model = model;
+                        best_cost = cost;
+                        this->criteria_iterations_maximum = constrain_max_iterations(
+                            static_cast<float>(inliers_size) / static_cast<float>(data_size),
+                            this->criteria_probability_failure,
+                            this->criteria_iterations_minimum,
+                            this->criteria_iterations_maximum
+                        );
+                    }
+                }
+            }
+            delete[] residuals;
+            delete[] inliers;
+            if (!solution_found) {
+                return false;
+            }
+            this->consensus_estimator.refine_model(data, data_size, best_model);
+            return true;
+        }
+
+        bool estimate(const data_type* const __restrict data, size_t data_size, model_type& best_model, size_t* const __restrict inliers, size_t& inliers_size) {
+            bool valid = this->estimate(data, data_size, best_model);
+            if (!valid) {
+                return false;
+            }
+            float* residuals = new float[data_size];
+            this->consensus_estimator.compute_residuals(data, data_size, best_model, residuals);
+            this->consensus_evaluator.evaluate(residuals, data_size, inliers, inliers_size);
+            delete[] residuals;
+            return true;
+        }
+    };
+}
+
+#endif // GTL_VISION_CONSENSUS_CONSENSUS_HPP

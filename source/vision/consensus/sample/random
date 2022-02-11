@@ -1,0 +1,95 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_CONSENSUS_SAMPLE_RANDOM_HPP
+#define GTL_VISION_CONSENSUS_SAMPLE_RANDOM_HPP
+
+// Summary: Implementation of a random dataset sampler. [wip]
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the random is misused.
+#   define GTL_RANDOM_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_RANDOM_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+#include <vision/consensus/sampler>
+
+namespace {
+    using size_t = decltype(sizeof(1));
+}
+
+namespace gtl {
+    template <size_t sample_size>
+    class random final
+        : public sampler<sample_size> {
+    private:
+        class random_pcg final {
+        private:
+            unsigned long long int state = 0x853C49E6748FEA9Bull;
+            unsigned long long int increment = 0xDA3E39CB94B95BDBull;
+        public:
+            unsigned int get_random() {
+                unsigned long long int state_previous = this->state;
+                this->state = state_previous * 0x5851F42D4C957F2Dull + this->increment;
+                unsigned int state_shift_xor_shift = static_cast<unsigned int>(((state_previous >> 18u) ^ state_previous) >> 27u);
+                int rotation = state_previous >> 59u;
+                return (state_shift_xor_shift >> rotation) | (state_shift_xor_shift << ((-rotation) & 31));
+            }
+        };
+
+    private:
+        random_pcg rng;
+        size_t size = 0;
+
+    public:
+        virtual void prepare(
+            const size_t data_size
+        ) override final {
+            GTL_RANDOM_ASSERT(data_size > 0, "Data size must be greater than zero.");
+            GTL_RANDOM_ASSERT(data_size >= sample_size, "Data size must be greater or equal to the sample size.");
+            this->size = data_size;
+        }
+
+    public:
+        virtual void sample(
+            size_t* const __restrict indices
+        ) override final {
+            GTL_RANDOM_ASSERT(this->size > 0, "Data size must be greater than zero.");
+            GTL_RANDOM_ASSERT(this->size >= sample_size, "Data size must be greater or equal to the sample size.");
+            for (size_t i = 0; i < sample_size; ++i) {
+                // Get a random index.
+                indices[i] = static_cast<size_t>(this->rng.get_random()) % this->size;
+                // Ensure it is unique.
+                for (size_t j = 0; j < i; ++j) {
+                    if (indices[j] == indices[i]) {
+                        indices[i] = (indices[i] + 1) % this->size;
+                        j = -1;
+                    }
+                }
+            }
+        }
+    };
+}
+
+#undef GTL_RANDOM_ASSERT
+
+#endif // GTL_VISION_CONSENSUS_SAMPLE_RANDOM_HPP

@@ -1,0 +1,62 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_CONSENSUS_EVALUATE_MAXIMUM_LIKELIHOOD_HPP
+#define GTL_VISION_CONSENSUS_EVALUATE_MAXIMUM_LIKELIHOOD_HPP
+
+// Summary: Implementation of a model evaulator that calculates a capped residual sum. [wip]
+
+#include <vision/consensus/evaluator>
+
+namespace {
+    using size_t = decltype(sizeof(1));
+}
+
+namespace gtl {
+    class maximum_likelihood final
+        : public evaluator {
+    private:
+        const float thresdhold;
+
+    public:
+        maximum_likelihood(const float residual_thresdhold)
+            : thresdhold(residual_thresdhold) {
+        }
+
+    public:
+        virtual float evaluate(
+            const float* const __restrict residuals,
+            const size_t residuals_size,
+            size_t* const __restrict inliers,
+            size_t& inliers_size
+        ) override final {
+            inliers_size = 0;
+            float score = 0.0f;
+            for (size_t i = 0; i < residuals_size; ++i) {
+                if (residuals[i] < this->thresdhold) {
+                    score += residuals[i];
+                    inliers[inliers_size++] = i;
+                } else {
+                    score += this->thresdhold;
+                }
+            }
+            return score;
+        }
+    };
+}
+
+#endif // GTL_VISION_CONSENSUS_EVALUATE_MAXIMUM_LIKELIHOOD_HPP

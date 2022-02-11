@@ -1,0 +1,102 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_CONSENSUS_SAMPLE_EXHAUSTIVE_HPP
+#define GTL_VISION_CONSENSUS_SAMPLE_EXHAUSTIVE_HPP
+
+// Summary: Implementation of an exhaustive dataset sampler. [wip]
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the exhaustive is misused.
+#   define GTL_EXHAUSTIVE_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_EXHAUSTIVE_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+#include <vision/consensus/sampler>
+
+namespace {
+    using size_t = decltype(sizeof(1));
+    using ssize_t = decltype(static_cast<char*>(nullptr) - static_cast<char*>(nullptr));
+}
+
+namespace gtl {
+    template <size_t sample_size>
+    class exhaustive final
+        : public sampler<sample_size> {
+    private:
+        size_t size;
+        size_t indices_next[sample_size];
+
+    public:
+        virtual void prepare(
+            const size_t data_size
+        ) override final {
+            GTL_EXHAUSTIVE_ASSERT(data_size > 0, "Data size must be greater than zero.");
+            GTL_EXHAUSTIVE_ASSERT(data_size >= sample_size, "Data size must be greater or equal to the sample size.");
+            this->size = data_size;
+            for (size_t i = 0; i < sample_size; ++i) {
+                this->indices_next[i] = i;
+            }
+        }
+
+    public:
+        virtual void sample(
+            size_t* const __restrict indices
+        ) override final {
+            GTL_EXHAUSTIVE_ASSERT(this->size > 0, "Data size must be greater than zero.");
+            GTL_EXHAUSTIVE_ASSERT(this->size >= sample_size, "Data size must be greater or equal to the sample size.");
+            for (size_t i = 0; i < sample_size; ++i) {
+                indices[i] = this->indices_next[i];
+            }
+            // Advance next indices.
+            // First increment the least significant index and if it doens't overflow we're done.
+            ++this->indices_next[sample_size - 1];
+            if (this->indices_next[sample_size - 1] < this->size) {
+                return;
+            }
+            // The overflow may cause previous indices to also overflow.
+            ssize_t index_overflow = sample_size - 2;
+            for (; index_overflow >= 0; --index_overflow) {
+                if (this->indices_next[index_overflow] < index_overflow + this->size - sample_size) {
+                    break;
+                }
+            }
+            // The overflow is looping the entire set.
+            if (index_overflow < 0) {
+                // So reset to the beginning.
+                for (size_t i = 0; i < sample_size; ++i) {
+                    this->indices_next[i] = i;
+                }
+                return;
+            }
+            // Found an index that will not overflow, increment it and reset all to the right of it.
+            this->indices_next[index_overflow] += 1;
+            for (size_t i = index_overflow + 1; i < sample_size; ++i) {
+                this->indices_next[i] = this->indices_next[i - 1] + 1;
+            }
+        }
+    };
+}
+
+#undef GTL_EXHAUSTIVE_ASSERT
+
+#endif // GTL_VISION_CONSENSUS_SAMPLE_EXHAUSTIVE_HPP

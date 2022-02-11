@@ -78,6 +78,15 @@ The current classes are as described below:
 | [utility](source/utility) | [pimpl](source/utility/pimpl) | Statically sized pointer to implementation wrapper. | :heavy_check_mark: |
 | [utility](source/utility) | [sizeof_bitfield](source/utility/sizeof_bitfield) | Macro to get the size in bits of a bitfield. | :x: |
 | [vision](source/vision) | [api](source/vision/api) | An API for a computer vision system that consumes sensor data to perform localisation and mapping. | :x: |
+| [vision/consensus](source/vision/consensus) | [consensus](source/vision/consensus/consensus) | A generic consensus system composed of templated dataset sampler, model estimator, and model evaluator. | :x: |
+| [vision/consensus](source/vision/consensus) | [estimator](source/vision/consensus/estimator) | Interface of a consensus model estimator. | :x: |
+| [vision/consensus/evaluate](source/vision/consensus/evaluate) | [inlier_support](source/vision/consensus/evaluate/inlier_support) | Implementation of a model evaulator that counts the number of inliers under a threshold. | :x: |
+| [vision/consensus/evaluate](source/vision/consensus/evaluate) | [least_median_of_squares](source/vision/consensus/evaluate/least_median_of_squares) | Implementation of a model evaulator that calculates the LMedS score. | :x: |
+| [vision/consensus/evaluate](source/vision/consensus/evaluate) | [maximum_likelihood](source/vision/consensus/evaluate/maximum_likelihood) | Implementation of a model evaulator that calculates a capped residual sum. | :x: |
+| [vision/consensus](source/vision/consensus) | [evaluator](source/vision/consensus/evaluator) | Interface of a consensus model evaluator. | :x: |
+| [vision/consensus/sample](source/vision/consensus/sample) | [exhaustive](source/vision/consensus/sample/exhaustive) | Implementation of an exhaustive dataset sampler. | :x: |
+| [vision/consensus/sample](source/vision/consensus/sample) | [random](source/vision/consensus/sample/random) | Implementation of a random dataset sampler. | :x: |
+| [vision/consensus](source/vision/consensus) | [sampler](source/vision/consensus/sampler) | Interface of a consensus dataset sampler. | :x: |
 | [vision/feature/angle](source/vision/feature/angle) | [orb_angle](source/vision/feature/angle/orb_angle) | Implemetation of feature angle from the paper "ORB: An efficient alternative to SIFT or SURF". IEEE International Conference on Computer Vision (2011). | :x: |
 | [vision/feature](source/vision/feature) | [binary_descriptor](source/vision/feature/binary_descriptor) | Simple structure to hold a buffer of binary data that describes a feature. | :x: |
 | [vision/feature/descriptor](source/vision/feature/descriptor) | [beblid](source/vision/feature/descriptor/beblid) | Implemetation of feature description from the paper "BEBLID: Boosted Efficient Binary Local Image Descriptor". Pattern Recognition Letters (2020). | :x: |

@@ -1,0 +1,46 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_VISION_CONSENSUS_SAMPLER_HPP
+#define GTL_VISION_CONSENSUS_SAMPLER_HPP
+
+// Summary: Interface of a consensus dataset sampler. [wip]
+
+namespace {
+    using size_t = decltype(sizeof(1));
+}
+
+namespace gtl {
+    template <size_t template_sample_size>
+    class sampler {
+    private:
+        static_assert(template_sample_size > 0, "Invalid number of samples, must be greater than zero.");
+
+    public:
+        constexpr static const size_t sample_size = template_sample_size;
+
+    protected:
+        virtual ~sampler() = default;
+        sampler() = default;
+
+        virtual void prepare(const size_t data_size) = 0;
+
+        virtual void sample(size_t* const __restrict indices) = 0;
+    };
+}
+
+#endif // GTL_VISION_CONSENSUS_SAMPLER_HPP
