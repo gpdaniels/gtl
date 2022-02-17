@@ -80,7 +80,7 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     IF(NOT COMPLETION_CELL MATCHES "\\[[Ww][Ii][Pp]\\]")
         SET(COMPLETION_CELL ":heavy_check_mark:")
     ELSE()
-        SET(COMPLETION_CELL ":x:")
+        SET(COMPLETION_CELL ":construction:")
     ENDIF()
     
     # Append the table row for this file.
