@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_SEARCH_MAXN_HPP
-#define GTL_SEARCH_MAXN_HPP
+#ifndef GTL_ALGORITHM_MAXN_HPP
+#define GTL_ALGORITHM_MAXN_HPP
 
 // Summary: The MaxN search algorithm to find the best possible moves for an N player game with known information. [wip]
 
@@ -169,4 +169,4 @@ namespace gtl {
     };
 }
 
-#endif // GTL_SEARCH_MAXN_HPP
+#endif // GTL_ALGORITHM_MAXN_HPP

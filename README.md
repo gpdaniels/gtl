@@ -16,6 +16,7 @@ The current classes are as described below:
 | [algorithm](source/algorithm) | [dijkstra](source/algorithm/dijkstra) | Implementation of Dijkstra's algorithm used to solve pathfinding problems. | :x: |
 | [algorithm](source/algorithm) | [gaussian_elimination](source/algorithm/gaussian_elimination) | Linear simultaneous equation solver. | :heavy_check_mark: |
 | [algorithm](source/algorithm) | [kmeans](source/algorithm/kmeans) | Implementation of the KMeans clustering algorithm. | :x: |
+| [algorithm](source/algorithm) | [maxn](source/algorithm/maxn) | The MaxN search algorithm to find the best possible moves for an N player game with known information. | :x: |
 | [algorithm](source/algorithm) | [quicksort](source/algorithm/quicksort) | Recursive quicksort algorithm, both full and partial versions. | :heavy_check_mark: |
 | [algorithm](source/algorithm) | [satisfiability](source/algorithm/satisfiability) | A simple SAT solver. | :x: |
 | [algorithm](source/algorithm) | [simulation_loop](source/algorithm/simulation_loop) | Fixed time step helper class for creating game loops. | :heavy_check_mark: |
@@ -67,7 +68,6 @@ The current classes are as described below:
 | [random](source/random) | [random_romu_64](source/random/random_romu_64) | Romu 64 bit pseudo\-random number generator. | :heavy_check_mark: |
 | [random](source/random) | [random_splitmix](source/random/random_splitmix) | Splitmix pseudo\-random number generator. | :heavy_check_mark: |
 | [random](source/random) | [random_xorshift](source/random/random_xorshift) | Xorshift pseudo\-random number generator. | :heavy_check_mark: |
-| [search](source/search) | [maxn](source/search/maxn) | The MaxN search algorithm to find the best possible moves for an N player game with known information. | :x: |
 | [string](source/string) | [static_string_encrypted](source/string/static_string_encrypted) | Compile\-time string encryption with runtime decryption to obfuscate strings. | :heavy_check_mark: |
 | [type](source/type) | [enum_name](source/type/enum_name) | Compile\-time enum value name as a string with \-fno\-rtti. | :heavy_check_mark: |
 | [type](source/type) | [standard](source/type/standard) | Standard type size sanity. | :x: |
