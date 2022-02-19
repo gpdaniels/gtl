@@ -1,0 +1,107 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_CRYPTO_RC4_HPP
+#define GTL_CRYPTO_RC4_HPP
+
+// Summary: [wip]
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the rc4 is misused.
+#   define GTL_RC4_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_RC4_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+namespace gtl {
+    /// @brief  The rc4 class computes an encrypted output from a sequence of data.
+    class rc4 final {
+    public:
+        /// @brief  The maximum size of the key in bytes.
+        constexpr static const unsigned int key_size_max = 256;
+
+    private:
+        static void process(const unsigned char* data, const unsigned int length_data, const unsigned char* key, const unsigned int length_key, unsigned char* output) {
+            // Prepare the cipher stream.
+            unsigned char cipher_stream[256];
+            {
+                for (unsigned int index_stream = 0; index_stream < 256; ++index_stream) {
+                    cipher_stream[index_stream] = index_stream;
+                }
+            }
+            // Mix in the key to the cipher stream.
+            {
+                unsigned char index_mix = 0;
+                for (unsigned int index_stream = 0; index_stream < 256; ++index_stream) {
+                    // Calculate a swap location.
+                    index_mix = (index_mix + cipher_stream[index_stream] + key[index_stream % length_key]) % 256;
+                    // Swap / Mix elements of the cipher stream.
+                    const unsigned char temp = cipher_stream[index_stream];
+                    cipher_stream[index_stream] = cipher_stream[index_mix];
+                    cipher_stream[index_mix] = temp;
+                }
+            }
+            {
+                // Continue to mix the cipher stream
+                unsigned char index_mix = 0;
+                for (unsigned int index_data = 0; index_data < length_data; ++index_data) {
+                    // Start the stream index at one and as the data could be any length cap the stream index at 255.
+                    const unsigned int index_stream = (index_data + 1) % 256;
+                    // Calculate swap location.
+                    index_mix = (index_mix + cipher_stream[index_stream]) % 256;
+                    // Swap / Mix elements of the cipher stream.
+                    const unsigned char temp = cipher_stream[index_stream];
+                    cipher_stream[index_stream] = cipher_stream[index_mix];
+                    cipher_stream[index_mix] = temp;
+                    // Encrypt / Decrypt character.
+                    output[index_data] = data[index_data] ^ cipher_stream[(cipher_stream[index_stream] + cipher_stream[index_mix]) % 256];
+                }
+            }
+        }
+
+    public:
+        /// @brief  Encrypt a string of data writing the encrypted data into the output string.
+        /// @param  data The string of data to encrypt.
+        /// @param  length The length of the data, must be a multiple of the aes block size.
+        /// @param  key The encryption key, must be at least the length required by the selected aes bitsize.
+        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
+        static void encrypt(const unsigned char* data, const unsigned int length_data, const unsigned char* key, const unsigned int length_key, unsigned char* output) {
+            GTL_RC4_ASSERT(length_key > 0, "The encryption key must be longer than 0 bytes.");
+            GTL_RC4_ASSERT(length_key < 256, "The encryption key must be shorter than 256 bytes.");
+            rc4::process(data, length_data, key, length_key, output);
+        }
+
+        /// @brief  Decrypt a string of data writing the decrypted data into the output string.
+        /// @param  data The string of data to decrypt.
+        /// @param  length_data The length of the data, must be a multiple of the aes block size.
+        /// @param  key The decryption key, must be at least the length required by the selected aes bitsize.
+        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
+        static void decrypt(const unsigned char* data, const unsigned int length_data, const unsigned char* key, const unsigned int length_key, unsigned char* output) {
+            GTL_RC4_ASSERT(length_key > 0, "The decryption key must be longer than 0 bytes.");
+            GTL_RC4_ASSERT(length_key < 256, "The decryption key must be shorter than 256 bytes.");
+            rc4::process(data, length_data, key, length_key, output);
+        }
+    };
+}
+
+#undef GTL_RC4_ASSERT
+
+#endif // GTL_CRYPTO_RC4_HPP

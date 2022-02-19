@@ -30,6 +30,7 @@ The current classes are as described below:
 | [container](source/container) | [static_variant](source/container/static_variant) | A static\_variant class that can contain any one of its listed template types. | :construction: |
 | [container](source/container) | [static_view](source/container/static_view) | A non\-owning static\_view into multi\-dimensional memory. | :construction: |
 | [crypto](source/crypto) | [aes](source/crypto/aes) | An implementation of the aes encryption algorithm for 128, 196, and 256 bits. | :heavy_check_mark: |
+| [crypto](source/crypto) | [rc4](source/crypto/rc4) |  | :construction: |
 | [debug](source/debug) | [access](source/debug/access) | Classes and macros for accessing class private members. | :heavy_check_mark: |
 | [debug](source/debug) | [assert](source/debug/assert) | Macros that define an assert macro that optionally takes a format string and parameters. | :heavy_check_mark: |
 | [debug](source/debug) | [assume](source/debug/assume) | Macro that hints to the compiler when a statement should be assumed true. | :heavy_check_mark: |
