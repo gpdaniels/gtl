@@ -55,7 +55,6 @@ TEST(sha2, constructor, empty) {
     testbench::test_template<sha2_types>(
         [](auto test_value)->void {
             constexpr static const unsigned long long int value = decltype(test_value)::value;
-
             gtl::sha2<value> sha2;
             testbench::do_not_optimise_away(sha2);
         }
@@ -66,7 +65,6 @@ TEST(sha2, function, reset) {
     testbench::test_template<sha2_types>(
         [](auto test_value)->void {
             constexpr static const unsigned long long int value = decltype(test_value)::value;
-
             gtl::sha2<value> sha2;
             sha2.reset();
         }
@@ -77,7 +75,6 @@ TEST(sha2, function, consume) {
     testbench::test_template<sha2_types>(
         [](auto test_value)->void {
             constexpr static const unsigned long long int value = decltype(test_value)::value;
-
             gtl::sha2<value> sha2;
             sha2.consume("", 0);
             sha2.consume("123456781234567812345678123456781234567812345678123456781234567", 63);
@@ -91,7 +88,6 @@ TEST(sha2, function, finalise) {
     testbench::test_template<sha2_types>(
         [](auto test_value)->void {
             constexpr static const unsigned long long int value = decltype(test_value)::value;
-
             gtl::sha2<value> sha2;
             sha2.finalise();
         }
@@ -102,10 +98,21 @@ TEST(sha2, function, get_hash) {
     testbench::test_template<sha2_types>(
         [](auto test_value)->void {
             constexpr static const unsigned long long int value = decltype(test_value)::value;
-
             gtl::sha2<value> sha2;
             sha2.finalise();
             sha2.get_hash();
+        }
+    );
+}
+
+TEST(sha2, function, hash_buffer) {
+    testbench::test_template<sha2_types>(
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
+            gtl::sha2<value>::hash_buffer("", 0);
+            gtl::sha2<value>::hash_buffer("123456781234567812345678123456781234567812345678123456781234567", 63);
+            gtl::sha2<value>::hash_buffer("1234567812345678123456781234567812345678123456781234567812345678", 64);
+            gtl::sha2<value>::hash_buffer("12345678123456781234567812345678123456781234567812345678123456781", 65);
         }
     );
 }

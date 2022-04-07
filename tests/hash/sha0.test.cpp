@@ -71,6 +71,13 @@ TEST(sha0, function, get_hash) {
     sha0.get_hash();
 }
 
+TEST(sha0, function, hash_buffer) {
+    gtl::sha0::hash_buffer("", 0);
+    gtl::sha0::hash_buffer("123456781234567812345678123456781234567812345678123456781234567", 63);
+    gtl::sha0::hash_buffer("1234567812345678123456781234567812345678123456781234567812345678", 64);
+    gtl::sha0::hash_buffer("12345678123456781234567812345678123456781234567812345678123456781", 65);
+}
+
 TEST(sha0, evaluate, hash_as_integer) {
 
     constexpr static const unsigned int data_count = 7;

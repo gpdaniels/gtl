@@ -85,7 +85,6 @@ TEST(crc, function, finalise) {
     testbench::test_template<crc_types>(
         [](auto test_value)->void {
             constexpr static const unsigned long long int value = decltype(test_value)::value;
-
             gtl::crc<value> crc;
             crc.finalise();
         }
@@ -99,6 +98,18 @@ TEST(crc, function, get_hash) {
             gtl::crc<value> crc;
             crc.finalise();
             crc.get_hash();
+        }
+    );
+}
+
+TEST(crc, function, hash_buffer) {
+    testbench::test_template<crc_types>(
+        [](auto test_value)->void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
+            gtl::crc<value>::hash_buffer("", 0);
+            gtl::crc<value>::hash_buffer("123456781234567812345678123456781234567812345678123456781234567", 63);
+            gtl::crc<value>::hash_buffer("1234567812345678123456781234567812345678123456781234567812345678", 64);
+            gtl::crc<value>::hash_buffer("12345678123456781234567812345678123456781234567812345678123456781", 65);
         }
     );
 }

@@ -250,6 +250,18 @@ namespace gtl {
             output.hash[md5::hash_size * 2] = 0;
             return output;
         }
+        
+    public:
+        /// @brief  Hash a buffer of data.
+        /// @param  data Input data pointer.
+        /// @param  length Valid length of the input data pointer.
+        static hash_type hash_buffer(const char* data, const unsigned long long int length) {
+            md5 hash_function;
+            hash_function.reset();
+            hash_function.consume(data, length);
+            hash_function.finalise();
+            return hash_function.get_hash();
+        }
     };
 }
 
