@@ -65,10 +65,11 @@ namespace sizeof_bitset {
             []() constexpr -> unsigned int {                                            \
                 structure empty{};                                                      \
                 empty.member = static_cast<decltype(structure{}.member)>(0);            \
+                _Pragma("warning(push)");                                               \
                 _Pragma("warning(disable:4700)");                                       \
                 structure full{};                                                       \
                 full.member = static_cast<decltype(structure{}.member)>(~0);            \
-                _Pragma("warning(default:4700)");                                       \
+                _Pragma("warning(pop)");                                                \
                 unsigned int size = 0;                                                  \
                 while (empty.member != full.member) {                                   \
                     empty.member = static_cast<decltype(structure{}.member)>(           \
