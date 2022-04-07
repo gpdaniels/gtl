@@ -20,8 +20,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Summary: The MaxN search algorithm to find the best possible moves for an N player game with known information. [wip]
 
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
 #include <array>
 #include <vector>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 namespace gtl {
     template <typename state_type>
