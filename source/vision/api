@@ -58,21 +58,20 @@ GTL_API_STATIC_ASSERT(sizeof(short int) == 2,       "For ABI compatibility the s
 GTL_API_STATIC_ASSERT(sizeof(int) == 4,             "For ABI compatibility the sizeof(int) must be 4 bytes.")
 GTL_API_STATIC_ASSERT(sizeof(long long int) == 8,   "For ABI compatibility the sizeof(long long int) must be 8 bytes.")
 
-typedef enum gtl_vision_return_enum {
-    gtl_vision_return_success                          = 0x00000000,
-    gtl_vision_return_failure_insufficient_data_length = 0x00000001,
-    gtl_vision_return_failure_invalid_system           = 0x00000010,
-    gtl_vision_return_failure_invalid_argument         = 0x00000100,
-    gtl_vision_return_failure_invalid_license          = 0x00001000,
-    gtl_vision_return_failure_invalid_configuration    = 0x00010000,
-    gtl_vision_return_failure_invalid_rig_sensor       = 0x00100000,
-    gtl_vision_return_failure_invalid_sensor_data      = 0x01000000,
-    gtl_vision_return_invalid                          = 0xFFFFFFFF
-} gtl_vision_return_enum;
-
-GTL_API_STATIC_ASSERT(sizeof(gtl_vision_return_enum) == 4, "For ABI compatibility the sizeof(gtl_vision_return_enum) must be 4 bytes.")
-
 typedef struct gtl_vision_system gtl_vision_system;
+
+typedef enum gtl_vision_return_enum {
+    gtl_vision_return_success                           = 0x00000000,
+    gtl_vision_return_failure_insufficient_data_length  = 0x00000001,
+    gtl_vision_return_failure_invalid_system            = 0x00000010,
+    gtl_vision_return_failure_invalid_argument          = 0x00000100,
+    gtl_vision_return_failure_invalid_license           = 0x00001000,
+    gtl_vision_return_failure_invalid_configuration     = 0x00010000,
+    gtl_vision_return_failure_invalid_rig_sensor        = 0x00100000,
+    gtl_vision_return_failure_invalid_sensor_data       = 0x01000000,
+    gtl_vision_return_invalid                           = 0xFFFFFFFF
+} gtl_vision_return_enum;
+GTL_API_STATIC_ASSERT(sizeof(gtl_vision_return_enum) == 4, "For ABI compatibility the sizeof(gtl_vision_return_enum) must be 4 bytes.")
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
@@ -99,42 +98,49 @@ GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL gtl_vision_get_license(
     gtl_vision_system* system,
-    char* license, int* length
+    char* license,
+    int* length
 );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL gtl_vision_set_license(
     gtl_vision_system* system,
-    const char* license, int length
+    const char* license,
+    int length
 );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL gtl_vision_get_configuration(
     gtl_vision_system* system,
-    char* configuration, int* length
+    char* configuration,
+    int* length
 );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL gtl_vision_set_configuration(
     gtl_vision_system* system,
-    const char* configuration, int length);
+    const char* configuration,
+    int length
+);
 
 typedef enum gtl_vision_sensor_emum {
-    gtl_vision_sensor_map                               = 0x00000000,
-    gtl_vision_sensor_remote                            = 0x00000010,
-    gtl_vision_sensor_local_scale                       = 0x00000100,
-    gtl_vision_sensor_local_position                    = 0x00001000,
-    gtl_vision_sensor_local_position_velocity           = 0x00002000,
-    gtl_vision_sensor_local_position_acceleration       = 0x00004000,
-    gtl_vision_sensor_local_orientation                 = 0x00010000,
-    gtl_vision_sensor_local_orientation_velocity        = 0x00020000,
-    gtl_vision_sensor_local_orientation_acceleration    = 0x00040000,
+    gtl_vision_sensor_empty                             = 0x00000000,
+    gtl_vision_sensor_map_chunk                         = 0x00000001,
+    gtl_vision_sensor_local_scale                       = 0x00000002,
+    gtl_vision_sensor_local_position                    = 0x00000004,
+    gtl_vision_sensor_local_velocity                    = 0x00000008,
+    gtl_vision_sensor_local_acceleration                = 0x00000010,
+    gtl_vision_sensor_local_orientation                 = 0x00000020,
+    gtl_vision_sensor_local_angular_velocity            = 0x00000040,
+    gtl_vision_sensor_local_angular_acceleration        = 0x00000080,
+    gtl_vision_sensor_remote_range                      = 0x00000100,
+    gtl_vision_sensor_remote_bearing                    = 0x00000200,
+    gtl_vision_sensor_remote_texture                    = 0x00000400,
     gtl_vision_sensor_invalid                           = 0xFFFFFFFF
 } gtl_vision_sensor_emum;
-
 GTL_API_STATIC_ASSERT(sizeof(gtl_vision_sensor_emum) == 4, "For ABI compatibility the sizeof(gtl_vision_sensor_emum) must be 4 bytes.")
 
 typedef struct gtl_vision_sensor_rig_struct {

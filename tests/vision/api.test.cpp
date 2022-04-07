@@ -85,7 +85,7 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get
     if (!system) {
         return gtl_vision_return_failure_invalid_system;
     }
-    if ((!license) || (!length)) {
+    if ((!length) || ((!license) && (*length != 0))) {
         return gtl_vision_return_failure_invalid_argument;
     }
     if (*length < 0) {
@@ -126,7 +126,7 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get
     if (!system) {
         return gtl_vision_return_failure_invalid_system;
     }
-    if ((!configuration) || (!length)) {
+    if ((!length) || ((!configuration) && (*length != 0))) {
         return gtl_vision_return_failure_invalid_argument;
     }
     if (*length < 0) {
@@ -284,8 +284,12 @@ TEST(api, function, get_set_license) {
     REQUIRE(gtl_vision_get_license(nullptr, &license[0], &length) == gtl_vision_return_failure_invalid_system);
     REQUIRE(gtl_vision_get_license(system, nullptr, nullptr) == gtl_vision_return_failure_invalid_argument);
     REQUIRE(gtl_vision_get_license(system, &license[0], nullptr) == gtl_vision_return_failure_invalid_argument);
-    REQUIRE(gtl_vision_get_license(system, nullptr, &length) == gtl_vision_return_failure_invalid_argument);
 
+    length = 0;
+    REQUIRE(gtl_vision_get_license(system, nullptr, &length) == gtl_vision_return_failure_insufficient_data_length);
+    REQUIRE(length == 11);
+
+    length = 0;
     REQUIRE(gtl_vision_get_license(system, &license[0], &length) == gtl_vision_return_failure_insufficient_data_length);
     REQUIRE(length == 11);
 
@@ -338,8 +342,12 @@ TEST(api, function, get_set_configuration) {
     REQUIRE(gtl_vision_get_configuration(nullptr, &configuration[0], &length) == gtl_vision_return_failure_invalid_system);
     REQUIRE(gtl_vision_get_configuration(system, nullptr, nullptr) == gtl_vision_return_failure_invalid_argument);
     REQUIRE(gtl_vision_get_configuration(system, &configuration[0], nullptr) == gtl_vision_return_failure_invalid_argument);
-    REQUIRE(gtl_vision_get_configuration(system, nullptr, &length) == gtl_vision_return_failure_invalid_argument);
 
+    length = 0;
+    REQUIRE(gtl_vision_get_configuration(system, nullptr, &length) == gtl_vision_return_failure_insufficient_data_length);
+    REQUIRE(length == 3);
+
+    length = 0;
     REQUIRE(gtl_vision_get_configuration(system, &configuration[0], &length) == gtl_vision_return_failure_insufficient_data_length);
     REQUIRE(length == 3);
 
