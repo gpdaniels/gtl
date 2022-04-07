@@ -98,7 +98,6 @@ namespace gtl {
             }
             moves.erase(moves.begin() + static_cast<long long int>(moves.size() - bad_moves), moves.end());
             // Select one of the best moves.
-            // TODO: This the oppertunity to add some variation to the perfect player.
             state_type best_move = moves[0];
             // Apply the best move.
             game = best_move;
