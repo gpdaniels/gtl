@@ -327,7 +327,7 @@ namespace gtl {
                 return false;
             }
             std::string::size_type length = 1;
-            while ((index + length < data.size()) && (data[index + length - 1] != '\\') && (data[index + length] != '"')) {
+            while ((index + length < data.size()) && ((data[index + length] != '"') || ((data[index + length - 1] == '\\') && (data[index + length] == '"')))) {
                 if (data[index + length] == '\b') {
                     return false;
                 }
