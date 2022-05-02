@@ -149,30 +149,30 @@ namespace gtl {
             value(const array_type& value)  : type(contains::array_type)  { new (&array_value) array_type(value); }
         private:
             template <typename contains_type>
-            constexpr static contains convert_to_contains_enum();
+            class convert_to_contains_enum;
         public:
             template <typename is_type>
             bool is() const {
-                return (this->type == convert_to_contains_enum<is_type>());
+                return (this->type == convert_to_contains_enum<is_type>::type);
             }
         public:
             template <typename as_type>
             const as_type& as() const {
-                if constexpr (convert_to_contains_enum<as_type>() == contains::null_type) { return null_value; }
-                else if constexpr (convert_to_contains_enum<as_type>() == contains::bool_type) { return bool_value; }
-                else if constexpr (convert_to_contains_enum<as_type>() == contains::number_type) { return number_value; }
-                else if constexpr (convert_to_contains_enum<as_type>() == contains::string_type) { return string_value; }
-                else if constexpr (convert_to_contains_enum<as_type>() == contains::object_type) { return object_value; }
-                else if constexpr (convert_to_contains_enum<as_type>() == contains::array_type) { return array_value; }
+                if constexpr (convert_to_contains_enum<as_type>::type == contains::null_type) { return null_value; }
+                else if constexpr (convert_to_contains_enum<as_type>::type == contains::bool_type) { return bool_value; }
+                else if constexpr (convert_to_contains_enum<as_type>::type == contains::number_type) { return number_value; }
+                else if constexpr (convert_to_contains_enum<as_type>::type == contains::string_type) { return string_value; }
+                else if constexpr (convert_to_contains_enum<as_type>::type == contains::object_type) { return object_value; }
+                else if constexpr (convert_to_contains_enum<as_type>::type == contains::array_type) { return array_value; }
             }
             template <typename as_type>
             as_type& as() {
-                if constexpr (convert_to_contains_enum<as_type>() == contains::null_type) { return null_value; }
-                else if constexpr (convert_to_contains_enum<as_type>() == contains::bool_type) { return bool_value; }
-                else if constexpr (convert_to_contains_enum<as_type>() == contains::number_type) { return number_value; }
-                else if constexpr (convert_to_contains_enum<as_type>() == contains::string_type) { return string_value; }
-                else if constexpr (convert_to_contains_enum<as_type>() == contains::object_type) { return object_value; }
-                else if constexpr (convert_to_contains_enum<as_type>() == contains::array_type) { return array_value; }
+                if constexpr (convert_to_contains_enum<as_type>::type == contains::null_type) { return null_value; }
+                else if constexpr (convert_to_contains_enum<as_type>::type == contains::bool_type) { return bool_value; }
+                else if constexpr (convert_to_contains_enum<as_type>::type == contains::number_type) { return number_value; }
+                else if constexpr (convert_to_contains_enum<as_type>::type == contains::string_type) { return string_value; }
+                else if constexpr (convert_to_contains_enum<as_type>::type == contains::object_type) { return object_value; }
+                else if constexpr (convert_to_contains_enum<as_type>::type == contains::array_type) { return array_value; }
             }
         public:
             string_type to_string() const {
@@ -439,12 +439,14 @@ namespace gtl {
         }
     };
 
-    template <> json::value::contains json::value::convert_to_contains_enum<json::value::null_type>() { return value::contains::null_type; }
-    template <> json::value::contains json::value::convert_to_contains_enum<json::value::bool_type>() { return value::contains::bool_type; }
-    template <> json::value::contains json::value::convert_to_contains_enum<json::value::number_type>() { return value::contains::number_type; }
-    template <> json::value::contains json::value::convert_to_contains_enum<json::value::string_type>() { return value::contains::string_type; }
-    template <> json::value::contains json::value::convert_to_contains_enum<json::value::object_type>() { return value::contains::object_type; }
-    template <> json::value::contains json::value::convert_to_contains_enum<json::value::array_type>() { return value::contains::array_type; }
+    template <typename contains_type>
+    class json::value::convert_to_contains_enum<const contains_type> final { public: constexpr static const json::value::contains type = json::value::convert_to_contains_enum<contains_type>::type; };
+    template <> class json::value::convert_to_contains_enum<json::value::null_type> final { public: constexpr static const json::value::contains type = json::value::contains::null_type; };
+    template <> class json::value::convert_to_contains_enum<json::value::bool_type> final { public: constexpr static const json::value::contains type = json::value::contains::bool_type; };
+    template <> class json::value::convert_to_contains_enum<json::value::number_type> final { public: constexpr static const json::value::contains type = json::value::contains::number_type; };
+    template <> class json::value::convert_to_contains_enum<json::value::string_type> final { public: constexpr static const json::value::contains type = json::value::contains::string_type; };
+    template <> class json::value::convert_to_contains_enum<json::value::object_type> final { public: constexpr static const json::value::contains type = json::value::contains::object_type; };
+    template <> class json::value::convert_to_contains_enum<json::value::array_type> final { public: constexpr static const json::value::contains type = json::value::contains::array_type; };
 }
 
 #endif // GTL_FILE_TEXT_JSON_HPP
