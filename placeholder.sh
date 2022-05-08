@@ -26,7 +26,7 @@ mkdir -p source/${TYPE_NAME_LOWER}
 
 cat << EOF > source/${TYPE_NAME_LOWER}/${CLASS_NAME_LOWER}
 /*
-Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+Copyright (C) 2018-2022 Geoffrey Daniels. https://gpdaniels.com/
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ mkdir -p tests/${TYPE_NAME_LOWER}
 
 cat << EOF > tests/${TYPE_NAME_LOWER}/${CLASS_NAME_LOWER}.test.cpp
 /*
-Copyright (C) 2018-2022 Geoffrey Daniels. http://gpdaniels.com/
+Copyright (C) 2018-2022 Geoffrey Daniels. https://gpdaniels.com/
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
