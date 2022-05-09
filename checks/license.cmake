@@ -25,7 +25,7 @@ SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 
 # Find all source files, test files, and testbench files.
 FILE(GLOB_RECURSE LICENSED_FILES RELATIVE "${CMAKE_SOURCE_DIR}/"
-    "${CMAKE_SOURCE_DIR}/CMakelists.txt"
+    "${CMAKE_SOURCE_DIR}/CMakeLists.txt"
     "${CMAKE_SOURCE_DIR}/checks/*"
     "${CMAKE_SOURCE_DIR}/source/*"
     "${CMAKE_SOURCE_DIR}/testbench/*"
