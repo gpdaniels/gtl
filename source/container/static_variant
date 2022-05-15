@@ -110,7 +110,12 @@ namespace gtl {
 
     private:
         unsigned long long int active_type_id = 0;
-        alignas(static_variant::get_largest_type_size()) unsigned char data[static_variant::get_largest_type_size()] = {};
+        #if defined(_MSC_VER)
+            // Work around an MSVC bug.
+            alignas(static_variant::get_largest_type_size()) unsigned char data[get_largest_type_size()] = {};
+        #else
+            alignas(static_variant::get_largest_type_size()) unsigned char data[static_variant::get_largest_type_size()] = {};
+        #endif
 
     public:
         ~static_variant() {
@@ -125,7 +130,7 @@ namespace gtl {
         constexpr static_variant(const type& value) {
             static_assert(is_same_type<type, first_type>::value || (is_same_type<type, remaining_types>::value || ...), "Value type is not in the list of valid variant types.");
             this->active_type_id = reinterpret_cast<const unsigned long long int>(&static_variant<void*>::type_identifier_generator<type>::identifier);
-            new (this->data, static_cast<static_variant*>(nullptr)) type(value);
+            new (&this->data[0], static_cast<static_variant*>(nullptr)) type(value);
         }
 
         constexpr static_variant(const static_variant& other) {
@@ -187,8 +192,8 @@ namespace gtl {
         constexpr void construct_copy(const static_variant& other) {
             if (other.is<type>()) {
                 this->active_type_id = reinterpret_cast<const unsigned long long int>(&static_variant<void*>::type_identifier_generator<type>::identifier);
-                type& other_data = *reinterpret_cast<type*>(other.data);
-                new (this->data, static_cast<static_variant*>(nullptr)) type(other_data);
+                type& other_data = *reinterpret_cast<type*>(&other.data[0]);
+                new (&this->data[0], static_cast<static_variant*>(nullptr)) type(other_data);
             }
             else {
                 if constexpr (sizeof...(types) != 0) {
@@ -204,8 +209,8 @@ namespace gtl {
         constexpr void construct_move(static_variant&& other) {
             if (other.is<type>()) {
                 this->active_type_id = reinterpret_cast<const unsigned long long int>(&static_variant<void*>::type_identifier_generator<type>::identifier);
-                type& other_data = *reinterpret_cast<type*>(other.data);
-                new (this->data, static_cast<static_variant*>(nullptr)) type(static_cast<type&&>(other_data));
+                type& other_data = reinterpret_cast<type&>(*reinterpret_cast<type*>(&other.data[0]));
+                new (&this->data[0], static_cast<static_variant*>(nullptr)) type(static_cast<type&&>(other_data));
             }
             else {
                 if constexpr (sizeof...(types) != 0) {
@@ -221,8 +226,8 @@ namespace gtl {
         constexpr void assign_copy(const static_variant& other) {
             if (other.is<type>()) {
                 this->active_type_id = reinterpret_cast<const unsigned long long int>(&static_variant<void*>::type_identifier_generator<type>::identifier);
-                type& thus_data = *reinterpret_cast<type*>(this->data);
-                type& other_data = *reinterpret_cast<type*>(other.data);
+                type& thus_data = *reinterpret_cast<type*>(&this->data[0]);
+                type& other_data = *reinterpret_cast<type*>(&other.data[0]);
                 thus_data = other_data;
             }
             else {
@@ -239,8 +244,8 @@ namespace gtl {
         constexpr void assign_move(static_variant&& other) {
             if (other.is<type>()) {
                 this->active_type_id = reinterpret_cast<const unsigned long long int>(&static_variant<void*>::type_identifier_generator<type>::identifier);
-                type& thus_data = *reinterpret_cast<type*>(this->data);
-                type& other_data = *reinterpret_cast<type*>(other.data);
+                type& thus_data = reinterpret_cast<type&>(*reinterpret_cast<type*>(&this->data[0]));
+                type& other_data = reinterpret_cast<type&>(*reinterpret_cast<type*>(&other.data[0]));
                 thus_data = static_cast<type&&>(other_data);
             }
             else {
@@ -257,7 +262,7 @@ namespace gtl {
         constexpr void destruct() {
             if (this->is<type>()) {
                 this->active_type_id = 0;
-                reinterpret_cast<type*>(this->data)->~type();
+                reinterpret_cast<type*>(&this->data[0])->~type();
             }
             else {
                 if constexpr (sizeof...(types) != 0) {
@@ -272,7 +277,7 @@ namespace gtl {
         template <typename return_type, typename type, typename... types>
         constexpr return_type cast() const {
             if (this->is<type>()) {
-                return static_cast<return_type>(*reinterpret_cast<const type*>(this->data));
+                return static_cast<return_type>(*reinterpret_cast<const type*>(&this->data[0]));
             }
             else {
                 if constexpr (sizeof...(types) != 0) {
@@ -304,7 +309,7 @@ namespace gtl {
         template <typename type>
         constexpr const type& get() const {
             GTL_STATIC_VARIANT_ASSERT(!this->empty(), "Attempting to get the value of an empty variant.");
-            return *reinterpret_cast<const type*>(this->data);
+            return reinterpret_cast<const type&>(*reinterpret_cast<const type*>(&this->data[0]));
         }
 
         template <typename type>
@@ -313,7 +318,7 @@ namespace gtl {
                 this->destruct<first_type, remaining_types...>();
             }
             this->active_type_id = reinterpret_cast<const unsigned long long int>(&static_variant<void*>::type_identifier_generator<type>::identifier);
-            new (this->data, static_cast<static_variant*>(nullptr)) type(value);
+            new (&this->data[0], static_cast<static_variant*>(nullptr)) type(value);
         }
     };
 }
