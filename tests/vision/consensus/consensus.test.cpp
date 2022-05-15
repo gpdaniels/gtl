@@ -80,7 +80,7 @@ TEST(consensus, evaluate, line) {
         }
     public:
         float get_random_exclusive_top() {
-            return static_cast<float>(this->get_random_raw()) * (1.0 / static_cast<float>(1ull << 32));
+            return static_cast<float>(this->get_random_raw()) * (1.0f / static_cast<float>(1ull << 32));
         }
     };
 

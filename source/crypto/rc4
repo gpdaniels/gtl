@@ -44,7 +44,7 @@ namespace gtl {
             unsigned char cipher_stream[256];
             {
                 for (unsigned int index_stream = 0; index_stream < 256; ++index_stream) {
-                    cipher_stream[index_stream] = index_stream;
+                    cipher_stream[index_stream] = static_cast<unsigned char>(index_stream);
                 }
             }
             // Mix in the key to the cipher stream.
@@ -80,7 +80,7 @@ namespace gtl {
     public:
         /// @brief  Encrypt a string of data writing the encrypted data into the output string.
         /// @param  data The string of data to encrypt.
-        /// @param  length The length of the data, must be a multiple of the aes block size.
+        /// @param  length_data The length of the data, must be a multiple of the aes block size.
         /// @param  key The encryption key, must be at least the length required by the selected aes bitsize.
         /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
         static void encrypt(const unsigned char* data, const unsigned int length_data, const unsigned char* key, const unsigned int length_key, unsigned char* output) {

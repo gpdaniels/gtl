@@ -74,9 +74,9 @@ namespace gtl {
                 return;
             }
             // The overflow may cause previous indices to also overflow.
-            ssize_t index_overflow = sample_size - 2;
+            ssize_t index_overflow = static_cast<ssize_t>(sample_size) - 2;
             for (; index_overflow >= 0; --index_overflow) {
-                if (this->indices_next[index_overflow] < index_overflow + this->size - sample_size) {
+                if (this->indices_next[index_overflow] < static_cast<size_t>(index_overflow) + this->size - sample_size) {
                     break;
                 }
             }
@@ -90,7 +90,7 @@ namespace gtl {
             }
             // Found an index that will not overflow, increment it and reset all to the right of it.
             this->indices_next[index_overflow] += 1;
-            for (size_t i = index_overflow + 1; i < sample_size; ++i) {
+            for (size_t i = static_cast<size_t>(index_overflow + 1); i < sample_size; ++i) {
                 this->indices_next[i] = this->indices_next[i - 1] + 1;
             }
         }

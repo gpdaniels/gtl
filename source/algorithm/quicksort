@@ -30,12 +30,12 @@ namespace gtl {
         using default_comparitor_type = bool(*)(const type& lhs, const type& rhs);
 
         /// @brief  A comparitor that will sort values into ascending order.
-        /// @tparam type The type of the values to compare.
+        // /// @tparam type The type of the values to compare.
         template<typename type>
         constexpr static const default_comparitor_type<type> comparitor_ascending = [](const type& lhs, const type& rhs){ return lhs < rhs; };
 
         /// @brief  A comparitor that will sort values into descending order.
-        /// @tparam type The type of the values to compare.
+        // /// @tparam type The type of the values to compare.
         template<typename type>
         constexpr static const default_comparitor_type<type> comparitor_descending = [](const type& lhs, const type& rhs){ return lhs > rhs; };
 

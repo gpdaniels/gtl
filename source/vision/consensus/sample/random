@@ -82,7 +82,7 @@ namespace gtl {
                 for (size_t j = 0; j < i; ++j) {
                     if (indices[j] == indices[i]) {
                         indices[i] = (indices[i] + 1) % this->size;
-                        j = -1;
+                        j = static_cast<size_t>(-1);
                     }
                 }
             }

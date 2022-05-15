@@ -42,6 +42,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma warning(pop)
 #endif
 
+namespace {
+    using size_t = decltype(sizeof(1));
+}
+
 namespace gtl {
     class satisfiability final {
     private:
@@ -52,6 +56,7 @@ namespace gtl {
     public:
         satisfiability(int variable_count = 0)
             : variables(variable_count) {
+            GTL_SATISFIABILITY_ASSERT(variable_count >= 0, "Cannot be less than zero variables.");
         }
 
     public:
@@ -129,25 +134,25 @@ namespace gtl {
 
         void assign_pure_literals(std::vector<std::vector<int>>& current_clauses, std::vector<int>& current_assignment) const {
             // Calculate the frequency of occurance of each variable, we only really care if it appears exactly one time.
-            std::vector<int> variable_frequency(this->variables + 1, 0);
+            std::vector<int> variable_frequency(static_cast<size_t>(this->variables + 1), 0);
             for (const std::vector<int>& clause : current_clauses) {
                 for (int variable : clause) {
                     const int sign = (0 < variable) - (variable < 0);
-                    if (variable_frequency[variable * sign] == 0) {
-                        variable_frequency[variable * sign] = sign;
+                    if (variable_frequency[static_cast<size_t>(variable * sign)] == 0) {
+                        variable_frequency[static_cast<size_t>(variable * sign)] = sign;
                     }
                     else {
-                        variable_frequency[variable * sign] = 2;
+                        variable_frequency[static_cast<size_t>(variable * sign)] = 2;
                     }
                 }
             }
 
             // Find variables that appear exactly once.
             std::vector<int> pending_assignments;
-            pending_assignments.reserve(this->variables);
+            pending_assignments.reserve(static_cast<size_t>(this->variables));
             for (int variable = 1; variable <= this->variables; ++variable) {
-                if ((variable_frequency[variable] == 1) || (variable_frequency[variable] == -1)) {
-                    pending_assignments.push_back(variable * variable_frequency[variable]);
+                if ((variable_frequency[static_cast<size_t>(variable)] == 1) || (variable_frequency[static_cast<size_t>(variable)] == -1)) {
+                    pending_assignments.push_back(variable * variable_frequency[static_cast<size_t>(variable)]);
                 }
             }
 

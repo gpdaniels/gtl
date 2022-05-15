@@ -280,6 +280,7 @@ namespace gtl {
                 }
                 else {
                     GTL_STATIC_VARIANT_ASSERT(false, "Failed to cast variant with no matching type.");
+                    return {};
                 }
             }
         }

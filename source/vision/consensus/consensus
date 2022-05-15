@@ -106,8 +106,14 @@ namespace gtl {
             }
 
             constexpr static const auto log_approx = [](float value) -> float {
-                const float temp = static_cast<float>(static_cast<double>(static_cast<float>(((*reinterpret_cast<int*>(&value)) & 8388607) - 4074142)) * 5.828231702537851E-8);
-                return static_cast<float>(static_cast<double>(static_cast<float>(*reinterpret_cast<int*>(&value))) * 8.262958294867817E-8 - static_cast<double>(temp  * temp ) - 87.96988524938206);
+                int punned;
+                const unsigned char* value_pointer = reinterpret_cast<const unsigned char*>(&value);
+                unsigned char* punned_pointer = reinterpret_cast<unsigned char*>(&punned);
+                for (int i = 0; i < 4; ++i) {
+                    punned_pointer[i] = value_pointer[i];
+                }
+                const float magic = static_cast<float>(static_cast<double>(static_cast<float>((punned & 8388607) - 4074142)) * 5.828231702537851e-8);
+                return static_cast<float>(static_cast<double>(static_cast<float>(punned)) * 8.262958294867817e-8 - static_cast<double>(magic  * magic) - 87.96988524938206);
             };
 
             constexpr static const auto abs = [](float value) -> float {
@@ -123,7 +129,7 @@ namespace gtl {
             }
 
             const float log_probability_failure = log_approx(probability_failure);
-            const size_t iterations = log_probability_failure / log_probability;
+            const size_t iterations = static_cast<size_t>(log_probability_failure / log_probability);
 
             // Constrain the iterations estimate by the max and min parameters.
             if (iterations > iterations_maximum) {
@@ -137,6 +143,7 @@ namespace gtl {
 
     public:
         bool estimate(const data_type* const __restrict data, size_t data_size, model_type& best_model) {
+            best_model = {};
             bool solution_found = false;
             float best_cost = 0;
             float* residuals = new float[data_size];
