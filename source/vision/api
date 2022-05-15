@@ -57,6 +57,7 @@ GTL_API_STATIC_ASSERT(sizeof(char) == 1,            "For ABI compatibility the s
 GTL_API_STATIC_ASSERT(sizeof(short int) == 2,       "For ABI compatibility the sizeof(short int) must be 2 bytes.")
 GTL_API_STATIC_ASSERT(sizeof(int) == 4,             "For ABI compatibility the sizeof(int) must be 4 bytes.")
 GTL_API_STATIC_ASSERT(sizeof(long long int) == 8,   "For ABI compatibility the sizeof(long long int) must be 8 bytes.")
+GTL_API_STATIC_ASSERT(sizeof(float) == 4,           "For ABI compatibility the sizeof(float) must be 4 bytes.")
 
 typedef struct gtl_vision_system gtl_vision_system;
 
