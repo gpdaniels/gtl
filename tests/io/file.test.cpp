@@ -72,10 +72,10 @@ TEST(file, constructor, empty) {
 }
 
 TEST(file, constructor, parameterised) {
-
     const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    PRINT("Temp filename for '%s' is: %s\n", __FUNCTION__, temp_filename.c_str());
     IGNORED(std::remove(temp_filename.c_str()));
-    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
+    IGNORED(std::fclose(std::fopen(temp_filename.c_str(), "wb")));
 
     // Ensure every combination works.
     testbench::test_template<access_types, creation_types, cursor_types>(
@@ -95,8 +95,9 @@ TEST(file, function, is_open) {
     REQUIRE(file.is_open() == false);
 
     const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    PRINT("Temp filename for '%s' is: %s\n", __FUNCTION__, temp_filename.c_str());
     IGNORED(std::remove(temp_filename.c_str()));
-    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
+    IGNORED(std::fclose(std::fopen(temp_filename.c_str(), "wb")));
 
     REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_only));
     REQUIRE(file.is_open() == true);
@@ -111,8 +112,9 @@ TEST(file, function, is_eof) {
     REQUIRE(eof == true);
 
     const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    PRINT("Temp filename for '%s' is: %s\n", __FUNCTION__, temp_filename.c_str());
     IGNORED(std::remove(temp_filename.c_str()));
-    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
+    IGNORED(std::fclose(std::fopen(temp_filename.c_str(), "wb")));
 
     REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write));
     eof = false;
@@ -147,12 +149,12 @@ TEST(file, function, is_eof) {
 }
 
 TEST(file, function, open) {
-
     const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    PRINT("Temp filename for '%s' is: %s\n", __FUNCTION__, temp_filename.c_str());
     IGNORED(std::remove(temp_filename.c_str()));
-    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
+    IGNORED(std::fclose(std::fopen(temp_filename.c_str(), "wb")));
 
-    // Ensure every combination works.
+    // Ensure every combination doesn't crash.
     testbench::test_template<access_types, creation_types, cursor_types>(
         [&temp_filename](auto test_access, auto test_creation, auto test_cursor)->void {
             constexpr static const gtl::file::access_type access = decltype(test_access)::value;
@@ -257,8 +259,9 @@ TEST(file, function, close) {
     gtl::file file;
 
     const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    PRINT("Temp filename for '%s' is: %s\n", __FUNCTION__, temp_filename.c_str());
     IGNORED(std::remove(temp_filename.c_str()));
-    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
+    IGNORED(std::fclose(std::fopen(temp_filename.c_str(), "wb")));
 
     REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_only));
     REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_only) == false);
@@ -279,8 +282,9 @@ TEST(file, function, get_handle) {
     gtl::file file;
 
     const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    PRINT("Temp filename for '%s' is: %s\n", __FUNCTION__, temp_filename.c_str());
     IGNORED(std::remove(temp_filename.c_str()));
-    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
+    IGNORED(std::fclose(std::fopen(temp_filename.c_str(), "wb")));
 
     REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_only));
 
@@ -293,8 +297,9 @@ TEST(file, function, get_size) {
     gtl::file file;
 
     const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    PRINT("Temp filename for '%s' is: %s\n", __FUNCTION__, temp_filename.c_str());
     IGNORED(std::remove(temp_filename.c_str()));
-    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
+    IGNORED(std::fclose(std::fopen(temp_filename.c_str(), "wb")));
 
     REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write));
 
@@ -332,8 +337,9 @@ TEST(file, function, get_cursor_position) {
     gtl::file file;
 
     const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    PRINT("Temp filename for '%s' is: %s\n", __FUNCTION__, temp_filename.c_str());
     IGNORED(std::remove(temp_filename.c_str()));
-    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
+    IGNORED(std::fclose(std::fopen(temp_filename.c_str(), "wb")));
 
     REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write));
 
@@ -378,8 +384,9 @@ TEST(file, function, set_cursor_position) {
     gtl::file file;
 
     const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    PRINT("Temp filename for '%s' is: %s\n", __FUNCTION__, temp_filename.c_str());
     IGNORED(std::remove(temp_filename.c_str()));
-    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
+    IGNORED(std::fclose(std::fopen(temp_filename.c_str(), "wb")));
 
     REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write));
 
@@ -442,8 +449,9 @@ TEST(file, function, read) {
     gtl::file file;
 
     const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    PRINT("Temp filename for '%s' is: %s\n", __FUNCTION__, temp_filename.c_str());
     IGNORED(std::remove(temp_filename.c_str()));
-    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
+    IGNORED(std::fclose(std::fopen(temp_filename.c_str(), "wb")));
 
     REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write));
 
@@ -476,8 +484,9 @@ TEST(file, function, write) {
     gtl::file file;
 
     const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    PRINT("Temp filename for '%s' is: %s\n", __FUNCTION__, temp_filename.c_str());
     IGNORED(std::remove(temp_filename.c_str()));
-    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
+    IGNORED(std::fclose(std::fopen(temp_filename.c_str(), "wb")));
 
     REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write));
 
