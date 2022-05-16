@@ -56,9 +56,13 @@ namespace symbolic {
             value_types... values
         ) {
             if constexpr(parameter_index != 0) {
+                static_cast<void>(value);
                 return parameter<parameter_index - 1>::template solve<scalar_type>(values...);
             }
-            return static_cast<scalar_type>(value);
+            else {
+                (static_cast<void>(values), ...);
+                return static_cast<scalar_type>(value);
+            }
         }
     public:
         static inline std::string to_string(
@@ -84,9 +88,13 @@ namespace symbolic {
             value_types... values
         ) {
             if constexpr(variable_index != 0) {
+                static_cast<void>(value);
                 return parameter<variable_index - 1>::template solve<scalar_type>(values...);
             }
-            return static_cast<scalar_type>(value);
+            else {
+                (static_cast<void>(values), ...);
+                return static_cast<scalar_type>(value);
+            }
         }
     public:
         static inline std::string to_string(

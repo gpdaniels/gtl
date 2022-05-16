@@ -88,11 +88,21 @@ namespace gtl {
     private:
         template <size_t raised_to_value>
         static float constexpr power(const float value) {
-            if constexpr (raised_to_value == 0) return 1;
-            if constexpr (raised_to_value == 1) return value;
-            const float temp = power<raised_to_value / 2>(value);
-            if constexpr ((raised_to_value % 2) == 0) { return temp * temp; }
-            else { return value * temp * temp; }
+            if constexpr (raised_to_value == 0) {
+                return 1;
+            }
+            else if constexpr (raised_to_value == 1) {
+                return value;
+            }
+            else {
+                const float temp = power<raised_to_value / 2>(value);
+                if constexpr ((raised_to_value % 2) == 0) {
+                    return temp * temp;
+                }
+                else {
+                    return value * temp * temp;
+                }
+            }
         }
 
         static size_t constrain_max_iterations(
