@@ -90,14 +90,16 @@ gtl_vision_destroy(
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
-GTL_API_CALL gtl_vision_get_timestamp(
+GTL_API_CALL
+gtl_vision_get_timestamp(
     gtl_vision_system* system,
     long long int* timestamp
 );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
-GTL_API_CALL gtl_vision_get_license(
+GTL_API_CALL
+gtl_vision_get_license(
     gtl_vision_system* system,
     char* license,
     int* length
@@ -105,7 +107,8 @@ GTL_API_CALL gtl_vision_get_license(
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
-GTL_API_CALL gtl_vision_set_license(
+GTL_API_CALL
+gtl_vision_set_license(
     gtl_vision_system* system,
     const char* license,
     int length
@@ -113,7 +116,8 @@ GTL_API_CALL gtl_vision_set_license(
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
-GTL_API_CALL gtl_vision_get_configuration(
+GTL_API_CALL
+gtl_vision_get_configuration(
     gtl_vision_system* system,
     char* configuration,
     int* length
@@ -121,7 +125,8 @@ GTL_API_CALL gtl_vision_get_configuration(
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
-GTL_API_CALL gtl_vision_set_configuration(
+GTL_API_CALL
+gtl_vision_set_configuration(
     gtl_vision_system* system,
     const char* configuration,
     int length
@@ -132,11 +137,11 @@ typedef enum gtl_vision_sensor_emum {
     gtl_vision_sensor_map_chunk                         = 0x00000001,
     gtl_vision_sensor_local_scale                       = 0x00000002,
     gtl_vision_sensor_local_position                    = 0x00000004,
-    gtl_vision_sensor_local_velocity                    = 0x00000008,
-    gtl_vision_sensor_local_acceleration                = 0x00000010,
+    gtl_vision_sensor_local_velocity_linear             = 0x00000008,
+    gtl_vision_sensor_local_acceleration_linear         = 0x00000010,
     gtl_vision_sensor_local_orientation                 = 0x00000020,
-    gtl_vision_sensor_local_angular_velocity            = 0x00000040,
-    gtl_vision_sensor_local_angular_acceleration        = 0x00000080,
+    gtl_vision_sensor_local_velocity_angular            = 0x00000040,
+    gtl_vision_sensor_local_acceleration_angular        = 0x00000080,
     gtl_vision_sensor_remote_range                      = 0x00000100,
     gtl_vision_sensor_remote_bearing                    = 0x00000200,
     gtl_vision_sensor_remote_texture                    = 0x00000400,
