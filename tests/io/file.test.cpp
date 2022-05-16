@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 #include <cstdio>
+#include <string>
 #include <type_traits>
 
 #if defined(_MSC_VER)
@@ -71,8 +72,9 @@ TEST(file, constructor, empty) {
 
 TEST(file, constructor, parameterised) {
 
-    const char* temp_filename = std::tmpnam(nullptr);
-    IGNORED(std::fopen(temp_filename, "wb"));
+    const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    IGNORED(std::remove(temp_filename.c_str()));
+    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
 
     // Ensure every combination works.
     testbench::test_template<access_types, creation_types, cursor_types>(
@@ -80,20 +82,25 @@ TEST(file, constructor, parameterised) {
             constexpr static const gtl::file::access_type access = decltype(test_access)::value;
             constexpr static const gtl::file::creation_type creation = decltype(test_creation)::value;
             constexpr static const gtl::file::cursor_type cursor = decltype(test_cursor)::value;
-            gtl::file file(temp_filename, access, creation, cursor);
+            gtl::file file(temp_filename.c_str(), access, creation, cursor);
         }
     );
+
+    IGNORED(std::remove(temp_filename.c_str()));
 }
 
 TEST(file, function, is_open) {
     gtl::file file;
     REQUIRE(file.is_open() == false);
 
-    const char* temp_filename = std::tmpnam(nullptr);
-    IGNORED(std::fopen(temp_filename, "wb"));
+    const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    IGNORED(std::remove(temp_filename.c_str()));
+    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
 
-    REQUIRE(file.open(temp_filename, gtl::file::access_type::read_only));
+    REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_only));
     REQUIRE(file.is_open() == true);
+
+    IGNORED(std::remove(temp_filename.c_str()));
 }
 
 TEST(file, function, is_eof) {
@@ -102,10 +109,11 @@ TEST(file, function, is_eof) {
     REQUIRE(file.is_eof(eof) == false);
     REQUIRE(eof == true);
 
-    const char* temp_filename = std::tmpnam(nullptr);
-    IGNORED(std::fopen(temp_filename, "wb"));
+    const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    IGNORED(std::remove(temp_filename.c_str()));
+    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
 
-    REQUIRE(file.open(temp_filename, gtl::file::access_type::read_and_write));
+    REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write));
     eof = false;
     REQUIRE(file.is_eof(eof) == true);
     REQUIRE(eof == true);
@@ -133,12 +141,15 @@ TEST(file, function, is_eof) {
     eof = false;
     REQUIRE(file.is_eof(eof) == true);
     REQUIRE(eof == true);
+
+    IGNORED(std::remove(temp_filename.c_str()));
 }
 
 TEST(file, function, open) {
 
-    const char* temp_filename = std::tmpnam(nullptr);
-    IGNORED(std::fopen(temp_filename, "wb"));
+    const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    IGNORED(std::remove(temp_filename.c_str()));
+    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
 
     // Ensure every combination works.
     testbench::test_template<access_types, creation_types, cursor_types>(
@@ -147,85 +158,144 @@ TEST(file, function, open) {
             constexpr static const gtl::file::creation_type creation = decltype(test_creation)::value;
             constexpr static const gtl::file::cursor_type cursor = decltype(test_cursor)::value;
             gtl::file file;
-            file.open(temp_filename, access, creation, cursor);
+            file.open(temp_filename.c_str(), access, creation, cursor);
         }
     );
 
     {
         gtl::file file;
 
-        REQUIRE(file.open(temp_filename, gtl::file::access_type::read_only));
-        REQUIRE(file.open(temp_filename, gtl::file::access_type::read_only) == false);
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_only));
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_only) == false);
     }
     {
         gtl::file file;
 
-        REQUIRE(file.open(temp_filename, gtl::file::access_type::read_and_write));
-        REQUIRE(file.open(temp_filename, gtl::file::access_type::read_and_write) == false);
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write));
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write) == false);
     }
     {
         gtl::file file;
 
-        REQUIRE(file.open(temp_filename, gtl::file::access_type::read_and_write, gtl::file::creation_type::open_only, gtl::file::cursor_type::end_of_file));
-        REQUIRE(file.open(temp_filename, gtl::file::access_type::read_and_write, gtl::file::creation_type::open_only, gtl::file::cursor_type::end_of_file) == false);
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write, gtl::file::creation_type::open_only, gtl::file::cursor_type::end_of_file));
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write, gtl::file::creation_type::open_only, gtl::file::cursor_type::end_of_file) == false);
     }
     {
         gtl::file file;
 
-        REQUIRE(file.open(temp_filename, gtl::file::access_type::read_and_write, gtl::file::creation_type::open_only, gtl::file::cursor_type::start_of_truncated));
-        REQUIRE(file.open(temp_filename, gtl::file::access_type::read_and_write, gtl::file::creation_type::open_only, gtl::file::cursor_type::start_of_truncated) == false);
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write, gtl::file::creation_type::open_only, gtl::file::cursor_type::start_of_truncated));
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write, gtl::file::creation_type::open_only, gtl::file::cursor_type::start_of_truncated) == false);
     }
     {
         gtl::file file;
 
-        REQUIRE(file.open(temp_filename, gtl::file::access_type::write_only, gtl::file::creation_type::open_only, gtl::file::cursor_type::end_of_file));
-        REQUIRE(file.open(temp_filename, gtl::file::access_type::write_only, gtl::file::creation_type::open_only, gtl::file::cursor_type::end_of_file) == false);
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::write_only, gtl::file::creation_type::open_only, gtl::file::cursor_type::end_of_file));
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::write_only, gtl::file::creation_type::open_only, gtl::file::cursor_type::end_of_file) == false);
     }
     {
         gtl::file file;
 
-        REQUIRE(file.open(temp_filename, gtl::file::access_type::write_only, gtl::file::creation_type::open_only, gtl::file::cursor_type::start_of_truncated));
-        REQUIRE(file.open(temp_filename, gtl::file::access_type::write_only, gtl::file::creation_type::open_only, gtl::file::cursor_type::start_of_truncated) == false);
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::write_only, gtl::file::creation_type::open_only, gtl::file::cursor_type::start_of_truncated));
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::write_only, gtl::file::creation_type::open_only, gtl::file::cursor_type::start_of_truncated) == false);
     }
+
+    IGNORED(std::remove(temp_filename.c_str()));
+
+    {
+        gtl::file file;
+
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_only) == false);
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_only, gtl::file::creation_type::create_only));
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_only, gtl::file::creation_type::create_only) == false);
+    }
+    IGNORED(std::remove(temp_filename.c_str()));
+    {
+        gtl::file file;
+
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write) == false);
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write, gtl::file::creation_type::create_only));
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write, gtl::file::creation_type::create_only) == false);
+    }
+    IGNORED(std::remove(temp_filename.c_str()));
+    {
+        gtl::file file;
+
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write, gtl::file::creation_type::open_only, gtl::file::cursor_type::end_of_file) == false);
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write, gtl::file::creation_type::create_only, gtl::file::cursor_type::end_of_file));
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write, gtl::file::creation_type::create_only, gtl::file::cursor_type::end_of_file) == false);
+    }
+    IGNORED(std::remove(temp_filename.c_str()));
+    {
+        gtl::file file;
+
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write, gtl::file::creation_type::open_only, gtl::file::cursor_type::start_of_truncated) == false);
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write, gtl::file::creation_type::create_only, gtl::file::cursor_type::start_of_truncated));
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write, gtl::file::creation_type::create_only, gtl::file::cursor_type::start_of_truncated) == false);
+    }
+    IGNORED(std::remove(temp_filename.c_str()));
+    {
+        gtl::file file;
+
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::write_only, gtl::file::creation_type::open_only, gtl::file::cursor_type::end_of_file) == false);
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::write_only, gtl::file::creation_type::create_only, gtl::file::cursor_type::end_of_file));
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::write_only, gtl::file::creation_type::create_only, gtl::file::cursor_type::end_of_file) == false);
+    }
+    IGNORED(std::remove(temp_filename.c_str()));
+    {
+        gtl::file file;
+
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::write_only, gtl::file::creation_type::open_only, gtl::file::cursor_type::start_of_truncated) == false);
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::write_only, gtl::file::creation_type::create_only, gtl::file::cursor_type::start_of_truncated));
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::write_only, gtl::file::creation_type::create_only, gtl::file::cursor_type::start_of_truncated) == false);
+    }
+
+    IGNORED(std::remove(temp_filename.c_str()));
 }
 
 TEST(file, function, close) {
     gtl::file file;
 
-    const char* temp_filename = std::tmpnam(nullptr);
-    IGNORED(std::fopen(temp_filename, "wb"));
+    const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    IGNORED(std::remove(temp_filename.c_str()));
+    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
 
-    REQUIRE(file.open(temp_filename, gtl::file::access_type::read_only));
-    REQUIRE(file.open(temp_filename, gtl::file::access_type::read_only) == false);
+    REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_only));
+    REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_only) == false);
+
+    REQUIRE(file.close());
+    REQUIRE(file.close() == false);
+
+    REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_only));
 
     REQUIRE(file.close());
     REQUIRE(file.close() == false);
 
-    REQUIRE(file.open(temp_filename, gtl::file::access_type::read_only));
-
-    REQUIRE(file.close());
-    REQUIRE(file.close() == false);
+    IGNORED(std::remove(temp_filename.c_str()));
 }
 
 
 TEST(file, function, get_handle) {
     gtl::file file;
 
-    const char* temp_filename = std::tmpnam(nullptr);
-    IGNORED(std::fopen(temp_filename, "wb"));
+    const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    IGNORED(std::remove(temp_filename.c_str()));
+    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
 
-    REQUIRE(file.open(temp_filename, gtl::file::access_type::read_only));
+    REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_only));
 
     REQUIRE(file.get_handle() >= 0);
+
+    IGNORED(std::remove(temp_filename.c_str()));
 }
 
 TEST(file, function, get_size) {
     gtl::file file;
 
-    const char* temp_filename = std::tmpnam(nullptr);
-    IGNORED(std::fopen(temp_filename, "wb"));
+    const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    IGNORED(std::remove(temp_filename.c_str()));
+    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
 
-    REQUIRE(file.open(temp_filename, gtl::file::access_type::read_and_write));
+    REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write));
 
     {
         gtl::file::size_type size = 0;
@@ -252,16 +322,19 @@ TEST(file, function, get_size) {
         REQUIRE(file.get_size(size));
         REQUIRE(size == 2);
     }
+
+    IGNORED(std::remove(temp_filename.c_str()));
 }
 
 
 TEST(file, function, get_cursor_position) {
     gtl::file file;
 
-    const char* temp_filename = std::tmpnam(nullptr);
-    IGNORED(std::fopen(temp_filename, "wb"));
+    const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    IGNORED(std::remove(temp_filename.c_str()));
+    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
 
-    REQUIRE(file.open(temp_filename, gtl::file::access_type::read_and_write));
+    REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write));
 
     {
         gtl::file::size_type position = 0;
@@ -296,15 +369,18 @@ TEST(file, function, get_cursor_position) {
         REQUIRE(file.get_cursor_position(position));
         REQUIRE(position == 1);
     }
+
+    IGNORED(std::remove(temp_filename.c_str()));
 }
 
 TEST(file, function, set_cursor_position) {
     gtl::file file;
 
-    const char* temp_filename = std::tmpnam(nullptr);
-    IGNORED(std::fopen(temp_filename, "wb"));
+    const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    IGNORED(std::remove(temp_filename.c_str()));
+    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
 
-    REQUIRE(file.open(temp_filename, gtl::file::access_type::read_and_write));
+    REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write));
 
     {
         gtl::file::size_type length = 1;
@@ -357,15 +433,18 @@ TEST(file, function, set_cursor_position) {
         REQUIRE(file.get_cursor_position(position));
         REQUIRE(position == 0);
     }
+
+    IGNORED(std::remove(temp_filename.c_str()));
 }
 
 TEST(file, function, read) {
     gtl::file file;
 
-    const char* temp_filename = std::tmpnam(nullptr);
-    IGNORED(std::fopen(temp_filename, "wb"));
+    const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    IGNORED(std::remove(temp_filename.c_str()));
+    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
 
-    REQUIRE(file.open(temp_filename, gtl::file::access_type::read_and_write));
+    REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write));
 
     {
         gtl::file::size_type length = 1;
@@ -388,15 +467,18 @@ TEST(file, function, read) {
         REQUIRE(buffer[0] == 'a');
         REQUIRE(buffer[1] == 'b');
     }
+
+    IGNORED(std::remove(temp_filename.c_str()));
 }
 
 TEST(file, function, write) {
     gtl::file file;
 
-    const char* temp_filename = std::tmpnam(nullptr);
-    IGNORED(std::fopen(temp_filename, "wb"));
+    const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    IGNORED(std::remove(temp_filename.c_str()));
+    IGNORED(std::fopen(temp_filename.c_str(), "wb"));
 
-    REQUIRE(file.open(temp_filename, gtl::file::access_type::read_and_write));
+    REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write));
 
     {
         char buffer[2] = {'a', 'b'};
@@ -422,4 +504,6 @@ TEST(file, function, write) {
         REQUIRE(length == 1);
         REQUIRE(character == 'b');
     }
+
+    IGNORED(std::remove(temp_filename.c_str()));
 }
