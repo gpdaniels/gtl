@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cstdio>
 #include <string>
+#include <utility>
 #include <type_traits>
 
 #if defined(_MSC_VER)

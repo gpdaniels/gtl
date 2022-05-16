@@ -45,20 +45,27 @@ FOREACH(PROJECT_FILE ${PROJECT_FILES})
         CONTINUE()
     ENDIF()
     
-    # Root hidden files.
+    # Check specific patterns for specific directories.
     IF("${PROJECT_FILE}" MATCHES "^[.][a-z]+([.][a-z]+)?$")
-    # Root files.
+        # Root hidden files.
+        CONTINUE()
     ELSEIF("${PROJECT_FILE}" MATCHES "^[a-z]+[a-z_0-9]*[.][a-z]+$")
-    # Check files.
+        # Root files.
+        CONTINUE()
     ELSEIF("${PROJECT_FILE}" MATCHES "^checks/[a-z]+[a-z_0-9]*[.]cmake$")
-    # Source files.
+        # Check files.
+        CONTINUE()
     ELSEIF("${PROJECT_FILE}" MATCHES "^source/([a-z]+[a-z_0-9]*/)+[a-z]+[a-z_0-9]*$")
-    # Test files.
+        # Source files.
+        CONTINUE()
     ELSEIF("${PROJECT_FILE}" MATCHES "^tests/([a-z]+[a-z_0-9]*/)+[a-z]+[a-z_0-9]*[.]test[.][ch]pp$")
-    # Testbench files.
+        # Test files.
+        CONTINUE()
     ELSEIF("${PROJECT_FILE}" MATCHES "^testbench/[a-z]+[a-z_0-9]*[.]tests[.][ch]pp$")
-    # Otherwise.
+        # Testbench files.
+        CONTINUE()
     ELSE()
+        # Otherwise fail.
         MESSAGE(FATAL_ERROR "Found invalid file name: '${PROJECT_FILE}'")
     ENDIF()
     

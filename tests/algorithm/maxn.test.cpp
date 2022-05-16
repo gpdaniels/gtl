@@ -31,24 +31,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #   pragma warning(pop)
 #endif
 
-#if 0
-TEST(maxn, traits, standard) {
-    REQUIRE((std::is_pod<gtl::maxn>::value == true));
-
-    REQUIRE((std::is_trivial<gtl::maxn>::value == true));
-
-    REQUIRE((std::is_trivially_copyable<gtl::maxn>::value == true));
-
-    REQUIRE((std::is_standard_layout<gtl::maxn>::value == true));
-}
-
-TEST(maxn, constructor, empty) {
-    gtl::maxn maxn;
-    testbench::do_not_optimise_away(maxn);
-}
-
-#endif
-
 class state {
 public:
     constexpr static const unsigned int entities = 2;

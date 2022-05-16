@@ -49,6 +49,9 @@ MESSAGE(STATUS "Configuring ${PROJECT_NAME}...")
 
 ################################################################################
 
+# Emit compile commands in a "compile_commands.json" file.
+SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Require c11.
 SET(CMAKE_C_STANDARD 11)
 SET(CMAKE_C_STANDARD_REQUIRED ON)
@@ -424,7 +427,7 @@ IF(BUILD_TESTING)
         SET_TARGET_PROPERTIES(testbench PROPERTIES XCODE_ATTRIBUTE_WARNING_CFLAGS "")
     ENDIF()
 
-    # Create an executable for each test test file.
+    # Create an executable for each test file.
     FOREACH(TEST_FILE ${TEST_FILES})
 
         # Extract the name of the source and test files.
@@ -649,7 +652,7 @@ IF(BUILD_CHECKS)
         ADD_CUSTOM_COMMAND(
             TARGET gtl_check
             POST_BUILD
-            COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_SOURCE_DIR}" "-P" "${CHECK_FILE}"
+            COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_SOURCE_DIR}" "-DBINARY_DIR=${CMAKE_BINARY_DIR}" "-P" "${CHECK_FILE}"
             COMMENT "Running ${CHECK_FILE}..."
         )
     ENDFOREACH()
