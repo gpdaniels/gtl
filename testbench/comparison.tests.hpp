@@ -68,10 +68,9 @@ namespace testbench {
 
     template <typename type>
     bool is_value_approx(const type& lhs, const type& rhs, const type& epsilon) {
-        const type difference = lhs - rhs;
-        return ((difference >= 0) && (difference <= epsilon)) || ((difference <= 0) && (difference >= -epsilon));
+        const type difference = (lhs - rhs) + epsilon + epsilon;
+        return  ((difference >= epsilon) && (difference <= epsilon + epsilon + epsilon));
     }
-
 }
 
 #endif // GTL_COMPARISON_TESTS_HPP
