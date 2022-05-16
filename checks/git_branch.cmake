@@ -45,7 +45,7 @@ IF(RETURN_CODE)
 ENDIF(RETURN_CODE)
 
 # Check the git branch matches one of the valid patterns.
-IF(NOT "${COMMIT_BRANCH}" MATCHES "^(master)|(dev)|(feature/.+)|(bug-fix/.+)$")
+IF(NOT "${COMMIT_BRANCH}" MATCHES "^master$|^dev$|^feature/.+$|^bug-fix/.+$|^HEAD$")
     MESSAGE(FATAL_ERROR "The current branch '${COMMIT_BRANCH}' is not valid.")
 ENDIF()
         
