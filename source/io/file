@@ -157,18 +157,50 @@ namespace gtl {
                 return false;
             }
 
-            constexpr static const int flag_access_read_only = 0;
-            constexpr static const int flag_access_write_only = 1;
-            constexpr static const int flag_access_read_and_write = 2;
+            #if (defined(linux) || defined(__linux) || defined(__linux__))
+                constexpr static const int flag_access_read_only        = 0;            // O_RDONLY;
+                constexpr static const int flag_access_write_only       = 1;            // O_WRONLY;
+                constexpr static const int flag_access_read_and_write   = 2;            // O_RDWR;
 
-            constexpr static const int flag_creation_open_only = 0;
-            constexpr static const int flag_creation_create_only = 64 | 128;
-            constexpr static const int flag_creation_create_or_open = 64;
+                constexpr static const int flag_creation_open_only      = 0;            // 0;
+                constexpr static const int flag_creation_create_only    = 64 | 128;     // O_CREAT | O_EXCL;
+                constexpr static const int flag_creation_create_or_open = 64;           // O_CREAT;
 
-            constexpr static const int flag_cursor_start = 0;
-            constexpr static const int flag_cursor_start_truncate = 512;
-            constexpr static const int flag_cursor_end = 1024;
-            constexpr static const int flag_cursor_end_truncate = 512 | 1024;
+                constexpr static const int flag_cursor_start            = 0;            // 0;
+                constexpr static const int flag_cursor_start_truncate   = 512;          // O_TRUNC;
+                constexpr static const int flag_cursor_end              = 1024;         // O_APPEND;
+                constexpr static const int flag_cursor_end_truncate     = 512 | 1024;   // O_TRUNC | O_APPEND;
+            #endif
+
+            #if defined(_WIN32)
+                constexpr static const int flag_access_read_only        = 0;            // O_RDONLY;
+                constexpr static const int flag_access_write_only       = 1;            // O_WRONLY;
+                constexpr static const int flag_access_read_and_write   = 2;            // O_RDWR;
+
+                constexpr static const int flag_creation_open_only      = 0;            // 0;
+                constexpr static const int flag_creation_create_only    = 256 | 1024;   // O_CREAT | O_EXCL;
+                constexpr static const int flag_creation_create_or_open = 256;          // O_CREAT;
+
+                constexpr static const int flag_cursor_start            = 0;            // 0;
+                constexpr static const int flag_cursor_start_truncate   = 512;          // O_TRUNC;
+                constexpr static const int flag_cursor_end              = 8;            // O_APPEND;
+                constexpr static const int flag_cursor_end_truncate     = 512 | 8;      // O_TRUNC | O_APPEND;
+            #endif
+
+            #if defined(__APPLE__)
+                constexpr static const int flag_access_read_only        = 0;            // O_RDONLY;
+                constexpr static const int flag_access_write_only       = 1;            // O_WRONLY;
+                constexpr static const int flag_access_read_and_write   = 2;            // O_RDWR;
+
+                constexpr static const int flag_creation_open_only      = 0;            // 0;
+                constexpr static const int flag_creation_create_only    = 512 | 2048;   // O_CREAT | O_EXCL;
+                constexpr static const int flag_creation_create_or_open = 512;          // O_CREAT;
+
+                constexpr static const int flag_cursor_start            = 0;            // 0;
+                constexpr static const int flag_cursor_start_truncate   = 1024;         // O_TRUNC;
+                constexpr static const int flag_cursor_end              = 8;            // O_APPEND;
+                constexpr static const int flag_cursor_end_truncate     = 1024 | 8;     // O_TRUNC | O_APPEND;
+            #endif
 
             int mode_flags = 0;
             switch (access_mode) {
