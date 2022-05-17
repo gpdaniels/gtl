@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef GTL_CRYPTO_RC4_HPP
 #define GTL_CRYPTO_RC4_HPP
 
-// Summary: [wip]
+// Summary: An implementation of the rc4 or arc4 encryption algorithm. [wip]
 
 #ifndef NDEBUG
 #   if defined(_MSC_VER)
