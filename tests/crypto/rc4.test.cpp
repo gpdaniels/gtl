@@ -46,7 +46,7 @@ TEST(rc4, constructor, empty) {
     testbench::do_not_optimise_away(rc4);
 }
 
-TEST(aes, evaluate, examples) {
+TEST(rc4, evaluate, examples) {
     constexpr static const unsigned int length_data = 16;
     constexpr static const unsigned int length_key = 16;
     const unsigned char plain[length_data] =     { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF };
@@ -55,12 +55,12 @@ TEST(aes, evaluate, examples) {
 
     unsigned char output[length_data];
     gtl::rc4 rc4;
-    rc4.encrypt(plain, length_data, key, length_key, output);
+    rc4.encrypt(plain, length_data, key, length_key, output); // lgtm [cpp/weak-cryptographic-algorithm]
 
     REQUIRE(testbench::is_memory_same(encrypted, output, length_data), "%s != %s\n", hex_2_string(encrypted, length_data).c_str(), hex_2_string(output, length_data).c_str());
 }
 
-TEST(aes, evaluate, roundtrip) {
+TEST(rc4, evaluate, roundtrip) {
 
     class random_pcg final {
     private:
@@ -93,8 +93,8 @@ TEST(aes, evaluate, roundtrip) {
             }
 
             gtl::rc4 rc4;
-            rc4.encrypt(plain, length_data, key, length_key, output);
-            rc4.decrypt(output, length_data, key, length_key, input);
+            rc4.encrypt(plain, length_data, key, length_key, output); // lgtm [cpp/weak-cryptographic-algorithm]
+            rc4.decrypt(output, length_data, key, length_key, input); // lgtm [cpp/weak-cryptographic-algorithm]
 
             REQUIRE(testbench::is_memory_same(plain, input, length_data), "%s != %s\n", hex_2_string(plain, length_data).c_str(), hex_2_string(input, length_data).c_str());
 

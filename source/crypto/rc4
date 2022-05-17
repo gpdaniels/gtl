@@ -86,7 +86,7 @@ namespace gtl {
         static void encrypt(const unsigned char* data, const unsigned int length_data, const unsigned char* key, const unsigned int length_key, unsigned char* output) {
             GTL_RC4_ASSERT(length_key > 0, "The encryption key must be longer than 0 bytes.");
             GTL_RC4_ASSERT(length_key < 256, "The encryption key must be shorter than 256 bytes.");
-            rc4::process(data, length_data, key, length_key, output);
+            rc4::process(data, length_data, key, length_key, output); // lgtm [cpp/weak-cryptographic-algorithm]
         }
 
         /// @brief  Decrypt a string of data writing the decrypted data into the output string.
@@ -97,7 +97,7 @@ namespace gtl {
         static void decrypt(const unsigned char* data, const unsigned int length_data, const unsigned char* key, const unsigned int length_key, unsigned char* output) {
             GTL_RC4_ASSERT(length_key > 0, "The decryption key must be longer than 0 bytes.");
             GTL_RC4_ASSERT(length_key < 256, "The decryption key must be shorter than 256 bytes.");
-            rc4::process(data, length_data, key, length_key, output);
+            rc4::process(data, length_data, key, length_key, output); // lgtm [cpp/weak-cryptographic-algorithm]
         }
     };
 }

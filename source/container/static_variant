@@ -262,7 +262,7 @@ namespace gtl {
         constexpr void destruct() {
             if (this->is<type>()) {
                 this->active_type_id = 0;
-                reinterpret_cast<type*>(&this->data[0])->~type();
+                reinterpret_cast<type*>(&this->data[0])->~type(); // lgtm [cpp/incorrect-string-type-conversion]
             }
             else {
                 if constexpr (sizeof...(types) != 0) {

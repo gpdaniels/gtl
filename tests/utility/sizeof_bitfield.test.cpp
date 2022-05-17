@@ -36,8 +36,8 @@ enum class asd : unsigned long long int {
 };
 
 struct test {
-    short a : 1;
-    short b : 12;
+    short a : 1;                // lgtm [cpp/ambiguously-signed-bit-field]
+    short b : 12;               // lgtm [cpp/ambiguously-signed-bit-field]
     unsigned short au : 1;
     unsigned short bu : 12;
     asd x : 2;

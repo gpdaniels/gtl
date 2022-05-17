@@ -52,40 +52,40 @@ TEST(cpu, function, is_build_compatible) {
 
 TEST(cpu, function, get_max_leaf_id) {
     gtl::cpu cpu;
-    cpu.get_max_leaf_id();
+    testbench::do_not_optimise_away(cpu.get_max_leaf_id());
 }
 
 TEST(cpu, function, get_manufacturer_id) {
     gtl::cpu cpu;
-    cpu.get_manufacturer_id();
+    testbench::do_not_optimise_away(cpu.get_manufacturer_id());
 }
 
 TEST(cpu, function, get_brand_string) {
     gtl::cpu cpu;
-    cpu.get_brand_string();
+    testbench::do_not_optimise_away(cpu.get_brand_string());
 }
 
 TEST(cpu, function, has_xxx) {
     gtl::cpu cpu;
 
-    cpu.has_mmx();
+    testbench::do_not_optimise_away(cpu.has_mmx());
 
-    cpu.has_sse();
-    cpu.has_sse2();
-    cpu.has_sse3();
-    cpu.has_ssse3();
-    cpu.has_sse4_1();
-    cpu.has_sse4_2();
+    testbench::do_not_optimise_away(cpu.has_sse());
+    testbench::do_not_optimise_away(cpu.has_sse2());
+    testbench::do_not_optimise_away(cpu.has_sse3());
+    testbench::do_not_optimise_away(cpu.has_ssse3());
+    testbench::do_not_optimise_away(cpu.has_sse4_1());
+    testbench::do_not_optimise_away(cpu.has_sse4_2());
 
-    cpu.has_popcnt();
+    testbench::do_not_optimise_away(cpu.has_popcnt());
 
-    cpu.has_avx();
-    cpu.has_avx2();
+    testbench::do_not_optimise_away(cpu.has_avx());
+    testbench::do_not_optimise_away(cpu.has_avx2());
 
-    cpu.has_avx512_foundation();
+    testbench::do_not_optimise_away(cpu.has_avx512_foundation());
 
-    cpu.has_bmi();
-    cpu.has_bmi2();
+    testbench::do_not_optimise_away(cpu.has_bmi());
+    testbench::do_not_optimise_away(cpu.has_bmi2());
 }
 
 TEST(cpu, evaluate, print_flags) {

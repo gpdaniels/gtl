@@ -3,10 +3,10 @@ path_classifiers:
     - '*.md'
     - 'LICENSE'
   test:
-    - 'Tests/*/*.hpp'
-    - 'Tests/*/*.cpp'
-    - 'Testbench/*.hpp'
-    - 'Testbench/*.cpp'
+    - 'tests/*/*.hpp'
+    - 'tests/*/*.cpp'
+    - 'testbench/*.hpp'
+    - 'testbench/*.cpp'
   build-system:
     - 'CMakeLists.txt'
     - 'compile.sh'
