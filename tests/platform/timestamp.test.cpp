@@ -15,7 +15,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <main.tests.hpp>
-#include <comparison.tests.hpp>
 #include <optimise.tests.hpp>
 #include <require.tests.hpp>
 
@@ -25,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #   pragma warning(push, 0)
 #endif
 
+#include <chrono>
 #include <thread>
 #include <type_traits>
 
@@ -33,10 +33,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 TEST(timestamp, evaluate, differece) {
+    std::chrono::high_resolution_clock::time_point outer1 = std::chrono::high_resolution_clock::now();
     long long int timestamp1 = gtl::timestamp();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::chrono::high_resolution_clock::time_point inner1 = std::chrono::high_resolution_clock::now();
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::chrono::high_resolution_clock::time_point inner2 = std::chrono::high_resolution_clock::now();
     long long int timestamp2 = gtl::timestamp();
+    std::chrono::high_resolution_clock::time_point outer2 = std::chrono::high_resolution_clock::now();
+
     REQUIRE(timestamp2 > timestamp1);
-    REQUIRE(testbench::is_value_approx(timestamp1, timestamp2 - 1000000ll, 200000ll), "Excessive timestamp difference: %lld - %lld = %lld", timestamp2, timestamp1, timestamp2 - timestamp1);
+
+    long long int minimum_time = std::chrono::duration_cast<std::chrono::nanoseconds>(inner2 - inner1).count();
+    long long int maximum_time = std::chrono::duration_cast<std::chrono::nanoseconds>(outer2 - outer1).count();
+    long long int timestamp_time = timestamp2 - timestamp1;
+
+    REQUIRE(maximum_time > minimum_time);
+
+    REQUIRE(timestamp_time >= minimum_time);
+    REQUIRE(timestamp_time <= maximum_time);
 }
 

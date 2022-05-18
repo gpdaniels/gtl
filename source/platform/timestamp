@@ -20,11 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Summary: Function to get a monotonically increasing timestamp.
 
-#if (                                                                                           \
-    (defined(__ANDROID__))                                                                  ||  \
-    (defined(__APPLE__))                                                                    ||  \
-    ((defined(linux) || defined(__linux) || defined(__linux__)) && !defined(__ANDROID__))       \
-)
+#if ((defined(linux) || defined(__linux) || defined(__linux__)) || (__APPLE__))
     #include <ctime>
 #endif
 
@@ -51,11 +47,7 @@ namespace gtl {
     /// @note    The clock will continue incrementing when the computer is sleeping.
     /// @warning The timestamp epoch is not related to the unix epoch.
     long long int timestamp() {
-        #if (                                                                                           \
-            (defined(__ANDROID__))                                                                  ||  \
-            (defined(__APPLE__))                                                                    ||  \
-            ((defined(linux) || defined(__linux) || defined(__linux__)) && !defined(__ANDROID__))       \
-        )
+        #if (defined(linux) || defined(__linux) || defined(__linux__))
             struct timespec ts;
             int return_code = clock_gettime(CLOCK_BOOTTIME, &ts);
             if (return_code != 0) {
@@ -66,6 +58,8 @@ namespace gtl {
             unsigned long long int centinanoseconds;
             QueryInterruptTimePrecise(&centinanoseconds);
             return static_cast<long long int>(centinanoseconds) * 100ll;
+        #elif (defined(__APPLE__))
+            return static_cast<long long int>(clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW));
         #else
             #error "Failed to define timestamp function."
         #endif
