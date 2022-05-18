@@ -61,7 +61,12 @@ The current classes are as described below:
 | [math](source/math) | [big_integer](source/math/big_integer) | Arbitrary sized signed integers. | :heavy_check_mark: |
 | [math](source/math) | [big_unsigned](source/math/big_unsigned) | Arbitrary sized unsigned integers. | :heavy_check_mark: |
 | [math](source/math) | [symbolic](source/math/symbolic) | Compile time symbolic differentiation using template metaprogramming. | :construction: |
+| [platform](source/platform) | [architecture](source/platform/architecture) | Macros and helper function to get the architecture used for the build. | :heavy_check_mark: |
+| [platform](source/platform) | [compiler](source/platform/compiler) | Macros and helper function to get the compiler used for the build. | :heavy_check_mark: |
 | [platform](source/platform) | [cpu](source/platform/cpu) | Class to extract cpuid information to determine supported instructions at runtime. | :heavy_check_mark: |
+| [platform](source/platform) | [operating_system](source/platform/operating_system) | Macros and helper function to get the operating system used for the build. | :heavy_check_mark: |
+| [platform](source/platform) | [runtime](source/platform/runtime) | Macros and helper function to get the runtime used for the build. | :heavy_check_mark: |
+| [platform](source/platform) | [types](source/platform/types) | Type aliases of standard types to short names. | :heavy_check_mark: |
 | [protection](source/protection) | [virtual_machine](source/protection/virtual_machine) | A simple stack based virtual machine allowing easy creation of custom operands. | :heavy_check_mark: |
 | [random](source/random) | [random_mt](source/random/random_mt) | Mersenne twister pseudo\-random number generator. | :heavy_check_mark: |
 | [random](source/random) | [random_pcg](source/random/random_pcg) | PCG pseudo\-random number generator. | :heavy_check_mark: |

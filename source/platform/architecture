@@ -1,0 +1,87 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_PLATFORM_ARCHITECTURE_HPP
+#define GTL_PLATFORM_ARCHITECTURE_HPP
+
+// Summary: Macros and helper function to get the architecture used for the build.
+
+#define GTL_PLATFORM_ARCHITECTURE_X86 0
+#define GTL_PLATFORM_ARCHITECTURE_X64 0
+#define GTL_PLATFORM_ARCHITECTURE_ARM 0
+#define GTL_PLATFORM_ARCHITECTURE_ARM64 0
+#define GTL_PLATFORM_ARCHITECTURE_UNKNOWN 1
+
+#if (defined(i386) || defined(__i386) || defined(__i386__) || defined(__i386__) || defined(_M_IX86))
+    #undef GTL_PLATFORM_ARCHITECTURE_X86
+    #define GTL_PLATFORM_ARCHITECTURE_X86 1
+#endif
+
+#if (defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64))
+    #undef GTL_PLATFORM_ARCHITECTURE_X64
+    #define GTL_PLATFORM_ARCHITECTURE_X64 1
+#endif
+
+#if (defined(__arm__) || defined(_M_ARM) || defined(_M_ARMT))
+    #undef GTL_PLATFORM_ARCHITECTURE_ARM
+    #define GTL_PLATFORM_ARCHITECTURE_ARM 1
+#endif
+
+#if (defined(__aarch64__))
+    #undef GTL_PLATFORM_ARCHITECTURE_ARM64
+    #define GTL_PLATFORM_ARCHITECTURE_ARM64 1
+#endif
+
+#if (                                      \
+    (GTL_PLATFORM_ARCHITECTURE_X86)    ||  \
+    (GTL_PLATFORM_ARCHITECTURE_X64)    ||  \
+    (GTL_PLATFORM_ARCHITECTURE_ARM)    ||  \
+    (GTL_PLATFORM_ARCHITECTURE_ARM64)      \
+)
+    #undef GTL_PLATFORM_ARCHITECTURE_UNKNOWN
+    #define GTL_PLATFORM_ARCHITECTURE_UNKNOWN 0
+#endif
+
+namespace gtl {
+    /// @brief Enumeration of the known architectures.
+    enum class architecture_types {
+        unknown,
+        x86,
+        x64,
+        arm,
+        arm64
+    };
+
+    /// @brief Compile time variable holding the detected architecture.
+    constexpr static const architecture_types architecture = []()constexpr->architecture_types{
+        #if (GTL_PLATFORM_ARCHITECTURE_X86)
+            return architecture_types::x86;
+        #elif (GTL_PLATFORM_ARCHITECTURE_X64)
+            return architecture_types::x64;
+        #elif (GTL_PLATFORM_ARCHITECTURE_ARM)
+            return architecture_types::arm;
+        #elif (GTL_PLATFORM_ARCHITECTURE_ARM64)
+            return architecture_types::arm64;
+        #elif (GTL_PLATFORM_ARCHITECTURE_UNKNOWN)
+            return architecture_types::unknown;
+        #else
+            #error "Issue detecting platform architecture."
+        #endif
+    }();
+}
+
+#endif // GTL_PLATFORM_ARCHITECTURE_HPP

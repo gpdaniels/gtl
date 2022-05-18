@@ -1,0 +1,87 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_PLATFORM_OPERATING_SYSTEM_HPP
+#define GTL_PLATFORM_OPERATING_SYSTEM_HPP
+
+// Summary: Macros and helper function to get the operating system used for the build.
+
+#define GTL_PLATFORM_OPERATING_SYSTEM_ANDROID 0
+#define GTL_PLATFORM_OPERATING_SYSTEM_APPLE 0
+#define GTL_PLATFORM_OPERATING_SYSTEM_LINUX 0
+#define GTL_PLATFORM_OPERATING_SYSTEM_WINDOWS 0
+#define GTL_PLATFORM_OPERATING_SYSTEM_UNKNOWN 1
+
+#if (defined(__ANDROID__))
+    #undef GTL_PLATFORM_OPERATING_SYSTEM_ANDROID
+    #define GTL_PLATFORM_OPERATING_SYSTEM_ANDROID 1
+#endif
+
+#if (defined(__APPLE__))
+    #undef GTL_PLATFORM_OPERATING_SYSTEM_APPLE
+    #define GTL_PLATFORM_OPERATING_SYSTEM_APPLE 1
+#endif
+
+#if ((defined(linux) || defined(__linux) || defined(__linux__)) && !defined(__ANDROID__))
+    #undef GTL_PLATFORM_OPERATING_SYSTEM_LINUX
+    #define GTL_PLATFORM_OPERATING_SYSTEM_LINUX 1
+#endif
+
+#if (defined(_WIN32) || defined(_WIN64))
+    #undef GTL_PLATFORM_OPERATING_SYSTEM_WINDOWS
+    #define GTL_PLATFORM_OPERATING_SYSTEM_WINDOWS 1
+#endif
+
+#if (                                              \
+    (GTL_PLATFORM_OPERATING_SYSTEM_APPLE)      ||  \
+    (GTL_PLATFORM_OPERATING_SYSTEM_LINUX)      ||  \
+    (GTL_PLATFORM_OPERATING_SYSTEM_WINDOWS)    ||  \
+    (GTL_PLATFORM_OPERATING_SYSTEM_ANDROID)        \
+)
+    #undef GTL_PLATFORM_OPERATING_SYSTEM_UNKNOWN
+    #define GTL_PLATFORM_OPERATING_SYSTEM_UNKNOWN 0
+#endif
+
+namespace gtl {
+    /// @brief Enumeration of the known operating systems.
+    enum class operating_system_types {
+        unknown,
+        android,
+        apple,
+        linux,
+        windows
+    };
+
+    /// @brief Compile time variable holding the detected operating system.
+    constexpr static const operating_system_types operating_system = []()constexpr->operating_system_types{
+        #if (GTL_PLATFORM_OPERATING_SYSTEM_ANDROID)
+            return operating_system_types::android;
+        #elif (GTL_PLATFORM_OPERATING_SYSTEM_APPLE)
+            return operating_system_types::apple;
+        #elif (GTL_PLATFORM_OPERATING_SYSTEM_LINUX)
+            return operating_system_types::linux;
+        #elif (GTL_PLATFORM_OPERATING_SYSTEM_WINDOWS)
+            return operating_system_types::windows;
+        #elif (GTL_PLATFORM_OPERATING_SYSTEM_UNKNOWN)
+            return operating_system_types::unknown;
+        #else
+            #error "Issue detecting platform operating system."
+        #endif
+    }();
+}
+
+#endif // GTL_PLATFORM_OPERATING_SYSTEM_HPP

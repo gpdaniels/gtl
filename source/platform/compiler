@@ -1,0 +1,107 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_PLATFORM_COMPILER_HPP
+#define GTL_PLATFORM_COMPILER_HPP
+
+// Summary: Macros and helper function to get the compiler used for the build.
+
+#define GTL_PLATFORM_COMPILER_APPLE_CLANG 0
+#define GTL_PLATFORM_COMPILER_CLANG 0
+#define GTL_PLATFORM_COMPILER_GCC 0
+#define GTL_PLATFORM_COMPILER_MINGW 0
+#define GTL_PLATFORM_COMPILER_MSVC 0
+#define GTL_PLATFORM_COMPILER_INTEL 0
+#define GTL_PLATFORM_COMPILER_UNKNOWN 1
+
+#if (defined(__clang__) && defined(__apple_build_version__))
+    #undef GTL_PLATFORM_COMPILER_APPLE_CLANG
+    #define GTL_PLATFORM_COMPILER_APPLE_CLANG 1
+#endif
+
+#if (defined(__clang__) && !defined(__apple_build_version__))
+    #undef GTL_PLATFORM_COMPILER_CLANG
+    #define GTL_PLATFORM_COMPILER_CLANG 1
+#endif
+
+#if ((defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER))))
+    #undef GTL_PLATFORM_COMPILER_GCC
+    #define GTL_PLATFORM_COMPILER_GCC 1
+#endif
+
+#if (defined(__MINGW32__) || defined(__MINGW64__))
+    #undef GTL_PLATFORM_COMPILER_MINGW
+    #define GTL_PLATFORM_COMPILER_MINGW 1
+#endif
+
+#if (defined(_MSC_VER))
+    #undef GTL_PLATFORM_COMPILER_MSVC
+    #define GTL_PLATFORM_COMPILER_MSVC 1
+#endif
+
+#if (defined(__INTEL_COMPILER))
+    #undef GTL_PLATFORM_COMPILER_INTEL
+    #define GTL_PLATFORM_COMPILER_INTEL 1
+#endif
+
+#if (                                          \
+    (GTL_PLATFORM_COMPILER_APPLE_CLANG)    ||  \
+    (GTL_PLATFORM_COMPILER_CLANG)          ||  \
+    (GTL_PLATFORM_COMPILER_GCC)            ||  \
+    (GTL_PLATFORM_COMPILER_MINGW)          ||  \
+    (GTL_PLATFORM_COMPILER_MSVC)           ||  \
+    (GTL_PLATFORM_COMPILER_INTEL)              \
+)
+    #undef GTL_PLATFORM_COMPILER_UNKNOWN
+    #define GTL_PLATFORM_COMPILER_UNKNOWN 0
+#endif
+
+namespace gtl {
+    /// @brief Enumeration of the known compilers.
+    enum class compiler_types {
+        unknown,
+        apple_clang,
+        clang,
+        gcc,
+        mingw,
+        msvc,
+        intel
+    };
+
+    /// @brief Compile time variable holding the detected compiler.
+    constexpr static const compiler_types compiler = []()constexpr->compiler_types{
+        #if (GTL_PLATFORM_COMPILER_APPLE_CLANG)
+            return compiler_types::apple_clang;
+        #elif (GTL_PLATFORM_COMPILER_CLANG)
+            return compiler_types::clang;
+        #elif (GTL_PLATFORM_COMPILER_GCC)
+            return compiler_types::gcc;
+        #elif (GTL_PLATFORM_COMPILER_MINGW)
+            return compiler_types::mingw;
+        #elif (GTL_PLATFORM_COMPILER_MSVC)
+            return compiler_types::msvc;
+        #elif (GTL_PLATFORM_COMPILER_INTEL)
+            return compiler_types::intel;
+        #elif (GTL_PLATFORM_COMPILER_UNKNOWN)
+            return compiler_types::unknown;
+        #else
+            #error "Issue detecting platform compiler."
+        #endif
+    }();
+}
+
+#endif // GTL_PLATFORM_COMPILER_HPP

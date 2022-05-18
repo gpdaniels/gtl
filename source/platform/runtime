@@ -1,0 +1,137 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_PLATFORM_RUNTIME_HPP
+#define GTL_PLATFORM_RUNTIME_HPP
+
+// Summary: Macros and helper function to get the runtime used for the build.
+
+#if defined(_MSC_VER)
+    #pragma warning(push, 0)
+#endif
+
+#include <cstdlib>
+
+#if defined(_MSC_VER)
+    #pragma warning(pop)
+#endif
+
+#define GTL_PLATFORM_RUNTIME_LIBSTDCPP 0
+#define GTL_PLATFORM_RUNTIME_LIBCPP 0
+#define GTL_PLATFORM_RUNTIME_MSVC_MT_DLL 0
+#define GTL_PLATFORM_RUNTIME_MSVC_MT 0
+#define GTL_PLATFORM_RUNTIME_MSVC_ST_DLL 0
+#define GTL_PLATFORM_RUNTIME_MSVC_ST 0
+#define GTL_PLATFORM_RUNTIME_GLIBC 0
+#define GTL_PLATFORM_RUNTIME_INTEL 0
+#define GTL_PLATFORM_RUNTIME_UNKNOWN 1
+
+#if (defined(__GLIBCPP__) || defined(__GLIBCXX__))
+    #undef GTL_PLATFORM_RUNTIME_LIBSTDCPP
+    #define GTL_PLATFORM_RUNTIME_LIBSTDCPP 1
+#endif
+
+#if (defined(_LIBCPP_VERSION))
+    #undef GTL_PLATFORM_RUNTIME_LIBCPP
+    #define GTL_PLATFORM_RUNTIME_LIBCPP 1
+#endif
+
+#if (defined(_MSC_VER) && defined(_MT) && defined(_DLL))
+    #undef GTL_PLATFORM_RUNTIME_MSVC_MT_DLL
+    #define GTL_PLATFORM_RUNTIME_MSVC_MT_DLL 1
+#endif
+
+#if (defined(_MSC_VER) && defined(_MT) && !defined(_DLL))
+    #undef GTL_PLATFORM_RUNTIME_MSVC_MT
+    #define GTL_PLATFORM_RUNTIME_MSVC_MT 1
+#endif
+
+#if (defined(_MSC_VER) && !defined(_MT) && defined(_DLL))
+    #undef GTL_PLATFORM_RUNTIME_MSVC_ST_DLL
+    #define GTL_PLATFORM_RUNTIME_MSVC_ST_DLL 1
+#endif
+
+#if (defined(_MSC_VER) && !defined(_MT) && !defined(_DLL))
+    #undef GTL_PLATFORM_RUNTIME_MSVC_ST
+    #define GTL_PLATFORM_RUNTIME_MSVC_ST 1
+#endif
+
+#if (defined(__GLIBC__))
+    #undef GTL_PLATFORM_RUNTIME_GLIBC
+    #define GTL_PLATFORM_RUNTIME_GLIBC 1
+#endif
+
+#if (defined(__INTEL_CXXLIB_ICC))
+    #undef GTL_PLATFORM_RUNTIME_INTEL
+    #define GTL_PLATFORM_RUNTIME_INTEL 1
+#endif
+
+#if (                                      \
+    (GTL_PLATFORM_RUNTIME_LIBSTDCPP)   ||  \
+    (GTL_PLATFORM_RUNTIME_LIBCPP)      ||  \
+    (GTL_PLATFORM_RUNTIME_MSVC_MT_DLL) ||  \
+    (GTL_PLATFORM_RUNTIME_MSVC_MT)     ||  \
+    (GTL_PLATFORM_RUNTIME_MSVC_ST_DLL) ||  \
+    (GTL_PLATFORM_RUNTIME_MSVC_ST)     ||  \
+    (GTL_PLATFORM_RUNTIME_GLIBC)       ||  \
+    (GTL_PLATFORM_RUNTIME_INTEL)           \
+)
+    #undef GTL_PLATFORM_RUNTIME_UNKNOWN
+    #define GTL_PLATFORM_RUNTIME_UNKNOWN 0
+#endif
+
+namespace gtl {
+    /// @brief Enumeration of the known runtime libraries.
+    enum class runtime_types {
+        unknown,
+        libstdcpp,
+        libcpp,
+        mscv_mt_dll,
+        mscv_mt,
+        mscv_st_dll,
+        mscv_st,
+        glibc,
+        intel
+    };
+
+    /// @brief Compile time variable holding the detected runtime.
+    constexpr static const runtime_types runtime = []()constexpr->runtime_types{
+        #if (GTL_PLATFORM_RUNTIME_LIBSTDCPP)
+            return runtime_types::libstdcpp;
+        #elif (GTL_PLATFORM_RUNTIME_LIBCPP)
+            return runtime_types::libcpp;
+        #elif (GTL_PLATFORM_RUNTIME_MSVC_MT_DLL)
+            return runtime_types::mscv_mt_dll;
+        #elif (GTL_PLATFORM_RUNTIME_MSVC_MT)
+            return runtime_types::mscv_mt;
+        #elif (GTL_PLATFORM_RUNTIME_MSVC_ST_DLL)
+            return runtime_types::mscv_st_dll;
+        #elif (GTL_PLATFORM_RUNTIME_MSVC_ST)
+            return runtime_types::mscv_st;
+        #elif (GTL_PLATFORM_RUNTIME_GLIBC)
+            return runtime_types::glibc;
+        #elif (GTL_PLATFORM_RUNTIME_INTEL)
+            return runtime_types::intel;
+        #elif (GTL_PLATFORM_RUNTIME_UNKNOWN)
+            return runtime_types::unknown;
+        #else
+            #error "Issue detecting platform runtime."
+        #endif
+    }();
+}
+
+#endif // GTL_PLATFORM_RUNTIME_HPP
