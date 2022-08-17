@@ -41,7 +41,7 @@ FOREACH(PROJECT_FILE ${PROJECT_FILES})
     #MESSAGE(STATUS "Processing '${PROJECT_FILE}'...")
     
     # Special files.
-    IF("${PROJECT_FILE}" MATCHES "^(CMakeLists.txt)|(CODE_OF_CONDUCT.md)|(LICENSE)|(README.md)|(.github/.+)$")
+    IF("${PROJECT_FILE}" MATCHES "^(CMakeLists.txt)|(CODE_OF_CONDUCT.md)|(LICENSE)|(README.md)|(SECURITY.md)|(.github/.+)$")
         CONTINUE()
     ENDIF()
     
