@@ -3,7 +3,7 @@
 
 This repository is a collection of useful cross-platform, well-commented, self-contained, simple, and interesting C++ classes in the style of the standard template library.
 
-[![Build Status](https://github.com/gpdaniels/gtl/actions/workflows/main.yml/badge.svg)](https://github.com/gpdaniels/gtl/actions/workflows/main.yml) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/gpdaniels/gtl.svg)](https://lgtm.com/projects/g/gpdaniels/gtl/context:cpp) [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT) 
+[![Build Status](https://github.com/gpdaniels/gtl/actions/workflows/main.yml/badge.svg)](https://github.com/gpdaniels/gtl/actions/workflows/main.yml) [![Code Quality](https://github.com/gpdaniels/gtl/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/gpdaniels/gtl/actions/workflows/codeql-analysis.yml) [![License: MIT](https://img.shields.io/badge/License-GPL3-brightgreen.svg)](https://opensource.org/licenses/GPL-3.0) 
 
 ## Content ##
 
