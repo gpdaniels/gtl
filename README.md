@@ -71,6 +71,7 @@ The current classes are as described below:
 | [protection](source/protection) | [virtual_machine](source/protection/virtual_machine) | A simple stack based virtual machine allowing easy creation of custom operands. | :heavy_check_mark: |
 | [random](source/random) | [random_mt](source/random/random_mt) | Mersenne twister pseudo\-random number generator. | :heavy_check_mark: |
 | [random](source/random) | [random_pcg](source/random/random_pcg) | PCG pseudo\-random number generator. | :heavy_check_mark: |
+| [random](source/random) | [random_rlcg](source/random/random_rlcg) | A reversible pseudo\-random number generator. | :heavy_check_mark: |
 | [random](source/random) | [random_romu_32](source/random/random_romu_32) | Romu 32 bit pseudo\-random number generator. | :heavy_check_mark: |
 | [random](source/random) | [random_romu_64](source/random/random_romu_64) | Romu 64 bit pseudo\-random number generator. | :heavy_check_mark: |
 | [random](source/random) | [random_splitmix](source/random/random_splitmix) | Splitmix pseudo\-random number generator. | :heavy_check_mark: |
