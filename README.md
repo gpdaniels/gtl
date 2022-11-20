@@ -13,7 +13,8 @@ The current classes are as described below:
 |:-----------|---------------------:|:---------------------------------------------------------------|:---------------:|
 | [ai](source/ai) | [ann](source/ai/ann) | Artificial neural network using the backpropagation algorithm for training. | :heavy_check_mark: |
 | [ai](source/ai) | [hmm](source/ai/hmm) | Hidden markov model using the Baum\-Welch algorithm for training. | :heavy_check_mark: |
-| [algorithm](source/algorithm) | [dijkstra](source/algorithm/dijkstra) | Implementation of Dijkstra's algorithm used to solve pathfinding problems. | :construction: |
+| [algorithm](source/algorithm) | [astar](source/algorithm/astar) | Implementation of the astar algorithm used to solve pathfinding problems. | :heavy_check_mark: |
+| [algorithm](source/algorithm) | [dijkstra](source/algorithm/dijkstra) | Implementation of Dijkstra's algorithm used to solve pathfinding problems. | :heavy_check_mark: |
 | [algorithm](source/algorithm) | [gaussian_elimination](source/algorithm/gaussian_elimination) | Linear simultaneous equation solver. | :heavy_check_mark: |
 | [algorithm](source/algorithm) | [kmeans](source/algorithm/kmeans) | Implementation of the KMeans clustering algorithm. | :construction: |
 | [algorithm](source/algorithm) | [maxn](source/algorithm/maxn) | The MaxN search algorithm to find the best possible moves for an N player game with known information. | :construction: |

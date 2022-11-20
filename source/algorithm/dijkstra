@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef GTL_ALGORITHM_DIJKSTRA_HPP
 #define GTL_ALGORITHM_DIJKSTRA_HPP
 
-// Summary: Implementation of Dijkstra's algorithm used to solve pathfinding problems. [wip]
+// Summary: Implementation of Dijkstra's algorithm used to solve pathfinding problems.
 
 #if defined(_MSC_VER)
 #pragma warning(push, 0)
