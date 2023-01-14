@@ -249,18 +249,7 @@ namespace testbench {
     const long double* test_data<long double>::end()   { return &data[0] + sizeof(data) / sizeof(long double); }
 
     // Pointer type.
-    #if defined(__clang__)
-        // clang.
-        const char* test_data<decltype(nullptr)>::name = "nullptr_t";
-    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
-        // gcc.
-        const char* test_data<decltype(nullptr)>::name = "std::nullptr_t";
-    #elif defined(_MSC_VER)
-        // msvc.
-        const char* test_data<decltype(nullptr)>::name = "std::nullptr_t";
-    #else
-        #error "No support for this compiler."
-    #endif
+    const char* test_data<decltype(nullptr)>::name = "std::nullptr_t";
     const decltype(nullptr) test_data<decltype(nullptr)>::data[] = {
         nullptr
     };
