@@ -16,6 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <main.tests.hpp>
 #include <optimise.tests.hpp>
+#include <print.tests.hpp>
 #include <require.tests.hpp>
 
 #include <algorithm/astar>
@@ -83,31 +84,31 @@ struct map {
     }
 
     void print(const xy& start, const xy& end, std::vector<xy> path = {}) {
-        printf("#");
+        PRINT("#");
         for (int x = 0; x < width; ++x) {
-            printf("#");
+            PRINT("#");
         }
-        printf("#\n");
+        PRINT("#\n");
         for (int y = 0; y < height; ++y) {
-            printf("#");
+            PRINT("#");
             for (int x = 0; x < width; ++x) {
                 bool on_start = (x == start.x) && (y == start.y);
                 bool on_end = (x == end.x) && (y == end.y);
                 bool on_path = (std::find(path.begin(), path.end(), xy{x, y}) != path.end());
-                if (on_start) { printf("S"); continue; }
-                if (on_end) { printf("E"); continue; }
-                if (on_path) { printf("o"); continue; }
-                if (this->grid[y][x]) { printf(" "); continue; }
-                printf("X");
+                if (on_start) { PRINT("S"); continue; }
+                if (on_end) { PRINT("E"); continue; }
+                if (on_path) { PRINT("o"); continue; }
+                if (this->grid[y][x]) { PRINT(" "); continue; }
+                PRINT("X");
             }
-            printf("#\n");
+            PRINT("#\n");
         }
-        printf("#");
+        PRINT("#");
         for (int x = 0; x < width; ++x) {
-            printf("#");
+            PRINT("#");
         }
-        printf("#\n");
-        printf("\n");
+        PRINT("#\n");
+        PRINT("\n");
     }
 };
 
@@ -163,31 +164,31 @@ struct map2 {
     }
 
     void print(const xy& start, const xy& end, std::vector<xy> path = {}) {
-        printf("#");
+        PRINT("#");
         for (int x = 0; x < width; ++x) {
-            printf("#");
+            PRINT("#");
         }
-        printf("#\n");
+        PRINT("#\n");
         for (int y = 0; y < height; ++y) {
-            printf("#");
+            PRINT("#");
             for (int x = 0; x < width; ++x) {
                 bool on_start = (x == start.x) && (y == start.y);
                 bool on_end = (x == end.x) && (y == end.y);
                 bool on_path = (std::find(path.begin(), path.end(), xy{x, y}) != path.end());
-                if (on_start) { printf("S"); continue; }
-                if (on_end) { printf("E"); continue; }
-                if (on_path) { printf("%d",this->grid[y][x]); continue; }
-                if (this->grid[y][x]) { printf(" "); continue; }
-                printf("X");
+                if (on_start) { PRINT("S"); continue; }
+                if (on_end) { PRINT("E"); continue; }
+                if (on_path) { PRINT("%d",this->grid[y][x]); continue; }
+                if (this->grid[y][x]) { PRINT(" "); continue; }
+                PRINT("X");
             }
-            printf("#\n");
+            PRINT("#\n");
         }
-        printf("#");
+        PRINT("#");
         for (int x = 0; x < width; ++x) {
-            printf("#");
+            PRINT("#");
         }
-        printf("#\n");
-        printf("\n");
+        PRINT("#\n");
+        PRINT("\n");
     }
 };
 
