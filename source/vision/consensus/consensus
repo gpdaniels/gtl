@@ -60,7 +60,7 @@ namespace gtl {
         // Criteria for early exit: The failure probability a given model, e.g. 0.01 means a 1% chance of incorrect result.
         float criteria_probability_failure;
 
-        // The minimum number of iterations before exiting.
+        // The minimum number of iterations before exiting if other criteria are met.
         size_t criteria_iterations_minimum;
 
         // The maximum number of iterations before exiting.

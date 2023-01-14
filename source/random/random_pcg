@@ -82,7 +82,7 @@ namespace gtl {
         /// @brief  Get the next random number from the generator.
         /// @return A pseudo-random number.
         unsigned int get_random_raw() {
-            // Save current state.
+            // Save current state for output calculation.
             unsigned long long int state_previous = this->state;
             // Advance internal state.
             this->state = state_previous * 0x5851F42D4C957F2Dull + this->increment;
