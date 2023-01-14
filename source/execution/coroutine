@@ -104,7 +104,7 @@ namespace gtl {
             constexpr static const unsigned long long stack_alignment = 16;
 
             /// @brief  The amount of memory to allocate for the stack of the coroutine.
-            constexpr static const unsigned long long stack_size = SIGSTKSZ;
+            constexpr static const unsigned long long stack_size = 32768; // Would use SIGSTKSZ but that macro calls a non-constexpr function.
 
             /// @brief  The id of the signal raised to trigger a signal handler.
             constexpr static const int trigger_signal_identifier = SIGUSR1;
