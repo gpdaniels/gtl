@@ -83,7 +83,7 @@ namespace gtl {
 
             // Prepare structures.
             heap_queue<node_type> open;
-            std::unordered_map<coordinate_type, node_type, typename coordinate_type::HashFunction> closed;
+            std::unordered_map<coordinate_type, node_type, typename coordinate_type::hash_function> closed;
 
             // Add start node to open list.
             open.push(node_type{start, start, heuristic(start, end)});

@@ -37,7 +37,7 @@ struct xy {
     bool operator==(const xy& other) const {
         return ((this->x == other.x) && (this->y == other.y));
     }
-    struct HashFunction
+    struct hash_function
     {
         std::size_t operator()(const xy& pos) const
         {
