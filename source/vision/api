@@ -163,13 +163,9 @@ gtl_vision_set_sensor_data(
 typedef struct gtl_vision_pose_struct {
     long long int timestamp;
     float pose[7];
-    float velocity[7];
-    float acceleration[7];
-    float pose_confidence[7];
-    float velocity_confidence[7];
-    float acceleration_confidence[7];
+    float covariance[7*7];
 } gtl_vision_pose_struct;
-GTL_API_STATIC_ASSERT(sizeof(gtl_vision_pose_struct) == 176, "For ABI compatibility the sizeof(gtl_vision_pose_struct) must be 176 bytes.")
+GTL_API_STATIC_ASSERT(sizeof(gtl_vision_pose_struct) == 232, "For ABI compatibility the sizeof(gtl_vision_pose_struct) must be 232 bytes.")
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
