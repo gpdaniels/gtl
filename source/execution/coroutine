@@ -33,24 +33,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #if (defined(linux) || defined(__linux) || defined(__linux__)) || defined(__APPLE__)
 
-#   include <csetjmp>
+    #if defined(_FORTIFY_SOURCE)
+        #define GTL_COROUTINE_UNFORTIFY_SOURCE
+        #pragma push_macro("_FORTIFY_SOURCE")
+        #undef _FORTIFY_SOURCE
+    #endif
+        #include <csetjmp>
+    #if defined(GTL_COROUTINE_UNFORTIFY_SOURCE)
+        #undef GTL_COROUTINE_UNFORTIFY_SOURCE
+        #pragma pop_macro("_FORTIFY_SOURCE")
+    #endif
 
-#   include <csignal>
-#   include <cstdint>
-#   include <cstdlib>
-
-#ifdef __GLIBC__
-    // Use glibc internal longjmp to bypass fortify checks.
-    extern "C" void __libc_siglongjmp(sigjmp_buf env, int val);
-    #define siglongjmp __libc_siglongjmp
-#endif
+    #include <csignal>
+    #include <cstdint>
+    #include <cstdlib>
 
 //  Valgrind.
 #   if !defined(NDEBUG) && __has_include(<valgrind/valgrind.h>)
-#       include <valgrind/valgrind.h>
-#       define GTL_COROUTINE_HAVE_VALGRIND 1
+        #include <valgrind/valgrind.h>
+        #define GTL_COROUTINE_HAVE_VALGRIND 1
 #   else
-#       define GTL_COROUTINE_HAVE_VALGRIND 0
+        #define GTL_COROUTINE_HAVE_VALGRIND 0
 #   endif
 
 #endif
