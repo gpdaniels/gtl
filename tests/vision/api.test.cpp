@@ -37,7 +37,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Mock of the API.
 
 extern "C" struct gtl_vision_system {
-    std::string license = "unlicensed";
     std::string configuration = "{}";
     long long int timestamp_start = 0;
 
@@ -49,6 +48,32 @@ extern "C" struct gtl_vision_system {
         gtl_vision_get_timestamp(this, &timestamp_start);
     }
 };
+
+#if defined(_MSC_VER)
+    #if defined(GTL_API_EXPORT)
+        #define GTL_API_VISIBILITY __declspec(dllexport)
+    #else
+        #define GTL_API_VISIBILITY __declspec(dllimport)
+    #endif
+
+    #define GTL_API_CALL __stdcall
+
+    #define GTL_API_STATIC_ASSERT(ASSERTION, MESSAGE) static_assert(ASSERTION, MESSAGE);
+#else
+    #if defined(GTL_API_EXPORT)
+        #define GTL_API_VISIBILITY __attribute__((visibility("default")))
+    #else
+        #define GTL_API_VISIBILITY __attribute__((visibility("default")))
+    #endif
+
+    #define GTL_API_CALL
+
+    #if defined(__cplusplus)
+        #define GTL_API_STATIC_ASSERT(ASSERTION, MESSAGE) static_assert(ASSERTION, MESSAGE);
+    #else
+        #define GTL_API_STATIC_ASSERT(ASSERTION, MESSAGE) _Static_assert(ASSERTION, MESSAGE);
+    #endif
+#endif
 
 extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_create(gtl_vision_system** system) {
     if (!system) {
@@ -78,47 +103,6 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get
         return gtl_vision_return_failure_invalid_argument;
     }
     *timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
-    return gtl_vision_return_success;
-}
-
-extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get_license(gtl_vision_system* system, char* license, int* length) {
-    if (!system) {
-        return gtl_vision_return_failure_invalid_system;
-    }
-    if ((!length) || ((!license) && (*length != 0))) {
-        return gtl_vision_return_failure_invalid_argument;
-    }
-    if (*length < 0) {
-        return gtl_vision_return_failure_invalid_argument;
-    }
-    // TODO: This probably should return a description of the license rather than its contents.
-    if (static_cast<std::string::size_type>(*length) < system->license.size() + 1) {
-        *length = static_cast<int>(system->license.size() + 1);
-        return gtl_vision_return_failure_insufficient_data_length;
-    }
-    *length = static_cast<int>(system->license.size() + 1);
-    for (char c : system->license) {
-        *license++ = c;
-    }
-    *license++ = 0;
-    return gtl_vision_return_success;
-}
-
-extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_set_license(gtl_vision_system* system, const char* license, int length) {
-    if (!system) {
-        return gtl_vision_return_failure_invalid_system;
-    }
-    if (!license) {
-        return gtl_vision_return_failure_invalid_argument;
-    }
-    system->license.clear();
-    system->license.reserve(static_cast<std::string::size_type>(length));
-    for (int i = 0; i < length; ++i) {
-        system->license.push_back(*license++);
-    }
-
-    // TODO: License validation, and enabling/disabling of features.
-
     return gtl_vision_return_success;
 }
 
@@ -269,64 +253,6 @@ TEST(api, function, get_timestamp) {
     long long int stop = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
     REQUIRE(start < timestamp);
     REQUIRE(stop > timestamp);
-}
-
-TEST(api, function, get_set_license) {
-    gtl_vision_system* system = nullptr;
-    char license[100]{};
-    int length = 0;
-
-    REQUIRE(gtl_vision_create(&system) == gtl_vision_return_success);
-
-    REQUIRE(gtl_vision_get_license(nullptr, nullptr, nullptr) == gtl_vision_return_failure_invalid_system);
-    REQUIRE(gtl_vision_get_license(nullptr, &license[0], nullptr) == gtl_vision_return_failure_invalid_system);
-    REQUIRE(gtl_vision_get_license(nullptr, nullptr, &length) == gtl_vision_return_failure_invalid_system);
-    REQUIRE(gtl_vision_get_license(nullptr, &license[0], &length) == gtl_vision_return_failure_invalid_system);
-    REQUIRE(gtl_vision_get_license(system, nullptr, nullptr) == gtl_vision_return_failure_invalid_argument);
-    REQUIRE(gtl_vision_get_license(system, &license[0], nullptr) == gtl_vision_return_failure_invalid_argument);
-
-    length = 0;
-    REQUIRE(gtl_vision_get_license(system, nullptr, &length) == gtl_vision_return_failure_insufficient_data_length);
-    REQUIRE(length == 11);
-
-    length = 0;
-    REQUIRE(gtl_vision_get_license(system, &license[0], &length) == gtl_vision_return_failure_insufficient_data_length);
-    REQUIRE(length == 11);
-
-    length = 10;
-    REQUIRE(gtl_vision_get_license(system, &license[0], &length) == gtl_vision_return_failure_insufficient_data_length);
-    REQUIRE(length == 11);
-
-    length = 12;
-    REQUIRE(gtl_vision_get_license(system, &license[0], &length) == gtl_vision_return_success);
-    REQUIRE(length == 11);
-    REQUIRE(testbench::is_string_same("unlicensed", &license[0]));
-
-    length = 100;
-    REQUIRE(gtl_vision_get_license(system, &license[0], &length) == gtl_vision_return_success);
-    REQUIRE(length == 11);
-    REQUIRE(testbench::is_string_same("unlicensed", &license[0]));
-
-    REQUIRE(gtl_vision_set_license(nullptr, nullptr, 0) == gtl_vision_return_failure_invalid_system);
-    REQUIRE(gtl_vision_set_license(nullptr, "license", 0) == gtl_vision_return_failure_invalid_system);
-    REQUIRE(gtl_vision_set_license(nullptr, "license", 7) == gtl_vision_return_failure_invalid_system);
-    REQUIRE(gtl_vision_set_license(system, nullptr, 0) == gtl_vision_return_failure_invalid_argument);
-    REQUIRE(gtl_vision_set_license(system, "license", 0) == gtl_vision_return_success);
-
-    length = 100;
-    REQUIRE(gtl_vision_get_license(system, &license[0], &length) == gtl_vision_return_success);
-    REQUIRE(length == 1);
-    REQUIRE(testbench::is_string_same("", &license[0]));
-
-    REQUIRE(gtl_vision_set_license(system, "license", 7) == gtl_vision_return_success);
-
-    length = 100;
-    REQUIRE(gtl_vision_get_license(system, &license[0], &length) == gtl_vision_return_success);
-    REQUIRE(length == 8);
-    REQUIRE(testbench::is_string_same("license", &license[0]));
-
-    REQUIRE(gtl_vision_destroy(&system) == gtl_vision_return_success);
-    REQUIRE(system == nullptr);
 }
 
 TEST(api, function, get_set_configuration) {

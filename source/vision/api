@@ -66,10 +66,9 @@ typedef enum gtl_vision_return_enum {
     gtl_vision_return_failure_insufficient_data_length  = 0x00000001,
     gtl_vision_return_failure_invalid_system            = 0x00000010,
     gtl_vision_return_failure_invalid_argument          = 0x00000100,
-    gtl_vision_return_failure_invalid_license           = 0x00001000,
-    gtl_vision_return_failure_invalid_configuration     = 0x00010000,
-    gtl_vision_return_failure_invalid_rig_sensor        = 0x00100000,
-    gtl_vision_return_failure_invalid_sensor_data       = 0x01000000,
+    gtl_vision_return_failure_invalid_configuration     = 0x00001000,
+    gtl_vision_return_failure_invalid_rig_sensor        = 0x00010000,
+    gtl_vision_return_failure_invalid_sensor_data       = 0x00100000,
     gtl_vision_return_invalid                           = 0xFFFFFFFF
 } gtl_vision_return_enum;
 GTL_API_STATIC_ASSERT(sizeof(gtl_vision_return_enum) == 4, "For ABI compatibility the sizeof(gtl_vision_return_enum) must be 4 bytes.")
@@ -94,24 +93,6 @@ GTL_API_CALL
 gtl_vision_get_timestamp(
     gtl_vision_system* system,
     long long int* timestamp
-);
-
-GTL_API_VISIBILITY
-gtl_vision_return_enum
-GTL_API_CALL
-gtl_vision_get_license(
-    gtl_vision_system* system,
-    char* license,
-    int* length
-);
-
-GTL_API_VISIBILITY
-gtl_vision_return_enum
-GTL_API_CALL
-gtl_vision_set_license(
-    gtl_vision_system* system,
-    const char* license,
-    int length
 );
 
 GTL_API_VISIBILITY
@@ -239,6 +220,8 @@ gtl_vision_get_map_chunk(
     gtl_vision_map_chunk_struct* chunk
 );
 
+#undef GTL_API_VISIBILITY
+#undef GTL_API_CALL
 #undef GTL_API_STATIC_ASSERT
 
 #if defined(__cplusplus)
