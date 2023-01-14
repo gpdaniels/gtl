@@ -276,7 +276,7 @@ TEST_CASE("SquareCoveringDistributor", "[SquareCoveringDistributor][FeatureDistr
         // For any number of desired features bigger than the total number of points, the result
         // should always be the same: obtaining all the points.
         std::vector<int> allIndices(inputFeaturePoints.size());
-        for (size_t i = 0; i < inputFeaturePoints.size(); i++)
+        for (std::size_t i = 0; i < inputFeaturePoints.size(); i++)
         {
             allIndices[i] = static_cast<int>(i);
         }
@@ -310,7 +310,7 @@ TEST_CASE("SquareCoveringDistributor", "[SquareCoveringDistributor][FeatureDistr
         // For any number of desired features bigger than the total number of points, the result
         // should always be the same: obtaining all the points.
         std::vector<int> allIndices(inputFeaturePoints.size());
-        for (size_t i = 0; i < inputFeaturePoints.size(); i++)
+        for (std::size_t i = 0; i < inputFeaturePoints.size(); i++)
         {
             allIndices[i] = static_cast<int>(i);
         }
@@ -341,7 +341,7 @@ TEST_CASE("SquareCoveringDistributor", "[SquareCoveringDistributor][FeatureDistr
         // For any number of desired features bigger than the total number of points, the result
         // should always be the same: obtaining all the points.
         std::vector<int> allIndices(inputFeaturePoints.size());
-        for (size_t i = 0; i < inputFeaturePoints.size(); i++)
+        for (std::size_t i = 0; i < inputFeaturePoints.size(); i++)
         {
             allIndices[i] = static_cast<int>(i);
         }

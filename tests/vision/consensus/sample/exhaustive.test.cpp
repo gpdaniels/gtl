@@ -52,7 +52,7 @@ TEST(exhaustive, constructor, empty) {
 TEST(exhaustive, function, sample) {
     {
         gtl::exhaustive<1> exhaustive;
-        size_t indices[1] = { 123456 };
+        std::size_t indices[1] = { 123456 };
         exhaustive.prepare(1);
         exhaustive.sample(&indices[0]);
         REQUIRE(indices[0] == 0);
@@ -63,7 +63,7 @@ TEST(exhaustive, function, sample) {
     }
     {
         gtl::exhaustive<5> exhaustive;
-        size_t indices[5] = { 1111, 2222, 3333, 4444, 5555 };
+        std::size_t indices[5] = { 1111, 2222, 3333, 4444, 5555 };
         exhaustive.prepare(6);
         exhaustive.sample(&indices[0]);
         REQUIRE(indices[0] == 0);

@@ -57,8 +57,8 @@ TEST(inlier_support, constructor, threshold) {
 TEST(inlier_support, function, evaluate) {
     gtl::inlier_support inlier_support(1.5f);
     float residuals[5] = { 0.0f, 1.0f, 2.0f, 1.0f, -1.0f };
-    size_t inliers[5] = { 1111, 2222, 3333, 4444, 5555 };
-    size_t inliers_size = 0;
+    std::size_t inliers[5] = { 1111, 2222, 3333, 4444, 5555 };
+    std::size_t inliers_size = 0;
     float cost = inlier_support.evaluate(residuals, 5, inliers, inliers_size);
     REQUIRE(testbench::is_value_equal(cost, 1.0f));
     REQUIRE(inliers_size == 4);

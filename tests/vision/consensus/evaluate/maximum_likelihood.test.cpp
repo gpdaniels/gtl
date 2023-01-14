@@ -57,8 +57,8 @@ TEST(maximum_likelihood, constructor, threshold) {
 TEST(maximum_likelihood, function, evaluate) {
     gtl::maximum_likelihood maximum_likelihood(1.5f);
     float residuals[5] = { 0.0f, 1.0f, 2.0f, 1.0f, -1.0f };
-    size_t inliers[5] = { 1111, 2222, 3333, 4444, 5555 };
-    size_t inliers_size = 0;
+    std::size_t inliers[5] = { 1111, 2222, 3333, 4444, 5555 };
+    std::size_t inliers_size = 0;
     float cost = maximum_likelihood.evaluate(residuals, 5, inliers, inliers_size);
     REQUIRE(testbench::is_value_equal(cost, 2.5f));
     REQUIRE(inliers_size == 4);

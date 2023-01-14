@@ -57,8 +57,8 @@ TEST(least_median_of_squares, constructor, threshold) {
 TEST(least_median_of_squares, function, evaluate) {
     gtl::least_median_of_squares least_median_of_squares(1);
     float residuals[5] = { 100.0f, 1.0f, 2.0f, 1.0f, -1.0f };
-    size_t inliers[5] = { 1111, 2222, 3333, 4444, 5555 };
-    size_t inliers_size = 0;
+    std::size_t inliers[5] = { 1111, 2222, 3333, 4444, 5555 };
+    std::size_t inliers_size = 0;
     float cost = least_median_of_squares.evaluate(residuals, 5, inliers, inliers_size);
     REQUIRE(testbench::is_value_equal(cost, 2.5f));
     REQUIRE(inliers_size == 4);

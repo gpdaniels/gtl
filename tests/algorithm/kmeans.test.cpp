@@ -66,7 +66,7 @@ TEST(kmeans, evaluate, data) {
         {+10.0f - 0.5f, +10.0f - 0.5f}
     };
 
-    std::vector<size_t> clusters;
+    std::vector<std::size_t> clusters;
 
     clusters = gtl::kmeans<xy, float>::compute(data, 2, 100, 0.001f, [](const xy& lhs, const xy& rhs){
         return std::sqrt((lhs.x - rhs.x) * (lhs.x - rhs.x) + ((lhs.y - rhs.y) * (lhs.y - rhs.y)));

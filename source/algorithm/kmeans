@@ -37,32 +37,32 @@ namespace gtl {
         using distance_function_type = distance_type(const data_type&, const data_type&);
 
     public:
-        static std::vector<size_t> compute(
+        static std::vector<std::size_t> compute(
             const std::vector<data_type>& data,
-            size_t cluster_count,
+            std::size_t cluster_count,
             int max_iterations,
             distance_type min_delta,
             distance_function_type distance_function
         ) {
             std::vector<data_type> cluster_centroids(cluster_count);
-            std::vector<size_t> cluster_data(data.size());
+            std::vector<std::size_t> cluster_data(data.size());
 
             // TODO: ASSERT there is enough data.
 
             // Initialise cluster centroids using data (could be done using random points).
-            for (size_t i = 0; i < cluster_count; ++i) {
+            for (std::size_t i = 0; i < cluster_count; ++i) {
                 cluster_centroids[i] = data[i];
             }
 
             // Iteratively improve the clusters.
             for (int iteration = 0; iteration < max_iterations; ++iteration) {
                 // Allocate points to clusters.
-                for (size_t i = 0; i < data.size(); ++i) {
+                for (std::size_t i = 0; i < data.size(); ++i) {
                     // Assume first cluster.
                     cluster_data[i] = 0;
                     distance_type cluster_distance = distance_function(data[i], cluster_centroids[cluster_data[i]]);
                     // Search remaining clusters for closer centroids.
-                    for (size_t j = 1; j < cluster_count; ++j) {
+                    for (std::size_t j = 1; j < cluster_count; ++j) {
                         distance_type distance = distance_function(data[i], cluster_centroids[j]);
                         if (distance < cluster_distance) {
                             cluster_data[i] = j;
@@ -73,13 +73,13 @@ namespace gtl {
                 // Recalculate cluster centroids.
                 std::vector<data_type> centroid_data_sum(cluster_count);
                 std::vector<int> centroid_data_count(cluster_count);
-                for (size_t i = 0; i < data.size(); ++i) {
+                for (std::size_t i = 0; i < data.size(); ++i) {
                     centroid_data_sum[cluster_data[i]] = centroid_data_sum[cluster_data[i]] + data[i];
                     ++centroid_data_count[cluster_data[i]];
                 }
                 // TODO: If data count is zero, should I move the centroid?
                 distance_type delta = 0;
-                for (size_t i = 0; i < cluster_count; ++i) {
+                for (std::size_t i = 0; i < cluster_count; ++i) {
                     data_type centroid = centroid_data_sum[i] / centroid_data_count[i];
                     delta += distance_function(cluster_centroids[i], centroid);
                     cluster_centroids[i] = centroid;

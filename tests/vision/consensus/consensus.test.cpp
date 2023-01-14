@@ -50,15 +50,15 @@ public:
 class line_estimator final
     : public gtl::estimator<xy, 2, line, 1> {
 public:
-    virtual size_t generate_models(const data_type* const __restrict data, size_t data_size, model_type* const __restrict models) override final {
+    virtual std::size_t generate_models(const data_type* const __restrict data, std::size_t data_size, model_type* const __restrict models) override final {
         REQUIRE(data_size == 2);
         models[0].gradient = (data[1].y - data[0].y) / (data[1].x - data[0].x);
         models[0].intercept = data[1].y - models[0].gradient * data[1].x;
         return 1;
     }
-    virtual void compute_residuals(const data_type* const __restrict data, size_t data_size, const model_type& model, float* const __restrict residuals) override final {
+    virtual void compute_residuals(const data_type* const __restrict data, std::size_t data_size, const model_type& model, float* const __restrict residuals) override final {
         const float denominator = std::sqrt(model.gradient * model.gradient + 1.0f);
-        for (size_t i = 0; i < data_size; ++i) {
+        for (std::size_t i = 0; i < data_size; ++i) {
             residuals[i] = std::abs(-model.gradient * data[i].x + data[i].y - model.intercept) / denominator;
         }
     }
@@ -84,7 +84,7 @@ TEST(consensus, evaluate, line) {
         }
     };
 
-    constexpr static const size_t data_size = 2000;
+    constexpr static const std::size_t data_size = 2000;
     random_pcg rng;
 
     const float gradient = 1.234f;
@@ -92,7 +92,7 @@ TEST(consensus, evaluate, line) {
 
     // Create a dataset with half the points fitting the line (y = 1.234x + 5.6789) and half noise.
     xy data[data_size];
-    for (size_t i = 0; i < data_size; ++i) {
+    for (std::size_t i = 0; i < data_size; ++i) {
         if (i % 2 == 0) {
             const float line_noise_x = rng.get_random_exclusive_top() * 0.1f;
             const float line_noise_y = rng.get_random_exclusive_top() * 0.1f;
@@ -107,8 +107,8 @@ TEST(consensus, evaluate, line) {
 
     const float probability_failure = 0.01f;
     const float inlier_ratio = 0.4f;
-    const size_t iterations_minimum = 0;
-    const size_t iterations_maximum = 100;
+    const std::size_t iterations_minimum = 0;
+    const std::size_t iterations_maximum = 100;
     const float residual_thresdhold = 0.1f;
 
     gtl::random<2> random;
@@ -126,11 +126,11 @@ TEST(consensus, evaluate, line) {
     );
 
     line best;
-    size_t inliers[data_size];
-    size_t inliers_size = 0;
+    std::size_t inliers[data_size];
+    std::size_t inliers_size = 0;
     REQUIRE(consensus.estimate(data, data_size, best, inliers, inliers_size));
 
     REQUIRE(testbench::is_value_approx(best.gradient, gradient, 0.05f));
     REQUIRE(testbench::is_value_approx(best.intercept, intercept, 0.05f));
-    REQUIRE(testbench::is_value_approx(inliers_size, data_size / 2, static_cast<size_t>(data_size * 0.01f)));
+    REQUIRE(testbench::is_value_approx(inliers_size, data_size / 2, static_cast<std::size_t>(data_size * 0.01f)));
 }

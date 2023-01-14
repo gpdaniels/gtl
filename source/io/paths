@@ -301,7 +301,7 @@ namespace gtl {
                 if (!_getcwd(&current_working_directory[0], MAX_PATH)) {
                     return false;
                 }
-                size_t current_working_directory_size = current_working_directory.find_last_not_of('\0');
+                std::size_t current_working_directory_size = current_working_directory.find_last_not_of('\0');
                 if (current_working_directory_size == std::string::npos) {
                     return false;
                 }
@@ -337,7 +337,7 @@ namespace gtl {
                 if (SHGetFolderPathA(nullptr, CSIDL_MYDOCUMENTS, nullptr, 0, &home_directory[0]) < 0) {
                     return false;
                 }
-                size_t home_path_size = home_directory.find_last_not_of('\0');
+                std::size_t home_path_size = home_directory.find_last_not_of('\0');
                 if (home_path_size == std::string::npos) {
                     return false;
                 }
@@ -382,7 +382,7 @@ namespace gtl {
                 if (SHGetFolderPathA(nullptr, CSIDL_COMMON_APPDATA, nullptr, 0, &application_data_directory[0]) < 0) {
                     return false;
                 }
-                size_t pathLength = application_data_directory.find_last_not_of('\0');
+                std::size_t pathLength = application_data_directory.find_last_not_of('\0');
                 if (pathLength == std::string::npos) {
                     return false;
                 }

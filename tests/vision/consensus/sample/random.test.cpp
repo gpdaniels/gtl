@@ -52,7 +52,7 @@ TEST(random, constructor, empty) {
 TEST(random, function, sample) {
     {
         gtl::random<1> random;
-        size_t indices[1] = { 123456 };
+        std::size_t indices[1] = { 123456 };
         random.prepare(1);
         random.sample(&indices[0]);
         REQUIRE(indices[0] == 0);
@@ -63,7 +63,7 @@ TEST(random, function, sample) {
     }
     {
         gtl::random<5> random;
-        size_t indices[5] = { 1111, 2222, 3333, 4444, 5555 };
+        std::size_t indices[5] = { 1111, 2222, 3333, 4444, 5555 };
         random.prepare(6);
         random.sample(&indices[0]);
         REQUIRE(indices[0] == 1);

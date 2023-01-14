@@ -42,8 +42,8 @@ struct xy {
     {
         std::size_t operator()(const xy& pos) const
         {
-            size_t rowHash = std::hash<int>()(pos.x);
-            size_t colHash = std::hash<int>()(pos.y) << 1;
+            std::size_t rowHash = std::hash<int>()(pos.x);
+            std::size_t colHash = std::hash<int>()(pos.y) << 1;
             return rowHash ^ colHash;
         }
     };
@@ -351,7 +351,7 @@ TEST(astar, evaluate, solve_big) {
 
     int risk = 0;
 
-    for (size_t i = 1; i < path.size(); ++i) {
+    for (std::size_t i = 1; i < path.size(); ++i) {
         risk += maze.grid[path[i].y][path[i].x];
     }
 

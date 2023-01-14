@@ -320,7 +320,7 @@ TEST(thread_pool, evaluate, benchmark) {
     constexpr static const unsigned int flag_count = 1000;
     constexpr static const unsigned int sum_count = 10000;
 
-    static auto work = [](void* values, size_t index) {
+    static auto work = [](void* values, std::size_t index) {
         volatile unsigned long long int sum = 0;
         for (unsigned int i = 0; i < sum_count; ++i) {
             sum += 1;
@@ -390,7 +390,7 @@ TEST(thread_pool, evaluate, benchmark) {
         std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
         dispatch_apply_f(flag_count, queue, values,
-            [](void* values, size_t index) {
+            [](void* values, std::size_t index) {
                 work(values, index);
             }
         );
