@@ -74,6 +74,26 @@ typedef enum gtl_vision_return_enum {
 GTL_API_STATIC_ASSERT(sizeof(gtl_vision_return_enum) == 4, "For ABI compatibility the sizeof(gtl_vision_return_enum) must be 4 bytes.")
 
 GTL_API_VISIBILITY
+inline
+const char*
+GTL_API_CALL
+gtl_vision_return_enum_to_string(
+    gtl_vision_return_enum return_enum
+) {
+    switch (return_enum) {
+        case gtl_vision_return_success:                             return "success";
+        case gtl_vision_return_failure_insufficient_data_length:    return "failure: insufficient data length";
+        case gtl_vision_return_failure_invalid_system:              return "failure: invalid system";
+        case gtl_vision_return_failure_invalid_argument:            return "failure: invalid argument";
+        case gtl_vision_return_failure_invalid_configuration:       return "failure: invalid configuration";
+        case gtl_vision_return_failure_invalid_rig_sensor:          return "failure: invalid rig sensor";
+        case gtl_vision_return_failure_invalid_sensor_data:         return "failure: invalid sensor_data";
+        case gtl_vision_return_invalid:                             return "invalid";
+    }
+    return "unknown";
+}
+
+GTL_API_VISIBILITY
 gtl_vision_return_enum
 GTL_API_CALL
 gtl_vision_create(
@@ -125,6 +145,27 @@ typedef enum gtl_vision_sensor_emum {
     gtl_vision_sensor_invalid                           = 0xFFFFFFFF
 } gtl_vision_sensor_emum;
 GTL_API_STATIC_ASSERT(sizeof(gtl_vision_sensor_emum) == 4, "For ABI compatibility the sizeof(gtl_vision_sensor_emum) must be 4 bytes.")
+
+GTL_API_VISIBILITY
+inline
+const char*
+GTL_API_CALL
+gtl_vision_sensor_emum_to_string(
+    gtl_vision_sensor_emum sensor_emum
+) {
+    switch (sensor_emum) {
+        case gtl_vision_sensor_empty:                               return "empty";
+        case gtl_vision_sensor_map_chunk:                           return "map chunk";
+        case gtl_vision_sensor_local_scale:                         return "local scale";
+        case gtl_vision_sensor_local_linear:                        return "local linear";
+        case gtl_vision_sensor_local_angular:                       return "local augular";
+        case gtl_vision_sensor_remote_range:                        return "remote range";
+        case gtl_vision_sensor_remote_bearing:                      return "remote bearing";
+        case gtl_vision_sensor_remote_description:                  return "remote description";
+        case gtl_vision_sensor_invalid:                             return "invalid";
+    }
+    return "unknown";
+}
 
 typedef struct gtl_vision_sensor_rig_struct {
     gtl_vision_sensor_emum type;

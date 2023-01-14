@@ -228,6 +228,33 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get
     return gtl_vision_return_success;
 }
 
+// Tests for the enum to sting functions.
+
+TEST(api, function, return_enum_to_string) {
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_success),                          "success"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_insufficient_data_length), "failure: insufficient data length"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_invalid_system),           "failure: invalid system"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_invalid_argument),         "failure: invalid argument"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_invalid_configuration),    "failure: invalid configuration"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_invalid_rig_sensor),       "failure: invalid rig sensor"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_invalid_sensor_data),      "failure: invalid sensor_data"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_invalid),                          "invalid"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(static_cast<gtl_vision_return_enum>(0xFFFFFFFE)),    "unknown"));
+}
+
+TEST(api, function, sensor_emum_to_string) {
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_empty),                            "empty"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_map_chunk),                        "map chunk"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_local_scale),                      "local scale"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_local_linear),                     "local linear"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_local_angular),                    "local augular"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_remote_range),                     "remote range"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_remote_bearing),                   "remote bearing"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_remote_description),               "remote description"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_invalid),                          "invalid"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(static_cast<gtl_vision_sensor_emum>(0xFFFFFFFE)),    "unknown"));
+}
+
 // Tests for the API functionality.
 
 TEST(api, function, create_destroy) {
