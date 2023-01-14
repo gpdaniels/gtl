@@ -46,7 +46,8 @@ namespace gtl {
     /// @return  A representation of the time now using a monotonically increasing clock.
     /// @note    The clock will continue incrementing when the computer is sleeping.
     /// @warning The timestamp epoch is not related to the unix epoch.
-    long long int timestamp() {
+    inline long long int timestamp();
+    inline long long int timestamp() {
         #if (defined(linux) || defined(__linux) || defined(__linux__))
             struct timespec ts;
             int return_code = clock_gettime(CLOCK_BOOTTIME, &ts);
