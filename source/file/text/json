@@ -36,7 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace gtl {
     class json final {
-    private:
+    public:
         class value final {
         public:
             using null_type = decltype(nullptr);
@@ -427,15 +427,19 @@ namespace gtl {
             return false;
         }
 
-
     public:
         bool parse(const std::string& data) {
             std::string::size_type index = 0;
             this->root = parse_recursive(data, index);
             return (index == data.size());
         }
+
         std::string compose() const {
             return this->root.to_string();
+        }
+
+        value& document() {
+            return this->root;
         }
     };
 
