@@ -374,6 +374,15 @@ FIND_PACKAGE(Threads REQUIRED)
 
 ################################################################################
 
+# Enable installing files.
+FOREACH(SOURCE_FILE ${SOURCE_FILES})
+    FILE(RELATIVE_PATH SOURCE_DIR "${CMAKE_SOURCE_DIR}/source/" ${SOURCE_FILE})
+    GET_FILENAME_COMPONENT(SOURCE_DIR "${SOURCE_DIR}" DIRECTORY)
+    INSTALL(FILES ${SOURCE_FILE} DESTINATION "include/${PROJECT_NAME}/${SOURCE_DIR}")
+ENDFOREACH()
+
+################################################################################
+
 # Get cmake system name in UPPER form.
 STRING(TOUPPER ${CMAKE_SYSTEM_NAME} UPPER_CMAKE_SYSTEM_NAME)
 
