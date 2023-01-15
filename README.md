@@ -77,6 +77,7 @@ The current classes are as described below:
 | [random](source/random) | [random_romu_64](source/random/random_romu_64) | Romu 64 bit pseudo\-random number generator. | :heavy_check_mark: |
 | [random](source/random) | [random_splitmix](source/random/random_splitmix) | Splitmix pseudo\-random number generator. | :heavy_check_mark: |
 | [random](source/random) | [random_xorshift](source/random/random_xorshift) | Xorshift pseudo\-random number generator. | :heavy_check_mark: |
+| [string](source/string) | [static_string](source/string/static_string) | Container and macro generator for compile time string templates. | :heavy_check_mark: |
 | [string](source/string) | [static_string_encrypted](source/string/static_string_encrypted) | Compile\-time string encryption with runtime decryption to obfuscate strings. | :heavy_check_mark: |
 | [type](source/type) | [enum_name](source/type/enum_name) | Compile\-time enum value name as a string with \-fno\-rtti. | :heavy_check_mark: |
 | [type](source/type) | [standard](source/type/standard) | Standard type size sanity. | :construction: |

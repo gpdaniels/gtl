@@ -1,0 +1,454 @@
+/*
+Copyright (C) 2018-2022 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_STRING_STATIC_STRING_HPP
+#define GTL_STRING_STATIC_STRING_HPP
+
+// Summary: Container and macro generator for compile time string templates.
+
+// TODO: Broken on windows! Crashes the compiler...
+#if !defined(_MSC_VER)
+
+namespace gtl {
+    /// @brief  Type to hold a compile time string as a parameter pack of characters.
+    /// @tparam characters The characters of the string (without a null terminator).
+    template <char... characters>
+    class static_string final {
+    private:
+        /// @brief  Template struct that holds a sequence of integers, derived from http://stackoverflow.com/a/32223343.
+        template <typename integer_type, integer_type... indexes>
+        struct integer_sequence {
+            using sequence_type = integer_sequence;
+        };
+
+        /// @brief  Template struct declaration that combines two sequences into one.
+        template <typename integer_type, typename lhs_sequence, typename rhs_sequence>
+        struct merge_sequences;
+
+        /// @brief  Template struct definition and partial specialisation for merging two interger_sequences.
+        template <typename integer_type, integer_type... lhs_indexes, integer_type... rhs_indexes>
+        struct merge_sequences<integer_type, integer_sequence<integer_type, lhs_indexes...>, integer_sequence<integer_type, rhs_indexes...>>
+            : integer_sequence<integer_type, lhs_indexes..., (sizeof...(lhs_indexes) + rhs_indexes)...> {
+        };
+
+        /// @brief  Template struct to create an integer_sequence from zero to the given length.
+        template <typename integer_type, unsigned long long length>
+        struct make_integer_sequence final
+            : merge_sequences<integer_type, typename make_integer_sequence<integer_type, length / 2>::sequence_type, typename make_integer_sequence<integer_type, length - length / 2>::sequence_type> {
+        };
+
+        /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length zero.
+        template<typename integer_type>
+        struct make_integer_sequence<integer_type, 0> final
+            : integer_sequence<integer_type> {
+        };
+
+        /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length one.
+        template<typename integer_type>
+        struct make_integer_sequence<integer_type, 1> final
+            : integer_sequence<integer_type, 0> {
+        };
+
+    public:
+        /// @brief  Get the number of characters in the string.
+        /// @return The number of characters in the string.
+        /// @warning This size does not include a null terminating character.
+        constexpr static unsigned long long int size() {
+            return sizeof...(characters);
+        }
+
+        /// @brief  Get the number of characters in the string.
+        /// @return The number of characters in the string.
+        /// @warning This length does not include a null terminating character.
+        constexpr static unsigned long long int length() {
+            return sizeof...(characters);
+        }
+
+    public:
+        /// @brief  Get the characters of the string reassembled into a null terminated string array.
+        /// @return A pointer to a null terminated array of characters.
+        static const char* c_str() {
+            constexpr static const char data[sizeof...(characters) + 1] = { characters..., 0 };
+            return &data[0];
+        }
+
+    public:
+        /// @brief  Append a string of characters to this string and return the result.
+        /// @tparam other_characters The characters in the other string.
+        /// @param  other The string to append.
+        /// @return A static_string object representing the original string with the other string appended.
+        template <char... other_characters>
+        constexpr static auto append(const static_string<other_characters...>& other) {
+            return concatenate_sequence(other, make_integer_sequence<unsigned long long, sizeof...(characters)>{}, make_integer_sequence<unsigned long long, sizeof...(other_characters)>{});
+        }
+
+        /// @brief  Append a string of characters to this string and return the result.
+        /// @tparam other_characters The characters in the other string.
+        /// @param  other The string to append.
+        /// @return A static_string object representing the original string with the other string appended.
+        template <char... other_characters>
+        constexpr auto operator+(const static_string<other_characters...>& other) {
+            return concatenate_sequence(other, make_integer_sequence<unsigned long long, sizeof...(characters)>{}, make_integer_sequence<unsigned long long, sizeof...(other_characters)>{});
+        }
+
+    private:
+        /// @brief  Append a string of characters to this string and return the result.
+        /// @tparam other_characters The characters in the other string.
+        /// @tparam indexes The indexes along the string to keep in the resultant appended string.
+        /// @tparam other_indexes The indexes along the other string to keep in the resultant appended string.
+        /// @param  other The string to append.
+        /// @return A static_string object representing the original string with the other string appended.
+        template <char... other_characters, unsigned long long... indexes, unsigned long long... other_indexes>
+        constexpr static auto concatenate_sequence(const static_string<other_characters...>& other, integer_sequence<unsigned long long, indexes...>, integer_sequence<unsigned long long, other_indexes...>) {
+            static_cast<void>(other);
+            constexpr const char data[sizeof...(characters) + 1] = { characters..., 0 };
+            constexpr const char data_other[sizeof...(other_characters) + 1] = { other_characters..., 0 };
+            return static_string<data[indexes]..., data_other[other_indexes]...>{};
+        }
+
+    public:
+        /// @brief  Search for the first index of a given character within this string.
+        /// @param  character The character to find.
+        /// @param  starting_index The index of the string to start searching from.
+        /// @return The index of the character if found, otherwise 0xFFFFFFFFFFFFFFFF.
+        constexpr static unsigned long long int find_first(const char character, const long long int starting_index = 0) {
+            constexpr const char data[sizeof...(characters) + 1] = { characters..., 0 };
+            const long long int index_clamped = starting_index < 0 ? 0 : starting_index;
+            for (long long int index = index_clamped; index < static_cast<long long int>(sizeof...(characters)); ++index) {
+                if (data[index] == character) {
+                    return static_cast<unsigned long long int>(index);
+                }
+            }
+            return 0xFFFFFFFFFFFFFFFF;
+        }
+
+        /// @brief  Search for the first index of a given string within this string.
+        /// @tparam other_characters The characters in the search string.
+        /// @param  string The string to find.
+        /// @param  starting_index The index of the string to start searching from.
+        /// @return The index of the string if found, otherwise 0xFFFFFFFFFFFFFFFF.
+        template <char... other_characters>
+        constexpr static unsigned long long int find_first(const static_string<other_characters...>& string, const long long int starting_index = 0) {
+            static_cast<void>(string);
+            constexpr const char lhs_data[sizeof...(characters) + 1] = { characters..., 0 };
+            constexpr const char rhs_data[sizeof...(other_characters) + 1] = { other_characters..., 0 };
+            const long long int size_max = static_cast<long long int>(sizeof...(characters)) - static_cast<long long int>(sizeof...(other_characters));
+            const long long int index_clamped = starting_index < 0 ? 0 : starting_index;
+            for (long long int index = index_clamped; index < size_max; ++index) {
+                bool found = (static_cast<long long int>(sizeof...(other_characters)) > 0);
+                for (long long int search = 0; search < static_cast<long long int>(sizeof...(other_characters)); ++search) {
+                    if (lhs_data[index + search] != rhs_data[search]) {
+                        found = false;
+                        break;
+                    }
+                }
+                if (found) {
+                    return static_cast<unsigned long long int>(index);
+                }
+            }
+            return 0xFFFFFFFFFFFFFFFF;
+        }
+
+        /// @brief  Search for the last index of a given character within this string.
+        /// @param  character The character to find.
+        /// @param  starting_index The index of the string to start searching from.
+        /// @return The index of the character if found, otherwise 0xFFFFFFFFFFFFFFFF.
+        constexpr static unsigned long long int find_last(const char character, const long long int starting_index = static_cast<long long int>(sizeof...(characters)) - 1) {
+            constexpr const char data[sizeof...(characters) + 1] = { characters..., 0 };
+            const long long int index_clamped = starting_index < static_cast<long long int>(sizeof...(characters)) ? starting_index : static_cast<long long int>(sizeof...(characters)) - 1;
+            for (long long int index = index_clamped; index >= 0; --index) {
+                if (data[index] == character) {
+                    return static_cast<unsigned long long int>(index);
+                }
+            }
+            return 0xFFFFFFFFFFFFFFFF;
+        }
+
+        /// @brief  Search for the last index of a given string within this string.
+        /// @tparam other_characters The characters in the search string.
+        /// @param  string The string to find.
+        /// @param  starting_index The index of the string to start searching from.
+        /// @return The index of the string if found, otherwise 0xFFFFFFFFFFFFFFFF.
+        template <char... other_characters>
+        constexpr static unsigned long long int find_last(const static_string<other_characters...>& string, const long long int starting_index = static_cast<long long int>(sizeof...(characters)) - static_cast<long long int>(sizeof...(other_characters)) - 1) {
+            static_cast<void>(string);
+            constexpr const char lhs_data[sizeof...(characters) + 1] = { characters..., 1 };
+            constexpr const char rhs_data[sizeof...(other_characters) + 1] = { other_characters..., 1 };
+            const long long int index_max = static_cast<long long int>(sizeof...(characters)) - static_cast<long long int>(sizeof...(other_characters)) - 1;
+            const long long int index_clamped = starting_index > index_max ? index_max : starting_index;
+            for (long long int index = index_clamped; index >= 0; --index) {
+                bool found = (static_cast<long long int>(sizeof...(other_characters)) > 0);
+                for (long long int search = 0; search < static_cast<long long int>(sizeof...(other_characters)); ++search) {
+                    if (lhs_data[index + search] != rhs_data[search]) {
+                        found = false;
+                        break;
+                    }
+                }
+                if (found) {
+                    return static_cast<unsigned long long int>(index);
+                }
+            }
+            return 0xFFFFFFFFFFFFFFFF;
+        }
+
+    public:
+        /// @brief  Create a sub-string from this string by providing a template start position and length.
+        /// @tparam sub_string_start The index at which to start the returned sub-string.
+        /// @tparam sub_string_length The length of characters to copy into the returned sub-string.
+        /// @return The requested sub-string.
+        template<unsigned long long sub_string_start, unsigned long long sub_string_length>
+        constexpr static auto sub_string() {
+            static_assert(sub_string_start <= sizeof...(characters), "Sub string start must be within the parent string.");
+            static_assert(sub_string_length <= sizeof...(characters), "Sub string length cannot be greater than parent string.");
+            return sub_string_sequence<sub_string_start>(make_integer_sequence<unsigned long long, sub_string_length>{});
+        }
+
+    private:
+        /// @brief  Create a sub-string from this string by providing an integer_sequence of indexes to include.
+        /// @tparam sub_string_start The index at which to start the returned sub-string.
+        /// @tparam indexes The indexes along the string to keep in the returned sub-string.
+        /// @return The requested sub-string.
+        template<unsigned long long sub_string_start, unsigned long long... indexes>
+        constexpr static auto sub_string_sequence(integer_sequence<unsigned long long, indexes...>) {
+            constexpr const char data[sizeof...(characters) + 1] = { characters..., 0 };
+            return static_string<data[indexes + sub_string_start]...>{};
+        }
+
+    public:
+        /// @brief  Replace all characters with their lowercase versions if they have one.
+        /// @return A static_string object representing the original string in lowercase.
+        constexpr static auto to_lower() {
+            return to_lower_sequence(make_integer_sequence<unsigned long long, sizeof...(characters)>{});
+        }
+
+    private:
+        /// @brief  Replace all characters with their lowercase versions if they have one.
+        /// @tparam indexes The indexes along the string to check and potentially replace.
+        /// @return A static_string object representing the original string in lowercase.
+        template<unsigned long long... indexes>
+        constexpr static auto to_lower_sequence(integer_sequence<unsigned long long, indexes...>) {
+            constexpr const char data[sizeof...(characters) + 1] = { characters..., 0 };
+            return static_string<to_lower_char(data[indexes])...>{};
+        }
+
+        /// @brief  Convert an input character to lowercase if possible, otherwise return it as it was.
+        /// @param  character The character that should be converted to lowercase.
+        /// @return The character, converted to lowercase if possible.
+        constexpr static char to_lower_char(const char character) {
+            return (character >= 'A' && character <= 'Z') ? character + ' ' : character;
+        }
+
+    public:
+        /// @brief  Replace all characters with their uppercase versions if they have one.
+        /// @return A static_string object representing the original string in uppercase.
+        constexpr static auto to_upper() {
+            return to_upper_sequence(make_integer_sequence<unsigned long long, sizeof...(characters)>{});
+        }
+
+    private:
+        /// @brief  Replace all characters with their uppercase versions if they have one.
+        /// @tparam indexes The indexes along the string to check and potentially replace.
+        /// @return A static_string object representing the original string in uppercase.
+        template<unsigned long long... indexes>
+        constexpr static auto to_upper_sequence(integer_sequence<unsigned long long, indexes...>) {
+            constexpr const char data[sizeof...(characters) + 1] = { characters..., 0 };
+            return static_string<to_upper_char(data[indexes])...>{};
+        }
+
+        /// @brief  Convert an input character to uppercase if possible, otherwise return it as it was.
+        /// @param  character The character that should be converted to uppercase.
+        /// @return The character, converted to uppercase if possible.
+        constexpr static char to_upper_char(const char character) {
+            return (character >= 'a' && character <= 'z') ? character - ' ' : character;
+        }
+
+    public:
+        /// @brief  Replace all matching characters with another character.
+        /// @tparam replace_from The search character, if this matches the a character it is replaced.
+        /// @tparam replace_to The replacement character used to replace matching characters.
+        /// @return A static_string object representing the original string with all occurances of the matching character replaced.
+        template <const char replace_from, const char replace_to>
+        constexpr static auto replace() {
+            return replace_sequence<replace_from, replace_to>(make_integer_sequence<unsigned long long, sizeof...(characters)>{});
+        }
+
+    private:
+        /// @brief  Replace all matching characters with another character.
+        /// @tparam replace_from The search character, if this matches the a character it is replaced.
+        /// @tparam replace_to The replacement character used to replace matching characters.
+        /// @tparam indexes The indexes along the string to check and potentially replace.
+        /// @return A static_string object representing the original string with all occurances of the matching character replaced.
+        template <const char replace_from, const char replace_to, unsigned long long... indexes>
+        constexpr static auto replace_sequence(integer_sequence<unsigned long long, indexes...>) {
+            constexpr const char data[sizeof...(characters) + 1] = { characters..., 0 };
+            return static_string<replace_char(data[indexes], replace_from, replace_to)...>{};
+        }
+
+        /// @brief  Replace a character with another character, otherwise return the orignal character.
+        /// @param  character The input character to potentially replace.
+        /// @param  replace_from The search character, if this matches the input character the replacement is returned.
+        /// @param  replace_to The replacement character to return if the input character is matched.
+        /// @return The original character, unless it matches the replacement character, in which case it is replaced.
+        constexpr static char replace_char(char character, const char replace_from, const char replace_to) {
+            return character == replace_from ? replace_to : character;
+        }
+
+    public:
+        /// @brief  The less than operator is the only one that performs any work, all other operators are defined using this one.
+        /// @tparam other_characters The characters in the rhs string.
+        /// @param  rhs The right hand side of the comparison.
+        /// @return true if this string is alphabetically less than the rhs or if equal, shorter, false otherwise.
+        template<char... other_characters>
+        constexpr bool operator<(const static_string<other_characters...>& rhs) const {
+            static_cast<void>(rhs);
+            constexpr const char lhs_data[sizeof...(characters) + 1] = { characters..., 0 };
+            constexpr const char rhs_data[sizeof...(other_characters) + 1] = { other_characters..., 0 };
+            const char* lhs_string = &lhs_data[0];
+            const char* rhs_string = &rhs_data[0];
+            const char* const lhs_end = &lhs_string[sizeof...(characters)];
+            const char* const rhs_end = &rhs_string[sizeof...(other_characters)];
+            while ((lhs_string != lhs_end) && (rhs_string != rhs_end)) {
+                if (*lhs_string < *rhs_string) return true;
+                if (*rhs_string < *lhs_string) return false;
+                lhs_string++;
+                rhs_string++;
+            }
+            return (lhs_string == lhs_end) && (rhs_string != rhs_end);
+        }
+
+        /// @brief  The greater than operator defined using the less than operator with the sides of the comparison reversed.
+        /// @tparam other_characters The characters in the rhs string.
+        /// @param  rhs The right hand side of the comparison.
+        /// @return true if rhs is less than lhs, false otherwise.
+        template<char... other_characters>
+        constexpr bool operator>(const static_string<other_characters...>& rhs) const {
+            return rhs < *this;
+        }
+
+        /// @brief  The less than or equal to operator defined using the greater than operator and inverted.
+        /// @tparam other_characters The characters in the rhs string.
+        /// @param  rhs The right hand side of the comparison.
+        /// @return false if this is greater than rhs, true otherwise.
+        template<char... other_characters>
+        constexpr bool operator<=(const static_string<other_characters...>& rhs) const {
+            return !(*this > rhs);
+        }
+
+        /// @brief  The greater than or equal to operator defined using the less than operator and inverted.
+        /// @tparam other_characters The characters in the rhs string.
+        /// @param  rhs The right hand side of the comparison.
+        /// @return false if this is less than rhs, true otherwise.
+        template<char... other_characters>
+        constexpr bool operator>=(const static_string<other_characters...>& rhs) const {
+            return !(*this < rhs);
+        }
+
+        /// @brief  The inequality operator defined using the less than and greater than operators.
+        /// @tparam other_characters The characters in the rhs string.
+        /// @param  rhs The right hand side of the comparison.
+        /// @return true if this is less than or greater than rhs, false otherwise.
+        template<char... other_characters>
+        constexpr bool operator!=(const static_string<other_characters...>& rhs) const {
+            return (*this < rhs) || (*this > rhs);
+        }
+
+        /// @brief  The equality operator defined using the inequality operator and inverted.
+        /// @tparam other_characters The characters in the rhs string.
+        /// @param  rhs The right hand side of the comparison.
+        /// @return false if this not equal to rhs, true otherwise.
+        template<char... other_characters>
+        constexpr bool operator==(const static_string<other_characters...>& rhs) const {
+            return !(*this != rhs);
+        }
+
+    private:
+        /// @brief  Get the length of a string represented as a lambda function.
+        /// @tparam string_as_lambda_type The type of the string lambda passed to the function.
+        /// @param  string_as_lambda A string represented by a lambda function allowing compile time indexing each character.
+        /// @return The length of the string in characters, not counting the null termination.
+        template <typename string_as_lambda_type>
+        constexpr static unsigned long long int string_as_lambda_length(string_as_lambda_type string_as_lambda) {
+            unsigned long long int length = 0;
+            while (string_as_lambda(length)) {
+                ++length;
+            }
+            return length;
+        }
+
+    public:
+        /// @brief  Explode a string represented as a lambda function into a string represented as a static_string type.
+        /// @tparam string_as_lambda_type The type of the string lambda passed to the function.
+        /// @param  string_as_lambda A string represented by a lambda function allowing indexing each character.
+        /// @return A static_string object representing the string as a unique type.
+        template <typename string_as_lambda_type>
+        constexpr static auto explode(string_as_lambda_type string_as_lambda) {
+            return explode(string_as_lambda, make_integer_sequence<unsigned long long int, string_as_lambda_length(string_as_lambda)>{});
+        }
+
+    private:
+        /// @brief  Explode a string represented as a lambda function into a string represented as a static_string type.
+        /// @tparam string_as_lambda_type The type of the string lambda passed to the function.
+        /// @tparam indexes The indexes of each character in the string.
+        /// @param  string_as_lambda A string represented by a lambda function allowing compile time indexing each character.
+        /// @param  character_index_sequence An object of a type holding the indexes of each character in the string.
+        /// @return A static_string object representing the string as a unique type.
+        template <typename string_as_lambda_type, unsigned long long int... indexes>
+        constexpr static auto explode(string_as_lambda_type string_as_lambda, integer_sequence<unsigned long long int, indexes...> character_index_sequence) {
+            static_cast<void>(string_as_lambda);
+            static_cast<void>(character_index_sequence);
+            return static_string<string_as_lambda(indexes)...>{};
+        }
+    };
+
+    #if !defined(_MSC_VER)
+        // Template argument deduction guide.
+        template<char... characters>
+        static_string() -> static_string<characters...>;
+    #endif
+
+    // Macro for easy creation of encoded strings.
+    // The string lambda has to be created outside of the decltype() call before c++20.
+    // Once we have a constexpr string index function we can explode it into a varadic template.
+    // Then once we have a string as a varadic template we can do anything easily, in this code we return the type.
+    // All of this is wrapped in a lambda to group and execute the multiple expressions together.
+    #define GTL_STATIC_STRING(string)                           \
+        [](){                                                   \
+            auto string_as_lambda =                             \
+                [](unsigned long long int index) constexpr {    \
+                    return string[index];                       \
+                };                                              \
+            return decltype(                                    \
+                gtl::static_string<>::explode(                  \
+                    string_as_lambda                            \
+                )                                               \
+            ){};                                                \
+        }()                                                     \
+
+    // With C++20 this macro can be shortened as lambdas can be used in non-evaulated contexts.
+    //#define GTL_STATIC_STRING(string)
+    //    decltype(
+    //        gtl::static_string::string_explode(
+    //            [](unsigned long long int index) constexpr {
+    //                return string[index];
+    //            };
+    //        )
+    //    ){}
+}
+
+#endif
+
+#endif // GTL_STRING_STATIC_STRING_HPP
