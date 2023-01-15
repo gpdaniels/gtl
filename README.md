@@ -88,6 +88,7 @@ The current classes are as described below:
 | [utility](source/utility) | [pimpl](source/utility/pimpl) | Statically sized pointer to implementation wrapper. | :heavy_check_mark: |
 | [utility](source/utility) | [sizeof_bitfield](source/utility/sizeof_bitfield) | Macro to get the size in bits of a bitfield. | :construction: |
 | [vision](source/vision) | [api](source/vision/api) | An API for a computer vision system that consumes sensor data to perform localisation and mapping. | :construction: |
+| [vision/camera/model](source/vision/camera/model) | [pinhole](source/vision/camera/model/pinhole) | Pinhole camera model with no distortion. | :construction: |
 | [vision/consensus](source/vision/consensus) | [consensus](source/vision/consensus/consensus) | A generic consensus system composed of templated dataset sampler, model estimator, and model evaluator. | :construction: |
 | [vision/consensus](source/vision/consensus) | [estimator](source/vision/consensus/estimator) | Interface of a consensus model estimator. | :construction: |
 | [vision/consensus/evaluate](source/vision/consensus/evaluate) | [inlier_support](source/vision/consensus/evaluate/inlier_support) | Implementation of a model evaulator that counts the number of inliers under a threshold. | :construction: |
