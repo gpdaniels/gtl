@@ -1,5 +1,5 @@
 #[[
-Copyright (C) 2018-2022 Geoffrey Daniels. https://gpdaniels.com/
+Copyright (C) 2018-2023 Geoffrey Daniels. https://gpdaniels.com/
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ FOREACH(LICENSED_FILE ${LICENSED_FILES})
     # Prepare the license regex.
     SET(LICENSE_REGEX_LINES
         "^/\\*$|^\"\"\"$|^#\\[\\[$"
-        "^Copyright \\(C\\) 2018-2022 Geoffrey Daniels\\. https://gpdaniels\\.com/$"
+        "^Copyright \\(C\\) 2018-2023 Geoffrey Daniels\\. https://gpdaniels\\.com/$"
         "^$"
         "^This program is free software: you can redistribute it and/or modify$"
         "^it under the terms of the GNU General Public License as published by$"
