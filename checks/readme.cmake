@@ -32,10 +32,6 @@ LIST(SORT SOURCE_FILES)
 # Prepare a list to hold the lines of the readme table.
 SET(README_TABLE_LINES "")
 
-# Add the table header.
-LIST(APPEND README_TABLE_LINES "| Group      |                Class | Description                                                    | :grey_question: |")
-LIST(APPEND README_TABLE_LINES "|:-----------|---------------------:|:---------------------------------------------------------------|:---------------:|")
-
 # Generate the table contents.
 FOREACH(SOURCE_FILE ${SOURCE_FILES})
     # Print progress.
@@ -88,9 +84,12 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     
 ENDFOREACH()
 
-# Dump the table to file.
-STRING(REGEX REPLACE ";" "\n" TABLE_CONTENT "${README_TABLE_LINES}")
-FILE(WRITE "readme_table.md" "${TABLE_CONTENT}")
+# Sort the table.
+LIST(SORT README_TABLE_LINES)
+
+# Add the table header (in reverse order).
+LIST(PREPEND README_TABLE_LINES "|:-----------|---------------------:|:---------------------------------------------------------------|:---------------:|")
+LIST(PREPEND README_TABLE_LINES "| Group      |                Class | Description                                                    | :grey_question: |")
 
 # Get the number of lines in the table.
 LIST(LENGTH README_TABLE_LINES README_TABLE_LENGTH)

@@ -87,31 +87,30 @@ The current classes are as described below:
 | [utility](source/utility) | [event](source/utility/event) | Thread safe multi\-in/multi\-out event/messaging system. | :heavy_check_mark: |
 | [utility](source/utility) | [pimpl](source/utility/pimpl) | Statically sized pointer to implementation wrapper. | :heavy_check_mark: |
 | [utility](source/utility) | [sizeof_bitfield](source/utility/sizeof_bitfield) | Macro to get the size in bits of a bitfield. | :construction: |
-| [vision](source/vision) | [api](source/vision/api) | An API for a computer vision system that consumes sensor data to perform localisation and mapping. | :construction: |
 | [vision/camera/model](source/vision/camera/model) | [pinhole](source/vision/camera/model/pinhole) | Pinhole camera model with no distortion. | :construction: |
-| [vision/consensus](source/vision/consensus) | [consensus](source/vision/consensus/consensus) | A generic consensus system composed of templated dataset sampler, model estimator, and model evaluator. | :construction: |
-| [vision/consensus](source/vision/consensus) | [estimator](source/vision/consensus/estimator) | Interface of a consensus model estimator. | :construction: |
 | [vision/consensus/evaluate](source/vision/consensus/evaluate) | [inlier_support](source/vision/consensus/evaluate/inlier_support) | Implementation of a model evaulator that counts the number of inliers under a threshold. | :construction: |
 | [vision/consensus/evaluate](source/vision/consensus/evaluate) | [least_median_of_squares](source/vision/consensus/evaluate/least_median_of_squares) | Implementation of a model evaulator that calculates the LMedS score. | :construction: |
 | [vision/consensus/evaluate](source/vision/consensus/evaluate) | [maximum_likelihood](source/vision/consensus/evaluate/maximum_likelihood) | Implementation of a model evaulator that calculates a capped residual sum. | :construction: |
-| [vision/consensus](source/vision/consensus) | [evaluator](source/vision/consensus/evaluator) | Interface of a consensus model evaluator. | :construction: |
 | [vision/consensus/sample](source/vision/consensus/sample) | [exhaustive](source/vision/consensus/sample/exhaustive) | Implementation of an exhaustive dataset sampler. | :construction: |
 | [vision/consensus/sample](source/vision/consensus/sample) | [random](source/vision/consensus/sample/random) | Implementation of a random dataset sampler. | :construction: |
+| [vision/consensus](source/vision/consensus) | [consensus](source/vision/consensus/consensus) | A generic consensus system composed of templated dataset sampler, model estimator, and model evaluator. | :construction: |
+| [vision/consensus](source/vision/consensus) | [estimator](source/vision/consensus/estimator) | Interface of a consensus model estimator. | :construction: |
+| [vision/consensus](source/vision/consensus) | [evaluator](source/vision/consensus/evaluator) | Interface of a consensus model evaluator. | :construction: |
 | [vision/consensus](source/vision/consensus) | [sampler](source/vision/consensus/sampler) | Interface of a consensus dataset sampler. | :construction: |
 | [vision/feature/angle](source/vision/feature/angle) | [orb_angle](source/vision/feature/angle/orb_angle) | Implemetation of feature angle from the paper "ORB: An efficient alternative to SIFT or SURF". IEEE International Conference on Computer Vision (2011). | :construction: |
-| [vision/feature](source/vision/feature) | [binary_descriptor](source/vision/feature/binary_descriptor) | Simple structure to hold a buffer of binary data that describes a feature. | :construction: |
 | [vision/feature/descriptor](source/vision/feature/descriptor) | [beblid](source/vision/feature/descriptor/beblid) | Implemetation of feature description from the paper "BEBLID: Boosted Efficient Binary Local Image Descriptor". Pattern Recognition Letters (2020). | :construction: |
 | [vision/feature/descriptor](source/vision/feature/descriptor) | [orb](source/vision/feature/descriptor/orb) | Implemetation of feature description from the paper "ORB: An efficient alternative to SIFT or SURF". IEEE International Conference on Computer Vision (2011). | :construction: |
 | [vision/feature/descriptor](source/vision/feature/descriptor) | [rs_brief](source/vision/feature/descriptor/rs_brief) | Implemetation of feature description from the paper "eSLAM: An Energy\-Efficient Accelerator for Real\-Time ORB\-SLAM on FPGA Platform". Design Automation Conference (2019). | :construction: |
 | [vision/feature/detector](source/vision/feature/detector) | [fast](source/vision/feature/detector/fast) | Implemetation of feature detection from the paper "Faster and better: A machine learning approach to corner detection". IEEE transactions on pattern analysis and machine intelligence (2008). | :construction: |
 | [vision/feature/distributor](source/vision/feature/distributor) | [square_covering](source/vision/feature/distributor/square_covering) | Implemetation of feature distribution from the paper "Efficient adaptive non\-maximal suppression algorithms for homogeneous spatial keypoint distribution". Pattern Recognition Letters (2018). | :construction: |
-| [vision/feature](source/vision/feature) | [feature](source/vision/feature/feature) | Simple structure to hold a the information defining a detected feature. | :construction: |
 | [vision/feature/refinement](source/vision/feature/refinement) | [exhaustive](source/vision/feature/refinement/exhaustive) | Exhaustive search method for the best match between two patches. | :construction: |
 | [vision/feature/refinement](source/vision/feature/refinement) | [golden_section](source/vision/feature/refinement/golden_section) | Golden section search method for the best match between two patches. | :construction: |
 | [vision/feature/refinement](source/vision/feature/refinement) | [quadratic_fitting](source/vision/feature/refinement/quadratic_fitting) | Quadratic fitting search method for the best match between two patches. | :construction: |
 | [vision/feature/score](source/vision/feature/score) | [fast_score](source/vision/feature/score/fast_score) | Implemetation of feature quality score from the paper "Faster and better: A machine learning approach to corner detection". IEEE transactions on pattern analysis and machine intelligence (2008). | :construction: |
 | [vision/feature/score](source/vision/feature/score) | [harris_score](source/vision/feature/score/harris_score) | Implemetation of feature quality score from the paper "A Combined Corner and Edge Detector". Alvey Vision Conference (1988). | :construction: |
 | [vision/feature/score](source/vision/feature/score) | [shi_tomasi_score](source/vision/feature/score/shi_tomasi_score) | Implemetation of feature quality score from the paper "Good Features to Track". IEEE Conference on Computer Vision and Pattern Recognition (1994). | :construction: |
+| [vision/feature](source/vision/feature) | [binary_descriptor](source/vision/feature/binary_descriptor) | Simple structure to hold a buffer of binary data that describes a feature. | :construction: |
+| [vision/feature](source/vision/feature) | [feature](source/vision/feature/feature) | Simple structure to hold a the information defining a detected feature. | :construction: |
 | [vision/image_processing](source/vision/image_processing) | [integral](source/vision/image_processing/integral) | Simple integral image processor. | :construction: |
 | [vision/image_processing](source/vision/image_processing) | [sub_pixel_patch](source/vision/image_processing/sub_pixel_patch) | Generation of a sub\-pixel patch for match refinement. | :construction: |
 | [vision/match_distance](source/vision/match_distance) | [hamming](source/vision/match_distance/hamming) | Simple hamming matching without the popcount instruction. | :construction: |
@@ -121,6 +120,7 @@ The current classes are as described below:
 | [vision/match_distance](source/vision/match_distance) | [zncc](source/vision/match_distance/zncc) | Zero\-mean normalised cross correleation between two patches. | :construction: |
 | [vision/match_distance](source/vision/match_distance) | [zsad](source/vision/match_distance/zsad) | Zero\-mean sum of absolute distances between two patches. | :construction: |
 | [vision/match_distance](source/vision/match_distance) | [zssd](source/vision/match_distance/zssd) | Zero\-mean sum of squared distances between two patches. | :construction: |
+| [vision](source/vision) | [api](source/vision/api) | An API for a computer vision system that consumes sensor data to perform localisation and mapping. | :construction: |
 
 ## License ##
 
