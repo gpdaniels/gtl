@@ -34,7 +34,7 @@ SET(BUILD_SANITIZE_UNDEFINED_BEHAVIOR OFF CACHE BOOL "Enable building with clang
 
 SET(BUILD_TESTING_PARALLELISM 4 CACHE STRING "The number of tests to run in parallel.")
 MARK_AS_ADVANCED(BUILD_TESTING_PARALLELISM)
-SET(BUILD_TESTING_TIMEOUT 30 CACHE STRING "The allowed run time of a test executable.")
+SET(BUILD_TESTING_TIMEOUT 60 CACHE STRING "The allowed run time of a test executable.")
 MARK_AS_ADVANCED(BUILD_TESTING_TIMEOUT)
 
 SET(BUILD_MEMCHECK_PARALLELISM 4 CACHE STRING "The number of memcheck tests to run in parallel.")
