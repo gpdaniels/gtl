@@ -66,8 +66,8 @@ constexpr static const char* valid_strings[] = {
 
 TEST(json, function, parse) {
     gtl::json json;
-    for (const std::string& string : valid_strings) {
-        REQUIRE(json.parse(string), "Failed to parse json: %s", string.c_str());
+    for (const char* string : valid_strings) {
+        REQUIRE(json.parse(string), "Failed to parse json: %s", string);
     }
 }
 
