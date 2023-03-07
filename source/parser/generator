@@ -386,7 +386,7 @@ namespace gtl {
                 static_cast<void>(self);
                 static_cast<void>(forest);
                 for (ssize_t index = static_cast<ssize_t>(string.size()) - 1; index >= 0; --index) {
-                    branch.pending.push_back(generator::terminal_any(string[index]));
+                    branch.pending.push_back(generator::terminal_any(string[static_cast<size_t>(index)]));
                 }
             });
         }
@@ -689,7 +689,7 @@ namespace gtl {
                 }
 
                 // Remove any failed branches.
-                forest.branches.erase(std::remove_if(forest.branches.begin(), forest.branches.end(), [&forest](parse_branch_type& branch){
+                forest.branches.erase(std::remove_if(forest.branches.begin(), forest.branches.end(), [](parse_branch_type& branch){
                     return (!branch.error.empty());
                 }), forest.branches.end());
 
@@ -788,7 +788,7 @@ namespace gtl {
                 }
 
                 // Remove any failed branches.
-                forest.branches.erase(std::remove_if(forest.branches.begin(), forest.branches.end(), [&forest](parse_branch_type& branch){
+                forest.branches.erase(std::remove_if(forest.branches.begin(), forest.branches.end(), [](parse_branch_type& branch){
                     return (!branch.error.empty());
                 }), forest.branches.end());
 

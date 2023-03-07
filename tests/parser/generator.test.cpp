@@ -36,7 +36,7 @@ TEST(parser, element, empty) {
 TEST(parser, element, barrier) {
     constexpr static const size_t grammar_count = 6;
 
-    std::string inputs[grammar_count] = {
+    std::string test_inputs[grammar_count] = {
         R"(0)", // 0
         R"(1)", // 1 or 2
         R"(4)", // 3 or 4
@@ -59,10 +59,10 @@ TEST(parser, element, barrier) {
     parser::parse_forest_type forests[grammar_count];
 
     for (size_t index = 0; index < grammar_count; ++index) {
-        const std::string& input = inputs[index];
+        const std::string& test_input = test_inputs[index];
         const parser& grammar = grammars[index];
         parser::parse_forest_type& forest = forests[index];
-        for (char character : input) {
+        for (char character : test_input) {
             grammar.parse(character, forest);
         }
         std::vector<char> tokens;
@@ -75,7 +75,7 @@ TEST(parser, element, barrier) {
 TEST(parser, element, terminal) {
     constexpr static const size_t grammar_count = 7;
 
-    std::string inputs[grammar_count] = {
+    std::string test_inputs[grammar_count] = {
         R"(0)", // 0
         R"(1)", // 1 or 2
         R"(4)", // 3 or 4
@@ -100,10 +100,10 @@ TEST(parser, element, terminal) {
     parser::parse_forest_type forests[grammar_count];
 
     for (size_t index = 0; index < grammar_count; ++index) {
-        const std::string& input = inputs[index];
+        const std::string& test_input = test_inputs[index];
         const parser& grammar = grammars[index];
         parser::parse_forest_type& forest = forests[index];
-        for (char character : input) {
+        for (char character : test_input) {
             grammar.parse(character, forest);
         }
         std::vector<char> tokens;
@@ -115,7 +115,7 @@ TEST(parser, element, terminal) {
 
 TEST(parser, element, sequence) {
 
-    std::string input = R"(Ab02)";
+    std::string test_input = R"(Ab02)";
 
     using parser = gtl::generator<char>;
 
@@ -132,7 +132,7 @@ TEST(parser, element, sequence) {
     );
 
     parser::parse_forest_type forest;
-    for (char character : input) {
+    for (char character : test_input) {
         grammar.parse(character, forest);
     }
     std::vector<char> tokens;
@@ -143,7 +143,7 @@ TEST(parser, element, sequence) {
 
 TEST(parser, element, disjunction) {
 
-    std::string input = R"(Ab02)";
+    std::string test_input = R"(Ab02)";
 
     using parser = gtl::generator<char>;
 
@@ -156,7 +156,7 @@ TEST(parser, element, disjunction) {
     );
 
     parser::parse_forest_type forest;
-    for (char character : input) {
+    for (char character : test_input) {
         grammar.parse(character, forest);
     }
     std::vector<char> tokens;
@@ -168,7 +168,7 @@ TEST(parser, element, disjunction) {
 TEST(parser, element, recurse) {
     constexpr static const size_t grammar_count = 3;
 
-    std::string input = R"(TTTTTTTT)";
+    std::string test_input = R"(TTTTTTTT)";
 
     using parser = gtl::generator<char>;
 
@@ -183,7 +183,7 @@ TEST(parser, element, recurse) {
     for (size_t index = 0; index < grammar_count; ++index) {
         const parser& grammar = grammars[index];
         parser::parse_forest_type& forest = forests[index];
-        for (char character : input) {
+        for (char character : test_input) {
             grammar.parse(character, forest);
         }
         std::vector<char> tokens;
@@ -194,14 +194,14 @@ TEST(parser, element, recurse) {
 }
 
 TEST(parser, element, repeat) {
-    std::string input = R"(TTTTTTTT)";
+    std::string test_input = R"(TTTTTTTT)";
 
     using parser = gtl::generator<char>;
 
     parser grammar = parser::repeat(parser::terminal_any('T'), 8);
 
     parser::parse_forest_type forest;
-    for (char character : input) {
+    for (char character : test_input) {
         grammar.parse(character, forest);
     }
     std::vector<char> tokens;
@@ -213,7 +213,7 @@ TEST(parser, element, repeat) {
 TEST(parser, element, emit) {
     constexpr static const size_t grammar_count = 8;
 
-    std::string inputs[grammar_count] = {
+    std::string test_inputs[grammar_count] = {
         R"()",  // No requirement.
         R"(0)", // Requires a 0.
         R"(1)", // Requires a 1 or 2.
@@ -251,10 +251,10 @@ TEST(parser, element, emit) {
     parser::parse_forest_type forests[grammar_count];
 
     for (size_t index = 0; index < grammar_count; ++index) {
-        const std::string& input = inputs[index];
+        const std::string& test_input = test_inputs[index];
         const parser& grammar = grammars[index];
         parser::parse_forest_type& forest = forests[index];
-        for (char character : input) {
+        for (char character : test_input) {
             grammar.parse(character, forest);
         }
         std::vector<char> tokens;
@@ -271,7 +271,7 @@ TEST(parser, element, emit) {
 TEST(parser, element, capture) {
     constexpr static const size_t grammar_count = 7;
 
-    std::string inputs[grammar_count] = {
+    std::string test_inputs[grammar_count] = {
         R"(0)", // Requires a 0.
         R"(1)", // Requires a 1 or 2.
         R"(4)", // Requires a 3 or 4.
@@ -306,10 +306,10 @@ TEST(parser, element, capture) {
     parser::parse_forest_type forests[grammar_count];
 
     for (size_t index = 0; index < grammar_count; ++index) {
-        const std::string& input = inputs[index];
+        const std::string& test_input = test_inputs[index];
         const parser& grammar = grammars[index];
         parser::parse_forest_type& forest = forests[index];
-        for (char character : input) {
+        for (char character : test_input) {
             grammar.parse(character, forest);
         }
         std::vector<char> tokens;
@@ -324,7 +324,7 @@ TEST(parser, element, capture) {
 }
 
 TEST(parser, element, reference) {
-    std::string input = R"(TTTTTTTT)";
+    std::string test_input = R"(TTTTTTTT)";
 
     using parser = gtl::generator<char>;
 
@@ -334,7 +334,7 @@ TEST(parser, element, reference) {
         grammar = parser::terminal_any('T') + (parser::empty() | parser::reference(grammar));
 
         parser::parse_forest_type forest;
-        for (char character : input) {
+        for (char character : test_input) {
             grammar.parse(character, forest);
         }
         std::vector<char> tokens;
@@ -350,7 +350,7 @@ TEST(parser, element, reference) {
     //     grammar = (parser::empty() | parser::reference(grammar)) + parser::terminal_any('T');
     //
     //     parser::parse_forest_type forest;
-    //     for (char character : input) {
+    //     for (char character : test_input) {
     //         grammar.parse(character, forest);
     //     }
     //     REQUIRE(grammar.finalise(forest, nullptr, nullptr));
@@ -359,7 +359,7 @@ TEST(parser, element, reference) {
 }
 
 TEST(parser, element, custom) {
-    std::string input = R"(abc)";
+    std::string test_input = R"(abc)";
 
     using parser = gtl::generator<char>;
 
@@ -374,8 +374,8 @@ TEST(parser, element, custom) {
                 tracer.push_back(input);
             }
         ) +
-        parser::terminal_any() + // first input char.
-        parser::terminal_any() + // second input char.
+        parser::terminal_any() + // first test_input char.
+        parser::terminal_any() + // second test_input char.
         parser(true, false, [&tracer](char input, parser& self, parser::parse_branch_type& branch, parser::parse_forest_type& forest)->void{
                 static_cast<void>(input);
                 static_cast<void>(self);
@@ -384,14 +384,14 @@ TEST(parser, element, custom) {
                 tracer.push_back(input);
             }
         ) +
-        parser::terminal_any(); // third input char.
+        parser::terminal_any(); // third test_input char.
 
     std::vector<char> expected = {
         'a', 'c'
     };
 
     parser::parse_forest_type forest;
-    for (char character : input) {
+    for (char character : test_input) {
         grammar.parse(character, forest);
     }
     std::vector<char> tokens;
@@ -402,14 +402,14 @@ TEST(parser, element, custom) {
 }
 
 TEST(parser, evaluate, ambiguous) {
-    std::string input = R"(AB)";
+    std::string test_input = R"(AB)";
 
     using parser = gtl::generator<std::string>;
 
-    gtl::generator grammar = ((parser::terminal("A") >> "A") + (parser::terminal("B") >> "B")) | (parser::terminal("AB") >> "AB");
+    parser grammar = ((parser::terminal("A") >> "A") + (parser::terminal("B") >> "B")) | (parser::terminal("AB") >> "AB");
 
     parser::parse_forest_type forest;
-    for (char character : input) {
+    for (char character : test_input) {
         grammar.parse(character, forest);
     }
     std::vector<std::string> tokens;
@@ -447,14 +447,14 @@ TEST(parser, evaluate, csv) {
     parser header   = record;
     parser csv      = header + record + parser::recurse(record | parser::empty());
 
-    std::string input = R"(header cell
+    std::string test_input = R"(header cell
 text,000, 123.456   ,"space "" space", "
 line
 "
 )";
 
     parser::parse_forest_type forest;
-    for (char character : input) {
+    for (char character : test_input) {
         csv.parse(character, forest);
     }
     std::vector<std::pair<token_type, std::vector<char>>> tokens;

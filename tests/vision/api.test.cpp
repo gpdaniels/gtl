@@ -75,6 +75,12 @@ extern "C" struct gtl_vision_system {
     #endif
 #endif
 
+GTL_API_STATIC_ASSERT(sizeof(char) == 1,            "For ABI compatibility the sizeof(char) must be 1 byte.")
+GTL_API_STATIC_ASSERT(sizeof(short int) == 2,       "For ABI compatibility the sizeof(short int) must be 2 bytes.")
+GTL_API_STATIC_ASSERT(sizeof(int) == 4,             "For ABI compatibility the sizeof(int) must be 4 bytes.")
+GTL_API_STATIC_ASSERT(sizeof(long long int) == 8,   "For ABI compatibility the sizeof(long long int) must be 8 bytes.")
+GTL_API_STATIC_ASSERT(sizeof(float) == 4,           "For ABI compatibility the sizeof(float) must be 4 bytes.")
+
 extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_create(gtl_vision_system** system) {
     if (!system) {
         return gtl_vision_return_failure_invalid_system;
