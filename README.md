@@ -62,6 +62,8 @@ The current classes are as described below:
 | [math](source/math) | [big_integer](source/math/big_integer) | Arbitrary sized signed integers. | :heavy_check_mark: |
 | [math](source/math) | [big_unsigned](source/math/big_unsigned) | Arbitrary sized unsigned integers. | :heavy_check_mark: |
 | [math](source/math) | [symbolic](source/math/symbolic) | Compile time symbolic differentiation using template metaprogramming. | :construction: |
+| [parser](source/parser) | [generator](source/parser/generator) | A parser generator to generate parsers defined using a collection of parsing primitives. | :heavy_check_mark: |
+| [parser](source/parser) | [pl0](source/parser/pl0) | A parser and interpreter for the PL/0 programming language. | :construction: |
 | [platform](source/platform) | [architecture](source/platform/architecture) | Macros and helper function to get the architecture used for the build. | :heavy_check_mark: |
 | [platform](source/platform) | [compiler](source/platform/compiler) | Macros and helper function to get the compiler used for the build. | :heavy_check_mark: |
 | [platform](source/platform) | [cpu](source/platform/cpu) | Class to extract cpuid information to determine supported instructions at runtime. | :heavy_check_mark: |

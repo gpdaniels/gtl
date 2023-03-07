@@ -1,0 +1,830 @@
+/*
+Copyright (C) 2018-2023 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_PARSER_GENERATOR_HPP
+#define GTL_PARSER_GENERATOR_HPP
+
+// Summary: A parser generator to generate parsers defined using a collection of parsing primitives.
+
+#if defined(_MSC_VER)
+#   pragma warning(push, 0)
+#endif
+
+#include <functional>
+#include <list>
+#include <string>
+#include <vector>
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
+
+namespace {
+    using size_t = decltype(sizeof(1));
+    using ssize_t = decltype(static_cast<char*>(nullptr) - static_cast<char*>(nullptr));
+}
+
+namespace gtl {
+    /// @brief  A parser generator that generates parsers by combining rules to form the grammar of a language.
+    /// @tparam template_token_type The type of tokens that can be emitted by the generated parser.
+    template <typename template_token_type>
+    class generator final {
+    public:
+        /// @brief  Forward declaration of the parse_forest_type.
+        class parse_forest_type;
+        /// @brief  Forward declaration of the parse_branch_type.
+        class parse_branch_type;
+
+    public:
+        /// @brief  The function type used for the generator parsing function.
+        using parse_function_type                   = std::function<void(char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)>;
+
+    public:
+        /// @brief  The type of tokens that can be emitted by the generated parser.
+        using token_type                            = template_token_type;
+
+        /// @brief  The function type used for emitting tokens.
+        using token_function_type                   = std::function<token_type()>;
+
+        /// @brief  The function type used for emitting tokens, providing access to branch status.
+        using token_status_function_type            = std::function<token_type(parse_branch_type&)>;
+
+        /// @brief  The function type used for emitting tokens using captured terminals.
+        using token_terminals_function_type         = std::function<token_type(const std::vector<char>&)>;
+
+        /// @brief  The function type used for emitting tokens using captured terminals, providing access to branch status.
+        using token_terminals_status_function_type  = std::function<token_type(const std::vector<char>&, parse_branch_type&)>;
+
+        /// @brief  The function type used for reemitting tokens using captured tokens.
+        using token_tokens_function_type            = std::function<token_type(const std::vector<token_type>&)>;
+
+        /// @brief  The function type used for reemitting tokens using captured tokens, providing access to branch status.
+        using token_tokens_status_function_type     = std::function<token_type(const std::vector<token_type>&, parse_branch_type&)>;
+
+    public:
+        /// @brief  Structure to store a collection of possible parse branches.
+        class parse_branch_type final {
+        private:
+            // Branches can only be constructed by the forest.
+            friend parse_forest_type;
+
+        public:
+            /// @brief  The number of input characters consumed by this branch.
+            unsigned int consumed = 0;
+
+            /// @brief  The generators currently pending being used for parsing.
+            std::vector<generator> pending;
+
+            /// @brief  Unique identifiers of currently reqursing generators.
+            std::vector<unsigned int> recursing_ids;
+
+            /// @brief  Stack of captured terminals.
+            std::vector<std::vector<char>> captured_terminals;
+
+            /// @brief  Stack of captured tokens.
+            std::vector<std::vector<token_type>> captured_tokens = {{}};
+
+            /// @brief  Error status of the branch, if empty there is currently no error.
+            std::string error;
+
+            // TODO: Allow the user to specify a maximum buffer size that can be cached for left recursive loops.
+
+        private:
+            /// @brief  Empty constructor for a branch.
+            parse_branch_type() = default;
+
+        public:
+            /// @brief  Equality operator for a branch used to detect if two branches are equivalent.
+            /// @param  other The branch to compare against.
+            bool operator==(const parse_branch_type& other) const {
+                if (this->consumed != other.consumed) {
+                    return false;
+                }
+                if (this->pending.size() != other.pending.size()) {
+                    return false;
+                }
+                if (this->captured_terminals.size() != other.captured_terminals.size()) {
+                    return false;
+                }
+                if (this->captured_tokens.size() != other.captured_tokens.size()) {
+                    return false;
+                }
+                if (this->recursing_ids.size() != other.recursing_ids.size()) {
+                    return false;
+                }
+                for (size_t index = 0; index < this->pending.size(); ++index) {
+                    if (this->pending[index].id != other.pending[index].id) {
+                        return false;
+                    }
+                }
+                if (this->captured_terminals != other.captured_terminals) {
+                    return false;
+                }
+                if (this->captured_tokens != other.captured_tokens) {
+                    return false;
+                }
+                if (this->error != other.error) {
+                    return false;
+                }
+                if (this->recursing_ids != other.recursing_ids) {
+                    return false;
+                }
+                return true;
+            }
+        };
+
+        /// @brief  Structure to store the parsing state of a single branch.
+        class parse_forest_type final {
+        private:
+            // The current generator type can access internals of this type.
+            friend generator<template_token_type>;
+
+        private:
+            /// @brief  The number of input characters consumed by the forest.
+            unsigned int consumed = 0;
+
+            /// @brief  All branches that are currently valid.
+            std::list<parse_branch_type> branches;
+
+        public:
+            /// @brief  Branching function to create a new branch in the forest.
+            /// @param  branch The new branch to add to the branches in the forest.
+            /// @return A reference to the last branch added to the forest.
+            parse_branch_type& branch(parse_branch_type branch = parse_branch_type()) {
+                this->branches.push_back(branch);
+                return this->branches.back();
+            }
+        };
+
+    private:
+        /// @brief  Identifier generator used to ensure all generators have a unique identifier.
+        static inline unsigned int id_generator = 0;
+
+        /// @brief  Unique identifier of this generator, used to check for recursion.
+        unsigned int id;
+
+        /// @brief  Boolean flag set to true if the generator function requires input when parsing.
+        bool requires_input;
+
+        /// @brief  Boolean flag set to true if the generator function recurses.
+        bool recurses;
+
+        /// @brief  The parsing function that is called when processing the generator.
+        parse_function_type function;
+
+    public:
+        /// @brief  Empty constructor to create a generator, it creates an empty generator.
+        constexpr generator()
+            : generator(false, false, [](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                static_cast<void>(input);
+                static_cast<void>(self);
+                static_cast<void>(branch);
+                static_cast<void>(forest);
+            }) {
+        }
+
+        /// @brief  Constructor to create a generator from some boolean flags and a parsing function.
+        /// @param  generator_requires_input Boolean flag that should be set to true if the parsing function requires input.
+        /// @param  generator_recurses Boolean flag that should be set to true if the parsing function recurses.
+        /// @param  generator_function The parsing function to call to parse input characters.
+        constexpr generator(
+            bool generator_requires_input,
+            bool generator_recurses,
+            parse_function_type generator_function
+        )
+            : id(generator::id_generator++)
+            , requires_input(generator_requires_input)
+            , recurses(generator_recurses)
+            , function(generator_function) {
+        }
+
+    public:
+        /// @brief  Plus operator overload to create a sequence generator.
+        /// @param  next The next generator, the retuned sequence is this followed by next.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        generator operator+(const generator& next) const {
+            return sequence(*this, next);
+        }
+
+        /// @brief  Bitwise or operator overload to create a disjunction generator.
+        /// @param  alternative The alternative generator, the returned disjunction is between this and other.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        generator operator|(const generator& alternative) const {
+            return disjunction(*this, alternative);
+        }
+
+        /// @brief  Right shift operator overload to create an emit generator.
+        /// @param  token The token to emit, see the documentation of the emit factory function.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        generator operator>>(const token_type& token) const {
+            return emit(*this, token);
+        }
+
+        /// @brief  Right shift operator overload to create an emit generator.
+        /// @param  token_function The function called to emit a token, see the documentation of the emit factory function.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        generator operator>>(const token_function_type& token_function) const {
+            return emit(*this, token_function);
+        }
+
+        /// @brief  Right shift operator overload to create an emit generator.
+        /// @param  token_status_function The function called to emit a token, see the documentation of the emit factory function.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        generator operator>>(const token_status_function_type& token_status_function) const {
+            return emit(*this, token_status_function);
+        }
+
+        /// @brief  Right shift operator overload to create an emit generator.
+        /// @param  token_function The function called to emit a token, see the documentation of the emit factory function.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        generator operator>>(const token_terminals_function_type& token_function) const {
+            return emit(*this, token_function);
+        }
+
+        /// @brief  Right shift operator overload to create an emit generator.
+        /// @param  token_status_function The function called to emit a token, see the documentation of the emit factory function.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        generator operator>>(const token_terminals_status_function_type& token_status_function) const {
+            return emit(*this, token_status_function);
+        }
+
+        /// @brief  Arrow star operator overload to create a reemit generator.
+        /// @param  token_function The function called to emit a token, see the documentation of the reemit factory function.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        generator operator->*(const token_tokens_function_type& token_function) const {
+            return reemit(*this, token_function);
+        }
+
+        /// @brief  Arrow star operator overload to create a reemit generator.
+        /// @param  token_status_function The function called to emit a token, see the documentation of the reemit factory function.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        generator operator->*(const token_tokens_status_function_type& token_status_function) const {
+            return reemit(*this, token_status_function);
+        }
+
+    private:
+        /// @brief  Convert an input character into either itself wrapped in single quotes if printable, or a hexadecimal.
+        /// @param  character The character to convert to a string.
+        /// @return A printable string of the input character.
+        static std::string chracter_to_string(char character) {
+            if (std::isprint(character)) {
+                return "'" + std::string(1, character) + "'";
+            }
+            constexpr static const char hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+            return "0x" + std::string(1, hex[character >> 4]) + std::string(1, hex[character & 0xF]);
+        }
+
+    public:
+        /// @brief  Empty generator, used to crate optionals.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        constexpr static generator empty() {
+            return generator();
+        }
+
+        /// @brief  Barrier generator, used to ensure the input character is from a provided set. Requires, but does not consume, input.
+        /// @tparam character_types Variadic types of the character aguments, these must all be of char type.
+        /// @param  characters A number of characters, one of which must match the current input character during parsing.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        template <typename... character_types>
+        constexpr static generator barrier_any(character_types... characters) {
+            static_assert((std::is_same<char, character_types>::value && ...), "All arguments to a barrier_any generator must be of char type.");
+            return generator(true, false, [characters...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                static_cast<void>(self);
+                static_cast<void>(forest);
+                if constexpr (sizeof...(characters) != 0) {
+                    if (((characters != input) && ...)) {
+                        branch.error = "Failed as barrier_any was not matched. Found '" + chracter_to_string(input) + "'. Expected one of the set [ " + (((chracter_to_string(characters)) + " ") + ...) + "].";
+                    }
+                }
+            });
+        }
+
+        /// @brief  Barrier generator, used to ensure the input character is not from a provided set. Requires, but does not consume, input.
+        /// @tparam character_types Variadic types of the character aguments, these must all be of char type.
+        /// @param  characters A number of characters, none of which must match the current input character during parsing.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        template <typename... character_types>
+        constexpr static generator barrier_not(character_types... characters) {
+            static_assert((std::is_same<char, character_types>::value && ...), "All arguments to a barrier_not generator must be of char type.");
+            return generator(true, false, [characters...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                static_cast<void>(self);
+                static_cast<void>(forest);
+                if constexpr (sizeof...(characters) != 0) {
+                    if (((characters == input) || ...)) {
+                        branch.error = "Failed as barrier_not was matched. Found " + chracter_to_string(input) + "'. Expected one not of the set [ " + (((chracter_to_string(characters)) + " ") + ...) + "].";
+                    }
+                }
+            });
+        }
+
+        /// @brief  Terminal generator, used to ensure the input character is from a provided set.
+        /// @tparam character_types Variadic types of the character aguments, these must all be of char type.
+        /// @param  characters A number of characters, one of which must match the current input character during parsing.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        template <typename... character_types>
+        constexpr static generator terminal_any(character_types... characters) {
+            static_assert((std::is_same<char, character_types>::value && ...), "All arguments to a terminal_any generator must be of char type.");
+            return generator(true, false, [characters...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                static_cast<void>(self);
+                static_cast<void>(forest);
+                if constexpr (sizeof...(characters) != 0) {
+                    if (((characters != input) && ...)) {
+                        branch.error = "Failed as terminal_any was not matched. Found '" + chracter_to_string(input) + "'. Expected one of the set [ " + (((chracter_to_string(characters)) + " ") + ...) + "].";
+                        return;
+                    }
+                }
+                for (std::vector<char>& captured_terminals : branch.captured_terminals) {
+                    captured_terminals.push_back(input);
+                }
+                ++branch.consumed;
+            });
+        }
+
+        /// @brief  Terminal generator, used to ensure the input character is not from a provided set.
+        /// @tparam character_types Variadic types of the character aguments, these must all be of char type.
+        /// @param  characters A number of characters, none of which must match the current input character during parsing.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        template <typename... character_types>
+        constexpr static generator terminal_not(character_types... characters) {
+            static_assert((std::is_same<char, character_types>::value && ...), "All arguments to a terminal_not generator must be of char type.");
+            return generator(true, false, [characters...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                static_cast<void>(self);
+                static_cast<void>(forest);
+                if constexpr (sizeof...(characters) != 0) {
+                    if (((characters == input) || ...)) {
+                        branch.error = "Failed as terminal_not was matched. Found '" + chracter_to_string(input) + "'. Expected one not of the set [ " + (((chracter_to_string(characters)) + " ") + ...) + "].";
+                        return;
+                    }
+                }
+                for (std::vector<char>& captured_terminals : branch.captured_terminals) {
+                    captured_terminals.push_back(input);
+                }
+                ++branch.consumed;
+            });
+        }
+
+        /// @brief  Terminal generator, used to match a whole string of characters.
+        /// @param  string A series of characters that will be added to the branch to be parsed in sequence.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        constexpr static generator terminal(const std::string& string) {
+            return generator(false, false, [string](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                static_cast<void>(input);
+                static_cast<void>(self);
+                static_cast<void>(forest);
+                for (ssize_t index = static_cast<ssize_t>(string.size()) - 1; index >= 0; --index) {
+                    branch.pending.push_back(generator::terminal_any(string[index]));
+                }
+            });
+        }
+
+        /// @brief  Sequence generator, used to match entire sets of other generators in order.
+        /// @tparam generator_types Variadic types of the generator aguments, these must all be of generator type.
+        /// @param  generators A number of generators that will be sequentially added to the branch.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        template <typename... generator_types>
+        constexpr static generator sequence(generator_types... generators) {
+            static_assert((std::is_same<generator, generator_types>::value && ...), "All arguments to a sequence generator must be of generator type.");
+            return generator(false, false, [generators...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                static_cast<void>(input);
+                static_cast<void>(self);
+                static_cast<void>(forest);
+                if constexpr (sizeof...(generator_types) != 0) {
+                    generator reversed_sequence[] = { generators... };
+                    for (ssize_t index = static_cast<ssize_t>(sizeof...(generator_types)) - 1; index >= 0; --index) {
+                        branch.pending.push_back(reversed_sequence[index]);
+                    }
+                }
+            });
+        }
+
+        /// @brief  Disjunction generator, used to match any one of the other generators by spawning new branches for each.
+        /// @tparam generator_types Variadic types of the generator aguments, these must all be of generator type.
+        /// @param  generators A number of generators that will each spawn a new branch in the forest.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        template <typename... generator_types>
+        constexpr static generator disjunction(generator_types... generators) {
+            static_assert((std::is_same<generator, generator_types>::value && ...), "All arguments to a disjunction generator must be of generator type.");
+            return generator(false, false, [generators...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                static_cast<void>(input);
+                static_cast<void>(self);
+                if constexpr (sizeof...(generator_types) != 0) {
+                    generator options[] = { generators... };
+                    for (size_t index = 1; index < sizeof...(generator_types); ++index) {
+                        // Clone the current branch before any modification and add each generator to a new branch.
+                        forest.branch(branch).pending.push_back(options[index]);
+                    }
+                    // The first generator is handled last and added to the original branch.
+                    branch.pending.push_back(options[0]);
+                }
+            });
+        }
+
+        /// @brief  Repeat generator, used to repeat a generator a number of times.
+        /// @param  to_repeat The generator that will be added to the branch a set number of times.
+        /// @param  count The number of times to add the provided generator to the branch.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        constexpr static generator repeat(generator to_repeat, unsigned int count) {
+            return generator(false, false, [to_repeat, count](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                static_cast<void>(input);
+                static_cast<void>(self);
+                static_cast<void>(forest);
+                for (unsigned int index = 0; index < count; ++index) {
+                    branch.pending.push_back(to_repeat);
+                }
+            });
+        }
+
+        /// @brief  Recurse generator, used to repeat a generator indefinitely.
+        /// @param  to_recurse The generator that will be continually added to the branch.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        constexpr static generator recurse(generator to_recurse) {
+            return generator(false, true, [to_recurse](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                static_cast<void>(input);
+                static_cast<void>(forest);
+                // When recursing the recursion happens after the other generator to ensure the generator can progress.
+                // Therefore, first add this generator (self) then add the generator that should be repeated (to_recurse).
+                branch.pending.push_back(self);
+                branch.pending.push_back(to_recurse);
+            });
+        }
+
+        /// Emit, emit a token with no reqirement.
+
+        /// @brief  Emit generator, used to produce a token.
+        /// @param  token The token emitted.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        constexpr static generator emit(token_type token) {
+            return generator::emit([token](parse_branch_type&){ return token; });
+        }
+
+        /// @brief  Emit generator, used to produce a token by calling a custom function.
+        /// @param  token_function The function called to emit a token.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        constexpr static generator emit(token_function_type token_function) {
+            return generator::emit([token_function](parse_branch_type&){ return token_function(); });
+        }
+
+        /// @brief  Emit generator, used to produce a token by calling a custom function and providing access to the branch status.
+        /// @param  token_status_function The function called to emit a token.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        constexpr static generator emit(token_status_function_type token_status_function) {
+            return generator(false, false, [token_status_function](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                static_cast<void>(input);
+                static_cast<void>(self);
+                static_cast<void>(forest);
+                // Call the function and store the returned token.
+                branch.captured_tokens.back().push_back(token_status_function(branch));
+            });
+        }
+
+        /// Emit, emit a token with a reqirement.
+
+        /// @brief  Emit generator, used to produce a token when satisfied.
+        /// @param  requirement A generator that must successfully parse in order for this generator to emit a token.
+        /// @param  token The token emitted when the requrement has been successfully parsed.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        constexpr static generator emit(generator requirement, token_type token) {
+            return generator::emit(requirement, [token](parse_branch_type&){ return token; });
+        }
+
+        /// @brief  Emit generator, used to produce a token when satisfied by calling a custom function.
+        /// @param  requirement A generator that must successfully parse in order for this generator to emit a token.
+        /// @param  token_function The function called to emit a token when the requrement has been successfully parsed.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        constexpr static generator emit(generator requirement, token_function_type token_function) {
+            return generator::emit(requirement, [token_function](parse_branch_type&){ return token_function(); });
+        }
+
+        /// @brief  Emit generator, used to produce a token when satisfied by calling a custom function and providing access to the branch status.
+        /// @param  requirement A generator that must successfully parse in order for this generator to emit a token.
+        /// @param  token_status_function The function called to emit a token when the requrement has been successfully parsed.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        constexpr static generator emit(generator requirement, token_status_function_type token_status_function) {
+            return generator::sequence(
+                requirement,
+                generator(false, false, [token_status_function](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                    static_cast<void>(input);
+                    static_cast<void>(self);
+                    static_cast<void>(forest);
+                    // Call the function and store the returned token.
+                    branch.captured_tokens.back().push_back(token_status_function(branch));
+                })
+            );
+        }
+
+        /// Emit, emit a token dependent on captured terminals with a reqirement.
+
+        /// @brief  Emit generator, used to produce a token when satisfied by calling a custom function with all tokens captured from the sequence.
+        /// @param  requirement A generator that must successfully parse in order for this generator to emit a token, any terminals processed are captured and reprocessed.
+        /// @param  token_function The function called to emit a token when the requrement has been successfully parsed, all processed terminals are captured and one token is emitted.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        static generator emit(generator requirement, token_terminals_function_type token_function) {
+            return generator::emit(requirement, [token_function](const std::vector<char>& terminals, parse_branch_type&){ return token_function(terminals); });
+        }
+
+        /// @brief  Emit generator, used to produce a token when satisfied by calling a custom function with all terminals captured from the sequence and providing access to the branch status.
+        /// @param  requirement A generator that must successfully parse in order for this generator to emit a token, any terminals processed are captured and reprocessed.
+        /// @param  token_status_function The function called to emit a token when the requrement has been successfully parsed, all processed terminals are captured and one token is emitted.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        static generator emit(generator requirement, token_terminals_status_function_type token_status_function) {
+            return generator::sequence(
+                generator(false, false, [](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                    static_cast<void>(input);
+                    static_cast<void>(self);
+                    static_cast<void>(branch);
+                    static_cast<void>(forest);
+                    // Add a terminal collector to capture parsed captured_terminals.
+                    branch.captured_terminals.push_back({});
+                }),
+                requirement,
+                generator(false, false, [token_status_function](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                    static_cast<void>(input);
+                    static_cast<void>(self);
+                    static_cast<void>(forest);
+                    // Call the function and store the returned token.
+                    branch.captured_tokens.back().push_back(token_status_function(branch.captured_terminals.back(), branch));
+                    // Remove the collected captured_terminals from the stack.
+                    branch.captured_terminals.pop_back();
+                })
+            );
+        }
+
+        /// Reemit, emit a token dependent on captured tokens with a reqirement.
+
+        /// @brief  Reemit generator, used to produce a token when satisfied by calling a custom function with all tokens captured from the sequence.
+        /// @param  requirement A generator that must successfully parse in order for this generator to emit a token, any tokens generated are captured and reprocessed.
+        /// @param  token_function The function called to emit a token when the requrement has been successfully parsed, all generated tokens are captured and only one token is reemitted.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        static generator reemit(generator requirement, token_tokens_function_type token_function) {
+            return generator::reemit(requirement, [token_function](const std::vector<token_type>& tokens, parse_branch_type&){ return token_function(tokens); });
+        }
+
+        /// @brief  Reemit generator, used to produce a token when satisfied by calling a custom function with all tokens captured from the sequence and providing access to the branch status.
+        /// @param  requirement A generator that must successfully parse in order for this generator to emit a token, any tokens generated are captured and reprocessed.
+        /// @param  token_status_function The function called to emit a token when the requrement has been successfully parsed, all generated tokens are captured and only one token is reemitted.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        static generator reemit(generator requirement, token_tokens_status_function_type token_status_function) {
+            return generator::sequence(
+                generator(false, false, [](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                    static_cast<void>(input);
+                    static_cast<void>(self);
+                    static_cast<void>(branch);
+                    static_cast<void>(forest);
+                    // Add a token collector to capture parsed captured_tokens.
+                    branch.captured_tokens.push_back({});
+                }),
+                requirement,
+                generator(false, false, [token_status_function](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                    static_cast<void>(input);
+                    static_cast<void>(self);
+                    static_cast<void>(forest);
+                    // Call the function and store the returned token.
+                    branch.captured_tokens[branch.captured_tokens.size()-2].push_back(token_status_function(branch.captured_tokens.back(), branch));
+                    // Remove the collected captured_tokens from the stack.
+                    branch.captured_tokens.pop_back();
+                })
+            );
+        }
+
+        /// @brief  Reference generator, to call a reference to an already defined generator.
+        /// @param  shared A reference to the parser that should be called when this parser is called.
+        /// @return A generator that can be used by itself to parse input, or combined with other generators.
+        static generator reference(const generator& shared) {
+            return generator(false, false, [&shared](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                static_cast<void>(input);
+                static_cast<void>(self);
+                static_cast<void>(forest);
+                branch.pending.push_back(shared);
+            });
+        }
+
+    public:
+        /// @brief  Parse a character of input into all branches in a forest.
+        /// @param  input The character to parse.
+        /// @param  forest Either empty forest or a collection of parse branches.
+        /// @return Return true if there is still valid branches left to consume the input, false otherwise.
+        bool parse(const char input, parse_forest_type& forest) const {
+            // On first run the parse_forest_type will be empty, so create an initial branch.
+            if (forest.consumed == 0) {
+                // Create starting generators branch and add the first job to be processed using this generator
+                forest.branch().pending.push_back(*this);
+            }
+
+            // If there is no branches left to parse the input then return false.
+            if (forest.branches.empty()) {
+                return false;
+            }
+
+            // Increment the count of input consumed by the forest.
+            ++forest.consumed;
+
+            // Ensure the list of recursing generators is cleared for each branch.
+            for (typename std::list<parse_branch_type>::iterator branch = forest.branches.begin(); branch != forest.branches.end(); ++branch) {
+                branch->recursing_ids.clear();
+            }
+
+            // Loop forever processing branches of the parse forest for the current input character until all have either consumed the character or failed.
+            for (;;) {
+                // Process the next generator on all branches, and check if the input has been consumed.
+                // Note: If a disjunction occurs the number of branches will grow.
+                for (typename std::list<parse_branch_type>::iterator branch = forest.branches.begin(); branch != forest.branches.end(); ++branch) {
+                    if (branch->consumed == forest.consumed) {
+                        continue;
+                    }
+                    if (!branch->error.empty()) {
+                        continue;
+                    }
+                    if (branch->pending.empty()) {
+                        branch->error = "Exhausted generators but failed to consume all input.";
+                        continue;
+                    }
+
+                    // Get the next generator.
+                    generator branch_generator = branch->pending.back();
+                    // Remove the generator from pending.
+                    branch->pending.pop_back();
+
+                    // For recursive loops the max depth is 1 before we bail out of the recursion.
+                    if (branch_generator.recurses) {
+                        // First check if this generator has not been reached before.
+                        if ((branch->recursing_ids.empty()) || (branch_generator.id != branch->recursing_ids.back())) {
+                            branch->recursing_ids.push_back(branch_generator.id);
+                        }
+                        else {
+                            // We have recursed and failed to progress so exit the recurse loop by returning without running the generator.
+                            // We also tidy up for future recurses of this branch by removing the branch from the recursing_ids list.
+                            branch->recursing_ids.pop_back();
+                            continue;
+                        }
+                    }
+
+                    // Run the generator.
+                    branch_generator.function(input, branch_generator, *branch, forest);
+                }
+
+                // Remove duplicate branches.
+                for (typename std::list<parse_branch_type>::iterator branch_lhs = forest.branches.begin(); branch_lhs != forest.branches.end(); ++branch_lhs) {
+                    if (!branch_lhs->error.empty()) {
+                        continue;
+                    }
+                    for (typename std::list<parse_branch_type>::iterator branch_rhs = std::next(branch_lhs); branch_rhs != forest.branches.end(); ++branch_rhs) {
+                        if (*branch_lhs == *branch_rhs) {
+                            branch_rhs->error = "Duplicate branch.";
+                        }
+                    }
+                }
+
+                // Remove any failed branches.
+                forest.branches.erase(std::remove_if(forest.branches.begin(), forest.branches.end(), [&forest](parse_branch_type& branch){
+                    return (!branch.error.empty());
+                }), forest.branches.end());
+
+                // See if we are done.
+                bool all_consumed = true;
+                for (typename std::list<parse_branch_type>::iterator branch = forest.branches.begin(); branch != forest.branches.end(); ++branch) {
+                    if ((branch->consumed != forest.consumed) && (branch->error.empty())) {
+                        all_consumed = false;
+                    }
+                }
+                if (all_consumed) {
+                    break;
+                }
+            }
+
+            // If there is no branches left to parse the input then return false.
+            if (forest.branches.empty()) {
+                return false;
+            }
+
+            // Otherwise return true.
+            return true;
+        }
+
+        /// @brief  Finalise a parse by continually processing all forest branches until they have no pending operations.
+        /// @param  forest Either empty forest or a collection of parse branches.
+        /// @param  tokens If there is a single successful parse branch the tokens of the branch are returned though this parameter.
+        /// @param  error If parsing fails an error message is returned though this parameter.
+        /// @return Return true if there is one valid branch after exhausting all branches pending operations, false otherwise.
+        bool finalise(parse_forest_type& forest, std::vector<token_type>* tokens = nullptr, std::string* error = nullptr) const {
+            // Ensure output arguments are clean.
+            if (tokens) {
+                tokens->clear();
+            }
+            if (error) {
+                error->clear();
+            }
+
+            // If the parse function has not been called the parse_forest_type will be empty, so create an initial branch.
+            // Note: This case will only successfully finalise if all generators within have no input requirements.
+            if (forest.consumed == 0) {
+                // Create starting generators branch and add the first job to be processed using this generator
+                forest.branch().pending.push_back(*this);
+            }
+
+            // Loop forever processing branches of the parse forest for the current input character until all have either consumed the character or failed.
+            for (;;) {
+                // Process the next generator on all branches, and check if the input has been consumed.
+                // Note: If a disjunction occurs the number of branches will grow.
+                for (typename std::list<parse_branch_type>::iterator branch = forest.branches.begin(); branch != forest.branches.end(); ++branch) {
+                    if (!branch->error.empty()) {
+                        continue;
+                    }
+                    if (branch->pending.empty()) {
+                        continue;
+                    }
+
+                    // Get the next generator.
+                    generator branch_generator = branch->pending.back();
+                    // Remove the generator from pending.
+                    branch->pending.pop_back();
+
+                    if (branch_generator.requires_input) {
+                        branch->error = "Found generator that requires input during finalise.";
+                        continue;
+                    }
+
+                    // For recursive loops the max depth is 1 before we bail out of the recursion.
+                    if (branch_generator.recurses) {
+                        // First check if this generator has not been reached before.
+                        if ((branch->recursing_ids.empty()) || (branch_generator.id != branch->recursing_ids.back())) {
+                            branch->recursing_ids.push_back(branch_generator.id);
+                        }
+                        else {
+                            // We have recursed and failed to progress so exit the recurse loop by returning without running the generator.
+                            // We also tidy up for future recurses of this branch by removing the branch from the recursing_ids list.
+                            branch->recursing_ids.pop_back();
+                            continue;
+                        }
+                    }
+
+                    // Run the generator.
+                    branch_generator.function(0, branch_generator, *branch, forest);
+                }
+
+                // Remove duplicate branches.
+                for (typename std::list<parse_branch_type>::iterator branch_lhs = forest.branches.begin(); branch_lhs != forest.branches.end(); ++branch_lhs) {
+                    if (!branch_lhs->error.empty()) {
+                        continue;
+                    }
+                    for (typename std::list<parse_branch_type>::iterator branch_rhs = std::next(branch_lhs); branch_rhs != forest.branches.end(); ++branch_rhs) {
+                        if (*branch_lhs == *branch_rhs) {
+                            branch_rhs->error = "Duplicate branch.";
+                        }
+                    }
+                }
+
+                // Remove any failed branches.
+                forest.branches.erase(std::remove_if(forest.branches.begin(), forest.branches.end(), [&forest](parse_branch_type& branch){
+                    return (!branch.error.empty());
+                }), forest.branches.end());
+
+                // See if we are done.
+                bool all_finished = true;
+                for (typename std::list<parse_branch_type>::iterator branch = forest.branches.begin(); branch != forest.branches.end(); ++branch) {
+                    if ((!branch->pending.empty()) && (branch->error.empty())) {
+                        all_finished = false;
+                    }
+                }
+                if (all_finished) {
+                    break;
+                }
+            }
+
+            // If there is a unique branch return its tokens and return true.
+            if (forest.branches.size() == 1) {
+                if (tokens) {
+                    *tokens = forest.branches.front().captured_tokens.front();
+                }
+                return true;
+            }
+            // Otherwise if there is more than one branch generate an error message and return false.
+            else if (forest.branches.size() > 1) {
+                if (error) {
+                    *error = "Ambiguous parse.";
+                }
+                return false;
+            }
+            // Otherwise there are only failed branches and parsing has failed.
+            if (error) {
+                *error = "Parsing invalid.";
+            }
+            return false;
+        }
+    };
+}
+
+#endif // GTL_PARSER_GENERATOR_HPP
