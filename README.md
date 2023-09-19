@@ -49,6 +49,7 @@ The current classes are as described below:
 | [execution](source/execution) | [triple_buffer](source/execution/triple_buffer) | Lockless triple buffer interface to three buffers. | :heavy_check_mark: |
 | [file/archive](source/file/archive) | [tar](source/file/archive/tar) | Tar format archive reader and writer. | :construction: |
 | [file/text](source/file/text) | [json](source/file/text/json) | A small json parser and composer. | :construction: |
+| [game](source/game) | [mastermind](source/game/mastermind) | An implementation of Donald Knuth's algorithm to solve the mastermind game in five moves or less. | :construction: |
 | [game](source/game) | [sudoku](source/game/sudoku) | A sudoku solver for standard 9x9 grids. | :construction: |
 | [game](source/game) | [tic_tac_toe](source/game/tic_tac_toe) | Solver for the game tic\-tac\-toe on a 3x3 board. | :construction: |
 | [hash](source/hash) | [crc](source/hash/crc) | An implementation of the crc hashing function for 8, 16, 32, and 64 bits. | :heavy_check_mark: |

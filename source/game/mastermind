@@ -1,0 +1,183 @@
+/*
+Copyright (C) 2018-2023 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_GAME_MASTERMIND_HPP
+#define GTL_GAME_MASTERMIND_HPP
+
+// Summary: An implementation of Donald Knuth's algorithm to solve the mastermind game in five moves or less. [wip]
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <algorithm>
+#include <array>
+#include <functional>
+#include <unordered_map>
+#include <vector>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace gtl {
+    template <unsigned int code_length, unsigned int code_base>
+    class mastermind final {
+    private:
+        static_assert(code_length > 0);
+        static_assert(code_base > 0);
+
+    private:
+        class score_type {
+        public:
+            unsigned int correct;
+            unsigned int close;
+        public:
+            bool operator==(const score_type& other) const {
+                return ((this->correct == other.correct) && (this->close == other.close));
+            }
+        };
+
+    public:
+        static unsigned int solve(
+            const std::array<unsigned int, code_length>& code,
+            const std::function<void(unsigned int turn,
+            const std::array<unsigned int, code_length>& guess,
+            unsigned int correct, unsigned int close)>& callback = {}
+        ) {
+            // Generate all possible codes.
+            std::vector<std::array<unsigned int, code_length>> unguessed_codes;
+            unguessed_codes.push_back(std::array<unsigned int, code_length>());
+            do {
+                unguessed_codes.push_back(unguessed_codes.back());
+                for (unsigned int i = 0; i < code_length; ++i) {
+                    unguessed_codes.back()[code_length - 1 - i] = (unguessed_codes.back()[code_length - 1 - i] + 1) % code_base;
+                    if (unguessed_codes.back()[code_length - 1 - i] != 0) {
+                        break;
+                    }
+                }
+            } while (unguessed_codes.back() != unguessed_codes.front());
+            unguessed_codes.pop_back();
+            std::vector<std::array<unsigned int, code_length>> possible_codes = unguessed_codes;
+            // Create an initial guess.
+            std::array<unsigned int, code_length> guess = {};
+            for (unsigned int i = 0; i < code_length; ++i) {
+                guess[i] = (i >= (code_length / 2));
+            }
+            // Play the game.
+            unsigned int turns = 0;
+            do {
+                // Score the current guess.
+                score_type score = evaluate(guess, code);
+                // Increment the guess counter.
+                ++turns;
+                // Print the state.
+                if (callback) {
+                    callback(turns - 1, guess, score.correct, score.close);
+                }
+                // Check if the guess is correct.
+                if (score.correct == code_length) {
+                    break;
+                }
+                // If the guess is not correct:
+                // Remove the guess from the unguessed set.
+                unguessed_codes.erase(std::find(unguessed_codes.begin(), unguessed_codes.end(), guess));
+                // Remove the guess from the possible set, and remove possible codes that do not match the returned score.
+                possible_codes.erase(
+                    std::remove_if(
+                        possible_codes.begin(),
+                        possible_codes.end(),
+                        [guess, score](const std::array<unsigned int, code_length>& possible_code)->bool{
+                            if (guess == possible_code) {
+                                return true;
+                            }
+                            score_type possible = evaluate(guess, possible_code);
+                            return ((score.correct != possible.correct) || (score.close != possible.close));
+                        }
+                    ),
+                    possible_codes.end()
+                );
+                // If there is only one possible code left, select that.
+                if (possible_codes.size() == 1) {
+                    guess = possible_codes.back();
+                    continue;
+                }
+                // Otherwise select a new guess using minimax.
+                std::vector<unsigned int> scores(unguessed_codes.size(), 0);
+                for (unsigned int i = 0; i < unguessed_codes.size(); ++i) {
+                    struct score_hash {
+                        std::size_t operator()(const score_type& key) const {
+                            return key.correct * code_length + key.close;
+                        }
+                    };
+                    // Calculate the score/pegs of each unguessed code as if a possible code was the code.
+                    std::unordered_map<score_type, unsigned int, score_hash> score_map;
+                    for (unsigned int j = 0; j < possible_codes.size(); ++j) {
+                        ++score_map[evaluate(unguessed_codes[i], possible_codes[j])];
+                    }
+                    // From these scores select the maximum, this is the worst case number of possible codes for a given unguessed code.
+                    scores[i] = std::max_element(score_map.begin(), score_map.end(),
+                        [](const std::pair<const score_type, unsigned int>& lhs, const std::pair<const score_type, unsigned int>& rhs)->bool{
+                            return lhs.second < rhs.second;
+                        }
+                    )->second;
+                }
+                // Select the minimum of the maximums to get the best guess.
+                std::vector<unsigned int>::iterator min_element = std::min_element(scores.begin(), scores.end());
+                guess = unguessed_codes[std::distance(scores.begin(), min_element)];
+                // Check to see if there is a possible code with the same score, if so, prefer that.
+                const unsigned int min_score = *min_element;
+                for (unsigned int i = 0; i < unguessed_codes.size(); ++i) {
+                    if (scores[i] == min_score) {
+                        if (std::find(possible_codes.begin(), possible_codes.end(), unguessed_codes[i]) != possible_codes.end()) {
+                            guess = unguessed_codes[i];
+                            break;
+                        }
+                    }
+                }
+            } while (true);
+            return turns;
+        }
+
+    private:
+        static score_type evaluate(const std::array<unsigned int, code_length>& guess, const std::array<unsigned int, code_length>& code) {
+            unsigned int correct = 0;
+            unsigned int close = 0;
+            std::array<bool, code_length> consumed = {};
+            for (unsigned int i = 0; i < code_length; ++i) {
+                if (guess[i] == code[i]) {
+                    consumed[i] = true;
+                    ++correct;
+                }
+            }
+            for (unsigned int i = 0; i < code_length; ++i) {
+                if (guess[i] != code[i]) {
+                    for (unsigned int j = 0; j < code_length; ++j) {
+                        if ((guess[i] == code[j]) && (!consumed[j])) {
+                            consumed[j] = true;
+                            ++close;
+                            break;
+                        }
+                    }
+                }
+            }
+            return {correct, close};
+        }
+    };
+}
+
+#endif // GTL_GAME_MASTERMIND_HPP
