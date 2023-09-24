@@ -166,10 +166,11 @@ namespace gtl {
         }
 
         /// @brief  Circular rotate of an input word by a number of bytes.
+        /// @param  word Data to byte rotate.
         /// @param  shift Number of bytes to rotate the input word.
-        /// @param  word Data to rotate.
-        constexpr static void rotate_left(unsigned int shift, word_type& word) {
-            word = word_type {{
+        /// @return The rotated word.
+        constexpr static word_type rotate_left(const word_type& word, unsigned int shift) {
+            return word_type {{
                 word.data[(0 + shift) % aes::block_size],
                 word.data[(1 + shift) % aes::block_size],
                 word.data[(2 + shift) % aes::block_size],
@@ -224,7 +225,7 @@ namespace gtl {
                 }};
 
                 if ((key_index % aes::key_size) == 0) {
-                    aes::rotate_left(1, previous_round_key_word);
+                    previous_round_key_word = aes::rotate_left(previous_round_key_word, 1);
                     aes::substitute_forward(previous_round_key_word);
                     word_type round_constant_word = aes::round_constant(key_index / aes::key_size);
                     previous_round_key_word = aes::xor_data(previous_round_key_word, round_constant_word);
@@ -313,19 +314,19 @@ namespace gtl {
         /// @brief  Rotate all rows of a block using the forward transformation.
         /// @param  block Data to rotate.
         constexpr static void rotate_rows_forward(block_type& block) {
-            //aes::rotate_left(0, block.data[0]);
-            aes::rotate_left(1, block.data[1]);
-            aes::rotate_left(2, block.data[2]);
-            aes::rotate_left(3, block.data[3]);
+            //block.data[0] = aes::rotate_left(block.data[0], 0);
+            block.data[1] = aes::rotate_left(block.data[1], 1);
+            block.data[2] = aes::rotate_left(block.data[2], 2);
+            block.data[3] = aes::rotate_left(block.data[3], 3);
         }
 
         /// @brief  Rotate all rows of a block using the inverse transformation.
         /// @param  block Data to rotate.
         constexpr static void rotate_rows_inverse(block_type& block) {
-            //aes::rotate_left(4, block.data[0]);
-            aes::rotate_left(3, block.data[1]);
-            aes::rotate_left(2, block.data[2]);
-            aes::rotate_left(1, block.data[3]);
+            //block.data[0] = aes::rotate_left(block.data[0], 4);
+            block.data[1] = aes::rotate_left(block.data[1], 3);
+            block.data[2] = aes::rotate_left(block.data[2], 2);
+            block.data[3] = aes::rotate_left(block.data[3], 1);
         }
 
     private:
@@ -474,7 +475,7 @@ namespace gtl {
         /// @param  key The encryption key, must be at least the length required by the selected aes bitsize.
         /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
         static void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, unsigned char* output) {
-            const unsigned char iv[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+            const unsigned char iv[32] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
             aes::encrypt(data, length, key, iv, output);
         }
 
@@ -484,7 +485,7 @@ namespace gtl {
         /// @param  key The decryption key, must be at least the length required by the selected aes bitsize.
         /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
         static void decrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, unsigned char* output) {
-            const unsigned char iv[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+            const unsigned char iv[32] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
             aes::decrypt(data, length, key, iv, output);
         }
 
