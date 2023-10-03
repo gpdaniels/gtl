@@ -61,6 +61,7 @@ The current classes are as described below:
 | [hash](source/hash) | [sha3](source/hash/sha3) | An implementation of the sha3 hashing function for 224, 256, 384, and 512 bits. | :heavy_check_mark: |
 | [io](source/io) | [file](source/io/file) | An RAII file handle that wraps file operation functions. | :construction: |
 | [io](source/io) | [paths](source/io/paths) | Collection of cross platform functions to provide useful paths. | :heavy_check_mark: |
+| [io](source/io) | [socket](source/io/socket) | Cross platform socket class, supporting tcp (server and client) and udp protocols. | :construction: |
 | [math](source/math) | [big_integer](source/math/big_integer) | Arbitrary sized signed integers. | :heavy_check_mark: |
 | [math](source/math) | [big_unsigned](source/math/big_unsigned) | Arbitrary sized unsigned integers. | :heavy_check_mark: |
 | [math](source/math) | [symbolic](source/math/symbolic) | Compile time symbolic differentiation using template metaprogramming. | :construction: |
