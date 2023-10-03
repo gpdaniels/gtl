@@ -138,7 +138,7 @@ namespace gtl {
                 }
                 // Select the minimum of the maximums to get the best guess.
                 std::vector<unsigned int>::iterator min_element = std::min_element(scores.begin(), scores.end());
-                guess = unguessed_codes[std::distance(scores.begin(), min_element)];
+                guess = unguessed_codes[static_cast<unsigned int>(std::distance(scores.begin(), min_element))];
                 // Check to see if there is a possible code with the same score, if so, prefer that.
                 const unsigned int min_score = *min_element;
                 for (unsigned int i = 0; i < unguessed_codes.size(); ++i) {
