@@ -1,0 +1,626 @@
+/*
+Copyright (C) 2018-2023 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_IO_SOCKET_HPP
+#define GTL_IO_SOCKET_HPP
+
+// Summary: Cross platform socket class, supporting tcp (server and client) and udp protocols. [wip]
+
+#if defined(linux) || defined(__linux) || defined(__linux__)
+    #include <netinet/in.h>
+    #include <netinet/tcp.h>
+    #include <sys/ioctl.h>
+    #include <sys/socket.h>
+    #include <unistd.h>
+
+    #define SOCKET int
+    #define INVALID_SOCKET -1
+    #define closesocket ::close
+    #define SD_BOTH SHUT_RDWR
+    #define ioctlsocket ioctl
+#endif
+
+#if defined(_WIN32)
+
+    #if defined(_MSC_VER)
+    #   pragma warning(push, 0)
+    #endif
+
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+
+    #pragma comment(lib, "Ws2_32.lib")
+
+    #if defined(_MSC_VER)
+    #   pragma warning(pop)
+    #endif
+
+#endif
+
+#if defined(__APPLE__)
+    #include <netinet/in.h>
+    #include <netinet/tcp.h>
+    #include <sys/ioctl.h>
+    #include <sys/socket.h>
+    #include <unistd.h>
+
+    #define SOCKET int
+    #define INVALID_SOCKET -1
+    #define closesocket ::close
+    #define SD_BOTH SHUT_RDWR
+    #define ioctlsocket ioctl
+#endif
+
+static_assert(INVALID_SOCKET == -1, "The invalid socket definition must be negative one.");
+
+namespace gtl {
+    class socket final {
+    public:
+        struct ip {
+            unsigned char segment[4];
+            bool operator==(const ip& other) const {
+                return ((this->segment[0] == other.segment[0]) && (this->segment[1] == other.segment[1]) && (this->segment[2] == other.segment[2]) && (this->segment[3] == other.segment[3]));
+            }
+        };
+
+        constexpr static const ip ip_any        = {0, 0, 0, 0};
+        constexpr static const ip ip_loopback   = {127, 0, 0, 1};
+        constexpr static const ip ip_broadcast  = {255, 255, 255, 255};
+
+        constexpr static const unsigned short port_any  = 0;
+        constexpr static const unsigned short port_ssh  = 22;
+        constexpr static const unsigned short port_smtp = 25;
+        constexpr static const unsigned short port_dns  = 53;
+        constexpr static const unsigned short port_http = 80;
+        constexpr static const unsigned short port_ssl  = 443;
+
+        struct tcp_server {
+            ip address;
+            unsigned short port;
+        };
+
+        struct tcp_client {
+            ip address_local;
+            unsigned short port_local;
+            ip address_remote;
+            unsigned short port_remote;
+        };
+
+        struct udp_client {
+            ip address;
+            unsigned short port;
+        };
+
+    private:
+        // The socket handle.
+        SOCKET handle;
+
+    public:
+        ~socket() {
+            this->close();
+            #if defined(_WIN32)
+                WSACleanup();
+            #endif
+        }
+
+        socket()
+            : handle(INVALID_SOCKET) {
+            #if defined(_WIN32)
+                WORD VersionRequested = MAKEWORD(2, 2);
+                WSADATA WinSockData;
+                if (WSAStartup(VersionRequested, &WinSockData) != 0) {
+                    return;
+                }
+                // Confirm that the WinSock DLL supports 2.2.
+                if (LOBYTE(WinSockData.wVersion) != 2 || HIBYTE(WinSockData.wVersion) != 2) {
+                    return;
+                }
+            #endif
+        }
+
+        socket(const socket&) = delete;
+
+        socket(socket&& other) {
+            this->handle = other.handle;
+            other.handle = INVALID_SOCKET;
+        }
+
+        socket& operator=(const socket&) = delete;
+
+        socket& operator=(socket&& other) {
+            if (this != &other) {
+                this->handle = other.handle;
+                other.handle = INVALID_SOCKET;
+            }
+            return *this;
+        }
+
+    public:
+        bool is_open() const {
+            return ((this->handle >= 0) && (this->handle != INVALID_SOCKET));
+        }
+
+        bool open(const tcp_server& connection) {
+            // Ensure closed.
+            this->close();
+
+            // Open a socket.
+            this->handle = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+            // Check the socket is valid.
+            if ((this->handle < 0) || (this->handle == INVALID_SOCKET)) {
+                return false;
+            }
+
+            // Enable port and address reuse.
+            const int reuseaddr_value = 1;
+            if (setsockopt(this->handle, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuseaddr_value), sizeof(int)) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            // Configure keepalive options for the socket.
+            const int keepalive_value = 1;
+            if (setsockopt(this->handle, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<const char*>(&keepalive_value), sizeof(int)) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            // These are not supported by apple.
+            #if !defined(__APPLE__)
+                // Configure other keepalive options for the socket.
+                const int keepidle_value = 1;
+                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPIDLE, reinterpret_cast<const char*>(&keepidle_value), sizeof(int)) < 0) {
+                    closesocket(this->handle);
+                    this->handle = INVALID_SOCKET;
+                    return false;
+                }
+                const int keepintvl_value = 1;
+                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPINTVL, reinterpret_cast<const char*>(&keepintvl_value), sizeof(int)) < 0) {
+                    closesocket(this->handle);
+                    this->handle = INVALID_SOCKET;
+                    return false;
+                }
+                const int keepcnt_value = 10;
+                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPCNT, reinterpret_cast<const char*>(&keepcnt_value), sizeof(int)) < 0) {
+                    closesocket(this->handle);
+                    this->handle = INVALID_SOCKET;
+                    return false;
+                }
+            #endif
+
+            // Configure the socket as blocking.
+            #if defined(_WIN32)
+                unsigned long int non_blocking_value = 0;
+            #else
+                int non_blocking_value = 0;
+            #endif
+            if (ioctlsocket(this->handle, FIONBIO, &non_blocking_value) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            // Setup the local address and port for the bind call.
+            sockaddr_in address_bind = {};
+            address_bind.sin_family = AF_INET;
+            address_bind.sin_addr.s_addr =
+                (static_cast<unsigned int>(connection.address.segment[3]) << 24) |
+                (static_cast<unsigned int>(connection.address.segment[2]) << 16) |
+                (static_cast<unsigned int>(connection.address.segment[1]) << 8) |
+                (static_cast<unsigned int>(connection.address.segment[0]) << 0);
+            address_bind.sin_port = htons(connection.port);
+
+            // Try and bind to the address and port.
+            if (bind(this->handle, reinterpret_cast<const sockaddr*>(&address_bind), sizeof(sockaddr_in)) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            // Now set the socket to listen for incoming connections.
+            if (listen(this->handle, SOMAXCONN) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            return true;
+        }
+
+        bool open(const tcp_client& connection) {
+            // Ensure closed.
+            this->close();
+
+            // Open a socket.
+            this->handle = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+            // Check the socket is valid.
+            if ((this->handle < 0) || (this->handle == INVALID_SOCKET)) {
+                return false;
+            }
+
+            // Enable port and address reuse.
+            const int reuseaddr_value = 1;
+            if (setsockopt(this->handle, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuseaddr_value), sizeof(int)) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            // Configure keepalive options for the socket.
+            const int keepalive_value = 1;
+            if (setsockopt(this->handle, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<const char*>(&keepalive_value), sizeof(int)) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            // These are not supported by apple.
+            #if !defined(__APPLE__)
+                // Configure other keepalive options for the socket.
+                const int keepidle_value = 1;
+                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPIDLE, reinterpret_cast<const char*>(&keepidle_value), sizeof(int)) < 0) {
+                    closesocket(this->handle);
+                    this->handle = INVALID_SOCKET;
+                    return false;
+                }
+                const int keepintvl_value = 1;
+                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPINTVL, reinterpret_cast<const char*>(&keepintvl_value), sizeof(int)) < 0) {
+                    closesocket(this->handle);
+                    this->handle = INVALID_SOCKET;
+                    return false;
+                }
+                const int keepcnt_value = 10;
+                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPCNT, reinterpret_cast<const char*>(&keepcnt_value), sizeof(int)) < 0) {
+                    closesocket(this->handle);
+                    this->handle = INVALID_SOCKET;
+                    return false;
+                }
+            #endif
+
+            // Configure the socket as blocking.
+            #if defined(_WIN32)
+                unsigned long int non_blocking_value = 0;
+            #else
+                int non_blocking_value = 0;
+            #endif
+            if (ioctlsocket(this->handle, FIONBIO, &non_blocking_value) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            // Setup the local address and port for the bind call.
+            sockaddr_in address_bind = {};
+            address_bind.sin_family = AF_INET;
+            address_bind.sin_addr.s_addr =
+                (static_cast<unsigned int>(connection.address_local.segment[3]) << 24) |
+                (static_cast<unsigned int>(connection.address_local.segment[2]) << 16) |
+                (static_cast<unsigned int>(connection.address_local.segment[1]) << 8) |
+                (static_cast<unsigned int>(connection.address_local.segment[0]) << 0);
+            address_bind.sin_port = htons(connection.port_local);
+
+            // Try and bind to the address and port.
+            if (bind(this->handle, reinterpret_cast<const sockaddr*>(&address_bind), sizeof(sockaddr_in)) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            // Setup the address and port
+            sockaddr_in address_connect = {};
+            address_connect.sin_family = AF_INET;
+            address_connect.sin_addr.s_addr =
+                (static_cast<unsigned int>(connection.address_remote.segment[3]) << 24) |
+                (static_cast<unsigned int>(connection.address_remote.segment[2]) << 16) |
+                (static_cast<unsigned int>(connection.address_remote.segment[1]) << 8) |
+                (static_cast<unsigned int>(connection.address_remote.segment[0]) << 0);
+            address_connect.sin_port = htons(connection.port_remote);
+
+            // Try to connect to the remote host
+            if (connect(this->handle, reinterpret_cast<const sockaddr*>(&address_connect), sizeof(sockaddr_in)) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            return true;
+        }
+
+        bool open(const udp_client& connection) {
+            // Ensure closed.
+            this->close();
+
+            // Open a socket.
+            this->handle = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+            // Check the socket is valid.
+            if ((this->handle < 0) || (this->handle == INVALID_SOCKET)) {
+                return false;
+            }
+
+            // Enable port and address reuse.
+            const int reuseaddr_value = 1;
+            if (setsockopt(this->handle, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuseaddr_value), sizeof(int)) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            // Configure broadcast options for the socket.
+            const int broadcast_value = 1;
+            if (setsockopt(this->handle, SOL_SOCKET, SO_BROADCAST, reinterpret_cast<const char*>(&broadcast_value), sizeof(int)) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            // Setup the local address and port for the bind call.
+            sockaddr_in address_bind = {};
+            address_bind.sin_family = AF_INET;
+            address_bind.sin_addr.s_addr =
+                (static_cast<unsigned int>(connection.address.segment[3]) << 24) |
+                (static_cast<unsigned int>(connection.address.segment[2]) << 16) |
+                (static_cast<unsigned int>(connection.address.segment[1]) << 8) |
+                (static_cast<unsigned int>(connection.address.segment[0]) << 0);
+            address_bind.sin_port = htons(connection.port);
+
+            // Try and bind to the address and port.
+            if (bind(this->handle, reinterpret_cast<const sockaddr*>(&address_bind), sizeof(sockaddr_in)) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            return true;
+        }
+
+        void close() {
+            if (!this->is_open()) {
+                return;
+            }
+
+            sockaddr_in address_null = {};
+            address_null.sin_family = AF_UNSPEC;
+
+            // Try to disconnect
+            if (connect(this->handle, reinterpret_cast<const sockaddr*>(&address_null), sizeof(sockaddr_in)) < 0) {
+                // Failed to disconnect.
+            }
+
+            if (shutdown(this->handle, SD_BOTH) < 0) {
+                // Failed to shutdown.
+            }
+
+            if (closesocket(this->handle) < 0) {
+                // Failed to close.
+            }
+
+            this->handle = INVALID_SOCKET;
+        }
+
+        bool accept(socket& connection) const {
+            ip address;
+            unsigned short port;
+            return this->accept(connection, address, port);
+        }
+
+        bool accept(socket& connection, ip& address, unsigned short& port) const {
+            if (!this->is_open()) {
+                return false;
+            }
+
+            // Ensure the connection to be created is closed initially.
+            connection.close();
+
+            // Prepare an address to store the sender's address.
+            sockaddr_in address_accepted = {};
+            address_accepted.sin_family = AF_INET;
+            socklen_t address_length = sizeof(sockaddr_in);
+
+            // Accept a connection.
+            SOCKET handle_accepted = ::accept(this->handle, reinterpret_cast<sockaddr*>(&address_accepted), &address_length);
+            if (handle_accepted == INVALID_SOCKET) {
+                return false;
+            }
+
+            // Get the sender.
+            address.segment[0] = (address_accepted.sin_addr.s_addr >>  0) & 0xFF;
+            address.segment[1] = (address_accepted.sin_addr.s_addr >>  8) & 0xFF;
+            address.segment[2] = (address_accepted.sin_addr.s_addr >> 16) & 0xFF;
+            address.segment[3] = (address_accepted.sin_addr.s_addr >> 24) & 0xFF;
+            port = ntohs(address_accepted.sin_port);
+
+            // "Open" the connection.
+            connection.handle = handle_accepted;
+
+            return true;
+        }
+
+        // Returns the configuration of a socket, used after listen to get port number.
+        bool get_config(ip& address, unsigned short& port) {
+            if (!this->is_open()) {
+                return false;
+            }
+            sockaddr_in address_config = {};
+            socklen_t address_length = sizeof(sockaddr_in);
+            if (getsockname(this->handle, reinterpret_cast<sockaddr*>(&address_config), &address_length) < 0) {
+                return false;
+            }
+            address.segment[0] = (address_config.sin_addr.s_addr >>  0) & 0xFF;
+            address.segment[1] = (address_config.sin_addr.s_addr >>  8) & 0xFF;
+            address.segment[2] = (address_config.sin_addr.s_addr >> 16) & 0xFF;
+            address.segment[3] = (address_config.sin_addr.s_addr >> 24) & 0xFF;
+            port = ntohs(address_config.sin_port);
+            return true;
+        }
+
+        bool read(unsigned char* buffer, unsigned long long int& length) const {
+            ip address;
+            unsigned short port;
+            return this->read(buffer, length, address, port);
+        }
+
+        bool read(unsigned char* buffer, unsigned long long int& length, ip& address, unsigned short& port) const {
+            if (!this->is_open()) {
+                return false;
+            }
+
+            if (length == 0) {
+                return true;
+            }
+
+            // The available data length.
+            unsigned long long int length_available = 0;
+
+            // // Get the available data length in linux.
+            #if defined(linux) || defined(__linux) || defined(__linux__)
+                int length_available_int = 0;
+                if (ioctlsocket(this->handle, FIONREAD, &length_available_int) < 0) {
+                    return false;
+                }
+                length_available = static_cast<unsigned long long int>(length_available_int);
+            #endif
+
+            // Get the available data length in windows.
+            #if defined(_WIN32)
+                unsigned long int length_available_int = 0;
+                if (ioctlsocket(this->handle, FIONREAD, &length_available_int) < 0) {
+                    return false;
+                }
+                length_available = static_cast<unsigned long long int>(length_available_int);
+            #endif
+
+            // Get the available data length in macos.
+            #if defined(__APPLE__)
+                int length_available_int;
+                socklen_t option_length = sizeof(int);
+                if (getsockopt(this->handle, SOL_SOCKET, SO_NREAD, &length_available_int, &option_length) < 0) {
+                    return false;
+                }
+                length_available = static_cast<unsigned long long int>(length_available_int);
+            #endif
+
+            if (length_available == 0) {
+                length = 0;
+                return true;
+            }
+
+            // Limit the amount received to fit in the buffer we have.
+            if (length_available > length) {
+                length_available = length;
+            }
+
+            // Prepare an address to store the sender's address.
+            sockaddr_in address_source = {};
+            socklen_t address_length = sizeof(sockaddr_in);
+
+            // Get data
+            #if defined(_WIN32)
+                const long long int length_received = recvfrom(this->handle, reinterpret_cast<char*>(buffer), static_cast<int>(length_available), 0, reinterpret_cast<sockaddr*>(&address_source), &address_length);
+            #else
+                const long long int length_received = recvfrom(this->handle, buffer, length_available, 0, reinterpret_cast<sockaddr*>(&address_source), &address_length);
+            #endif
+
+            // Check the read was successful.
+            if (length_received < 0) {
+                return false;
+            }
+
+            // Return the length of the message has been received.
+            length = static_cast<unsigned long long int>(length_received);
+
+            // Get the sender.
+            address.segment[0] = (address_source.sin_addr.s_addr >>  0) & 0xFF;
+            address.segment[1] = (address_source.sin_addr.s_addr >>  8) & 0xFF;
+            address.segment[2] = (address_source.sin_addr.s_addr >> 16) & 0xFF;
+            address.segment[3] = (address_source.sin_addr.s_addr >> 24) & 0xFF;
+            port = ntohs(address_source.sin_port);
+
+            return true;
+        }
+
+        bool write(const unsigned char* buffer, unsigned long long int& length) const {
+            if (!this->is_open()) {
+                return false;
+            }
+
+            if (length == 0) {
+                return true;
+            }
+
+            // Write out the whole buffer as a single message.
+            #if defined(_WIN32)
+                const long long int length_written = send(this->handle, reinterpret_cast<const char*>(buffer), static_cast<int>(length), 0);
+            #else
+                const long long int length_written = send(this->handle, buffer, length, 0);
+            #endif
+
+            // Check the write was successful.
+            if (length_written < 0) {
+                return false;
+            }
+
+            // Return the length of the message has been sent.
+            length = static_cast<unsigned long long int>(length_written);
+
+            return true;
+        }
+
+        bool write(const unsigned char* buffer, unsigned long long int& length, const ip address, const unsigned short port) const {
+            if (!this->is_open()) {
+                return false;
+            }
+
+            if (length == 0) {
+                return true;
+            }
+
+            // Setup the target address.
+            sockaddr_in address_target = {};
+            address_target.sin_family = AF_INET;
+            address_target.sin_addr.s_addr =
+                (static_cast<unsigned int>(address.segment[3]) << 24) |
+                (static_cast<unsigned int>(address.segment[2]) << 16) |
+                (static_cast<unsigned int>(address.segment[1]) << 8) |
+                (static_cast<unsigned int>(address.segment[0]) << 0);
+            address_target.sin_port = htons(port);
+
+            // Write out the whole buffer as a single message.
+            #if defined(_WIN32)
+                const long long int length_written = sendto(this->handle, reinterpret_cast<const char*>(buffer), static_cast<int>(length), 0, reinterpret_cast<const sockaddr*>(&address_target), sizeof(sockaddr_in));
+            #else
+                const long long int length_written = sendto(this->handle, buffer, length, 0, reinterpret_cast<const sockaddr*>(&address_target), sizeof(sockaddr_in));
+            #endif
+
+            // Check the write was successful.
+            if (length_written < 0) {
+                return false;
+            }
+
+            // Return the length of the message has been sent.
+            length = static_cast<unsigned long long int>(length_written);
+
+            return true;
+        }
+    };
+}
+
+#endif // GTL_IO_SOCKET_HPP
