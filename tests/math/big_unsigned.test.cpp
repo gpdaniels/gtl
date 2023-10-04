@@ -120,6 +120,27 @@ TEST(big_unsigned, constructor, string) {
     REQUIRE(check_power_of_two(big_unsigned_333, 0, 333, 1));
 }
 
+TEST(big_unsigned, constructor, bytes) {
+    constexpr static const unsigned char data[6] = { 1, 2, 3, 4, 5, 6 };
+    gtl::big_unsigned big_unsigned(&data[0], 6);
+    REQUIRE(big_unsigned == 0x010203040506ull);
+
+    constexpr static const unsigned char two_power_95[12] = {
+        0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+    gtl::big_unsigned big_unsigned_95(&two_power_95[0], 12);
+    REQUIRE(check_power_of_two(big_unsigned_95, 0, 95, 1));
+
+    constexpr static const unsigned char two_power_333[42] = {
+        0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+    gtl::big_unsigned big_unsigned_333(&two_power_333[0], 42);
+    REQUIRE(check_power_of_two(big_unsigned_333, 0, 333, 1));
+}
+
 TEST(big_unsigned, constructor, copy) {
     gtl::big_unsigned big_unsigned("123456", 6);
     gtl::big_unsigned big_unsigned_copy(big_unsigned);
@@ -646,11 +667,11 @@ TEST(big_unsigned, operator, get_length_bytes) {
     gtl::big_unsigned big_unsigned_lhs(lhs);
     gtl::big_unsigned big_unsigned_rhs(rhs);
     REQUIRE(big_unsigned_lhs.get_length_bytes() == 8);
-    REQUIRE(big_unsigned_rhs.get_length_bytes() == 4);
+    REQUIRE(big_unsigned_rhs.get_length_bytes() == 1);
 
     constexpr static const char* two_power_333 = "17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
     gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
-    REQUIRE(big_unsigned_333.get_length_bytes() == 44);
+    REQUIRE(big_unsigned_333.get_length_bytes() == 42);
 }
 
 TEST(big_unsigned, operator, get_length_decimal) {
@@ -685,4 +706,45 @@ TEST(big_unsigned, operator, to_string) {
     gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(big_unsigned_333.to_string(string_333, 102) == 101);
     REQUIRE(testbench::is_string_same(string_333, two_power_333));
+}
+
+TEST(big_unsigned, operator, to_bytes) {
+    const unsigned long long int lhs = 1ull << 62;
+    const unsigned long long int rhs = 2;
+
+    constexpr static const auto swap_endian = [](unsigned long long value)->unsigned long long{
+        return (value >> 56) |
+              ((value << 40) & 0x00FF000000000000ull) |
+              ((value << 24) & 0x0000FF0000000000ull) |
+              ((value <<  8) & 0x000000FF00000000ull) |
+              ((value >>  8) & 0x00000000FF000000ull) |
+              ((value >> 24) & 0x0000000000FF0000ull) |
+              ((value >> 40) & 0x000000000000FF00ull) |
+               (value << 56);
+    };
+
+    unsigned char bytes_lhs[8];
+    unsigned char bytes_rhs[1];
+    unsigned char bytes_rhs_padded[8];
+    const unsigned long long int swapped_lhs = swap_endian(lhs);
+    const unsigned long long int swapped_rhs = swap_endian(rhs);
+    gtl::big_unsigned big_unsigned_lhs(lhs);
+    gtl::big_unsigned big_unsigned_rhs(rhs);
+    REQUIRE(big_unsigned_lhs.to_bytes(&bytes_lhs[0], 8) == 8);
+    REQUIRE(big_unsigned_rhs.to_bytes(&bytes_rhs[0], 1) == 1);
+    REQUIRE(big_unsigned_rhs.to_bytes(&bytes_rhs_padded[0], 8, true) == 1);
+    REQUIRE(testbench::is_memory_same(&bytes_lhs[0], &swapped_lhs, 8));
+    REQUIRE(testbench::is_memory_same(&bytes_rhs[0], &rhs, 1));
+    REQUIRE(testbench::is_memory_same(&bytes_rhs_padded[0], &swapped_rhs, 8));
+
+    constexpr static const unsigned char two_power_333[42] = {
+        0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+    unsigned char bytes_333[42];
+    gtl::big_unsigned big_unsigned_333(two_power_333, 42);
+    REQUIRE(big_unsigned_333.to_bytes(&bytes_333[0], 42) == 42);
+    REQUIRE(testbench::is_memory_same(&bytes_333[0], &two_power_333[0], 42));
 }

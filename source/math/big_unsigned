@@ -164,6 +164,28 @@ namespace gtl {
             *this = result;
         }
 
+        /// @brief  Conversion constructor from an array of bytes.
+        /// @param  value The value to store.
+        /// @param  length The length of the data.
+        big_unsigned(const unsigned char* value, const unsigned long long int length)
+            : chunks(1, 0) {
+            // Sanity check length.
+            if (length == 0) {
+                return;
+            }
+            GTL_BIG_UNSIGNED_ASSERT(value != nullptr, "Value must not be null with a length greater than zero.");
+            // Loop over the data storing each byte.
+            big_unsigned result(value[0]);
+            for (unsigned long long int index = 1; index < length; ++index) {
+                result <<= 8;
+                result |= big_unsigned(value[index]);
+            }
+            // Remove leading zeros.
+            result.trim();
+            // Apply the result to this.
+            *this = result;
+        }
+
         /// @brief  Copy constructor from another big number.
         /// @param  other The other big number to copy.
         big_unsigned(const big_unsigned& other)
@@ -881,16 +903,17 @@ namespace gtl {
         }
 
     public:
-        /// @brief  Get the length of the big number in allocated bits, this will be a multiple of the bits in a chunk.
+        /// @brief  Get the length of the big number in allocated bits, this will be a multiple of eight.
         /// @return The number of bits allocated to store the big number.
         unsigned long long int get_length_bits() const {
             return this->chunks.size() * big_unsigned::chunk_bits;
         }
 
-        /// @brief  Get the length of the big number in allocated bytes, this will be a multiple of the size of a chunk.
+        /// @brief  Get the length of the big number in allocated bytes.
         /// @return The number of bytes allocated to store the big number.
         unsigned long long int get_length_bytes() const {
-            return this->chunks.size() * sizeof(chunk_type);
+            const unsigned long long int remainder = (this->chunks.back() > 0xFFFFFF) + (this->chunks.back() > 0xFFFF) + (this->chunks.back() > 0xFF) + 1;
+            return remainder + (this->chunks.size() - 1) * sizeof(chunk_type);
         }
 
         /// @brief  Get the length of the big number as a decimal number.
@@ -911,25 +934,42 @@ namespace gtl {
         /// @param  length The length of the output buffer.
         /// @return The decimal length of the big number, equal to the number of digits written.
         unsigned long long int to_string(char* buffer, const unsigned long long int length) const {
-            GTL_BIG_UNSIGNED_ASSERT(length > this->get_length_decimal(), "Buffer length must be greater than decimal length of number.");
-            static_cast<void>(length);
+            const unsigned long long int length_digits = this->get_length_decimal();
+            GTL_BIG_UNSIGNED_ASSERT(length > length_digits, "Buffer length must be greater than the decimal length of the number.");
             big_unsigned temp(*this);
             // Loop and decimate the big number storing the remainder as the current digit ascii char.
-            unsigned long long int digit_index = 0;
-            do {
+            for (unsigned long long int digit_index = 0; digit_index < length_digits; ++digit_index) {
                 big_unsigned remainder;
                 temp = big_unsigned::divide(temp, 10, remainder);
-                buffer[digit_index++] = '0' + static_cast<char>(remainder.chunks[0]);
-            } while (temp);
-            // Reverse the string as digits were stored units first and we want units last.
-            for (unsigned long long int reverse_index = 0; reverse_index < digit_index / 2; ++reverse_index) {
-                char swap_character = buffer[reverse_index];
-                buffer[reverse_index] = buffer[digit_index - reverse_index - 1];
-                buffer[digit_index - reverse_index - 1] = swap_character;
+                buffer[length_digits - 1 - digit_index] = '0' + static_cast<char>(remainder.chunks[0]);
             }
             // Null terminate the string.
-            buffer[digit_index] = 0;
-            return digit_index;
+            buffer[length_digits] = 0;
+            return length_digits;
+        }
+
+        /// @brief  Conver the big number to an array of bytes and output it in the provided buffer.
+        /// @param  buffer The output buffer, must be larger than or equal to the byte length of the big number.
+        /// @param  length The length of the output buffer.
+        /// @param  pad_to_length Add leading zeros to pad the bytes to the length of the input buffer.
+        /// @return The byte length of the big number, equal to the number of bytes written.
+        unsigned long long int to_bytes(unsigned char* buffer, const unsigned long long int length, bool pad_to_length = false) const {
+            const unsigned long long int length_bytes = this->get_length_bytes();
+            GTL_BIG_UNSIGNED_ASSERT(length >= length_bytes, "Buffer length must be greater than the bytes length of the number.");
+            big_unsigned temp(*this);
+            // Emit padding zeros.
+            unsigned long long int pad_index = 0;
+            if (pad_to_length) {
+                for (; pad_index < (length - length_bytes); ++pad_index) {
+                    buffer[pad_index] = static_cast<unsigned char>(0);
+                }
+            }
+            // Loop and output big number storing the least significant byte each iteration.
+            for (unsigned long long int byte_index = 0; byte_index < length_bytes; ++byte_index) {
+                buffer[pad_index + length_bytes - 1 - byte_index] = static_cast<unsigned char>(temp.chunks[0] & 0xFF);
+                temp >>= 8;
+            }
+            return this->get_length_bytes();
         }
     };
 }

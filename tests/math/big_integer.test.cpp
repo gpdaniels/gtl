@@ -1183,11 +1183,11 @@ TEST(big_integer, operator, get_length_bytes) {
     gtl::big_integer big_integer_lhs(lhs);
     gtl::big_integer big_integer_rhs(rhs);
     REQUIRE(big_integer_lhs.get_length_bytes() == 8);
-    REQUIRE(big_integer_rhs.get_length_bytes() == 4);
+    REQUIRE(big_integer_rhs.get_length_bytes() == 1);
 
     constexpr static const char* two_power_333 = "17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
     gtl::big_integer big_integer_333(two_power_333, testbench::string_length(two_power_333));
-    REQUIRE(big_integer_333.get_length_bytes() == 44);
+    REQUIRE(big_integer_333.get_length_bytes() == 42);
 
     signed long long int lhs_negative = -(1ll << 62);
     signed long long int rhs_negative = -2;
@@ -1195,11 +1195,11 @@ TEST(big_integer, operator, get_length_bytes) {
     gtl::big_integer big_integer_lhs_negative(lhs_negative);
     gtl::big_integer big_integer_rhs_negative(rhs_negative);
     REQUIRE(big_integer_lhs_negative.get_length_bytes() == 8);
-    REQUIRE(big_integer_rhs_negative.get_length_bytes() == 4);
+    REQUIRE(big_integer_rhs_negative.get_length_bytes() == 1);
 
     constexpr static const char* two_power_333_negative = "-17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
     gtl::big_integer big_integer_333_negative(two_power_333_negative, testbench::string_length(two_power_333_negative));
-    REQUIRE(big_integer_333_negative.get_length_bytes() == 44);
+    REQUIRE(big_integer_333_negative.get_length_bytes() == 42);
 }
 
 TEST(big_integer, operator, get_length_decimal) {
