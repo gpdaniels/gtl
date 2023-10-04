@@ -652,12 +652,12 @@ TEST(big_unsigned, operator, get_length_bits) {
 
     gtl::big_unsigned big_unsigned_lhs(lhs);
     gtl::big_unsigned big_unsigned_rhs(rhs);
-    REQUIRE(big_unsigned_lhs.get_length_bits() == 64);
-    REQUIRE(big_unsigned_rhs.get_length_bits() == 32);
+    REQUIRE(big_unsigned_lhs.get_length_bits() == 63);
+    REQUIRE(big_unsigned_rhs.get_length_bits() == 2);
 
     constexpr static const char* two_power_333 = "17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
     gtl::big_unsigned big_unsigned_333(two_power_333, testbench::string_length(two_power_333));
-    REQUIRE(big_unsigned_333.get_length_bits() == 352);
+    REQUIRE(big_unsigned_333.get_length_bits() == 334);
 }
 
 TEST(big_unsigned, operator, get_length_bytes) {

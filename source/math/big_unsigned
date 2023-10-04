@@ -903,14 +903,24 @@ namespace gtl {
         }
 
     public:
-        /// @brief  Get the length of the big number in allocated bits, this will be a multiple of eight.
+        /// @brief  Get the length of the big number in allocated bits.
         /// @return The number of bits allocated to store the big number.
         unsigned long long int get_length_bits() const {
-            return this->chunks.size() * big_unsigned::chunk_bits;
+            unsigned int msb = this->chunks.back() | 1;
+            unsigned int remainder = big_unsigned::chunk_bits;
+            while (msb < 0x01000000) {
+                msb <<= 8;
+                remainder -= 8;
+            }
+            while ((msb > 0) && (!(msb & 0x80000000))) {
+                msb <<= 1;
+                --remainder;
+            }
+            return remainder + (this->chunks.size() - 1) * big_unsigned::chunk_bits;
         }
 
-        /// @brief  Get the length of the big number in allocated bytes.
-        /// @return The number of bytes allocated to store the big number.
+        /// @brief  Get the length of the big number in bytes.
+        /// @return The number of bytes needed to store the big number.
         unsigned long long int get_length_bytes() const {
             const unsigned long long int remainder = (this->chunks.back() > 0xFFFFFF) + (this->chunks.back() > 0xFFFF) + (this->chunks.back() > 0xFF) + 1;
             return remainder + (this->chunks.size() - 1) * sizeof(chunk_type);

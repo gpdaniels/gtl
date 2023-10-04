@@ -739,20 +739,23 @@ namespace gtl {
         }
 
     public:
-        /// @brief  Get the length of the big number in allocated bits for the magnitude.
+        /// @brief  Get the length of the big number in allocated bits.
         /// @return The number of bits allocated to store the big number.
+        /// @note   This does not include a bit to store the sign.
         unsigned long long int get_length_bits() const {
             return this->magnitude.get_length_bits();
         }
 
-        /// @brief  Get the length of the big number in allocated bytes for the magnitude.
-        /// @return The number of bytes allocated to store the big number.
+        /// @brief  Get the length of the big number in bytes.
+        /// @return The number of bytes needed to store the big number.
+        /// @note   This does not include a byte to store the sign.
         unsigned long long int get_length_bytes() const {
             return this->magnitude.get_length_bytes();
         }
 
         /// @brief  Get the length of the big number as a decimal number.
         /// @return The number of digits required to represent the big number.
+        /// @note   This does not include a character to store the sign.
         unsigned long long int get_length_decimal() const {
             return this->magnitude.get_length_decimal();
         }
