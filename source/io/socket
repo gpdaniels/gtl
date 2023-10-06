@@ -455,7 +455,7 @@ namespace gtl {
         }
 
         // Returns the configuration of a socket, used after listen to get port number.
-        bool get_config(ip& address, unsigned short& port) {
+        bool get_config(ip& address, unsigned short& port) const {
             if (!this->is_open()) {
                 return false;
             }
