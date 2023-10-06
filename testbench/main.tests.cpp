@@ -80,7 +80,7 @@ int main(int argument_count, char* arguments[]) {
             }
         }
 
-        // Extract a test name filter from the command line arguments.
+        // Extract an execute flag from the command line arguments.
         if (arguments_remaining >= 1) {
             if (testbench::is_string_same("-x", arguments[argument_index]) || testbench::is_string_same("--execute", arguments[argument_index])) {
                 execute_in_process = false;
