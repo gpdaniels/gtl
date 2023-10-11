@@ -957,6 +957,7 @@ namespace gtl {
         unsigned long long int to_string(char* buffer, const unsigned long long int length) const {
             const unsigned long long int length_digits = this->get_length_decimal();
             GTL_BIG_UNSIGNED_ASSERT(length > length_digits, "Buffer length must be greater than the decimal length of the number.");
+            static_cast<void>(length);
             big_unsigned temp(*this);
             // Loop and decimate the big number storing the remainder as the current digit ascii char.
             for (unsigned long long int digit_index = 0; digit_index < length_digits; ++digit_index) {

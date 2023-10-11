@@ -91,13 +91,13 @@ namespace gtl {
         /// @param  size_bytes The number of bytes in the prime.
         /// @param  miller_rabin_iterations The number of miller rabin test iterations to validate primality.
         /// @return A random prime number.
-        static gtl::big_unsigned generate_prime(const std::function<unsigned int()>& random_generator, int size_bytes, unsigned int miller_rabin_iterations) {
+        static gtl::big_unsigned generate_prime(const std::function<unsigned int()>& random_generator, unsigned int size_bytes, unsigned int miller_rabin_iterations) {
             gtl::big_unsigned prime;
             do {
                 // Generate a number.
-                prime = rsa::generate_random(random_generator, 1, gtl::big_unsigned(1) << (size_bytes * 8));
+                prime = rsa::generate_random(random_generator, 1u, gtl::big_unsigned(1u) << (size_bytes * 8));
                 // Ensure it's got the lsb and msb set, aka odd and full size.
-                prime |= (gtl::big_unsigned(1) << ((size_bytes * 8) - 1)) | 1;
+                prime |= (gtl::big_unsigned(1u) << ((size_bytes * 8u) - 1u)) | 1u;
                 // Check if the number is prime, if not try again.
             } while (!rsa::is_prime(random_generator, prime, miller_rabin_iterations));
             return prime;
@@ -259,7 +259,7 @@ namespace gtl {
             gtl::big_unsigned square = value;
             long long int bits = static_cast<long long int>(exponent.get_length_bits());
             for (long long int i = bits - 1; i >= 0; --i) {
-                if (exponent.get_bit(i)) {
+                if (exponent.get_bit(static_cast<unsigned long long int>(i))) {
                     result = (result * square) % modulus;
                     square = (square * square) % modulus;
                 }
