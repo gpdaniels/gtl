@@ -1,0 +1,349 @@
+/*
+Copyright (C) 2018-2023 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_CRYPTO_RSA_HPP
+#define GTL_CRYPTO_RSA_HPP
+
+// Summary: An implementation of the RSA (Rivest-Shamir-Adleman) asymmetric encryption algorithm.
+
+#ifndef NDEBUG
+#   if defined(_MSC_VER)
+#       define __builtin_trap() __debugbreak()
+#   endif
+/// @brief A simple assert macro to break the program if the rsa is misused.
+#   define GTL_RSA_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#   define GTL_RSA_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+#include <math/big_unsigned>
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <functional>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace gtl {
+    /// @brief  The rsa class implements all the routines needed to generate primes and used them to perform asymmetric encryption.
+    class rsa final {
+    public:
+        /// @brief  The public key is used to encrypt data or verify signed data.
+        class public_key_type final {
+        public:
+            gtl::big_unsigned public_modulus;
+            gtl::big_unsigned public_exponent;
+        };
+
+        /// @brief  The private key is used to decrypt data or sign data.
+        /// @note   Only the public_modulus and private_exponent are needed for decryption.
+        class private_key_type final {
+        public:
+            gtl::big_unsigned public_modulus;
+            gtl::big_unsigned public_exponent;
+            gtl::big_unsigned private_exponent;
+            gtl::big_unsigned primes[2];
+            gtl::big_unsigned exponents[2];
+            gtl::big_unsigned coefficient;
+        };
+
+        /// @brief  Storage class for a public and private key pair.
+        class key_type final {
+        public:
+            public_key_type public_key;
+            private_key_type private_key;
+        };
+
+    private:
+        /// @brief  Generate a random big number.
+        /// @param  minimum The lower inclusive bound for the returned random number.
+        /// @param  maximum The upper exclusive bound for the returned random number.
+        /// @return A random number between the (inclusive) minimum and (exclusive) maximum bounds.
+        static gtl::big_unsigned generate_random(const std::function<unsigned int()>& random_generator, const gtl::big_unsigned& minimum, const gtl::big_unsigned& maximum) {
+            // Generate random bits
+            gtl::big_unsigned random = minimum;
+            while (random < maximum) {
+                random = (random << gtl::big_unsigned::chunk_bits) | random_generator();
+            }
+            return (minimum + random) % maximum;
+        }
+
+        /// @brief  Generate a random prime number.
+        /// @param  size_bytes The number of bytes in the prime.
+        /// @param  miller_rabin_iterations The number of miller rabin test iterations to validate primality.
+        /// @return A random prime number.
+        static gtl::big_unsigned generate_prime(const std::function<unsigned int()>& random_generator, int size_bytes, unsigned int miller_rabin_iterations) {
+            gtl::big_unsigned prime;
+            do {
+                // Generate a number.
+                prime = rsa::generate_random(random_generator, 1, gtl::big_unsigned(1) << (size_bytes * 8));
+                // Ensure it's got the lsb and msb set, aka odd and full size.
+                prime |= (gtl::big_unsigned(1) << ((size_bytes * 8) - 1)) | 1;
+                // Check if the number is prime, if not try again.
+            } while (!rsa::is_prime(random_generator, prime, miller_rabin_iterations));
+            return prime;
+        }
+
+        /// @brief  Check if a given number is a prime number.
+        /// @param  prime_candidate The prime number candidate to test.
+        /// @param  miller_rabin_iterations The number of miller rabin test iterations to validate primality.
+        /// @return true if the prime number candidate is probably a prime number.
+        static bool is_prime(const std::function<unsigned int()>& random_generator, const gtl::big_unsigned& prime_candidate, unsigned int miller_rabin_iterations = 64) {
+            // Corner cases.
+            if (prime_candidate < 2) {
+                return false;
+            }
+
+            // List of the first 256 primes.
+            constexpr static const unsigned int first_256_primes[256] = {
+                   2,    3,    5,    7,   11,   13,   17,   19,   23,   29,   31,   37,   41,   43,   47,   53,
+                  59,   61,   67,   71,  179,  181,  191,  193,  197,  199,  211,  223,  227,  229,  233,  239,
+                 241,  251,  257,  263,  269,  271,  277,  281,  283,  293,  307,  311,  313,  317,  331,  337,
+                 347,  349,  353,  359,  367,  373,  379,  383,  389,  397,  401,  409,  419,  421,  431,  433,
+                 439,  443,  449,  457,  461,  463,  467,  479,  487,  491,  499,  503,  509,  521,  523,  541,
+                 547,  557,  563,  569,  571,  577,  587,  593,  599,  601,  607,  613,  617,  619,  631,  641,
+                 643,  647,  653,  659,  661,  673,  677,  683,  691,  701,  709,  719,  727,  733,  739,  743,
+                 751,  757,  761,  769,  773,  787,  797,  809,  811,  821,  823,  827,  829,  839,  853,  857,
+                 859,  863,  877,  881,  883,  887,  907,  911,  919,  929,  937,  941,  947,  953,  967,  971,
+                 977,  983,  991,  997, 1009, 1013, 1019, 1021, 1031, 1033, 1039, 1049, 1051, 1061, 1063, 1069,
+                1087, 1091, 1093, 1097, 1103, 1109, 1117, 1123, 1129, 1151, 1153, 1163, 1171, 1181, 1187, 1193,
+                1201, 1213, 1217, 1223, 1229, 1231, 1237, 1249, 1259, 1277, 1279, 1283, 1289, 1291, 1297, 1301,
+                1303, 1307, 1319, 1321, 1327, 1361, 1367, 1373, 1381, 1399, 1409, 1423, 1427, 1429, 1433, 1439,
+                1447, 1451, 1453, 1459, 1471, 1481, 1483, 1487, 1489, 1493, 1499, 1511, 1523, 1531, 1543, 1549,
+                1553, 1559, 1567, 1571, 1579, 1583, 1597, 1601, 1607, 1609, 1613, 1619, 1621, 1627, 1637, 1657,
+                1663, 1667, 1669, 1693, 1697, 1699, 1709, 1721, 1723, 1733, 1741, 1747, 1753, 1759, 1777, 1783
+            };
+            // Check if the candidate is divisible by one of the first 256 primes.
+            for (unsigned int i = 0; i < 256; ++i) {
+                if ((prime_candidate % first_256_primes[i]) == 0) {
+                    // If it is divisible it is only prime if it is exactly that value.
+                    return prime_candidate == first_256_primes[i];
+                }
+            }
+
+            // Calculate a helper variable for the miller rabin to avoid recalculating it each iteration.
+            // power_of_two_multiplier is an odd number such that "power_of_two_multiplier = (prime_candidate - 1) / (2 ^ power_of_two)" for "power_of_two >= 1".
+            gtl::big_unsigned power_of_two_multiplier = prime_candidate - 1;
+            while (power_of_two_multiplier % 2 == 0) {
+                power_of_two_multiplier /= 2;
+            }
+
+            // Iterate given nber of 'k' times
+            for (unsigned int i = 0; i < miller_rabin_iterations; ++i) {
+                if (!rsa::miller_rabin(random_generator, prime_candidate, power_of_two_multiplier)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// @brief  The miller rabin test to evaluate the primality of a number.
+        /// @param  prime_candidate The prime number candidate to test.
+        /// @param  power_of_two_multiplier Helper variable equal to "(prime_candidate - 1) / (2 ^ power_of_two)" for "power_of_two >= 1"
+        /// @return true if the test past and the number could be a prime number, false if the number is definitely not prime.
+        static bool miller_rabin(const std::function<unsigned int()>& random_generator, const gtl::big_unsigned& prime_candidate, gtl::big_unsigned power_of_two_multiplier) {
+            // Pick a random number in "[2 ... prime_candidate - 2]".
+            gtl::big_unsigned base = rsa::generate_random(random_generator, 2, prime_candidate - 2);
+
+            // Compute "(base ^ power_of_two_multiplier) % prime_candidate".
+            gtl::big_unsigned test = rsa::modular_exponentiation(base, power_of_two_multiplier, prime_candidate);
+
+            // Corner case checks.
+            if ((test == 1) || (test == (prime_candidate - 1))) {
+                return true;
+            }
+
+            // Keep squaring "test" until:
+            // - "power_of_two_multiplier" does not reach "prime_candidate - 1".
+            // - "(test ^ 2) % prime_candidate" is not one.
+            // - "(test ^ 2) % prime_candidate" is not "prime_candidate - 1".
+            while (power_of_two_multiplier != (prime_candidate - 1)) {
+                test = (test * test) % prime_candidate;
+                power_of_two_multiplier <<= 1;
+                if (test == 1) {
+                    return false;
+                }
+                if (test == (prime_candidate - 1)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// @brief  Calculates the greatest common denominator of two big numbers.
+        /// @param  value_a One of the numbers to calculate the greatest common denominator of.
+        /// @param  value_b One of the numbers to calculate the greatest common denominator of.
+        /// @return The greatest common denominator of the two numbers.
+        /// @note   Also known as the greatest common devisor, or the highest common factor, or highest common divisor.
+        static gtl::big_unsigned greatest_common_denominator(gtl::big_unsigned value_a, gtl::big_unsigned value_b) {
+            // Ensure value_a is smaller than value_b.
+            if (value_a > value_b) {
+                gtl::big_unsigned swap;
+                swap = value_a;
+                value_a = value_b;
+                value_b = swap;
+            }
+            // Reduce values until remainder is zero.
+            while (true) {
+                gtl::big_unsigned remainder = value_b % value_a;
+                if (remainder == 0) {
+                    return value_a;
+                }
+                value_b = value_a;
+                value_a = remainder;
+            }
+        }
+
+        /// @brief  Calculate the modular multiplicative inverse of a number.
+        /// @param  value The value to calculate the modular multiplicative inverse of.
+        /// @param  modulus The modulus used in the calculation.
+        /// @return The modular multiplicative inverse of the input value.
+        /// @note   The modular inverse of "value % modulus" is "value^-1" such that "(value * value^-1) % modulus" is one.
+        static gtl::big_unsigned modular_inverse(gtl::big_unsigned value, const gtl::big_unsigned& modulus) {
+            GTL_RSA_ASSERT(rsa::greatest_common_denominator(value, modulus) == 1, "Value and modulus must be co-primes.");
+            gtl::big_unsigned result = 1;
+            gtl::big_unsigned previous = 0;
+            gtl::big_unsigned quotient = modulus;
+            bool inverse = false;
+            while (true) {
+                gtl::big_unsigned remainder;
+                quotient = gtl::big_unsigned::divide(quotient, value, remainder);
+                if (remainder == 0) {
+                    if (value != 1) {
+                        return 0;
+                    }
+                    else if (inverse) {
+                        return modulus - result;
+                    }
+                    else {
+                        return result;
+                    }
+                }
+                gtl::big_unsigned temp = result;
+                result = result * quotient + previous;
+                previous = temp;
+                quotient = value;
+                value = remainder;
+                inverse = !inverse;
+            }
+        }
+
+        /// @brief  Calculate the modular exponentiation of a number.
+        /// @param  value The value to calculate the modular exponentiation of.
+        /// @param  exponent The exponent to raise the value to.
+        /// @param  modulus The modulus used in the calculation.
+        /// @return The modular exponentiation of the input value.
+        /// @note   The modular exponentiation of "value" is "(value ^ exponent) % modulus".
+        static gtl::big_unsigned modular_exponentiation(const gtl::big_unsigned& value, const gtl::big_unsigned& exponent, const gtl::big_unsigned& modulus){
+            gtl::big_unsigned result = 1;
+            gtl::big_unsigned square = value;
+            long long int bits = static_cast<long long int>(exponent.get_length_bits());
+            for (long long int i = bits - 1; i >= 0; --i) {
+                if (exponent.get_bit(i)) {
+                    result = (result * square) % modulus;
+                    square = (square * square) % modulus;
+                }
+                else {
+                    square = (result * square) % modulus;
+                    result = (result * result) % modulus;
+                }
+            }
+            return result;
+        }
+
+    public:
+        /// @brief  Generate a public and private key set.
+        /// @param  size_bytes The number of bytes in the keys..
+        /// @param  miller_rabin_iterations The number of miller rabin test iterations to validate primality.
+        /// @return A public and private key set.
+        static key_type generate_key_pair(const std::function<unsigned int()>& random_generator, unsigned int size_bytes, unsigned int exponent = 65537, unsigned int miller_rabin_iterations = 64) {
+            key_type keys;
+            keys.private_key.public_exponent = exponent;
+            keys.public_key.public_exponent = exponent;
+            gtl::big_unsigned phi;
+            do {
+                keys.private_key.primes[0] = rsa::generate_prime(random_generator, size_bytes / 2, miller_rabin_iterations);
+                keys.private_key.primes[1] = rsa::generate_prime(random_generator, size_bytes / 2, miller_rabin_iterations);
+                keys.private_key.public_modulus = keys.private_key.primes[0] * keys.private_key.primes[1];
+                keys.public_key.public_modulus = keys.private_key.public_modulus;
+                phi = (keys.private_key.primes[0] - 1) * (keys.private_key.primes[1] - 1);
+            } while (
+                (keys.private_key.primes[0] == keys.private_key.primes[1]) ||
+                (rsa::greatest_common_denominator(phi, exponent) != 1)
+            );
+            keys.private_key.private_exponent = rsa::modular_inverse(keys.public_key.public_exponent, phi);
+            keys.private_key.exponents[0] = keys.private_key.private_exponent % (keys.private_key.primes[0] - 1);
+            keys.private_key.exponents[1] = keys.private_key.private_exponent % (keys.private_key.primes[1] - 1);
+            keys.private_key.coefficient = rsa::modular_inverse(keys.private_key.primes[1], keys.private_key.primes[0]);
+            return keys;
+        }
+
+    public:
+        /// @brief  Transform a block of data writing the transformed data into the output.
+        /// @param  data The block of data to encrypt, must be at least length bytes long.
+        /// @param  length The length of the data, must be equal to the key length.
+        /// @param  exponent Exponent used to transform the data, must be length bytes long.
+        /// @param  modulus Modulus used to transform the data, must be length bytes long.
+        /// @param  output Pointer to an output buffer that will receive the transformed data, must be at least length bytes long
+        /// @note   For encryption the exponent is the public exponent, and modulus is the public modulus.
+        /// @note   For decryption the exponent is the private exponent, and modulus is the public modulus.
+        static void transform_block(const unsigned char* data, const unsigned int length, const unsigned char* exponent, const unsigned char* modulus, unsigned char* output) {;
+            rsa::modular_exponentiation(
+                gtl::big_unsigned(data, length),
+                gtl::big_unsigned(exponent, length),
+                gtl::big_unsigned(modulus, length)
+            ).to_bytes(output, length);
+        }
+
+    public:
+        /// @brief  Encrypt a block of data, writing the edcrypted data into the output.
+        /// @param  data The block of data to encrypt, must be at least length bytes long.
+        /// @param  length The length of the data, must be equal to the key length.
+        /// @param  public_key The public key data used to encrypt the data.
+        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least length bytes long.
+        static void encrypt(const unsigned char* data, const unsigned int length, const public_key_type& public_key, unsigned char* output) {
+            rsa::modular_exponentiation(
+                gtl::big_unsigned(data, length),
+                public_key.public_exponent,
+                public_key.public_modulus
+            ).to_bytes(output, length);
+        }
+
+        /// @brief  Decrypt a block of data, writing the decrypted data into the output.
+        /// @param  data The block of data to decrypt, must be at least length bytes long.
+        /// @param  length The length of the data, must be equal to the key length.
+        /// @param  private_key The private key data used to decrypt the data.
+        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least length bytes long.
+        static void decrypt(const unsigned char* data, const unsigned int length, const private_key_type& private_key, unsigned char* output) {
+            rsa::modular_exponentiation(
+                gtl::big_unsigned(data, length),
+                private_key.private_exponent,
+                private_key.public_modulus
+            ).to_bytes(output, length);
+        }
+    };
+}
+
+#undef GTL_RSA_ASSERT
+
+#endif // GTL_CRYPTO_RSA_HPP

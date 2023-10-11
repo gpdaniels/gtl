@@ -33,6 +33,7 @@ The current classes are as described below:
 | [crypto](source/crypto) | [aes](source/crypto/aes) | An implementation of the aes encryption algorithm for 128, 196, and 256 bits. | :heavy_check_mark: |
 | [crypto](source/crypto) | [chacha](source/crypto/chacha) | An implementation of the chacha encryption algorithm. | :heavy_check_mark: |
 | [crypto](source/crypto) | [rc4](source/crypto/rc4) | An implementation of the rc4 or arc4 encryption algorithm. | :construction: |
+| [crypto](source/crypto) | [rsa](source/crypto/rsa) | An implementation of the RSA (Rivest\-Shamir\-Adleman) asymmetric encryption algorithm. | :heavy_check_mark: |
 | [debug](source/debug) | [access](source/debug/access) | Classes and macros for accessing class private members. | :heavy_check_mark: |
 | [debug](source/debug) | [assert](source/debug/assert) | Macros that define an assert macro that optionally takes a format string and parameters. | :heavy_check_mark: |
 | [debug](source/debug) | [assume](source/debug/assume) | Macro that hints to the compiler when a statement should be assumed true. | :heavy_check_mark: |

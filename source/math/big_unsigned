@@ -54,7 +54,7 @@ namespace gtl {
         /// @brief  The container type used to hold all chunks of a big number.
         using chunk_container_type = std::vector<chunk_type>;
 
-    private:
+    public:
         /// @brief  The number of bits in a chunk of the big number.
         constexpr static const unsigned long long int chunk_bits = sizeof(chunk_type) * 8;
 
@@ -900,6 +900,17 @@ namespace gtl {
         /// @return true if the value of this big number is not equal to the rhs, false otherwise.
         bool operator!=(const big_unsigned& rhs) const {
             return big_unsigned::not_equal_to(*this, rhs);
+        }
+
+    public:
+        /// @brief  Get value of an individual bit in the big number.
+        /// @param  index The index of the bit to evaluate.
+        /// @return true if the bit is a one, false if the bit is a zero.
+        bool get_bit(unsigned long long int index) const {
+            if (index > this->chunks.size() * big_unsigned::chunk_bits) {
+                return 0;
+            }
+            return this->chunks[index / big_unsigned::chunk_bits] & (1u << (index % big_unsigned::chunk_bits));
         }
 
     public:
