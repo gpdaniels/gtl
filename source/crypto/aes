@@ -36,7 +36,9 @@ namespace gtl {
     enum class aes_mode {
         ecb, // Electronic codebook.
         cbc, // Cipher block chaining.
-        cfb  // Cipher feedback.
+        cfb, // Cipher feedback.
+        ofb, // Output feedback.
+        ctr  // Counter.
     };
 
     /// @brief  The aes class computes an encrypted output from a sequence of data.
@@ -429,11 +431,36 @@ namespace gtl {
                 static_cast<void>(initialisation_vector);
                 result = aes::transform_block_forward(key, data);
             }
+            else if constexpr (aes::mode == aes_mode::ofb) {
+                const block_type block = aes::transform_block_forward(key, initialisation_vector);
+                result = aes::xor_data(data, block);
+                initialisation_vector = block;
+            }
+            else if constexpr (aes::mode == aes_mode::ctr) {
+                const block_type block = aes::transform_block_forward(key, initialisation_vector);
+                result = aes::xor_data(data, block);
+                [&](){
+                    for (int i = static_cast<int>(aes::block_size) - 1; i >= 0; --i) {
+                        for (int j = static_cast<int>(aes::block_size) - 1; j >= 0; --j) {
+                            if (++initialisation_vector.data[i].data[j]) {
+                                return;
+                            }
+                        }
+                    }
+                }();
+            }
             else {
                 static_cast<void>(key);
                 static_cast<void>(data);
                 static_cast<void>(initialisation_vector);
-                static_assert((aes::mode == aes_mode::cbc) || (aes::mode == aes_mode::cfb) || (aes::mode == aes_mode::ecb), "No valid mode selected for aes process.");
+                static_assert(
+                    (aes::mode == aes_mode::cbc) ||
+                    (aes::mode == aes_mode::cfb) ||
+                    (aes::mode == aes_mode::ecb) ||
+                    (aes::mode == aes_mode::ofb) ||
+                    (aes::mode == aes_mode::ctr),
+                    "No valid mode selected for aes process."
+                );
             }
             return result;
         }
@@ -459,11 +486,36 @@ namespace gtl {
                 static_cast<void>(initialisation_vector);
                 result = aes::transform_block_inverse(key, data);
             }
+            else if constexpr (aes::mode == aes_mode::ofb) {
+                const block_type block = aes::transform_block_forward(key, initialisation_vector);
+                result = aes::xor_data(data, block);
+                initialisation_vector = block;
+            }
+            else if constexpr (aes::mode == aes_mode::ctr) {
+                const block_type block = aes::transform_block_forward(key, initialisation_vector);
+                result = aes::xor_data(data, block);
+                [&](){
+                    for (int i = static_cast<int>(aes::block_size) - 1; i >= 0; --i) {
+                        for (int j = static_cast<int>(aes::block_size) - 1; j >= 0; --j) {
+                            if (++initialisation_vector.data[i].data[j]) {
+                                return;
+                            }
+                        }
+                    }
+                }();
+            }
             else {
                 static_cast<void>(key);
                 static_cast<void>(data);
                 static_cast<void>(initialisation_vector);
-                static_assert((aes::mode == aes_mode::cbc) || (aes::mode == aes_mode::cfb) || (aes::mode == aes_mode::ecb), "No valid mode selected for aes process.");
+                static_assert(
+                    (aes::mode == aes_mode::cbc) ||
+                    (aes::mode == aes_mode::cfb) ||
+                    (aes::mode == aes_mode::ecb) ||
+                    (aes::mode == aes_mode::ofb) ||
+                    (aes::mode == aes_mode::ctr),
+                    "No valid mode selected for aes process."
+                );
             }
             return result;
         }
