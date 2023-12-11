@@ -117,7 +117,7 @@ namespace gtl {
             {{  7,  3}, { 12,  4}}, {{  9, -7}, { 10, -2}}, {{  7,  0}, { 12, -2}}, {{ -1, -6}, {  0,-11}}
         };
 
-        // Compute sine and cosign of angle.
+        // Compute sine and cosine of angle.
         constexpr static const float degrees_to_radians = (static_cast<float>(M_PI) / 180.0f);
         const float angle_radians = angle_degrees * degrees_to_radians;
         const float angle_sin = std::sin(angle_radians);
