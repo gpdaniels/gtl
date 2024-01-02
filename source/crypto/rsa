@@ -307,7 +307,7 @@ namespace gtl {
         /// @param  output Pointer to an output buffer that will receive the transformed data, must be at least length bytes long
         /// @note   For encryption the exponent is the public exponent, and modulus is the public modulus.
         /// @note   For decryption the exponent is the private exponent, and modulus is the public modulus.
-        static void transform_block(const unsigned char* data, const unsigned int length, const unsigned char* exponent, const unsigned char* modulus, unsigned char* output) {;
+        static void transform_block(const unsigned char* data, const unsigned int length, const unsigned char* exponent, const unsigned char* modulus, unsigned char* output) {
             rsa::modular_exponentiation(
                 gtl::big_unsigned(data, length),
                 gtl::big_unsigned(exponent, length),

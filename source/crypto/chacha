@@ -229,7 +229,7 @@ namespace gtl {
             if constexpr (chacha::mode == chacha_mode::ctr_32) {
                 unsigned int counter = chacha::pack_bytes_32(&initialisation_vector.data[0]);
                 const block_type block = chacha::transform_block(key, initialisation_vector);
-                result = chacha::xor_data(block, data);;
+                result = chacha::xor_data(block, data);
                 ++counter;
                 for (unsigned int i = 0; i < 4; ++i) {
                     initialisation_vector.data[i] = unpack_byte(counter, i);
@@ -238,7 +238,7 @@ namespace gtl {
             else if constexpr (chacha::mode == chacha_mode::ctr_64) {
                 unsigned long long int counter = chacha::pack_bytes_64(&initialisation_vector.data[0]);
                 const block_type block = chacha::transform_block(key, initialisation_vector);
-                result = chacha::xor_data(block, data);;
+                result = chacha::xor_data(block, data);
                 ++counter;
                 for (unsigned int i = 0; i < 8; ++i) {
                     initialisation_vector.data[i] = unpack_byte(counter, i);
