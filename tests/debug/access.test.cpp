@@ -36,10 +36,10 @@ private:
     /*            auto */   volatile   /*const*/    int   variable_XavXi = 1;
     /*            auto */ /*volatile*/   const      int   variable_XaXci = 1;
     /*            auto */   volatile     const      int   variable_Xavci = 1;
-         inline static    /*volatile*/ /*const*/    int   variable_XsXXi = 1;
-         inline static      volatile   /*const*/    int   variable_XsvXi = 1;
-         inline static    /*volatile*/   const      int   variable_XsXci = 1;
-         inline static      volatile     const      int   variable_Xsvci = 1;
+         static inline    /*volatile*/ /*const*/    int   variable_XsXXi = 1;
+         static inline      volatile   /*const*/    int   variable_XsvXi = 1;
+         static inline    /*volatile*/   const      int   variable_XsXci = 1;
+         static inline      volatile     const      int   variable_Xsvci = 1;
                mutable    /*volatile*/ /*const*/    int   variable_XmXXi = 1;
                mutable      volatile   /*const*/    int   variable_XmvXi = 1;
 //             mutable    /*volatile*/   const      int   variable_XmXci = 1;
