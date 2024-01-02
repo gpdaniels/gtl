@@ -36,6 +36,10 @@ namespace gtl {
     protected:
         virtual ~sampler() = default;
         sampler() = default;
+        sampler(const sampler&) = default;
+        sampler(sampler&&) = default;
+        sampler& operator=(const sampler&) = default;
+        sampler& operator=(sampler&&) = default;
 
         virtual void prepare(const size_t data_size) = 0;
 

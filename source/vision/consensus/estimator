@@ -41,6 +41,10 @@ namespace gtl {
     protected:
         virtual ~estimator() = default;
         estimator() = default;
+        estimator(const estimator&) = default;
+        estimator(estimator&&) = default;
+        estimator& operator=(const estimator&) = default;
+        estimator& operator=(estimator&&) = default;
 
     public:
         virtual size_t generate_models(const data_type* const __restrict data, size_t data_size, model_type* const __restrict models) = 0;
