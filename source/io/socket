@@ -25,7 +25,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     #include <netinet/tcp.h>
     #include <sys/ioctl.h>
     #include <sys/socket.h>
+    #include <sys/select.h>
     #include <unistd.h>
+    #include <cerrno>
 
     #define SOCKET int
     #define INVALID_SOCKET -1
@@ -56,7 +58,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     #include <netinet/tcp.h>
     #include <sys/ioctl.h>
     #include <sys/socket.h>
+    #include <sys/select.h>
     #include <unistd.h>
+    #include <cerrno>
 
     #define SOCKET int
     #define INVALID_SOCKET -1
@@ -149,6 +153,102 @@ namespace gtl {
             return *this;
         }
 
+    private:
+        bool configure_tcp_socket(ip address, unsigned short port) {
+            // Enable port and address reuse.
+            const int reuseaddr_value = 1;
+            if (setsockopt(this->handle, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuseaddr_value), sizeof(int)) < 0) {
+                return false;
+            }
+
+            // Configure keepalive options for the socket.
+            const int keepalive_value = 1;
+            if (setsockopt(this->handle, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<const char*>(&keepalive_value), sizeof(int)) < 0) {
+                return false;
+            }
+
+            // These are not supported by apple.
+            #if !defined(__APPLE__)
+                // Configure other keepalive options for the socket.
+                const int keepidle_value = 1;
+                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPIDLE, reinterpret_cast<const char*>(&keepidle_value), sizeof(int)) < 0) {
+                    return false;
+                }
+                const int keepintvl_value = 1;
+                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPINTVL, reinterpret_cast<const char*>(&keepintvl_value), sizeof(int)) < 0) {
+                    return false;
+                }
+                const int keepcnt_value = 10;
+                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPCNT, reinterpret_cast<const char*>(&keepcnt_value), sizeof(int)) < 0) {
+                    return false;
+                }
+            #endif
+
+            // Configure the socket as blocking.
+            #if defined(_WIN32)
+                unsigned long int non_blocking_value = 0;
+            #else
+                int non_blocking_value = 0;
+            #endif
+            if (ioctlsocket(this->handle, FIONBIO, &non_blocking_value) < 0) {
+                return false;
+            }
+
+            // Setup the local address and port for the bind call.
+            sockaddr_in address_bind = {};
+            address_bind.sin_family = AF_INET;
+            address_bind.sin_addr.s_addr =
+                (static_cast<unsigned int>(address.segment[3]) << 24) |
+                (static_cast<unsigned int>(address.segment[2]) << 16) |
+                (static_cast<unsigned int>(address.segment[1]) << 8) |
+                (static_cast<unsigned int>(address.segment[0]) << 0);
+            address_bind.sin_port = htons(port);
+
+            // Try and bind to the address and port.
+            if (bind(this->handle, reinterpret_cast<const sockaddr*>(&address_bind), sizeof(sockaddr_in)) < 0) {
+                return false;
+            }
+
+            return true;
+        }
+
+        bool configure_udp_socket(ip address, unsigned short port) {
+            // Enable port and address reuse.
+            const int reuseaddr_value = 1;
+            if (setsockopt(this->handle, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuseaddr_value), sizeof(int)) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            // Configure broadcast options for the socket.
+            const int broadcast_value = 1;
+            if (setsockopt(this->handle, SOL_SOCKET, SO_BROADCAST, reinterpret_cast<const char*>(&broadcast_value), sizeof(int)) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            // Setup the local address and port for the bind call.
+            sockaddr_in address_bind = {};
+            address_bind.sin_family = AF_INET;
+            address_bind.sin_addr.s_addr =
+                (static_cast<unsigned int>(address.segment[3]) << 24) |
+                (static_cast<unsigned int>(address.segment[2]) << 16) |
+                (static_cast<unsigned int>(address.segment[1]) << 8) |
+                (static_cast<unsigned int>(address.segment[0]) << 0);
+            address_bind.sin_port = htons(port);
+
+            // Try and bind to the address and port.
+            if (bind(this->handle, reinterpret_cast<const sockaddr*>(&address_bind), sizeof(sockaddr_in)) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+
+            return true;
+        }
+
     public:
         bool is_open() const {
             return ((this->handle >= 0) && (this->handle != INVALID_SOCKET));
@@ -166,69 +266,8 @@ namespace gtl {
                 return false;
             }
 
-            // Enable port and address reuse.
-            const int reuseaddr_value = 1;
-            if (setsockopt(this->handle, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuseaddr_value), sizeof(int)) < 0) {
-                closesocket(this->handle);
-                this->handle = INVALID_SOCKET;
-                return false;
-            }
-
-            // Configure keepalive options for the socket.
-            const int keepalive_value = 1;
-            if (setsockopt(this->handle, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<const char*>(&keepalive_value), sizeof(int)) < 0) {
-                closesocket(this->handle);
-                this->handle = INVALID_SOCKET;
-                return false;
-            }
-
-            // These are not supported by apple.
-            #if !defined(__APPLE__)
-                // Configure other keepalive options for the socket.
-                const int keepidle_value = 1;
-                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPIDLE, reinterpret_cast<const char*>(&keepidle_value), sizeof(int)) < 0) {
-                    closesocket(this->handle);
-                    this->handle = INVALID_SOCKET;
-                    return false;
-                }
-                const int keepintvl_value = 1;
-                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPINTVL, reinterpret_cast<const char*>(&keepintvl_value), sizeof(int)) < 0) {
-                    closesocket(this->handle);
-                    this->handle = INVALID_SOCKET;
-                    return false;
-                }
-                const int keepcnt_value = 10;
-                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPCNT, reinterpret_cast<const char*>(&keepcnt_value), sizeof(int)) < 0) {
-                    closesocket(this->handle);
-                    this->handle = INVALID_SOCKET;
-                    return false;
-                }
-            #endif
-
-            // Configure the socket as blocking.
-            #if defined(_WIN32)
-                unsigned long int non_blocking_value = 0;
-            #else
-                int non_blocking_value = 0;
-            #endif
-            if (ioctlsocket(this->handle, FIONBIO, &non_blocking_value) < 0) {
-                closesocket(this->handle);
-                this->handle = INVALID_SOCKET;
-                return false;
-            }
-
-            // Setup the local address and port for the bind call.
-            sockaddr_in address_bind = {};
-            address_bind.sin_family = AF_INET;
-            address_bind.sin_addr.s_addr =
-                (static_cast<unsigned int>(connection.address.segment[3]) << 24) |
-                (static_cast<unsigned int>(connection.address.segment[2]) << 16) |
-                (static_cast<unsigned int>(connection.address.segment[1]) << 8) |
-                (static_cast<unsigned int>(connection.address.segment[0]) << 0);
-            address_bind.sin_port = htons(connection.port);
-
-            // Try and bind to the address and port.
-            if (bind(this->handle, reinterpret_cast<const sockaddr*>(&address_bind), sizeof(sockaddr_in)) < 0) {
+            // Configure the socket.
+            if (!this->configure_tcp_socket(connection.address, connection.port)) {
                 closesocket(this->handle);
                 this->handle = INVALID_SOCKET;
                 return false;
@@ -256,69 +295,8 @@ namespace gtl {
                 return false;
             }
 
-            // Enable port and address reuse.
-            const int reuseaddr_value = 1;
-            if (setsockopt(this->handle, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuseaddr_value), sizeof(int)) < 0) {
-                closesocket(this->handle);
-                this->handle = INVALID_SOCKET;
-                return false;
-            }
-
-            // Configure keepalive options for the socket.
-            const int keepalive_value = 1;
-            if (setsockopt(this->handle, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<const char*>(&keepalive_value), sizeof(int)) < 0) {
-                closesocket(this->handle);
-                this->handle = INVALID_SOCKET;
-                return false;
-            }
-
-            // These are not supported by apple.
-            #if !defined(__APPLE__)
-                // Configure other keepalive options for the socket.
-                const int keepidle_value = 1;
-                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPIDLE, reinterpret_cast<const char*>(&keepidle_value), sizeof(int)) < 0) {
-                    closesocket(this->handle);
-                    this->handle = INVALID_SOCKET;
-                    return false;
-                }
-                const int keepintvl_value = 1;
-                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPINTVL, reinterpret_cast<const char*>(&keepintvl_value), sizeof(int)) < 0) {
-                    closesocket(this->handle);
-                    this->handle = INVALID_SOCKET;
-                    return false;
-                }
-                const int keepcnt_value = 10;
-                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPCNT, reinterpret_cast<const char*>(&keepcnt_value), sizeof(int)) < 0) {
-                    closesocket(this->handle);
-                    this->handle = INVALID_SOCKET;
-                    return false;
-                }
-            #endif
-
-            // Configure the socket as blocking.
-            #if defined(_WIN32)
-                unsigned long int non_blocking_value = 0;
-            #else
-                int non_blocking_value = 0;
-            #endif
-            if (ioctlsocket(this->handle, FIONBIO, &non_blocking_value) < 0) {
-                closesocket(this->handle);
-                this->handle = INVALID_SOCKET;
-                return false;
-            }
-
-            // Setup the local address and port for the bind call.
-            sockaddr_in address_bind = {};
-            address_bind.sin_family = AF_INET;
-            address_bind.sin_addr.s_addr =
-                (static_cast<unsigned int>(connection.address_local.segment[3]) << 24) |
-                (static_cast<unsigned int>(connection.address_local.segment[2]) << 16) |
-                (static_cast<unsigned int>(connection.address_local.segment[1]) << 8) |
-                (static_cast<unsigned int>(connection.address_local.segment[0]) << 0);
-            address_bind.sin_port = htons(connection.port_local);
-
-            // Try and bind to the address and port.
-            if (bind(this->handle, reinterpret_cast<const sockaddr*>(&address_bind), sizeof(sockaddr_in)) < 0) {
+            // Configure the socket.
+            if (!this->configure_tcp_socket(connection.address_local, connection.port_local)) {
                 closesocket(this->handle);
                 this->handle = INVALID_SOCKET;
                 return false;
@@ -356,34 +334,8 @@ namespace gtl {
                 return false;
             }
 
-            // Enable port and address reuse.
-            const int reuseaddr_value = 1;
-            if (setsockopt(this->handle, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuseaddr_value), sizeof(int)) < 0) {
-                closesocket(this->handle);
-                this->handle = INVALID_SOCKET;
-                return false;
-            }
-
-            // Configure broadcast options for the socket.
-            const int broadcast_value = 1;
-            if (setsockopt(this->handle, SOL_SOCKET, SO_BROADCAST, reinterpret_cast<const char*>(&broadcast_value), sizeof(int)) < 0) {
-                closesocket(this->handle);
-                this->handle = INVALID_SOCKET;
-                return false;
-            }
-
-            // Setup the local address and port for the bind call.
-            sockaddr_in address_bind = {};
-            address_bind.sin_family = AF_INET;
-            address_bind.sin_addr.s_addr =
-                (static_cast<unsigned int>(connection.address.segment[3]) << 24) |
-                (static_cast<unsigned int>(connection.address.segment[2]) << 16) |
-                (static_cast<unsigned int>(connection.address.segment[1]) << 8) |
-                (static_cast<unsigned int>(connection.address.segment[0]) << 0);
-            address_bind.sin_port = htons(connection.port);
-
-            // Try and bind to the address and port.
-            if (bind(this->handle, reinterpret_cast<const sockaddr*>(&address_bind), sizeof(sockaddr_in)) < 0) {
+            // Configure the socket.
+            if (!this->configure_udp_socket(connection.address, connection.port)) {
                 closesocket(this->handle);
                 this->handle = INVALID_SOCKET;
                 return false;
@@ -472,6 +424,44 @@ namespace gtl {
             return true;
         }
 
+        // Checks if there is data to read.
+        bool is_data_available() {
+            if (!this->is_open()) {
+                return false;
+            }
+
+            timeval timeout{ 0, 0 };
+            fd_set rfds = {};
+            fd_set wfds = {};
+            fd_set efds = {};
+
+            FD_ZERO(&rfds);
+            FD_ZERO(&wfds);
+            FD_ZERO(&efds);
+            FD_SET(this->handle, &rfds);
+            FD_SET(this->handle, &wfds);
+            FD_SET(this->handle, &efds);
+
+            int r = select(this->handle + 1, &rfds, &wfds, &efds, &timeout);
+            switch (r) {
+                case 0: {
+                } break;
+                case -1: {
+                    if ((errno == EINPROGRESS) || (errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+                        // These errors might indicate that data is available but we can't check it right now.
+                        break;
+                    }
+                } break;
+                default: {
+                    if (FD_ISSET(this->handle, &rfds)) {
+                        return true;
+                    }
+                } break;
+            }
+
+            return false;
+        }
+
         bool read(unsigned char* buffer, unsigned long long int& length) const {
             ip address;
             unsigned short port;
@@ -532,7 +522,7 @@ namespace gtl {
             sockaddr_in address_source = {};
             socklen_t address_length = sizeof(sockaddr_in);
 
-            // Get data
+            // Get data.
             #if defined(_WIN32)
                 const long long int length_received = recvfrom(this->handle, reinterpret_cast<char*>(buffer), static_cast<int>(length_available), 0, reinterpret_cast<sockaddr*>(&address_source), &address_length);
             #else
