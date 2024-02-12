@@ -213,13 +213,19 @@ TEST(socket, function, read_write_tcp) {
     while (server.get_accepted_connections_count() != 1) {
         std::this_thread::yield();
     }
+    REQUIRE(socket.is_data_available() == false);
     const char* sent_message = "Test message";
     const unsigned long long int sent_length = testbench::string_length(sent_message);
     REQUIRE(server.send_to_last_client(reinterpret_cast<const unsigned char*>(sent_message), sent_length));
+    do {
+        std::this_thread::yield();
+    } while (!socket.is_data_available());
+    REQUIRE(socket.is_data_available() == true);
     unsigned char received_message[128] = {};
     unsigned long long int received_length = 128;
     do {
         std::this_thread::yield();
+        received_length = 128;
         REQUIRE(socket.read(received_message, received_length));
     } while (received_length == 0);
     received_message[127] = 0;
@@ -247,6 +253,7 @@ TEST(socket, function, read_write_udp) {
     unsigned short port1 = 0;
     do {
         std::this_thread::yield();
+        received_length1 = 128;
         REQUIRE(socket2.read(received_message1, received_length1, address1, port1));
     } while (received_length1 == 0);
     received_message1[127] = 0;
@@ -266,6 +273,7 @@ TEST(socket, function, read_write_udp) {
     unsigned short port2 = 0;
     do {
         std::this_thread::yield();
+        received_length2 = 128;
         REQUIRE(socket1.read(received_message2, received_length2,  address2, port2));
     } while (received_length2 == 0);
     received_message2[127] = 0;
