@@ -126,7 +126,7 @@ namespace gtl {
 
     private:
         /// @brief  Flag that specifies if the interal threads should sleep or exit when there are no queues to process.
-        std::atomic<bool> running;
+        bool running;
 
         /// @brief  The array of internal threads.
         std::vector<std::thread> threads;
@@ -281,11 +281,12 @@ namespace gtl {
 
         /// @brief  Block until all queues in the thread_pool are empty, then join all threads.
         void join() {
-            // Stop pool.
-            this->running = false;
-
-            // Wake threads.
-            this->queue_available.notify_all();
+            // Stop pool and wake threads.
+            {
+                std::lock_guard<std::mutex> lock(this->queue_mutex);
+                this->running = false;
+                this->queue_available.notify_all();
+            }
 
             // Ensure work is finished.
             this->thread_loop();
@@ -312,9 +313,10 @@ namespace gtl {
             std::lock_guard<std::mutex> lock(this->pool.queue_mutex);
             // WARNING: This line triggers a "use-of-uninitialized-value" in MemorySanitizer, but is a false positive.
             this->pool.queues.emplace(this);
+
+            // Notify a thread in the pool that there is a queue available.
+            this->pool.queue_available.notify_one();
         }
-        // Notify a thread in the pool that there is a queue available.
-        this->pool.queue_available.notify_one();
     }
 
     // The drain function for the queue class is implemented here as it needs to access the thread_pool class.
