@@ -32,9 +32,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 #include <vision/image_processing/sub_pixel_patch>
-#include <vision/match_distance/ncc>
-#include <vision/match_distance/ssd>
-#include <vision/match_distance/zncc>
+#include <vision/match/score/ncc>
+#include <vision/match/score/ssd>
+#include <vision/match/score/zncc>
 
 TEST(quadratic_fitting, function, search_2d) {
     constexpr static const unsigned int data_width = 8;

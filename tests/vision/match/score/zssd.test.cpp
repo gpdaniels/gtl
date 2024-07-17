@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <require.tests.hpp>
 #include <template.tests.hpp>
 
-#include <vision/match_distance/zssd>
+#include <vision/match/score/zssd>
 
 #if defined(_MSC_VER)
 #   pragma warning(push, 0)

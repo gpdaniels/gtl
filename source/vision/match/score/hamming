@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_VISION_MATCH_DISTANCE_HAMMING_HPP
-#define GTL_VISION_MATCH_DISTANCE_HAMMING_HPP
+#ifndef GTL_VISION_MATCH_SCORE_HAMMING_HPP
+#define GTL_VISION_MATCH_SCORE_HAMMING_HPP
 
 // Summary: Simple hamming matching without the popcount instruction. [wip]
 
@@ -175,4 +175,4 @@ namespace gtl {
     }
 }
 
-#endif // GTL_VISION_MATCH_DISTANCE_HAMMING_HPP
+#endif // GTL_VISION_MATCH_SCORE_HAMMING_HPP

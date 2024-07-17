@@ -15,10 +15,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_VISION_MATCH_DISTANCE_ZNCC_HPP
-#define GTL_VISION_MATCH_DISTANCE_ZNCC_HPP
+#ifndef GTL_VISION_MATCH_SCORE_NCC_HPP
+#define GTL_VISION_MATCH_SCORE_NCC_HPP
 
-// Summary: Zero-mean normalised cross correleation between two patches. [wip]
+// Summary: Normalised cross correleation between two patches. [wip]
 
 #if defined(_MSC_VER)
     #pragma warning(push, 0) 
@@ -37,53 +37,26 @@ namespace gtl {
         typename type_lhs = unsigned char,
         typename type_rhs = unsigned char
     >
-    float zncc(
+    float ncc(
         const type_lhs* __restrict data_lhs,
         const int stride_lhs,
         const type_rhs* __restrict data_rhs,
         const int stride_rhs
     ) {
-        // Cache the data pointer so we can reset after calculating the mean.
-        const type_lhs* __restrict pointer_lhs = data_lhs;
-        const type_rhs* __restrict pointer_rhs = data_rhs;
-
         const int step_lhs = stride_lhs - patch_width;
         const int step_rhs = stride_rhs - patch_width;
 
-        // Calculate the mean of the patch.
-        float mean_lhs = 0.0f;
-        float mean_rhs = 0.0f;
+        float numerator = 0;
+        float denominator_lhs = 0;
+        float denominator_rhs = 0;
 
         for (int y = 0; y < patch_height; ++y, data_lhs += step_lhs, data_rhs += step_rhs) {
             for (int x = 0; x < patch_width; ++x, ++data_lhs, ++data_rhs) {
                 const float pixel_lhs = *data_lhs;
                 const float pixel_rhs = *data_rhs;
-                mean_lhs += pixel_lhs;
-                mean_rhs += pixel_rhs;
-            }
-        }
-
-        mean_lhs /= static_cast<float>(patch_width * patch_height);
-        mean_rhs /= static_cast<float>(patch_width * patch_height);
-
-        // Reset data pointer.
-        data_lhs = pointer_lhs;
-        data_rhs = pointer_rhs;
-
-        // Calculate the zero-mean normalised cross correlation.
-        float numerator = 0.0f;
-        float denominator_lhs = 0.0f;
-        float denominator_rhs = 0.0f;
-
-        for (int y = 0; y < patch_height; ++y, data_lhs += step_lhs, data_rhs += step_rhs) {
-            for (int x = 0; x < patch_width; ++x, ++data_lhs, ++data_rhs) {
-                const float pixel_lhs = *data_lhs;
-                const float pixel_rhs = *data_rhs;
-                const float part_lhs = (pixel_lhs - mean_lhs);
-                const float part_rhs = (pixel_rhs - mean_rhs);
-                numerator += part_lhs * part_rhs;
-                denominator_lhs += part_lhs * part_lhs;
-                denominator_rhs += part_rhs * part_rhs;
+                numerator += pixel_lhs * pixel_rhs;
+                denominator_lhs += pixel_lhs * pixel_lhs;
+                denominator_rhs += pixel_rhs * pixel_rhs;
             }
         }
 
@@ -99,4 +72,4 @@ namespace gtl {
     }
 }
 
-#endif // GTL_VISION_MATCH_DISTANCE_ZNCC_HPP
+#endif // GTL_VISION_MATCH_SCORE_NCC_HPP

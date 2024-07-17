@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <require.tests.hpp>
 #include <template.tests.hpp>
 
-#include <vision/match_distance/ncc>
+#include <vision/match/score/ssd>
 
 #if defined(_MSC_VER)
 #   pragma warning(push, 0)
@@ -118,10 +118,10 @@ constexpr static const unsigned char data_xy_empty[data_height][data_width] = {
 template <unsigned long long value1, unsigned long long value2>
 void test(const unsigned char lhs[data_height][data_width], const unsigned char rhs[data_height][data_width], const float results[data_height][data_width]) {
     REQUIRE(
-        testbench::is_value_approx(gtl::ncc<value1, value2>(&lhs[0][0], data_width, &rhs[0][0], data_width), results[value2 - 1][value1 - 1], 1E-6f),
+        testbench::is_value_approx(gtl::ssd<value1, value2>(&lhs[0][0], data_width, &rhs[0][0], data_width), results[value2 - 1][value1 - 1], 1E-6f),
         "ncc<%llu, %llu> = %f (!= %f)",
         value1, value2,
-        static_cast<double>(gtl::ncc<value1, value2>(&lhs[0][0], data_width, &rhs[0][0], data_width)),
+        static_cast<double>(gtl::ssd<value1, value2>(&lhs[0][0], data_width, &rhs[0][0], data_width)),
         static_cast<double>(results[value2 - 1][value1 - 1])
     );
 }
@@ -152,34 +152,34 @@ void test_set(const unsigned char lhs[data_height][data_width], const unsigned c
     );
 }
 
-TEST(ncc, function, empty_and_full) {
+TEST(ssd, function, empty_and_full) {
     const float results_empty_empty[data_height][data_width] = {
-        { -1.000000f, -1.000000f, -1.000000f, -1.000000f, -1.000000f },
-        { -1.000000f, -1.000000f, -1.000000f, -1.000000f, -1.000000f },
-        { -1.000000f, -1.000000f, -1.000000f, -1.000000f, -1.000000f },
-        { -1.000000f, -1.000000f, -1.000000f, -1.000000f, -1.000000f },
-        { -1.000000f, -1.000000f, -1.000000f, -1.000000f, -1.000000f }
+        { 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0 }
     };
     test_set(data_empty, data_empty, results_empty_empty);
 
     const float results_empty_full[data_height][data_width] = {
-        { 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f },
-        { 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f },
-        { 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f },
-        { 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f },
-        { 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f }
+        { 255*255*1, 255*255*2, 255*255*3, 255*255*4, 255*255*5 },
+        { 255*255*2, 255*255*4, 255*255*6, 255*255*8, 255*255*10 },
+        { 255*255*3, 255*255*6, 255*255*9, 255*255*12, 255*255*15 },
+        { 255*255*4, 255*255*8, 255*255*12, 255*255*16, 255*255*20 },
+        { 255*255*5, 255*255*10, 255*255*15, 255*255*20, 255*255*25 }
     };
     test_set(data_empty, data_full, results_empty_full);
     test_set(data_full, data_empty, results_empty_full);
 }
 
-TEST(ncc, function, same_lhs_and_rhs) {
+TEST(ssd, function, same_lhs_and_rhs) {
     const float results_same[data_height][data_width] = {
-        { -1.000000f, -1.000000f, -1.000000f, -1.000000f, -1.000000f },
-        { -1.000000f, -1.000000f, -1.000000f, -1.000000f, -1.000000f },
-        { -1.000000f, -1.000000f, -1.000000f, -1.000000f, -1.000000f },
-        { -1.000000f, -1.000000f, -1.000000f, -1.000000f, -1.000000f },
-        { -1.000000f, -1.000000f, -1.000000f, -1.000000f, -1.000000f }
+        { 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0 }
     };
     test_set(data_full, data_full, results_same);
     test_set(data_x_empty, data_x_empty, results_same);
@@ -192,85 +192,71 @@ TEST(ncc, function, same_lhs_and_rhs) {
     test_set(data_y_fill, data_y_fill, results_same);
 }
 
-TEST(ncc, function, checker) {
-    const float results_empty_checker1[data_height][data_width] = {
-        { -1.000000f,  0.000000f,  0.000000f,  0.000000f,  0.000000f },
-        {  0.000000f,  0.000000f,  0.000000f,  0.000000f,  0.000000f },
-        {  0.000000f,  0.000000f,  0.000000f,  0.000000f,  0.000000f },
-        {  0.000000f,  0.000000f,  0.000000f,  0.000000f,  0.000000f },
-        {  0.000000f,  0.000000f,  0.000000f,  0.000000f,  0.000000f }
+TEST(ssd, function, checker) {
+    const float results_empty_checker[data_height][data_width] = {
+        { 255*255*0, 255*255*1, 255*255*1, 255*255*2, 255*255*2 },
+        { 255*255*1, 255*255*2, 255*255*3, 255*255*4, 255*255*5 },
+        { 255*255*1, 255*255*3, 255*255*4, 255*255*6, 255*255*7 },
+        { 255*255*2, 255*255*4, 255*255*6, 255*255*8, 255*255*10 },
+        { 255*255*2, 255*255*5, 255*255*7, 255*255*10, 255*255*12 }
     };
-    test_set(data_empty, data_chequer1, results_empty_checker1);
-    test_set(data_chequer1, data_empty, results_empty_checker1);
+    test_set(data_empty, data_chequer1, results_empty_checker);
+    test_set(data_chequer1, data_empty, results_empty_checker);
 
-    const float results_full_checker1[data_height][data_width] = {
-        {  0.000000f, -0.707107f, -0.577350f, -0.707107f, -0.632456f },
-        { -0.707107f, -0.707107f, -0.707107f, -0.707107f, -0.707107f },
-        { -0.577350f, -0.707107f, -0.666667f, -0.707107f, -0.683130f },
-        { -0.707107f, -0.707107f, -0.707107f, -0.707107f, -0.707107f },
-        { -0.632456f, -0.707107f, -0.683130f, -0.707107f, -0.692820f }
+    const float results_full_checker[data_height][data_width] = {
+        { 255*255*1, 255*255*1, 255*255*2, 255*255*2, 255*255*3 },
+        { 255*255*1, 255*255*2, 255*255*3, 255*255*4, 255*255*5 },
+        { 255*255*2, 255*255*3, 255*255*5, 255*255*6, 255*255*8 },
+        { 255*255*2, 255*255*4, 255*255*6, 255*255*8, 255*255*10 },
+        { 255*255*3, 255*255*5, 255*255*8, 255*255*10, 255*255*13 }
     };
-    test_set(data_full, data_chequer1, results_full_checker1);
-    test_set(data_chequer1, data_full, results_full_checker1);
+    test_set(data_full, data_chequer1, results_full_checker);
+    test_set(data_chequer1, data_full, results_full_checker);
 
-    const float results_empty_checker2[data_height][data_width] = {
-        { 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f },
-        { 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f },
-        { 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f },
-        { 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f },
-        { 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f }
-    };
-    test_set(data_empty, data_chequer2, results_empty_checker2);
-    test_set(data_chequer2, data_empty, results_empty_checker2);
+    test_set(data_empty, data_chequer2, results_full_checker);
+    test_set(data_chequer2, data_empty, results_full_checker);
 
-    const float results_full_checker2[data_height][data_width] = {
-        { -1.000000f, -0.707107f, -0.816497f, -0.707107f, -0.774597f },
-        { -0.707107f, -0.707107f, -0.707107f, -0.707107f, -0.707107f },
-        { -0.816497f, -0.707107f, -0.745356f, -0.707107f, -0.730297f },
-        { -0.707107f, -0.707107f, -0.707107f, -0.707107f, -0.707107f },
-        { -0.774597f, -0.707107f, -0.730297f, -0.707107f, -0.721110f }
-    };
-    test_set(data_full, data_chequer2, results_full_checker2);
-    test_set(data_chequer2, data_full, results_full_checker2);
+    test_set(data_full, data_chequer2, results_empty_checker);
+    test_set(data_chequer2, data_full, results_empty_checker);
 
-    const float results_checker1_checker2[data_height][data_width] = {
-        {  0.000000f, -0.000000f, -0.000000f, -0.000000f, -0.000000f },
-        { -0.000000f, -0.000000f, -0.000000f, -0.000000f, -0.000000f },
-        { -0.000000f, -0.000000f, -0.000000f, -0.000000f, -0.000000f },
-        { -0.000000f, -0.000000f, -0.000000f, -0.000000f, -0.000000f },
-        { -0.000000f, -0.000000f, -0.000000f, -0.000000f, -0.000000f }
+    const float results_checker_checker[data_height][data_width] = {
+        { 255*255*1, 255*255*2, 255*255*3, 255*255*4, 255*255*5 },
+        { 255*255*2, 255*255*4, 255*255*6, 255*255*8, 255*255*10 },
+        { 255*255*3, 255*255*6, 255*255*9, 255*255*12, 255*255*15 },
+        { 255*255*4, 255*255*8, 255*255*12, 255*255*16, 255*255*20 },
+        { 255*255*5, 255*255*10, 255*255*15, 255*255*20, 255*255*25 }
     };
-    test_set(data_chequer1, data_chequer2, results_checker1_checker2);
-    test_set(data_chequer2, data_chequer1, results_checker1_checker2);
+    test_set(data_chequer1, data_chequer2, results_checker_checker);
+    test_set(data_chequer2, data_chequer1, results_checker_checker);
 }
 
-TEST(ncc, function, gradient_1d) {
+TEST(ssd, function, gradient_1d) {
     const float results_gradient_x[data_height][data_width] = {
-        {  0.000000f, -0.601503f, -0.582573f, -0.488968f, -0.334725f },
-        {  0.000000f, -0.601503f, -0.582573f, -0.488968f, -0.334725f },
-        {  0.000000f, -0.601503f, -0.582573f, -0.488968f, -0.334725f },
-        {  0.000000f, -0.601503f, -0.582573f, -0.488968f, -0.334725f },
-        {  0.000000f, -0.601503f, -0.582573f, -0.488968f, -0.334725f }
+        {  65025,  81409,  81409,  97793, 162818 },
+        { 130050, 162818, 162818, 195586, 325636 },
+        { 195075, 244227, 244227, 293379, 488454 },
+        { 260100, 325636, 325636, 391172, 651272 },
+        { 325125, 407045, 407045, 488965, 814090 }
     };
     test_set(data_x_empty, data_x_fill, results_gradient_x);
 
     const float results_gradient_y[data_height][data_width] = {
-        {  0.000000f,  0.000000f,  0.000000f,  0.000000f,  0.000000f },
-        { -0.601503f, -0.601503f, -0.601503f, -0.601503f, -0.601503f },
-        { -0.582573f, -0.582573f, -0.582573f, -0.582573f, -0.582573f },
-        { -0.488968f, -0.488968f, -0.488968f, -0.488968f, -0.488968f },
-        { -0.334725f, -0.334725f, -0.334725f, -0.334725f, -0.334725f }
+        {  65025, 130050, 195075, 260100, 325125 },
+        {  81409, 162818, 244227, 325636, 407045 },
+        {  81409, 162818, 244227, 325636, 407045 },
+        {  97793, 195586, 293379, 391172, 488965 },
+        { 162818, 325636, 488454, 651272, 814090 }
     };
     test_set(data_y_empty, data_y_fill, results_gradient_y);
 }
 
-TEST(ncc, function, gradient_2d) {
+TEST(ssd, function, gradient_2d) {
     const float results_gradient[data_height][data_width] = {
-        {  0.000000f, -0.659963f, -0.697275f, -0.689865f, -0.663138f },
-        { -0.659963f, -0.755289f, -0.756254f, -0.731735f, -0.692437f },
-        { -0.697275f, -0.756254f, -0.756491f, -0.730571f, -0.686894f },
-        { -0.689865f, -0.731735f, -0.730571f, -0.703301f, -0.655301f },
-        { -0.663138f, -0.692437f, -0.686894f, -0.655301f, -0.600599f }
+        {  65025, 101889, 118273, 122369, 122369 },
+        { 101889, 155137, 175617, 179713, 183809 },
+        { 118273, 175617, 196097, 204289, 224769 },
+        { 122369, 179713, 204289, 228865, 286209 },
+        { 122369, 183809, 224769, 286209, 408578 }
     };
     test_set(data_xy_empty, data_xy_fill, results_gradient);
     test_set(data_xy_fill, data_xy_empty, results_gradient);

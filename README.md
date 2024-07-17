@@ -119,13 +119,15 @@ The current classes are as described below:
 | [vision/feature](source/vision/feature) | [feature](source/vision/feature/feature) | Simple structure to hold a the information defining a detected feature. | :construction: |
 | [vision/image_processing](source/vision/image_processing) | [integral](source/vision/image_processing/integral) | Simple integral image processor. | :construction: |
 | [vision/image_processing](source/vision/image_processing) | [sub_pixel_patch](source/vision/image_processing/sub_pixel_patch) | Generation of a sub\-pixel patch for match refinement. | :construction: |
-| [vision/match_distance](source/vision/match_distance) | [hamming](source/vision/match_distance/hamming) | Simple hamming matching without the popcount instruction. | :construction: |
-| [vision/match_distance](source/vision/match_distance) | [ncc](source/vision/match_distance/ncc) | Normalised cross correleation between two patches. | :construction: |
-| [vision/match_distance](source/vision/match_distance) | [sad](source/vision/match_distance/sad) | Sum of absolute distances between two patches. | :construction: |
-| [vision/match_distance](source/vision/match_distance) | [ssd](source/vision/match_distance/ssd) | Sum of squared distances between two patches. | :construction: |
-| [vision/match_distance](source/vision/match_distance) | [zncc](source/vision/match_distance/zncc) | Zero\-mean normalised cross correleation between two patches. | :construction: |
-| [vision/match_distance](source/vision/match_distance) | [zsad](source/vision/match_distance/zsad) | Zero\-mean sum of absolute distances between two patches. | :construction: |
-| [vision/match_distance](source/vision/match_distance) | [zssd](source/vision/match_distance/zssd) | Zero\-mean sum of squared distances between two patches. | :construction: |
+| [vision/match/detector](source/vision/match/detector) | [bruteforce](source/vision/match/detector/bruteforce) | Bruteforce feature matcher. | :construction: |
+| [vision/match/score](source/vision/match/score) | [hamming](source/vision/match/score/hamming) | Simple hamming matching without the popcount instruction. | :construction: |
+| [vision/match/score](source/vision/match/score) | [ncc](source/vision/match/score/ncc) | Normalised cross correleation between two patches. | :construction: |
+| [vision/match/score](source/vision/match/score) | [sad](source/vision/match/score/sad) | Sum of absolute distances between two patches. | :construction: |
+| [vision/match/score](source/vision/match/score) | [ssd](source/vision/match/score/ssd) | Sum of squared distances between two patches. | :construction: |
+| [vision/match/score](source/vision/match/score) | [zncc](source/vision/match/score/zncc) | Zero\-mean normalised cross correleation between two patches. | :construction: |
+| [vision/match/score](source/vision/match/score) | [zsad](source/vision/match/score/zsad) | Zero\-mean sum of absolute distances between two patches. | :construction: |
+| [vision/match/score](source/vision/match/score) | [zssd](source/vision/match/score/zssd) | Zero\-mean sum of squared distances between two patches. | :construction: |
+| [vision/match](source/vision/match) | [match](source/vision/match/match) |  | :bulb: |
 | [vision](source/vision) | [api](source/vision/api) | An API for a computer vision system that consumes sensor data to perform localisation and mapping. | :construction: |
 
 ## License ##

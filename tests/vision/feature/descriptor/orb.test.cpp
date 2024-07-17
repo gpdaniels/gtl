@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #   pragma warning(pop)
 #endif
 
-#include <vision/match_distance/hamming>
+#include <vision/match/score/hamming>
 
 TEST(orb, function, gradient) {
     // Create some data.
