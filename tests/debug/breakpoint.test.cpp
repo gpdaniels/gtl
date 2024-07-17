@@ -83,16 +83,46 @@ TEST(breakpoint, evaluate, breakpoint) {
 
         REQUIRE(AddVectoredExceptionHandler(CALL_FIRST, handler) != nullptr);
     #else
-        constexpr static auto handler =  [](int signal_number) {
+        constexpr static auto handler =  [](int signal_number, siginfo_t* info, void* extra) {
+            static_cast<void>(info);
+            static_cast<void>(extra);
             if (signal_number == SIGTRAP) {
                 PRINT("Breakpoint skipped.\n");
                 caught = true;
+
+                // Note: Arm cpus (unlike intel) do not increment the pc upon hitting the breakpoint instruction.
+                #if defined(__APPLE__)
+                    #if (defined(__arm__) || defined(_M_ARM))
+                        #if defined(__thumb__)
+                            reinterpret_cast<ucontext_t*>(extra)->uc_mcontext->__ss.__pc += 2;
+                        #else
+                            reinterpret_cast<ucontext_t*>(extra)->uc_mcontext->__ss.__pc += 4;
+                        #endif
+                    #elif (defined(__aarch64__))
+                        reinterpret_cast<ucontext_t*>(extra)->uc_mcontext->__ss.__pc += 4;
+                    #endif
+                #else
+                    #if (defined(__arm__) || defined(_M_ARM))
+                        #if defined(__thumb__)
+                            reinterpret_cast<ucontext_t*>(extra)->uc_mcontext.pc += 2;
+                        #else
+                            reinterpret_cast<ucontext_t*>(extra)->uc_mcontext.pc += 4;
+                        #endif
+                    #elif (defined(__aarch64__))
+                        reinterpret_cast<ucontext_t*>(extra)->uc_mcontext.pc += 4;
+                    #endif
+                #endif
             }
         };
-        REQUIRE(std::signal(SIGTRAP, handler) != SIG_ERR);
+
+        struct sigaction action;
+        action.sa_flags = SA_SIGINFO;
+        action.sa_sigaction = handler;
+        REQUIRE(sigaction(SIGTRAP, &action, nullptr) != -1);
     #endif
 
     GTL_BREAKPOINT();
+
     REQUIRE(caught);
 }
 
