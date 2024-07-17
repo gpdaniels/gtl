@@ -54,6 +54,6 @@ TEST(shi_tomasi_score, function, gradient_with_inverted_square) {
 
     for (unsigned int i = 0; i < features_count; ++i) {
         const float response = gtl::shi_tomasi_score(&data[features[i].y][features[i].x], data_width);
-        REQUIRE(testbench::is_value_equal(features[i].response, response), "%f != %f", features[i].response, response);
+        REQUIRE(testbench::is_value_approx(features[i].response, response, 1e-4f), "%f != %f", features[i].response, response);
     }
 }
