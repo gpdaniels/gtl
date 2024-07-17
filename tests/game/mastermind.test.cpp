@@ -26,7 +26,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 #include <random>
-#include <type_traits>
 
 #if defined(_MSC_VER)
 #   pragma warning(pop)
@@ -86,3 +85,41 @@ TEST(mastermind, evaluate, all) {
     }
 }
 
+
+#if 0
+TEST(mastermind, interactive, game) {
+    enum colours : unsigned int {
+        yellow  = 0,
+        green   = 1,
+        blue    = 2,
+        white   = 3,
+        orange  = 4,
+        purple  = 5,
+        pink    = 6,
+        red     = 7,
+    };
+    constexpr static const auto to_string = [](unsigned int colour){
+        switch (colour) {
+            case yellow:    return "yellow";
+            case green:     return " green";
+            case blue:      return "  blue";
+            case white:     return " white";
+            case orange:    return "orange";
+            case purple:    return "purple";
+            case pink:      return "  pink";
+            case red:       return "   red";
+        }
+            return "unknown";
+    };
+    unsigned int turns = gtl::mastermind<4, 8>::solve([](const std::array<unsigned int, 4>& guess){
+        std::pair<unsigned int, unsigned int> score;
+        PRINT("GUESS: %s %s %s %s\n", to_string(guess[0]), to_string(guess[1]), to_string(guess[2]), to_string(guess[3]));
+        PRINT("Enter [correct colour in correct place] and [correct colour in incorrect place]:\n");
+        std::scanf("%d %d", &score.first, &score.second);
+        return score;
+    }, [](unsigned int turn, const std::array<unsigned int, 4>& guess, unsigned int correct, unsigned int close){
+        PRINT("SOLUTION %d: %s %s %s %s ==> %d %d\n", turn, to_string(guess[0]), to_string(guess[1]), to_string(guess[2]), to_string(guess[3]), correct, close);
+    });
+    PRINT("Turns: %u\n", turns);
+}
+#endif
