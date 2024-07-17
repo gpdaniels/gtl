@@ -69,9 +69,9 @@ namespace gtl {
     public:
         ~consensus() = default;
         consensus(
-            sampler_type& sampler,
-            estimator_type& estimator,
-            evaluator_type& evaluator,
+            const sampler_type& sampler,
+            const estimator_type& estimator,
+            const evaluator_type& evaluator,
             const float inlier_ratio,
             const float probability_failure,
             const size_t iterations_minimum,
@@ -152,12 +152,17 @@ namespace gtl {
         }
 
     public:
-        bool estimate(const data_type* const __restrict data, size_t data_size, model_type& best_model) {
+        bool estimate(
+            const data_type* const __restrict data,
+            const size_t data_size,
+            float* const __restrict residuals,
+            size_t* const __restrict inliers,
+            size_t& inliers_size,
+            model_type& best_model
+        ) {
             best_model = {};
             bool solution_found = false;
             float best_cost = 0;
-            float* residuals = new float[data_size];
-            size_t* inliers = new size_t[data_size];
             this->consensus_sampler.prepare(data_size);
             for (size_t i = 0; i < this->criteria_iterations_maximum; ++i) {
                 size_t subset_indices[sample_size];
@@ -171,7 +176,6 @@ namespace gtl {
                 for (size_t j = 0; j < model_count; ++j) {
                     const model_type& model = models[j];
                     this->consensus_estimator.compute_residuals(data, data_size, model, residuals);
-                    size_t inliers_size = 0;
                     const float cost = this->consensus_evaluator.evaluate(residuals, data_size, inliers, inliers_size);
                     if ((cost < best_cost) || (solution_found == false)) {
                         solution_found = true;
@@ -186,24 +190,11 @@ namespace gtl {
                     }
                 }
             }
-            delete[] residuals;
-            delete[] inliers;
             if (!solution_found) {
                 return false;
             }
-            this->consensus_estimator.refine_model(data, data_size, best_model);
-            return true;
-        }
-
-        bool estimate(const data_type* const __restrict data, size_t data_size, model_type& best_model, size_t* const __restrict inliers, size_t& inliers_size) {
-            bool valid = this->estimate(data, data_size, best_model);
-            if (!valid) {
-                return false;
-            }
-            float* residuals = new float[data_size];
             this->consensus_estimator.compute_residuals(data, data_size, best_model, residuals);
             this->consensus_evaluator.evaluate(residuals, data_size, inliers, inliers_size);
-            delete[] residuals;
             return true;
         }
     };

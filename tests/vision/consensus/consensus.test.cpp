@@ -125,12 +125,13 @@ TEST(consensus, evaluate, line) {
         iterations_maximum
     );
 
-    line best;
+    float residuals[data_size];
     std::size_t inliers[data_size];
     std::size_t inliers_size = 0;
-    REQUIRE(consensus.estimate(data, data_size, best, inliers, inliers_size));
+    line best_model;
+    REQUIRE(consensus.estimate(data, data_size, residuals, inliers, inliers_size, best_model));
 
-    REQUIRE(testbench::is_value_approx(best.gradient, gradient, 0.05f));
-    REQUIRE(testbench::is_value_approx(best.intercept, intercept, 0.05f));
+    REQUIRE(testbench::is_value_approx(best_model.gradient, gradient, 0.05f));
+    REQUIRE(testbench::is_value_approx(best_model.intercept, intercept, 0.05f));
     REQUIRE(testbench::is_value_approx(inliers_size, data_size / 2, static_cast<std::size_t>(data_size * 0.01f)));
 }
