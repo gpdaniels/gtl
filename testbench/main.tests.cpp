@@ -21,7 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "process.tests.hpp"
 #include "require.tests.hpp"
 #include "sanitizers.tests.hpp"
-#include "unused.tests.hpp"
 
 int main(int argument_count, char* arguments[]) {
 
@@ -131,26 +130,24 @@ int main(int argument_count, char* arguments[]) {
     unsigned long long TEST_COUNT = 0;
     unsigned long long TEST_FAILURE_COUNT = 0;
 
-    testbench::test_node::reverse();
-
-    for (const testbench::test_node* current_test = testbench::test_node::get_root(); current_test != nullptr; current_test = current_test->get_next()) {
-        if (filter_file && !testbench::is_string_same(filter_file, current_test->get_file())) {
+    for (const testbench::test_node* current_test = testbench::test_node::root; current_test != nullptr; current_test = current_test->next) {
+        if (filter_file && !testbench::is_string_same(filter_file, current_test->file)) {
             continue;
         }
-        if (filter_group && !testbench::is_string_same(filter_group, current_test->get_group())) {
+        if (filter_group && !testbench::is_string_same(filter_group, current_test->group)) {
             continue;
         }
-        if (filter_name && !testbench::is_string_same(filter_name, current_test->get_name())) {
+        if (filter_name && !testbench::is_string_same(filter_name, current_test->name)) {
             continue;
         }
 
         if (!quiet) {
-            PRINT("Launching [File: %s] [Group: %s] [Test: %s]...\n", current_test->get_file(), current_test->get_group(), current_test->get_name());
+            PRINT("Launching [File: %s] [Group: %s] [Test: %s]...\n", current_test->file, current_test->group, current_test->name);
         }
 
         ++TEST_COUNT;
         if (execute_in_process) {
-            const char* test_arguments[] = { "--quiet", "--execute", "--file", current_test->get_file(), "--group", current_test->get_group(), "--name", current_test->get_name(), nullptr };
+            const char* test_arguments[] = { "--quiet", "--execute", "--file", current_test->file, "--group", current_test->group, "--name", current_test->name, nullptr };
             int result = testbench::launch_process(testbench::get_executable(), test_arguments);
             if (result != 0) {
                 ++TEST_FAILURE_COUNT;
@@ -162,7 +159,7 @@ int main(int argument_count, char* arguments[]) {
         else {
             testbench::REQUIRE_COUNT = 0;
             testbench::REQUIRE_FAILURE_COUNT = 0;
-            current_test->get_function()();
+            current_test->function();
             if (testbench::REQUIRE_FAILURE_COUNT > 0) {
                 ++TEST_FAILURE_COUNT;
             }
@@ -171,7 +168,7 @@ int main(int argument_count, char* arguments[]) {
             }
         }
         if (!quiet) {
-            PRINT("Finishing [File: %s] [Group: %s] [Test: %s].\n", current_test->get_file(), current_test->get_group(), current_test->get_name());
+            PRINT("Finishing [File: %s] [Group: %s] [Test: %s].\n", current_test->file, current_test->group, current_test->name);
         }
     }
 

@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef GTL_REQUIRE_TESTS_HPP
 #define GTL_REQUIRE_TESTS_HPP
 
-#include "ignored.tests.hpp"
 #include "print.tests.hpp"
 #include "unused.tests.hpp"
 
@@ -69,7 +68,7 @@ namespace testbench {
 #define REQUIRE(...)                                                                                    \
     REQUIRE_IF(REQUIRE_HAS_TWO_ARGUMENTS(__VA_ARGS__))(                                                 \
         UNUSED(((++testbench::REQUIRE_COUNT) && (REQUIRE_EXPAND(REQUIRE_ARGUMENT_1(__VA_ARGS__)))) || ( \
-            PRINT("Requirement failure:  #%lld\n",  ++testbench::REQUIRE_FAILURE_COUNT),                \
+            PRINT("Requirement failure:  #%lld\n", ++testbench::REQUIRE_FAILURE_COUNT),                 \
             PRINT("  Requirement:        %s\n", REQUIRE_TO_STRING(REQUIRE_ARGUMENT_1(__VA_ARGS__,))),   \
             PRINT("  File:               %s\n", __FILE__),                                              \
             PRINT("  Line:               %d\n", __LINE__),                                              \
@@ -81,7 +80,7 @@ namespace testbench {
         )                                                                                               \
     /*REQUIRE_ELSE*/,                                                                                   \
         UNUSED(((++testbench::REQUIRE_COUNT) && (__VA_ARGS__)) || (                                     \
-            PRINT("Requirement failure:  #%lld\n",  ++testbench::REQUIRE_FAILURE_COUNT),                \
+            PRINT("Requirement failure:  #%lld\n", ++testbench::REQUIRE_FAILURE_COUNT),                 \
             PRINT("  Requirement:        %s\n", REQUIRE_TO_STRING(REQUIRE_ARGUMENT_1(__VA_ARGS__,))),   \
             PRINT("  File:               %s\n", __FILE__),                                              \
             PRINT("  Line:               %d\n", __LINE__),                                              \

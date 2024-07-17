@@ -66,10 +66,30 @@ namespace testbench {
 
     #undef TEST_IS_VALUE_EQUAL_FUNCTION
 
+    template <typename array_type>
+    bool are_values_equal(const array_type& lhs, const array_type& rhs, unsigned long long int length) {
+        for (unsigned long long int index = 0; index < length; ++index) {
+            if (!is_value_equal(lhs[index], rhs[index])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     template <typename type>
     bool is_value_approx(const type& lhs, const type& rhs, const type& epsilon) {
         const type difference = (lhs - rhs) + epsilon + epsilon;
         return  ((difference >= epsilon) && (difference <= epsilon + epsilon + epsilon));
+    }
+
+    template <typename array_type, typename epsilon_type>
+    bool are_values_approx(const array_type& lhs, const array_type& rhs, unsigned long long int length, const epsilon_type& epsilon) {
+        for (unsigned long long int index = 0; index < length; ++index) {
+            if (!is_value_approx(lhs[index], rhs[index], epsilon)) {
+                return false;
+            }
+        }
+        return true;
     }
 }
 

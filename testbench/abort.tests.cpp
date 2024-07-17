@@ -25,8 +25,11 @@ namespace testbench {
         constexpr static const int sigabort = 6;
         raise(sigabort);
 
-        // Force a segfault just in case.
-        *static_cast<volatile char*>(nullptr) = static_cast<char(*)()>(nullptr)();
+        // Silence the static analyser as the below is an intentional segfault.
+        #ifndef __clang_analyzer__
+            // Force a segfault just in case.
+            *static_cast<volatile char*>(nullptr) = static_cast<char(*)()>(nullptr)();
+        #endif
 
         // This function can never return.
         for (;;);

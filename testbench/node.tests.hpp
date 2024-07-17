@@ -24,34 +24,15 @@ namespace testbench {
     public:
         using function_type = void(*)();
 
-    private:
-        static inline const test_node* root = nullptr;
-
-        const char* const file;
-        const char* const group;
-        const char* const name;
-
-        const function_type function;
-
-        const test_node* next;
+    public:
+        static inline test_node* root = nullptr;
 
     public:
-        test_node(const char* const test_file, const char* const test_group, const char* const test_name, function_type test_function);
-
-    public:
-        static void reverse();
-
-        static const test_node* get_root();
-
-        const char* get_file() const;
-
-        const char* get_group() const;
-
-        const char* get_name() const;
-
-        function_type get_function() const;
-
-        const test_node* get_next() const;
+        const char* file;
+        const char* group;
+        const char* name;
+        function_type function;
+        test_node* next;
     };
 }
 

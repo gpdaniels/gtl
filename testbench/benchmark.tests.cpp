@@ -15,7 +15,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "benchmark.tests.hpp"
-#include "abort.tests.hpp"
 
 #if defined(_MSC_VER)
 #   pragma warning(push, 0)
@@ -50,9 +49,7 @@ namespace testbench {
 
         // Testing
         while ((iterations < minimum_iterations) || (get_difference_seconds(start_nanoseconds, end_nanoseconds) < minimum_runtime)) {
-
             testFunction();
-
             ++iterations;
             end_nanoseconds = get_timestamp_nanoseconds();
         }
