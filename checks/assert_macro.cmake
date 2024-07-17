@@ -67,6 +67,7 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     # Get the number of lines in the file.
     LIST(LENGTH SOURCE_FILE_LINES SOURCE_FILE_LENGTH)
     IF(SOURCE_FILE_LENGTH LESS 35)
+        MESSAGE("CMake Error at ${CMAKE_SOURCE_DIR}/${SOURCE_FILE}:0 (MESSAGE):")
         MESSAGE(FATAL_ERROR "Assert macro in file '${SOURCE_FILE}' is not correct: The file is too short.")
     ENDIF()
     
@@ -78,12 +79,14 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
         LIST(GET SOURCE_FILE_ASSERT_LINES ${ASSERT_LINE} SOURCE_FILE_ASSERT_LINE)
         LIST(GET ASSERT_REGEX_LINES ${ASSERT_LINE} ASSERT_REGEX_LINE)
         IF(NOT SOURCE_FILE_ASSERT_LINE MATCHES "${ASSERT_REGEX_LINE}")
+            MESSAGE("CMake Error at ${CMAKE_SOURCE_DIR}/${SOURCE_FILE}:0 (MESSAGE):")
             MESSAGE(FATAL_ERROR "Assert macro in file '${SOURCE_FILE}' is not correct:\n'${SOURCE_FILE_ASSERT_LINE}' != '${ASSERT_REGEX_LINE}'.")
         ENDIF()
     ENDFOREACH()
     
     # Check there is an undef at the end.
     IF(NOT SOURCE_FILE_CONTENT MATCHES "\n#undef GTL_${SOURCE_FILE_NAME_UPPER}_ASSERT\n")
+        MESSAGE("CMake Error at ${CMAKE_SOURCE_DIR}/${SOURCE_FILE}:0 (MESSAGE):")
         MESSAGE(FATAL_ERROR "Assert macro in file '${SOURCE_FILE}' is missing its undef.")
     ENDIF()
     

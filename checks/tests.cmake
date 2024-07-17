@@ -37,6 +37,7 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     #MESSAGE(STATUS "Processing '${SOURCE_FILE}'...")
     
     IF(NOT "${SOURCE_FILE}.test.cpp" IN_LIST TEST_FILES)
+        MESSAGE("CMake Error at ${CMAKE_SOURCE_DIR}/${SOURCE_FILE}:0 (MESSAGE):")
         MESSAGE(FATAL_ERROR "Failed to find test file for '${SOURCE_FILE}'.")
     ENDIF()
     

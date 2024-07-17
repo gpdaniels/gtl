@@ -40,6 +40,7 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     
     # If 'using namespace' is detected raise an error.
     IF(SOURCE_FILE_CONTENT MATCHES "using namespace")
+        MESSAGE("CMake Error at ${CMAKE_SOURCE_DIR}/${SOURCE_FILE}:0 (MESSAGE):")
         MESSAGE(FATAL_ERROR "Detected 'using namespace' in ${SOURCE_FILE}.")
     ENDIF()
     

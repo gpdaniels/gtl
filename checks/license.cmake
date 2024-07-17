@@ -27,6 +27,7 @@ SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 FILE(GLOB_RECURSE LICENSED_FILES RELATIVE "${CMAKE_SOURCE_DIR}/"
     "${CMAKE_SOURCE_DIR}/CMakeLists.txt"
     "${CMAKE_SOURCE_DIR}/checks/*"
+    "${CMAKE_SOURCE_DIR}/script/*"
     "${CMAKE_SOURCE_DIR}/source/*"
     "${CMAKE_SOURCE_DIR}/testbench/*"
     "${CMAKE_SOURCE_DIR}/tests/*"
@@ -55,6 +56,7 @@ FOREACH(LICENSED_FILE ${LICENSED_FILES})
     # Get the number of lines in the file.
     LIST(LENGTH LICENSED_FILE_LINES LICENSED_FILE_LENGTH)
     IF(LICENSED_FILE_LENGTH LESS 18)
+        MESSAGE("CMake Error at ${CMAKE_SOURCE_DIR}/${LICENSED_FILE}:0 (MESSAGE):")
         MESSAGE(FATAL_ERROR "License in file '${LICENSED_FILE}' does not match: The file is too short.")
     ENDIF()
 
@@ -98,6 +100,7 @@ FOREACH(LICENSED_FILE ${LICENSED_FILES})
 
         IF(NOT LICENSED_FILE_LINE MATCHES "${LICENSE_REGEX_LINE}")
             MATH(EXPR LICENSE_LINE "${LICENSE_LINE}+1")
+            MESSAGE("CMake Error at ${CMAKE_SOURCE_DIR}/${LICENSED_FILE}:0 (MESSAGE):")
             MESSAGE(FATAL_ERROR "License in file '${LICENSED_FILE}' does not match on line ${LICENSE_LINE}:\n'${LICENSED_FILE_LINE}' != '${LICENSE_REGEX_LINE}'.")
         ENDIF()
     ENDFOREACH()

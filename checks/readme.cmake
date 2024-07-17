@@ -50,6 +50,7 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     # Get the number of lines in the file.
     LIST(LENGTH SOURCE_FILE_LINES SOURCE_FILE_LENGTH)
     IF(SOURCE_FILE_LENGTH LESS 24)
+        MESSAGE("CMake Error at ${CMAKE_SOURCE_DIR}/${SOURCE_FILE}:0 (MESSAGE):")
         MESSAGE(FATAL_ERROR "Readme description line in file '${SOURCE_FILE}' is not correct: The file is too short.")
     ENDIF()
     
@@ -59,6 +60,7 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     # Validate description line.
     SET(DESCRIPTION_LINE_REGEX "^// Summary:([ ]([A-Za-z][A-Za-z0-9 -_.,]+[.]))?([ ](\\[[Ww][Ii][Pp]\\]))?$")
     IF(NOT DESCRIPTION_LINE MATCHES "${DESCRIPTION_LINE_REGEX}")
+        MESSAGE("CMake Error at ${CMAKE_SOURCE_DIR}/${SOURCE_FILE}:0 (MESSAGE):")
         MESSAGE(FATAL_ERROR "Readme description line in file '${SOURCE_FILE}' is invalid.")
     ENDIF()
     
@@ -75,6 +77,8 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     # Convert the wip status into an emoji.
     IF(NOT COMPLETION_CELL MATCHES "\\[[Ww][Ii][Pp]\\]")
         SET(COMPLETION_CELL ":heavy_check_mark:")
+    ELSEIF("${DESCRIPTION_CELL}" STREQUAL "")
+        SET(COMPLETION_CELL ":bulb:")
     ELSE()
         SET(COMPLETION_CELL ":construction:")
     ENDIF()

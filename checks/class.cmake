@@ -29,6 +29,9 @@ FILE(GLOB_RECURSE CLASS_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_DI
 # Sort list of files.
 LIST(SORT CLASS_FILES)
 
+SET(MISSING_DEFINITIONS_FOUND 0)
+SET(MISSING_DEFINITIONS_MAX 5)
+
 # Check each file for include guard correctness.
 FOREACH(CLASS_FILE ${CLASS_FILES})
     
@@ -47,9 +50,17 @@ FOREACH(CLASS_FILE ${CLASS_FILES})
             STRING(TOUPPER "${CLASS_FILE_NAME}" CLASS_FILE_NAME_UPPER)
             IF(NOT CLASS_FILE_CONTENT MATCHES "#define GTL_${CLASS_FILE_NAME_UPPER}")
                 # TODO: Convert this warning into a FATAL_ERROR.
-                MESSAGE(STATUS "Missing definition of class, namespace, or #define including '${CLASS_FILE_NAME}' in ${CLASS_FILE}.")
+                MESSAGE("CMake Error at ${CMAKE_SOURCE_DIR}/${CLASS_FILE}:0 (MESSAGE): Missing definition of class, namespace, or #define including '${CLASS_FILE_NAME}'.")
+                # Count up the error messages printed.
+                MATH(EXPR MISSING_DEFINITIONS_FOUND "${MISSING_DEFINITIONS_FOUND}+1")
             ENDIF()
         ENDIF()
+    ENDIF()
+
+    # Limit the max number of errors printed.
+    IF(${MISSING_DEFINITIONS_FOUND} GREATER ${MISSING_DEFINITIONS_MAX})
+        MESSAGE("CMake Error at ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} (MESSAGE): Found more than ${MISSING_DEFINITIONS_MAX} missing definitions. Skipping printing.")
+        BREAK()
     ENDIF()
     
 ENDFOREACH()

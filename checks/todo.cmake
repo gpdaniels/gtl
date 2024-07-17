@@ -29,6 +29,9 @@ FILE(GLOB_RECURSE SOURCE_FILES RELATIVE "${CMAKE_SOURCE_DIR}/" "${CMAKE_SOURCE_D
 # Sort list of files.
 LIST(SORT SOURCE_FILES)
 
+SET(TODOS_COMMENTS_FOUND 0)
+SET(TODOS_COMMENTS_MAX 5)
+
 # Check each file for the correct license text.
 FOREACH(SOURCE_FILE ${SOURCE_FILES})
     
@@ -44,12 +47,23 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     # Remove all lines that don't match the TODO regex.
     LIST(FILTER SOURCE_FILE_LINES INCLUDE REGEX "^[ ]*(([#])|([/][/]))[ ]*[Tt][Oo][Dd][Oo][: ]")
     
-    # Check each file for the correct license text.
+    # Print a message for each found TODO comment..
     FOREACH(SOURCE_FILE_LINE ${SOURCE_FILE_LINES})
         STRING(STRIP ${SOURCE_FILE_LINE} SOURCE_FILE_LINE)
-        MESSAGE(STATUS "Found TODO in '${SOURCE_FILE}': '${SOURCE_FILE_LINE}'.")
+        MESSAGE("CMake Error at ${CMAKE_SOURCE_DIR}/${SOURCE_FILE}:0 (MESSAGE): Found TODO: '${SOURCE_FILE_LINE}'.")
+        # Count up the error messages printed.
+        MATH(EXPR TODOS_COMMENTS_FOUND "${TODOS_COMMENTS_FOUND}+1")
+        # There can be more than one TODO per file, so early exit the internal loop if we are at the limit.
+        IF(${TODOS_COMMENTS_FOUND} GREATER ${TODOS_COMMENTS_MAX})
+            BREAK()
+        ENDIF()
     ENDFOREACH()
-    
+
+    # Limit the max number of errors printed.
+    IF(${TODOS_COMMENTS_FOUND} GREATER ${TODOS_COMMENTS_MAX})
+        MESSAGE("CMake Error at ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} (MESSAGE): Found more than ${TODOS_COMMENTS_MAX} TODO comments. Skipping printing.")
+        BREAK()
+    ENDIF()
 ENDFOREACH()
 
 MESSAGE(STATUS "Finished todo comments check.")

@@ -55,6 +55,9 @@ FOREACH(PROJECT_FILE ${PROJECT_FILES})
     ELSEIF("${PROJECT_FILE}" MATCHES "^checks/[a-z]+[a-z_0-9]*[.]cmake$")
         # Check files.
         CONTINUE()
+    ELSEIF("${PROJECT_FILE}" MATCHES "^script/([a-z]+[a-z_0-9]*/)+[a-z]+[a-z_0-9]*[.]py$")
+        # Script files.
+        CONTINUE()
     ELSEIF("${PROJECT_FILE}" MATCHES "^source/([a-z]+[a-z_0-9]*/)+[a-z]+[a-z_0-9]*$")
         # Source files.
         CONTINUE()
@@ -66,6 +69,7 @@ FOREACH(PROJECT_FILE ${PROJECT_FILES})
         CONTINUE()
     ELSE()
         # Otherwise fail.
+        MESSAGE("CMake Error at ${CMAKE_SOURCE_DIR}/${PROJECT_FILE}:0 (MESSAGE):")
         MESSAGE(FATAL_ERROR "Found invalid file name: '${PROJECT_FILE}'")
     ENDIF()
     

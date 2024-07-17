@@ -51,6 +51,7 @@ ELSE()
         
         # If any are found the match location will be something other than -1.
         IF(NOT "${FOUND_CARRIAGE_RETURN_LOCATION}" MATCHES "-1")
+            MESSAGE("CMake Error at ${CMAKE_SOURCE_DIR}/${PROJECT_FILE}:0 (MESSAGE):")
             MESSAGE(FATAL_ERROR "Found a carriage return in file '${PROJECT_FILE}'.")
         ENDIF()
             
