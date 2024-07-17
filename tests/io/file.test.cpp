@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <optimise.tests.hpp>
 #include <require.tests.hpp>
 #include <template.tests.hpp>
+#include <ignored.tests.hpp>
 
 #include <io/file>
 
