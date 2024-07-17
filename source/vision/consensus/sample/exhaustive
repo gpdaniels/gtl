@@ -34,7 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vision/consensus/sampler>
 
 namespace {
-    using size_t = decltype(sizeof(1));
+    using size_t = decltype(sizeof(0));
     using ssize_t = decltype(static_cast<char*>(nullptr) - static_cast<char*>(nullptr));
 }
 

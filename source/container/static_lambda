@@ -39,7 +39,7 @@ namespace gtl {
 
 namespace {
     // Operator new requires the size_t type for its size argument.
-    using size_t = decltype(sizeof(1));
+    using size_t = decltype(sizeof(0));
 }
 
 /// @brief  Custom placement operator new to avoid including the (massive) <new> header.
