@@ -113,6 +113,8 @@ namespace gtl {
                         leaf_data[cpuid_registers::index::edx]
                     );
                 #endif
+            #else
+                static_cast<void>(leaf_id);
             #endif
             return leaf_data;
         }
@@ -233,6 +235,9 @@ namespace gtl {
                 // Return the extracted value of the bit.
                 return this->cpu_data[leaf_id][register_id] & (1u << bit_id);
             #else
+                static_cast<void>(leaf_id);
+                static_cast<void>(register_id);
+                static_cast<void>(bit_id);
                 return false;
             #endif
         }
@@ -265,6 +270,9 @@ namespace gtl {
                 // Return the extracted value of the bit.
                 return this->cpu_extended_data[extended_leaf_id][register_id] & (1u << bit_id);
             #else
+                static_cast<void>(extended_leaf_id);
+                static_cast<void>(register_id);
+                static_cast<void>(bit_id);
                 return false;
             #endif
         }
