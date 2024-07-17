@@ -22,12 +22,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vision/camera/model/pinhole>
 
 TEST(pinhole, constructor, empty) {
-    gtl::pinhole pinhole;
+    gtl::pinhole<float> pinhole;
     testbench::do_not_optimise_away(pinhole);
 }
 
 TEST(pinhole, function, get_parameters) {
-    gtl::pinhole pinhole;
+    gtl::pinhole<float> pinhole;
     float parameters[4]{};
     pinhole.get_parameters(&parameters[0], 4);
     REQUIRE(testbench::is_value_equal(parameters[0], 1.0f));
@@ -44,7 +44,7 @@ TEST(pinhole, function, get_parameters) {
 }
 
 TEST(pinhole, function, set_parameters) {
-    gtl::pinhole pinhole;
+    gtl::pinhole<float> pinhole;
     const float parameters_new[4] = { 1.0f, 2.0f, 3.0f, 4.0f };
     pinhole.set_parameters(&parameters_new[0], 4);
     float parameters[4];
@@ -57,7 +57,7 @@ TEST(pinhole, function, set_parameters) {
 
 TEST(pinhole, function, project) {
     {
-        gtl::pinhole pinhole;
+        gtl::pinhole<float> pinhole;
         const float world_point[3] = { 0, 0, 1 };
         const float image_point_expected[2] = { 0.5f, 0.5f };
         float image_point[2]{};
@@ -66,7 +66,7 @@ TEST(pinhole, function, project) {
         REQUIRE(testbench::is_value_equal(image_point[1], image_point_expected[1]));
     }
     {
-        gtl::pinhole pinhole;
+        gtl::pinhole<float> pinhole;
         const float world_point[3] = { 0, 0, 1 };
         const float image_point_expected[2] = { 0.5f, 0.5f };
         const float jacobian_projection_expected[2][3] = { { 1, 0, 0 }, { 0, 1, 0 } };
@@ -82,7 +82,7 @@ TEST(pinhole, function, project) {
         }
     }
     {
-        gtl::pinhole pinhole;
+        gtl::pinhole<float> pinhole;
         const float world_point[3] = { 0, 0, 1 };
         const float image_point_expected[2] = { 0.5f, 0.5f };
         const float jacobian_parameter_expected[2][pinhole.parameter_count] = { { 0, 0, 1, 0 }, { 0, 0, 0, 1 } };
@@ -98,7 +98,7 @@ TEST(pinhole, function, project) {
         }
     }
     {
-        gtl::pinhole pinhole;
+        gtl::pinhole<float> pinhole;
         const float world_point[3] = { -1, 1, 2 };
         const float image_point_expected[2] = { 0.0f, 1.0f };
         const float jacobian_projection_expected[2][3] = { { 0.5, 0, 0.25 }, { 0, 0.5, -0.25 } };
@@ -122,7 +122,7 @@ TEST(pinhole, function, project) {
 
 TEST(pinhole, function, unproject) {
     {
-        gtl::pinhole pinhole;
+        gtl::pinhole<float> pinhole;
         const float image_point[2] = { 0.5, 0.5 };
         const float world_ray_expected[3] = { 0, 0, 1 };
         float world_ray[3]{};
@@ -132,7 +132,7 @@ TEST(pinhole, function, unproject) {
         REQUIRE(testbench::is_value_equal(world_ray[2], world_ray_expected[2]));
     }
     {
-        gtl::pinhole pinhole;
+        gtl::pinhole<float> pinhole;
         const float image_point[2] = { 0.5, 0.5 };
         const float world_ray_expected[3] = { 0, 0, 1 };
         float jacobian_unprojection_expected[3][2] = { { 1, 0 }, { 0, 1 }, { 0, 0 } };

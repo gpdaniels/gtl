@@ -32,20 +32,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 namespace {
-    using size_t = decltype(sizeof(1));
+    using size_t = decltype(sizeof(0));
 }
 
 namespace gtl {
+    template <typename type>
     class pinhole final {
     public:
         constexpr static const size_t parameter_count = 4;
 
     private:
-        float focal_lengths[2];
-        float centre_points[2];
+        type focal_lengths[2];
+        type centre_points[2];
 
     private:
-        template <typename type>
         constexpr static const type abs(type value) {
             if ((value + type(0)) < 0) {
                 return -value;
@@ -55,17 +55,17 @@ namespace gtl {
 
     public:
         pinhole()
-            : focal_lengths{ 1.0f, 1.0f }
-            , centre_points{ 0.5f, 0.5f } {
+            : focal_lengths{ type(1.0), type(1.0) }
+            , centre_points{ type(0.5), type(0.5) } {
         }
 
-        pinhole(const float* const __restrict parameters, const size_t parameters_length) {
+        pinhole(const type* const __restrict parameters, const size_t parameters_length) {
             GTL_PINHOLE_ASSERT(parameters_length == pinhole::parameter_count, "Parameters length must match internal number of parameters.");
             this->set_parameters(parameters, parameters_length);
         }
 
     public:
-        void set_parameters(const float* const __restrict parameters, const size_t parameters_length) {
+        void set_parameters(const type* const __restrict parameters, const size_t parameters_length) {
             GTL_PINHOLE_ASSERT(parameters_length == pinhole::parameter_count, "Parameters length must match internal number of parameters.");
             static_cast<void>(parameters_length);
             this->focal_lengths[0] = parameters[0];
@@ -76,7 +76,7 @@ namespace gtl {
             GTL_PINHOLE_ASSERT(this->focal_lengths[1] > 0, "Vertical focal length must be greater than zero.");
         }
 
-        void get_parameters(float* const __restrict parameters, const size_t parameters_length) const {
+        void get_parameters(type* const __restrict parameters, const size_t parameters_length) const {
             GTL_PINHOLE_ASSERT(parameters_length == pinhole::parameter_count, "Parameters length must match internal number of parameters.");
             static_cast<void>(parameters_length);
             parameters[0] = this->focal_lengths[0];
@@ -87,19 +87,19 @@ namespace gtl {
 
     public:
         bool project(
-            const float* const __restrict point_xyz,
-            float* const __restrict point_xy,
-            float* const __restrict jacobian_projection = nullptr,
-            float* const __restrict jacobian_parameters = nullptr
+            const type* const __restrict point_xyz,
+            type* const __restrict point_xy,
+            type* const __restrict jacobian_projection = nullptr,
+            type* const __restrict jacobian_parameters = nullptr
         ) const {
             // Cannot project points with no depth, also return false for those behind the camera.
-            if (abs(point_xyz[2]) < 1.0e-12f) {
+            if (abs(point_xyz[2]) < type(1.0e-12)) {
                 return false;
             }
 
             // Project.
-            const float inverse_z = 1.0f / point_xyz[2];
-            const float undistorted_xy[2] = {
+            const type inverse_z = type(1.0) / point_xyz[2];
+            const type undistorted_xy[2] = {
                 point_xyz[0] * inverse_z,
                 point_xyz[1] * inverse_z
             };
@@ -114,11 +114,11 @@ namespace gtl {
                 // import sympy
                 // fx, fy, cx, cy, X, Y, Z = sympy.symbols('fx, fy, cx, cy, X, Y, Z')
                 // sympy.cse(sympy.Matrix([fx*X/Z+cx, fy*Y/Z+cy]).jacobian(sympy.Matrix([X, Y, Z])))
-                const float inverse_z_squared = inverse_z * inverse_z;
+                const type inverse_z_squared = inverse_z * inverse_z;
                 jacobian_projection[0 * 3 + 0] =  this->focal_lengths[0] * inverse_z;
-                jacobian_projection[0 * 3 + 1] =  0.0f;
+                jacobian_projection[0 * 3 + 1] =  type(0.0);
                 jacobian_projection[0 * 3 + 2] = -this->focal_lengths[0] * point_xyz[0] * inverse_z_squared;
-                jacobian_projection[1 * 3 + 0] =  0.0f;
+                jacobian_projection[1 * 3 + 0] =  type(0.0);
                 jacobian_projection[1 * 3 + 1] =  this->focal_lengths[1] * inverse_z;
                 jacobian_projection[1 * 3 + 2] = -this->focal_lengths[1] * point_xyz[1] * inverse_z_squared;
             }
@@ -130,25 +130,25 @@ namespace gtl {
                 // fx, fy, cx, cy, X, Y, Z = sympy.symbols('fx, fy, cx, cy, X, Y, Z')
                 // sympy.cse(sympy.Matrix([fx*X/Z+cx, fy*Y/Z+cy]).jacobian(sympy.Matrix([fx, fy, cx, cy])))
                 jacobian_parameters[0 * pinhole::parameter_count + 0] = undistorted_xy[0];
-                jacobian_parameters[0 * pinhole::parameter_count + 1] = 0.0f;
-                jacobian_parameters[0 * pinhole::parameter_count + 2] = 1.0f;
-                jacobian_parameters[0 * pinhole::parameter_count + 3] = 0.0f;
-                jacobian_parameters[1 * pinhole::parameter_count + 0] = 0.0f;
+                jacobian_parameters[0 * pinhole::parameter_count + 1] = type(0.0);
+                jacobian_parameters[0 * pinhole::parameter_count + 2] = type(1.0);
+                jacobian_parameters[0 * pinhole::parameter_count + 3] = type(0.0);
+                jacobian_parameters[1 * pinhole::parameter_count + 0] = type(0.0);
                 jacobian_parameters[1 * pinhole::parameter_count + 1] = undistorted_xy[1];
-                jacobian_parameters[1 * pinhole::parameter_count + 2] = 0.0f;
-                jacobian_parameters[1 * pinhole::parameter_count + 3] = 1.0f;
+                jacobian_parameters[1 * pinhole::parameter_count + 2] = type(0.0);
+                jacobian_parameters[1 * pinhole::parameter_count + 3] = type(1.0);
             }
 
             return true;
         }
 
         bool unproject(
-            const float* const __restrict point_xy,
-            float* const __restrict ray_xyz,
-            float* const __restrict jacobian_unprojection = nullptr
+            const type* const __restrict point_xy,
+            type* const __restrict ray_xyz,
+            type* const __restrict jacobian_unprojection = nullptr
         ) const {
             // Scale and offset.
-            const float undistorted_xy[2] = {
+            const type undistorted_xy[2] = {
                 (point_xy[0] - this->centre_points[0]) / this->focal_lengths[0],
                 (point_xy[1] - this->centre_points[1]) / this->focal_lengths[1]
             };
@@ -156,7 +156,7 @@ namespace gtl {
             // Unproject.
             ray_xyz[0] = undistorted_xy[0];
             ray_xyz[1] = undistorted_xy[1];
-            ray_xyz[2] = 1.0f;
+            ray_xyz[2] = type(1.0);
 
             // Compute the unprojection jacobian.
             if (jacobian_unprojection != nullptr) {
@@ -164,12 +164,12 @@ namespace gtl {
                 // import sympy
                 // fx, fy, cx, cy, X, Y, Z = sympy.symbols('fx, fy, cx, cy, X, Y, Z')
                 // sympy.cse(sympy.Matrix([(X-cx)/fx, (Y-cy)/fy, 1]).jacobian(sympy.Matrix([X, Y])))
-                jacobian_unprojection[0 * 2 + 0] = 1.0f / this->focal_lengths[0];
-                jacobian_unprojection[0 * 2 + 1] = 0.0f;
-                jacobian_unprojection[1 * 2 + 0] = 0.0f;
-                jacobian_unprojection[1 * 2 + 1] = 1.0f / this->focal_lengths[1];
-                jacobian_unprojection[2 * 2 + 0] = 0.0f;
-                jacobian_unprojection[2 * 2 + 1] = 0.0f;
+                jacobian_unprojection[0 * 2 + 0] = type(1.0) / this->focal_lengths[0];
+                jacobian_unprojection[0 * 2 + 1] = type(0.0);
+                jacobian_unprojection[1 * 2 + 0] = type(0.0);
+                jacobian_unprojection[1 * 2 + 1] = type(1.0) / this->focal_lengths[1];
+                jacobian_unprojection[2 * 2 + 0] = type(0.0);
+                jacobian_unprojection[2 * 2 + 1] = type(0.0);
             }
 
             return true;
