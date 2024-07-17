@@ -950,7 +950,7 @@ namespace gtl {
         }
 
     public:
-        /// @brief  Conver the big number to a string and output it in the provided buffer.
+        /// @brief  Convert the big number to a string and output it in the provided buffer.
         /// @param  buffer The output string buffer, must be larger than the decimal length of the big number plus one for null termination.
         /// @param  length The length of the output buffer.
         /// @return The decimal length of the big number, equal to the number of digits written.
@@ -970,7 +970,7 @@ namespace gtl {
             return length_digits;
         }
 
-        /// @brief  Conver the big number to an array of bytes and output it in the provided buffer.
+        /// @brief  Convert the big number to an array of bytes and output it in the provided buffer.
         /// @param  buffer The output buffer, must be larger than or equal to the byte length of the big number.
         /// @param  length The length of the output buffer.
         /// @param  pad_to_length Add leading zeros to pad the bytes to the length of the input buffer.
@@ -992,6 +992,13 @@ namespace gtl {
                 temp >>= 8;
             }
             return this->get_length_bytes();
+        }
+
+        /// @brief  Convert the big number to an unsigned integer and return it.
+        /// @return The unsigned integer value of the big number.
+        unsigned int to_unsigned_integer() const {
+            GTL_BIG_UNSIGNED_ASSERT(this->chunks.size() == 1, "Big number is too large to fit in a 32 bit unsigned integer.");
+            return this->chunks[0];
         }
     };
 }

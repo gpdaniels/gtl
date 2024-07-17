@@ -761,7 +761,7 @@ namespace gtl {
         }
 
     public:
-        /// @brief  Conver the big number to a string and output it in the provided buffer.
+        /// @brief  Convert the big number to a string and output it in the provided buffer.
         /// @param  buffer The output string buffer, must be larger than the decimal length of the big number plus one for null termination and one for a sign.
         /// @param  length The length of the output buffer.
         /// @return The decimal length of the big number, equal to the number of digits written.
@@ -771,6 +771,12 @@ namespace gtl {
                 buffer[0] = '-';
             }
             return this->magnitude.to_string(&buffer[(this->sign < 0)], length - (this->sign < 0)) + (this->sign < 0);
+        }
+
+        /// @brief  Convert the big number to an integer and return it.
+        /// @return The integer value of the big number.
+        int to_integer() const {
+            return this->sign * static_cast<int>(this->magnitude.to_unsigned_integer());
         }
     };
 }

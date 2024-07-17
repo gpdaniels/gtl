@@ -646,7 +646,7 @@ TEST(big_unsigned, operator, not_equal_to) {
     REQUIRE((big_unsigned_333 != big_unsigned_333) == false);
 }
 
-TEST(big_unsigned, operator, get_length_bits) {
+TEST(big_unsigned, function, get_length_bits) {
     unsigned long long int lhs = 1ull << 62;
     unsigned long long int rhs = 2;
 
@@ -660,7 +660,7 @@ TEST(big_unsigned, operator, get_length_bits) {
     REQUIRE(big_unsigned_333.get_length_bits() == 334);
 }
 
-TEST(big_unsigned, operator, get_length_bytes) {
+TEST(big_unsigned, function, get_length_bytes) {
     unsigned long long int lhs = 1ull << 62;
     unsigned long long int rhs = 2;
 
@@ -674,7 +674,7 @@ TEST(big_unsigned, operator, get_length_bytes) {
     REQUIRE(big_unsigned_333.get_length_bytes() == 42);
 }
 
-TEST(big_unsigned, operator, get_length_decimal) {
+TEST(big_unsigned, function, get_length_decimal) {
     unsigned long long int lhs = 1ull << 62;
     unsigned long long int rhs = 2;
 
@@ -688,7 +688,7 @@ TEST(big_unsigned, operator, get_length_decimal) {
     REQUIRE(big_unsigned_333.get_length_decimal() == 101);
 }
 
-TEST(big_unsigned, operator, to_string) {
+TEST(big_unsigned, function, to_string) {
     unsigned long long int lhs = 1ull << 62;
     unsigned long long int rhs = 2;
 
@@ -708,7 +708,7 @@ TEST(big_unsigned, operator, to_string) {
     REQUIRE(testbench::is_string_same(string_333, two_power_333));
 }
 
-TEST(big_unsigned, operator, to_bytes) {
+TEST(big_unsigned, function, to_bytes) {
     const unsigned long long int lhs = 1ull << 62;
     const unsigned long long int rhs = 2;
 
@@ -747,4 +747,13 @@ TEST(big_unsigned, operator, to_bytes) {
     gtl::big_unsigned big_unsigned_333(two_power_333, 42);
     REQUIRE(big_unsigned_333.to_bytes(&bytes_333[0], 42) == 42);
     REQUIRE(testbench::is_memory_same(&bytes_333[0], &two_power_333[0], 42));
+}
+
+TEST(big_unsigned, function, to_unsigned_integer) {
+    unsigned int lhs = 1ull << 31;
+    unsigned int rhs = 2;
+    gtl::big_unsigned big_unsigned_lhs(lhs);
+    gtl::big_unsigned big_unsigned_rhs(rhs);
+    REQUIRE(big_unsigned_lhs.to_unsigned_integer() == lhs);
+    REQUIRE(big_unsigned_rhs.to_unsigned_integer() == rhs);
 }

@@ -1150,7 +1150,7 @@ TEST(big_integer, function, abs) {
     REQUIRE(gtl::big_integer::signum(0) == 0);
 }
 
-TEST(big_integer, operator, get_length_bits) {
+TEST(big_integer, function, get_length_bits) {
     signed long long int lhs = 1ull << 62;
     signed long long int rhs = 2;
 
@@ -1176,7 +1176,7 @@ TEST(big_integer, operator, get_length_bits) {
     REQUIRE(big_integer_333_negative.get_length_bits() == 334);
 }
 
-TEST(big_integer, operator, get_length_bytes) {
+TEST(big_integer, function, get_length_bytes) {
     signed long long int lhs = 1ull << 62;
     signed long long int rhs = 2;
 
@@ -1202,7 +1202,7 @@ TEST(big_integer, operator, get_length_bytes) {
     REQUIRE(big_integer_333_negative.get_length_bytes() == 42);
 }
 
-TEST(big_integer, operator, get_length_decimal) {
+TEST(big_integer, function, get_length_decimal) {
     signed long long int lhs = 1ull << 62;
     signed long long int rhs = 2;
 
@@ -1228,7 +1228,7 @@ TEST(big_integer, operator, get_length_decimal) {
     REQUIRE(big_integer_333_negative.get_length_decimal() == 101);
 }
 
-TEST(big_integer, operator, to_string) {
+TEST(big_integer, function, to_string) {
     signed long long int lhs = 1ull << 62;
     signed long long int rhs = 2;
 
@@ -1264,4 +1264,13 @@ TEST(big_integer, operator, to_string) {
     gtl::big_integer big_integer_333_negative(two_power_333_negative, testbench::string_length(two_power_333_negative));
     REQUIRE(big_integer_333_negative.to_string(string_333_negative, 103) == 102);
     REQUIRE(testbench::is_string_same(string_333_negative, two_power_333_negative));
+}
+
+TEST(big_integer, function, to_integer) {
+    signed int lhs = static_cast<int>(0b10000000000000000000000000000000);
+    signed int rhs = 1;
+    gtl::big_integer big_integer_lhs(lhs);
+    gtl::big_integer big_integer_rhs(rhs);
+    REQUIRE(big_integer_lhs.to_integer() == lhs);
+    REQUIRE(big_integer_rhs.to_integer() == rhs);
 }
