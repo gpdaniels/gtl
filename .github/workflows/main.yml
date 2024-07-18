@@ -38,7 +38,7 @@ jobs:
         os: [macOS-latest]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Compile and test in Debug.
       run: bash compile.sh Debug
     - name: Compile and test in Release.
@@ -57,7 +57,7 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Installing valgrind
       run: |
         sudo apt-get update -qq
