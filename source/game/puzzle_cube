@@ -1,0 +1,1177 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_GAME_PUZZLE_CUBE_HPP
+#define GTL_GAME_PUZZLE_CUBE_HPP
+
+// Summary: Solver for 3x3 puzzle cubes. [wip]
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <string>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace gtl {
+    class puzzle_cube final {
+    public:
+        enum class face_type {
+            front       = 0,
+            right       = 1,
+            back        = 2,
+            left        = 3,
+            up          = 4,
+            down        = 5,
+        };
+        constexpr friend int operator+(const face_type face) {
+            return static_cast<int>(face);
+        }
+
+        enum class move_type {
+            front       = static_cast<int>(face_type::front),
+            right       = static_cast<int>(face_type::right),
+            back        = static_cast<int>(face_type::back),
+            left        = static_cast<int>(face_type::left),
+            up          = static_cast<int>(face_type::up),
+            down        = static_cast<int>(face_type::down),
+
+            middle      = 6,
+            equatial    = 7,
+            standing    = 8,
+
+            x           = 9,
+            y           = 10,
+            z           = 11,
+        };
+        constexpr friend int operator+(const move_type move) {
+            return static_cast<int>(move);
+        }
+
+        // Colours of faces.
+        enum class colour_type {
+            green   = static_cast<int>(face_type::front),
+            red     = static_cast<int>(face_type::right),
+            blue    = static_cast<int>(face_type::back),
+            orange  = static_cast<int>(face_type::left),
+            white   = static_cast<int>(face_type::up),
+            yellow  = static_cast<int>(face_type::down),
+        };
+        constexpr friend int operator+(const colour_type colour) {
+            return static_cast<int>(colour);
+        }
+
+    private:
+        // Layout of cube face_type:
+        //     this->cubie[face index][y coord][x coord]
+        //
+        //                         U[0][0] U[0][1] U[0][2]
+        //                         U[1][0] U[1][1] U[1][2]
+        //                         U[2][0] U[2][1] U[2][2]
+        // L[0][0] L[0][1] L[0][2] F[0][0] F[0][1] F[0][2] R[0][0] R[0][1] R[0][2] B[0][0] B[0][1] B[0][2]
+        // L[1][0] L[1][1] L[1][2] F[1][0] F[1][1] F[1][2] R[1][0] R[1][1] R[1][2] B[1][0] B[1][1] B[1][2]
+        // L[2][0] L[2][1] L[2][2] F[2][0] F[2][1] F[2][2] R[2][0] R[2][1] R[2][2] B[2][0] B[2][1] B[2][2]
+        //                         D[0][0] D[0][1] D[0][2]
+        //                         D[1][0] D[1][1] D[1][2]
+        //                         D[2][0] D[2][1] D[2][2]
+
+        // Definition of a cube, six faces each with nine cells.
+        colour_type cubie[6][3][3] = {
+            { { colour_type::green,  colour_type::green,  colour_type::green  }, { colour_type::green,  colour_type::green,  colour_type::green  }, { colour_type::green,  colour_type::green,  colour_type::green  }},
+            { { colour_type::red,    colour_type::red,    colour_type::red    }, { colour_type::red,    colour_type::red,    colour_type::red    }, { colour_type::red,    colour_type::red,    colour_type::red    }},
+            { { colour_type::blue,   colour_type::blue,   colour_type::blue   }, { colour_type::blue,   colour_type::blue,   colour_type::blue   }, { colour_type::blue,   colour_type::blue,   colour_type::blue   }},
+            { { colour_type::orange, colour_type::orange, colour_type::orange }, { colour_type::orange, colour_type::orange, colour_type::orange }, { colour_type::orange, colour_type::orange, colour_type::orange }},
+            { { colour_type::white,  colour_type::white,  colour_type::white  }, { colour_type::white,  colour_type::white,  colour_type::white  }, { colour_type::white,  colour_type::white,  colour_type::white  }},
+            { { colour_type::yellow, colour_type::yellow, colour_type::yellow }, { colour_type::yellow, colour_type::yellow, colour_type::yellow }, { colour_type::yellow, colour_type::yellow, colour_type::yellow }}
+        };
+
+    public:
+        void set_cubie(face_type face, int x, int y, colour_type colour) {
+            this->cubie[+face][y][x] = colour;
+        }
+        colour_type get_cubie(face_type face, int x, int y) const {
+            return this->cubie[+face][y][x];
+        }
+
+    public:
+        bool operator==(const puzzle_cube& other) const {
+            for (int f = 0; f < 6; ++f) {
+                for (int y = 0; y < 3; ++y) {
+                    for (int x = 0; x < 3; ++x) {
+                        if (this->cubie[f][y][x] != other.cubie[f][y][x]) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+        bool operator!=(const puzzle_cube& other) const {
+            return !(*this == other);
+        }
+
+    public:
+        // Check if the cube is valid (aka it is solvable)
+        bool is_valid() const {
+            // This is a 2d bool array containing the color combinations possible in a corner.
+            bool edges[6][6] = {
+                { 0, 1, 0, 1, 1, 1 },
+                { 1, 0, 1, 0, 1, 1 },
+                { 0, 1, 0, 1, 1, 1 },
+                { 1, 0, 1, 0, 1, 1 },
+                { 1, 1, 1, 1, 0, 0 },
+                { 1, 1, 1, 1, 0, 0 }
+            };
+
+            // 3D array containing the possibible clockwise corner combinations.
+            bool corners[6][6][6] = {
+                { { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 1 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 1, 0 }, { 0, 1, 0, 0, 0, 0 }, { 0, 0, 0, 1, 0, 0 } },
+                { { 0, 0, 0, 0, 1, 0 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 1 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0 } },
+                { { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 1, 0 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 1 }, { 0, 0, 0, 1, 0, 0 }, { 0, 1, 0, 0, 0, 0 } },
+                { { 0, 0, 0, 0, 0, 1 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 1, 0 }, { 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0 } },
+                { { 0, 0, 0, 1, 0, 0 }, { 1, 0, 0, 0, 0, 0 }, { 0, 1, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0 } },
+                { { 0, 1, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0 }, { 0, 0, 0, 1, 0, 0 }, { 1, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0 } }
+            };
+
+            int up1[4]      = { 7, 5, 1, 3 };
+            int down1[4]    = { 1, 5, 7, 3 };
+            int up2[4]      = { 8, 2, 0, 6 };
+            int down2[4]    = { 2, 8, 6, 0 };
+
+            // Check the totals.
+            int totals[6] = { 0, 0, 0, 0, 0, 0 };
+            for (int f = 0; f < 6; ++f) {
+                for (int y = 0; y < 3; ++y) {
+                    for (int x = 0; x < 3; ++x) {
+                        if (++totals[+cubie[f][y][x]] > 9) {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            // Check the centers
+            if (cubie[+face_type::up][1][1] == colour_type::white) {
+                // Check the colors anti-clockwise around.
+                if (!(+cubie[+face_type::right][1][1] == (+cubie[+face_type::front][1][1] + 1) % 4 &&
+                      +cubie[+face_type::back][1][1]  == (+cubie[+face_type::right][1][1] + 1) % 4 &&
+                      +cubie[+face_type::left][1][1]  == (+cubie[+face_type::back][1][1] + 1) % 4 &&
+                      +cubie[+face_type::front][1][1] == (+cubie[+face_type::left][1][1] + 1) % 4))
+                {
+                    return false;
+                }
+            }
+            if (cubie[+face_type::up][1][1] == colour_type::yellow) {
+                // Check the colors clockwise around.
+                if (!(+cubie[+face_type::left][1][1]  == (+cubie[+face_type::front][1][1] + 1) % 4 &&
+                      +cubie[+face_type::back][1][1]  == (+cubie[+face_type::left][1][1] + 1) % 4 &&
+                      +cubie[+face_type::right][1][1] == (+cubie[+face_type::back][1][1] + 1) % 4 &&
+                      +cubie[+face_type::front][1][1] == (+cubie[+face_type::right][1][1] + 1) % 4)
+                ) {
+                    return false;
+                }
+            }
+            if (cubie[+face_type::right][1][1] == colour_type::white) {
+                if (!(+cubie[+face_type::front][1][1] == (+cubie[+face_type::up][1][1] + 1) % 4 &&
+                      +cubie[+face_type::up][1][1]    == (+cubie[+face_type::back][1][1] + 1) % 4 &&
+                      +cubie[+face_type::back][1][1]  == (+cubie[+face_type::down][1][1] + 1) % 4 &&
+                      +cubie[+face_type::down][1][1]  == (+cubie[+face_type::front][1][1] + 1) % 4)
+                ) {
+                    return false;
+                }
+            }
+            if (cubie[+face_type::right][1][1] == colour_type::yellow) {
+                if (!(+cubie[+face_type::back][1][1]  == (+cubie[+face_type::up][1][1] + 1) % 4 &&
+                      +cubie[+face_type::up][1][1]    == (+cubie[+face_type::front][1][1] + 1) % 4 &&
+                      +cubie[+face_type::front][1][1] == (+cubie[+face_type::down][1][1] + 1) % 4 &&
+                      +cubie[+face_type::down][1][1]  == (+cubie[+face_type::back][1][1] + 1) % 4)
+                ) {
+                    return false;
+                }
+            }
+            if (cubie[+face_type::front][1][1] == colour_type::white) {
+                if (!(+cubie[+face_type::left][1][1]  == (+cubie[+face_type::up][1][1] + 1) % 4 &&
+                      +cubie[+face_type::up][1][1]    == (+cubie[+face_type::right][1][1] + 1) % 4 &&
+                      +cubie[+face_type::right][1][1] == (+cubie[+face_type::down][1][1] + 1) % 4 &&
+                      +cubie[+face_type::down][1][1]  == (+cubie[+face_type::left][1][1] + 1) % 4)
+                ) {
+                    return false;
+                }
+            }
+            if (cubie[+face_type::front][1][1] == colour_type::yellow) {
+                if (!(+cubie[+face_type::right][1][1] == (+cubie[+face_type::up][1][1] + 1) % 4 &&
+                      +cubie[+face_type::up][1][1]    == (+cubie[+face_type::left][1][1] + 1) % 4 &&
+                      +cubie[+face_type::left][1][1]  == (+cubie[+face_type::down][1][1] + 1) % 4 &&
+                      +cubie[+face_type::down][1][1]  == (+cubie[+face_type::right][1][1] + 1) % 4)
+                ) {
+                    return false;
+                }
+            }
+            // Check the edges
+            // First check the up slice
+            for (int i = 0; i < 4; i++) {
+                // Check if top center of each face, combined with the corresponding up square is possible.
+                if (edges[+cubie[i][0][1]][+cubie[+face_type::up][up1[i]/3][up1[i]%3]] && edges[+cubie[+face_type::up][up1[i]/3][up1[i]%3]][+cubie[i][0][1]]) {
+                    //If so, set them to false so there can't be a second.
+                    edges[+cubie[i][0][1]][+cubie[+face_type::up][up1[i]/3][up1[i]%3]] = 0;
+                    edges[+cubie[+face_type::up][up1[i]/3][up1[i]%3]][+cubie[i][0][1]] = 0;
+                }
+                else {
+                    return false;
+                }
+            }
+            // Then the equatial slice
+            for (int i = 0; i < 4; i++) {
+                //check if square 5 (center right) of every face, combined with square 3 (center left) of the next face.
+                if (edges[+cubie[i][1][2]][+cubie[(i + 1) % 4][1][0]] && edges[+cubie[(i + 1) % 4][1][0]][+cubie[i][1][2]]) {
+                    //If so, set them to false so there can't be a second.
+                    edges[+cubie[i][1][2]][+cubie[(i + 1) % 4][1][0]] = 0;
+                    edges[+cubie[(i + 1) % 4][1][0]][+cubie[i][1][2]] = 0;
+                }
+                else {
+                    return false;
+                }
+            }
+            // Then the down slice
+            for (int i = 0; i < 4; i++) {
+                // Check if square 7 (down center) of each face, combined with the corresponding down square is possible.
+                if (edges[+cubie[i][2][1]][+cubie[+face_type::down][down1[i]/3][down1[i]%3]] && edges[+cubie[+face_type::down][down1[i]/3][down1[i]%3]][+cubie[i][2][1]]) {
+                    // If so, set them to false so there can't be a second.
+                    edges[+cubie[i][2][1]][+cubie[+face_type::down][down1[i]/3][down1[i]%3]] = 0;
+                    edges[+cubie[+face_type::down][down1[i]/3][down1[i]%3]][+cubie[i][2][1]] = 0;
+                }
+                else {
+                    return false;
+                }
+            }
+            // Next check the corners
+            // First the up slice
+            for (int i = 0; i < 4; i++) {
+                // Check if square 2 (top right) of each face, combined with the corresponding up square, combined with square 0 of the next face is possible.
+                // Repeat for every possible starting point
+                if (
+                    corners[+cubie[i][0][2]][+cubie[+face_type::up][up2[i]/3][up2[i]%3]][+cubie[(i + 1) % 4][0][0]] &&
+                    corners[+cubie[+face_type::up][up2[i]/3][up2[i]%3]][+cubie[(i + 1) % 4][0][0]][+cubie[i][0][2]] &&
+                    corners[+cubie[(i + 1) % 4][0][0]][+cubie[i][0][2]][+cubie[+face_type::up][up2[i]/3][up2[i]%3]]
+                ) {
+                    corners[+cubie[i][0][2]][+cubie[+face_type::up][up2[i]/3][up2[i]%3]][+cubie[(i + 1) % 4][0][0]] = 0;
+                    corners[+cubie[+face_type::up][up2[i]/3][up2[i]%3]][+cubie[(i + 1) % 4][0][0]][+cubie[i][0][2]] = 0;
+                    corners[+cubie[(i + 1) % 4][0][0]][+cubie[i][0][2]][+cubie[+face_type::up][up2[i]/3][up2[i]%3]] = 0;
+                }
+                else {
+                    return false;
+                }
+            }
+            // Then the down slice
+            for (int i = 0; i < 4; i++) {
+                // Check if square 8 (down right) of each face, combined with the corresponding down square, combined with square 6 of the next face is possible.
+                // Repeat for every possible starting point
+                if (
+                    corners[+cubie[i][2][2]][+cubie[(i + 1) % 4][2][0]][+cubie[+face_type::down][down2[i]/3][down2[i]%3]] &&
+                    corners[+cubie[(i + 1) % 4][2][0]][+cubie[+face_type::down][down2[i]/3][down2[i]%3]][+cubie[i][2][2]] &&
+                    corners[+cubie[+face_type::down][down2[i]/3][down2[i]%3]][+cubie[i][2][2]][+cubie[(i + 1) % 4][2][0]]
+                ) {
+                    corners[+cubie[i][2][2]][+cubie[(i + 1) % 4][2][0]][+cubie[+face_type::down][down2[i]/3][down2[i]%3]] = 0;
+                    corners[+cubie[(i + 1) % 4][2][0]][+cubie[+face_type::down][down2[i]/3][down2[i]%3]][+cubie[i][2][2]] = 0;
+                    corners[+cubie[+face_type::down][down2[i]/3][down2[i]%3]][+cubie[i][2][2]][+cubie[(i + 1) % 4][2][0]] = 0;
+                }
+                else {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Check if the cube is solved.
+        bool is_solved() const {
+            for (int f = 0; f < 6; ++f) {
+                for (int y = 0; y < 3; ++y) {
+                    for (int x = 0; x < 3; ++x) {
+                        if (this->cubie[f][y][x] != this->cubie[f][1][1]) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+    public:
+        // Apply a single move to the cube, optionally multiple times.
+        void apply_moves(const move_type& move, const int turns = 1, std::string* record = nullptr) {
+            constexpr static const auto cycle = [](colour_type& first, colour_type& second, colour_type& third, colour_type& fourth) {
+                const colour_type temp = first;
+                first = fourth;
+                fourth = third;
+                third = second;
+                second = temp;
+            };
+            const int minimal_clockwise_turns = ((turns % 4) < 0) ? ((turns % 4) + 4) : (turns % 4);
+            for (int turn = 0; turn < minimal_clockwise_turns; ++turn) {
+                switch (move) {
+                    // Rotate a single face.
+                    case move_type::front:
+                        if (record) record->push_back('F');
+                        // Turn the outsides of edges and corners.
+                        cycle(this->cubie[1][0][0], this->cubie[5][0][2], this->cubie[3][2][2], this->cubie[4][2][0]);
+                        cycle(this->cubie[1][1][0], this->cubie[5][0][1], this->cubie[3][1][2], this->cubie[4][2][1]);
+                        cycle(this->cubie[1][2][0], this->cubie[5][0][0], this->cubie[3][0][2], this->cubie[4][2][2]);
+                        // Turn the face.
+                        cycle(this->cubie[0][0][0], this->cubie[0][0][2], this->cubie[0][2][2], this->cubie[0][2][0]);
+                        cycle(this->cubie[0][0][1], this->cubie[0][1][2], this->cubie[0][2][1], this->cubie[0][1][0]);
+                        break;
+                    case move_type::right:
+                        if (record) record->push_back('R');
+                        // Turn the outsides of edges and corners.
+                        cycle(this->cubie[0][2][2], this->cubie[4][2][2], this->cubie[2][0][0], this->cubie[5][2][2]);
+                        cycle(this->cubie[0][1][2], this->cubie[4][1][2], this->cubie[2][1][0], this->cubie[5][1][2]);
+                        cycle(this->cubie[0][0][2], this->cubie[4][0][2], this->cubie[2][2][0], this->cubie[5][0][2]);
+                        // Turn the face.
+                        cycle(this->cubie[1][0][0], this->cubie[1][0][2], this->cubie[1][2][2], this->cubie[1][2][0]);
+                        cycle(this->cubie[1][0][1], this->cubie[1][1][2], this->cubie[1][2][1], this->cubie[1][1][0]);
+                        break;
+                    case move_type::back:
+                        if (record) record->push_back('B');
+                        // Turn the outsides of edges and corners.
+                        cycle(this->cubie[1][0][2], this->cubie[4][0][0], this->cubie[3][2][0], this->cubie[5][2][2]);
+                        cycle(this->cubie[1][1][2], this->cubie[4][0][1], this->cubie[3][1][0], this->cubie[5][2][1]);
+                        cycle(this->cubie[1][2][2], this->cubie[4][0][2], this->cubie[3][0][0], this->cubie[5][2][0]);
+                        // Turn the face.
+                        cycle(this->cubie[2][0][0], this->cubie[2][0][2], this->cubie[2][2][2], this->cubie[2][2][0]);
+                        cycle(this->cubie[2][0][1], this->cubie[2][1][2], this->cubie[2][2][1], this->cubie[2][1][0]);
+                        break;
+                    case move_type::left:
+                        if (record) record->push_back('L');
+                        // Turn the outsides of edges and corners.
+                        cycle(this->cubie[0][0][0], this->cubie[5][0][0], this->cubie[2][2][2], this->cubie[4][0][0]);
+                        cycle(this->cubie[0][1][0], this->cubie[5][1][0], this->cubie[2][1][2], this->cubie[4][1][0]);
+                        cycle(this->cubie[0][2][0], this->cubie[5][2][0], this->cubie[2][0][2], this->cubie[4][2][0]);
+                        // Turn the face.
+                        cycle(this->cubie[3][0][0], this->cubie[3][0][2], this->cubie[3][2][2], this->cubie[3][2][0]);
+                        cycle(this->cubie[3][0][1], this->cubie[3][1][2], this->cubie[3][2][1], this->cubie[3][1][0]);
+                        break;
+                    case move_type::up:
+                        if (record) record->push_back('U');
+                        // Turn the outsides of edges and corners.
+                        cycle(this->cubie[0][0][0], this->cubie[3][0][0], this->cubie[2][0][0], this->cubie[1][0][0]);
+                        cycle(this->cubie[0][0][1], this->cubie[3][0][1], this->cubie[2][0][1], this->cubie[1][0][1]);
+                        cycle(this->cubie[0][0][2], this->cubie[3][0][2], this->cubie[2][0][2], this->cubie[1][0][2]);
+                        // Turn the face.
+                        cycle(this->cubie[4][0][0], this->cubie[4][0][2], this->cubie[4][2][2], this->cubie[4][2][0]);
+                        cycle(this->cubie[4][0][1], this->cubie[4][1][2], this->cubie[4][2][1], this->cubie[4][1][0]);
+                        break;
+                    case move_type::down:
+                        if (record) record->push_back('D');
+                        // Turn the outsides of edges and corners.
+                        cycle(this->cubie[0][2][0], this->cubie[1][2][0], this->cubie[2][2][0], this->cubie[3][2][0]);
+                        cycle(this->cubie[0][2][1], this->cubie[1][2][1], this->cubie[2][2][1], this->cubie[3][2][1]);
+                        cycle(this->cubie[0][2][2], this->cubie[1][2][2], this->cubie[2][2][2], this->cubie[3][2][2]);
+                        // Turn the face.
+                        cycle(this->cubie[5][0][0], this->cubie[5][0][2], this->cubie[5][2][2], this->cubie[5][2][0]);
+                        cycle(this->cubie[5][0][1], this->cubie[5][1][2], this->cubie[5][2][1], this->cubie[5][1][0]);
+                        break;
+
+                    // Rotate a middle layer.
+                    case move_type::middle:
+                        if (record) record->push_back('M');
+                        cycle(this->cubie[0][0][1], this->cubie[5][0][1], this->cubie[2][2][1], this->cubie[4][0][1]);
+                        cycle(this->cubie[0][1][1], this->cubie[5][1][1], this->cubie[2][1][1], this->cubie[4][1][1]);
+                        cycle(this->cubie[0][2][1], this->cubie[5][2][1], this->cubie[2][0][1], this->cubie[4][2][1]);
+                        break;
+                    case move_type::equatial:
+                        if (record) record->push_back('E');
+                        cycle(this->cubie[0][1][0], this->cubie[1][1][0], this->cubie[2][1][0], this->cubie[3][1][0]);
+                        cycle(this->cubie[0][1][1], this->cubie[1][1][1], this->cubie[2][1][1], this->cubie[3][1][1]);
+                        cycle(this->cubie[0][1][2], this->cubie[1][1][2], this->cubie[2][1][2], this->cubie[3][1][2]);
+                        break;
+                    case move_type::standing:
+                        if (record) record->push_back('S');
+                        cycle(this->cubie[1][0][1], this->cubie[5][1][2], this->cubie[3][2][1], this->cubie[4][1][0]);
+                        cycle(this->cubie[1][1][1], this->cubie[5][1][1], this->cubie[3][1][1], this->cubie[4][1][1]);
+                        cycle(this->cubie[1][2][1], this->cubie[5][1][0], this->cubie[3][0][1], this->cubie[4][1][2]);
+                        break;
+
+                    // Rotate the whole cube rather than just a face.
+                    case move_type::x:
+                        if (record) record->append(std::string(minimal_clockwise_turns, 'X'));
+                        // Ignores left and right faces.
+                        this->apply_moves(move_type::right, turns);
+                        this->apply_moves(move_type::middle, 4 - turns);
+                        this->apply_moves(move_type::left, 4 - turns);
+                        // Now return rather than break as multiple turns are already handled by the recursive calls.
+                        return;
+                    case move_type::y:
+                        if (record) record->append(std::string(minimal_clockwise_turns, 'Y'));
+                        // Ignores up and down faces.
+                        this->apply_moves(move_type::up, turns);
+                        this->apply_moves(move_type::equatial, 4 - turns);
+                        this->apply_moves(move_type::down, 4 - turns);
+                        // Now return rather than break as multiple turns are already handled by the recursive calls.
+                        return;
+                    case move_type::z:
+                        if (record) record->append(std::string(minimal_clockwise_turns, 'Z'));
+                        // Ignores front and back faces.
+                        this->apply_moves(move_type::front, turns);
+                        this->apply_moves(move_type::standing, turns);
+                        this->apply_moves(move_type::back, 4 - turns);
+                        // Now return rather than break as multiple turns are already handled by the recursive calls.
+                        return;
+                }
+            }
+        }
+
+        // Apply a series of moves to the cube.
+        bool apply_moves(const char* move_string, std::string* record = nullptr) {
+            if (move_string == nullptr) {
+                return true;
+            }
+            while (*move_string != 0) {
+                const char move_character = *move_string++;
+                switch (move_character) {
+                    default: return false;
+                    case 'U': this->apply_moves(move_type::up, 1, record); break;
+                    case 'D': this->apply_moves(move_type::down, 1, record); break;
+                    case 'L': this->apply_moves(move_type::left, 1, record); break;
+                    case 'R': this->apply_moves(move_type::right, 1, record); break;
+                    case 'F': this->apply_moves(move_type::front, 1, record); break;
+                    case 'B': this->apply_moves(move_type::back, 1, record); break;
+                    case 'M': this->apply_moves(move_type::middle, 1, record); break;
+                    case 'E': this->apply_moves(move_type::equatial, 1, record); break;
+                    case 'S': this->apply_moves(move_type::standing, 1, record); break;
+                    case 'X': this->apply_moves(move_type::x, 1, record); break;
+                    case 'Y': this->apply_moves(move_type::y, 1, record); break;
+                    case 'Z': this->apply_moves(move_type::z, 1, record); break;
+                }
+            }
+            return true;
+        }
+
+    public:
+        // Check that there is a cross on the down face and all side faces have the correct centre and bottom cell.
+        bool validate_first_layer_cross() const {
+            bool valid = true;
+            // Check there is a cross of all the same colour on the down face of the cube.
+            valid &= (this->cubie[+face_type::down][0][1] == this->cubie[+face_type::down][1][1]);
+            valid &= (this->cubie[+face_type::down][1][0] == this->cubie[+face_type::down][1][1]);
+            valid &= (this->cubie[+face_type::down][1][2] == this->cubie[+face_type::down][1][1]);
+            valid &= (this->cubie[+face_type::down][2][1] == this->cubie[+face_type::down][1][1]);
+            // Check the side faces of the cross match the centre of their respective faces.
+            valid &= (this->cubie[+face_type::front][2][1] == this->cubie[+face_type::front][1][1]);
+            valid &= (this->cubie[+face_type::right][2][1] == this->cubie[+face_type::right][1][1]);
+            valid &= (this->cubie[+face_type::back][2][1] == this->cubie[+face_type::back][1][1]);
+            valid &= (this->cubie[+face_type::left][2][1] == this->cubie[+face_type::left][1][1]);
+            return valid;
+        }
+
+        // Check that the corners are all the same colour as the centre on the bottom face of the cube.
+        bool validate_first_layer_corners() const {
+            bool valid = true;
+            // Check the corners of the down face match the centre.
+            valid &= (this->cubie[+face_type::down][0][0] == this->cubie[+face_type::down][1][1]);
+            valid &= (this->cubie[+face_type::down][0][2] == this->cubie[+face_type::down][1][1]);
+            valid &= (this->cubie[+face_type::down][2][0] == this->cubie[+face_type::down][1][1]);
+            valid &= (this->cubie[+face_type::down][2][2] == this->cubie[+face_type::down][1][1]);
+            // Check the side faces of the corners match the centre of their respective faces.
+            valid &= (this->cubie[+face_type::front][2][0] == this->cubie[+face_type::front][1][1]);
+            valid &= (this->cubie[+face_type::front][2][2] == this->cubie[+face_type::front][1][1]);
+            valid &= (this->cubie[+face_type::right][2][0] == this->cubie[+face_type::right][1][1]);
+            valid &= (this->cubie[+face_type::right][2][2] == this->cubie[+face_type::right][1][1]);
+            valid &= (this->cubie[+face_type::back][2][0] == this->cubie[+face_type::back][1][1]);
+            valid &= (this->cubie[+face_type::back][2][2] == this->cubie[+face_type::back][1][1]);
+            valid &= (this->cubie[+face_type::left][2][0] == this->cubie[+face_type::left][1][1]);
+            valid &= (this->cubie[+face_type::left][2][2] == this->cubie[+face_type::left][1][1]);
+            return valid;
+        }
+
+        // Check that all the middle layer edges of the cube (front, right, back, left) are the same colour as the centre of their respective faces.
+        bool validate_middle_edges() const {
+            bool valid = true;
+            valid &= ((this->cubie[+face_type::front][1][0] == this->cubie[+face_type::front][1][1]) && (this->cubie[+face_type::front][1][2] == this->cubie[+face_type::front][1][1]));
+            valid &= ((this->cubie[+face_type::right][1][0] == this->cubie[+face_type::right][1][1]) && (this->cubie[+face_type::right][1][2] == this->cubie[+face_type::right][1][1]));
+            valid &= ((this->cubie[+face_type::back][1][0] == this->cubie[+face_type::back][1][1]) && (this->cubie[+face_type::back][1][2] == this->cubie[+face_type::back][1][1]));
+            valid &= ((this->cubie[+face_type::left][1][0] == this->cubie[+face_type::left][1][1]) && (this->cubie[+face_type::left][1][2] == this->cubie[+face_type::left][1][1]));
+            return valid;
+        }
+
+        // Check that there is a cross on the top layer.
+        bool validate_last_layer_cross() const {
+            bool valid = true;
+            // Check there is a cross of all the same colour on the up face of the cube.
+            valid &= (this->cubie[+face_type::up][0][1] == this->cubie[+face_type::up][1][1]);
+            valid &= (this->cubie[+face_type::up][1][0] == this->cubie[+face_type::up][1][1]);
+            valid &= (this->cubie[+face_type::up][1][2] == this->cubie[+face_type::up][1][1]);
+            valid &= (this->cubie[+face_type::up][2][1] == this->cubie[+face_type::up][1][1]);
+            return valid;
+        }
+
+        // Check that the edges of the cross on the top layer are correct.
+        bool validate_last_layer_edges() const {
+            bool valid = true;
+            // Check there is a cross of all the same colour on the up face of the cube.
+            valid &= (this->cubie[+face_type::front][0][1] == this->cubie[+face_type::front][1][1]);
+            valid &= (this->cubie[+face_type::right][0][1] == this->cubie[+face_type::right][1][1]);
+            valid &= (this->cubie[+face_type::back][0][1] == this->cubie[+face_type::back][1][1]);
+            valid &= (this->cubie[+face_type::left][0][1] == this->cubie[+face_type::left][1][1]);
+            return valid;
+        }
+
+        // Check that the corners of the top layer are the correct colour.
+        bool validate_last_layer_corner_positions() const {
+            bool valid = true;
+            // Check all corners of the up face are in the correct position.
+            puzzle_cube temp_cube = *this;
+            for (int i = 0; i < 4; ++i) {
+                valid &= (
+                    (
+                        (temp_cube.cubie[+face_type::front][0][2] == temp_cube.cubie[+face_type::front][1][1]) &&
+                        (temp_cube.cubie[+face_type::right][0][0] == temp_cube.cubie[+face_type::right][1][1]) &&
+                        (temp_cube.cubie[+face_type::up][2][2] == temp_cube.cubie[+face_type::up][1][1])
+                    ) || (
+                        (temp_cube.cubie[+face_type::front][0][2] == temp_cube.cubie[+face_type::up][1][1]) &&
+                        (temp_cube.cubie[+face_type::right][0][0] == temp_cube.cubie[+face_type::front][1][1]) &&
+                        (temp_cube.cubie[+face_type::up][2][2] == temp_cube.cubie[+face_type::right][1][1])
+                    ) || (
+                        (temp_cube.cubie[+face_type::front][0][2] == temp_cube.cubie[+face_type::right][1][1]) &&
+                        (temp_cube.cubie[+face_type::right][0][0] == temp_cube.cubie[+face_type::up][1][1]) &&
+                        (temp_cube.cubie[+face_type::up][2][2] == temp_cube.cubie[+face_type::front][1][1])
+                    )
+                );
+                temp_cube.apply_moves(move_type::y);
+            }
+            return valid;
+        }
+
+    public:
+        // Transform the cube so that there is a cross on the down face.
+        bool solve_first_layer_cross(std::string* solution = nullptr) {
+            // Check if we are already done.
+            if (this->validate_first_layer_cross()) {
+                return true;
+            }
+
+            // The cross should be able to be solved max 4 rounds. One edge per round.
+            for (int i = 0; i < 4; ++i) {
+                const colour_type colour_right = cubie[+face_type::right][1][1];
+                const colour_type colour_down  = cubie[+face_type::down][1][1];
+
+                // The four times that the piece is on the right face, and just needs spun into position
+                if ((cubie[+face_type::right][0][1] == colour_right) && (cubie[+face_type::up][1][2] == colour_down)) {
+                    this->apply_moves("RR", solution);
+                }
+                else if (cubie[+face_type::right][1][2] == colour_right && cubie[+face_type::back][1][0] == colour_down) {
+                    this->apply_moves("R", solution);
+                }
+                else if (cubie[+face_type::right][1][0] == colour_right && cubie[+face_type::front][1][2] == colour_down) {
+                    this->apply_moves("RRR", solution);
+                }
+                else if (cubie[+face_type::right][2][1] == colour_right && cubie[+face_type::down][1][2] == colour_down) {
+                    // Already correct.
+                }
+
+                // The four times that the piece is on the right face, but isn't in a nice orientation
+                else if (cubie[+face_type::right][0][1] == colour_down && cubie[+face_type::up][1][2] == colour_right) {
+                    this->apply_moves("UFRRRFFF", solution);
+                }
+                else if (cubie[+face_type::right][1][2] == colour_down && cubie[+face_type::back][1][0] == colour_right) {
+                    this->apply_moves("DBBBDDD", solution);
+                }
+                else if (cubie[+face_type::right][1][0] == colour_down && cubie[+face_type::front][1][2] == colour_right) {
+                    this->apply_moves("DDDFD", solution);
+                }
+                else if (cubie[+face_type::right][2][1] == colour_down && cubie[+face_type::down][1][2] == colour_right) {
+                    this->apply_moves("DDDFFFDRRR", solution);
+                }
+
+                // The four positions where it's on the top of the the middle slice, i.e. not on the right or on the left
+                else if (cubie[+face_type::up][2][1] == colour_right && cubie[+face_type::front][0][1] == colour_down) {
+                    this->apply_moves("FRRRFFF", solution);
+                }
+                else if (cubie[+face_type::up][2][1] == colour_down && cubie[+face_type::front][0][1] == colour_right) {
+                    this->apply_moves("UUURR", solution);
+                }
+                else if(cubie[+face_type::up][0][1] == colour_right && cubie[+face_type::back][0][1] == colour_down) {
+                    this->apply_moves("BBBRB", solution);
+                }
+                else if(cubie[+face_type::up][0][1] == colour_down && cubie[+face_type::back][0][1] == colour_right) {
+                    this->apply_moves("URR", solution);
+                }
+
+                // The four positions where it's on the bottom of the middle slice, i.e. not on the right or the left
+                else if (cubie[+face_type::down][0][1] == colour_right && cubie[+face_type::front][2][1] == colour_down) {
+                    this->apply_moves("FFFRRR", solution);
+                }
+                else if (cubie[+face_type::down][0][1] == colour_down && cubie[+face_type::front][2][1] == colour_right) {
+                    this->apply_moves("FFFDDDFD", solution);
+                }
+                else if (cubie[+face_type::down][2][1] == colour_right && cubie[+face_type::back][2][1] == colour_down) {
+                    this->apply_moves("BR", solution);
+                }
+                else if (cubie[+face_type::down][2][1] == colour_down && cubie[+face_type::back][2][1] == colour_right) {
+                    this->apply_moves("BDBBBDDD", solution);
+                }
+
+                // Now, the 8 positions where it's on the left hand face
+                else if (cubie[+face_type::up][1][0] == colour_right && cubie[+face_type::left][0][1] == colour_down) {
+                    this->apply_moves("LLLDBDDDL", solution);
+                }
+                else if (cubie[+face_type::up][1][0] == colour_down && cubie[+face_type::left][0][1] == colour_right) {
+                    this->apply_moves("UURR", solution);
+                }
+                else if (cubie[+face_type::back][1][2] == colour_right && cubie[+face_type::left][1][0] == colour_down) {
+                    this->apply_moves("DBDDD", solution);
+                }
+                else if (cubie[+face_type::back][1][2] == colour_down && cubie[+face_type::left][1][0] == colour_right) {
+                    this->apply_moves("DDLLLDD", solution);
+                }
+                else if (cubie[+face_type::front][1][0] == colour_right && cubie[+face_type::left][1][2] == colour_down) {
+                    this->apply_moves("DDDFFFD", solution);
+                }
+                else if (cubie[+face_type::front][1][0] == colour_down && cubie[+face_type::left][1][2] == colour_right) {
+                    this->apply_moves("DDLDD", solution);
+                }
+                else if (cubie[+face_type::down][1][0] == colour_down && cubie[+face_type::left][2][1] == colour_right) {
+                    this->apply_moves("LLLDDLDD", solution);
+                }
+                else if (cubie[+face_type::down][1][0] == colour_right && cubie[+face_type::left][2][1] == colour_down) {
+                    this->apply_moves("LLLDDDFFFD", solution);
+                }
+                else {
+                    // Should never get here.
+                    return false;
+                }
+                this->apply_moves("Y", solution);
+            }
+
+            return (this->validate_first_layer_cross());
+        }
+
+        // Transform the cube so that the down face is uniform.
+        bool solve_first_layer_corners(std::string* solution = nullptr) {
+            // Must start with a valid cross.
+            if (!validate_first_layer_cross()) {
+                return false;
+            }
+
+            // Check if we are already done.
+            if (this->validate_first_layer_corners()) {
+                return true;
+            }
+
+            for (int i = 0; i < 4 * 4; ++i) {
+                // Rotate first to allow us to continue if already set.
+                this->apply_moves("Y", solution);
+
+                // Check if the corner on the bottom cross is already done.
+                if (
+                    (this->cubie[+face_type::down][0][0] == this->cubie[+face_type::down][1][1]) &&
+                    (this->cubie[+face_type::left][2][2] == this->cubie[+face_type::left][1][1]) &&
+                    (this->cubie[+face_type::front][2][0] == this->cubie[+face_type::front][1][1])
+                ) {
+                    continue;
+                }
+
+                // Search top layer for corner cubes (note correct colour could be on any side) and solve.
+                for (int k = 0; k < 4; ++k) {
+                    if (
+                        (this->cubie[+face_type::up][2][0] == this->cubie[+face_type::down][1][1]) &&
+                        (this->cubie[+face_type::left][0][2] == this->cubie[+face_type::front][1][1]) &&
+                        (this->cubie[+face_type::front][0][0] == this->cubie[+face_type::left][1][1])
+                    ) {
+                        this->apply_moves("LLLULFUUFFF", solution);
+                        break;
+                    }
+                    else if (
+                        (this->cubie[+face_type::left][0][2] == this->cubie[+face_type::down][1][1]) &&
+                        (this->cubie[+face_type::up][2][0] == this->cubie[+face_type::left][1][1]) &&
+                        (this->cubie[+face_type::front][0][0] == this->cubie[+face_type::front][1][1])
+                    ) {
+                        this->apply_moves("LLLUUUL", solution);
+                        break;
+                    }
+                    else if (
+                        (this->cubie[+face_type::front][0][0] == this->cubie[+face_type::down][1][1]) &&
+                        (this->cubie[+face_type::up][2][0] == this->cubie[+face_type::front][1][1]) &&
+                        (this->cubie[+face_type::left][0][2] == this->cubie[+face_type::left][1][1])
+                    ) {
+                        this->apply_moves("FUFFF", solution);
+                        break;
+                    }
+                    this->apply_moves("U", solution);
+                }
+
+                // Check if the corner on the bottom cross is done now.
+                if (
+                    (this->cubie[+face_type::down][0][0] == this->cubie[+face_type::down][1][1]) &&
+                    (this->cubie[+face_type::left][2][2] == this->cubie[+face_type::left][1][1]) &&
+                    (this->cubie[+face_type::front][2][0] == this->cubie[+face_type::front][1][1])
+                ) {
+                    continue;
+                }
+
+                // Search bottom layer for twisted corners.
+                if (
+                    (this->cubie[+face_type::left][2][2] == this->cubie[+face_type::down][1][1]) &&
+                    (this->cubie[+face_type::down][0][0] == this->cubie[+face_type::front][1][1]) &&
+                    (this->cubie[+face_type::front][2][0] == this->cubie[+face_type::left][1][1])
+                ) {
+                    this->apply_moves("LLLULFUFFFLLLULFUFFF", solution);
+                    continue;
+                }
+                else if (
+                    (this->cubie[+face_type::front][2][0] == this->cubie[+face_type::down][1][1]) &&
+                    (this->cubie[+face_type::left][2][2] == this->cubie[+face_type::front][1][1]) &&
+                    (this->cubie[+face_type::down][0][0] == this->cubie[+face_type::left][1][1])
+                ) {
+                    this->apply_moves("LLLULFUFFF", solution);
+                }
+                else {
+                    // If not found anywhere displace the current.
+                    this->apply_moves("FUFFF", solution);
+                }
+            }
+
+            return this->validate_first_layer_corners();
+        }
+
+        // Transform the cube so that the edges along the sides of the down face are correct.
+        bool solve_middle_edges(std::string* solution = nullptr) {
+            // Must start with a valid cross and corners.
+            if ((!validate_first_layer_cross()) || (!this->validate_first_layer_corners())) {
+                return false;
+            }
+
+            // Check if we are already done.
+            if (this->validate_middle_edges()) {
+                return true;
+            }
+
+            for (int i = 0; i < 4*4*4; ++i) {
+                // Rotate first to allow us to continue if already set.
+                this->apply_moves("Y", solution);
+
+                // Check if left and right middle cells are correct, if so go to next face.
+                if (
+                    (this->cubie[+face_type::front][1][0] == this->cubie[+face_type::front][1][1]) &&
+                    (this->cubie[+face_type::left][1][2] == this->cubie[+face_type::left][1][1]) &&
+                    (this->cubie[+face_type::front][1][2] == this->cubie[+face_type::front][1][1]) &&
+                    (this->cubie[+face_type::right][1][0] == this->cubie[+face_type::right][1][1])
+                ) {
+                    continue;
+                }
+
+                // Search for top middle cell to move into position.
+                for (int k = 0; k < 4; ++k) {
+                    if (this->cubie[+face_type::front][0][1] == this->cubie[+face_type::front][1][1]) {
+                        if (this->cubie[+face_type::up][2][1] == this->cubie[+face_type::left][1][1]) {
+                            this->apply_moves("UUULLLULUFUUUFFF", solution);
+                            break;
+                        }
+                        else if (this->cubie[+face_type::up][2][1] == this->cubie[+face_type::right][1][1]) {
+                            this->apply_moves("URUUURRRUUUFFFUF", solution);
+                            break;
+                        }
+                    }
+                    this->apply_moves("U", solution);
+                }
+
+                // Check if left and right middle cells are correct, if so go to next face.
+                if (
+                    (this->cubie[+face_type::front][1][0] == this->cubie[+face_type::front][1][1]) &&
+                    (this->cubie[+face_type::left][1][2] == this->cubie[+face_type::left][1][1]) &&
+                    (this->cubie[+face_type::front][1][2] == this->cubie[+face_type::front][1][1]) &&
+                    (this->cubie[+face_type::right][1][0] == this->cubie[+face_type::right][1][1])
+                ) {
+                    continue;
+                }
+
+                // Otherwise just apply the left or right algorithm.
+                if (
+                    (this->cubie[+face_type::front][1][0] == this->cubie[+face_type::front][1][1]) &&
+                    (this->cubie[+face_type::left][1][2] == this->cubie[+face_type::left][1][1])
+                ) {
+                    this->apply_moves("URUUURRRUUUFFFUF", solution);
+                }
+                else {
+                    this->apply_moves("UUULLLULUFUUUFFF", solution);
+                }
+            }
+
+            return this->validate_middle_edges();
+        }
+
+        // Transform the cube so that there is a cross on the top face.
+        bool solve_last_layer_cross(std::string* solution = nullptr) {
+            // Must start with a valid cross, corners, and edges.
+            if ((!validate_first_layer_cross()) || (!this->validate_first_layer_corners()) || (!this->validate_middle_edges())) {
+                return false;
+            }
+
+            // Check if we are already done.
+            if (this->validate_last_layer_cross()) {
+                return true;
+            }
+
+            // Calculate the number of times we need to apply a solving algorithm.
+            // There are three situations, "dot", "L", and "line", requiring 3, 2, and 1 applications.
+            int applications_required = 0;
+
+            // First check for a "dot".
+            if (
+                (this->cubie[+face_type::up][0][1] != this->cubie[+face_type::up][1][1]) &&
+                (this->cubie[+face_type::up][1][0] != this->cubie[+face_type::up][1][1]) &&
+                (this->cubie[+face_type::up][1][2] != this->cubie[+face_type::up][1][1]) &&
+                (this->cubie[+face_type::up][2][1] != this->cubie[+face_type::up][1][1])
+            ) {
+                // Found a "dot".
+                applications_required = 3;
+            }
+
+            // Next check for an "L".
+            if (applications_required == 0) {
+                // Check 4 orientations of cube.
+                for (int i = 0; i < 4; ++i) {
+                    if (
+                        (this->cubie[+face_type::up][0][1] == this->cubie[+face_type::up][1][1]) &&
+                        (this->cubie[+face_type::up][1][0] == this->cubie[+face_type::up][1][1]) &&
+                        (this->cubie[+face_type::up][1][2] != this->cubie[+face_type::up][1][1]) &&
+                        (this->cubie[+face_type::up][2][1] != this->cubie[+face_type::up][1][1])
+                    ) {
+                        // Found an "L".
+                        applications_required = 2;
+                        break;
+
+                    }
+                    this->apply_moves("Y", solution);
+                }
+            }
+
+            // Next check for a "line".
+            if (applications_required == 0) {
+                // Check 2 orientations of cube.
+                for (int i = 0; i < 2; ++i) {
+                    if (
+                        (this->cubie[+face_type::up][0][1] != this->cubie[+face_type::up][1][1]) &&
+                        (this->cubie[+face_type::up][1][0] == this->cubie[+face_type::up][1][1]) &&
+                        (this->cubie[+face_type::up][1][2] == this->cubie[+face_type::up][1][1]) &&
+                        (this->cubie[+face_type::up][2][1] != this->cubie[+face_type::up][1][1])
+                    ) {
+                        // Found a "line".
+                        applications_required = 1;
+                        break;
+
+                    }
+                    this->apply_moves("Y", solution);
+                }
+            }
+
+            // Failed to find a solution.
+            if (applications_required == 0) {
+                return false;
+            }
+
+            // Apply the solving algorithm.
+            for (int i = 0; i < applications_required; ++i) {
+                this->apply_moves("FRURRRUUUFFFYY", solution);
+            }
+
+            return this->validate_last_layer_cross();
+        }
+
+        // Transform the cube so that the top face cross edges are in the correct location.
+        bool solve_last_layer_edges(std::string* solution = nullptr) {
+            // Must start with a valid cross, corners, edges, and last layer cross.
+            if ((!validate_first_layer_cross()) || (!this->validate_first_layer_corners()) || (!this->validate_middle_edges()) || (!this->validate_last_layer_cross())) {
+                return false;
+            }
+
+            // Check if we are already done.
+            if (this->validate_last_layer_edges()) {
+                return true;
+            }
+
+            // Loop around the cube 4 times potentially moving edges.
+            for (int i = 0; i < 4*4; ++i) {
+                if (this->cubie[+face_type::front][0][1] != this->cubie[+face_type::front][1][1]) {
+                    this->apply_moves("RURRRURUURRRU", solution);
+                }
+                this->apply_moves("Y", solution);
+            }
+
+            return this->validate_last_layer_edges();
+        }
+
+        // Transform the cube so that the top face corners are in the correct position (but maybe not correct orientation).
+        bool solve_last_layer_corner_positions(std::string* solution = nullptr) {
+            // Must start with a valid cross, corners, edges, last layer cross, and last layer edges.
+            if ((!validate_first_layer_cross()) || (!this->validate_first_layer_corners()) || (!this->validate_middle_edges()) || (!this->validate_last_layer_cross()) || (!this->validate_last_layer_edges())) {
+                return false;
+            }
+
+            // Check if we are already done.
+            if (this->validate_last_layer_corner_positions()) {
+                return true;
+            }
+
+            // Find a correct corner.
+            bool none_correct = true;
+            for (int i = 0; i < 4; ++i) {
+                if (
+                    (
+                        (this->cubie[+face_type::front][0][2] == this->cubie[+face_type::front][1][1]) &&
+                        (this->cubie[+face_type::right][0][0] == this->cubie[+face_type::right][1][1]) &&
+                        (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::up][1][1])
+                    ) || (
+                        (this->cubie[+face_type::front][0][2] == this->cubie[+face_type::up][1][1]) &&
+                        (this->cubie[+face_type::right][0][0] == this->cubie[+face_type::front][1][1]) &&
+                        (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::right][1][1])
+                    )
+                    || (
+                        (this->cubie[+face_type::front][0][2] == this->cubie[+face_type::right][1][1]) &&
+                        (this->cubie[+face_type::right][0][0] == this->cubie[+face_type::up][1][1]) &&
+                        (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::front][1][1])
+                    )
+                ) {
+                    none_correct = false;
+                    break;
+                }
+                this->apply_moves("Y", solution);
+            }
+
+            if (none_correct) {
+                // Create a correct corner.
+                this->apply_moves("URUUULLLURRRUUUL", solution);
+
+                // Find a correct corner.
+                for (int i = 0; i < 4; ++i) {
+                    if (
+                        (
+                            (this->cubie[+face_type::front][0][2] == this->cubie[+face_type::front][1][1]) &&
+                            (this->cubie[+face_type::right][0][0] == this->cubie[+face_type::right][1][1]) &&
+                            (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::up][1][1])
+                        ) || (
+                            (this->cubie[+face_type::front][0][2] == this->cubie[+face_type::up][1][1]) &&
+                            (this->cubie[+face_type::right][0][0] == this->cubie[+face_type::front][1][1]) &&
+                            (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::right][1][1])
+                        ) || (
+                            (this->cubie[+face_type::front][0][2] == this->cubie[+face_type::right][1][1]) &&
+                            (this->cubie[+face_type::right][0][0] == this->cubie[+face_type::up][1][1]) &&
+                            (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::front][1][1])
+                        )
+                    ) {
+                        break;
+                    }
+                    this->apply_moves("Y", solution);
+                }
+            }
+
+            // Apply the algorithm (potentially twice).
+            this->apply_moves("URUUULLLURRRUUUL", solution);
+            if (!this->validate_last_layer_corner_positions()) {
+                this->apply_moves("URUUULLLURRRUUUL", solution);
+            }
+
+            return this->validate_last_layer_corner_positions();
+        }
+
+        // Transform the cube so that the top face corners are in the correct orientation.
+        bool solve_last_layer_corner_orientations(std::string* solution = nullptr) {
+            // Must start with a valid cross, corners, edges, last layer cross, last layer edges, and last layer corner positions.
+            if ((!validate_first_layer_cross()) || (!this->validate_first_layer_corners()) || (!this->validate_middle_edges()) || (!this->validate_last_layer_cross()) || (!this->validate_last_layer_edges()) || (!this->validate_last_layer_corner_positions())) {
+                return false;
+            }
+
+            // Check if we are already done.
+            if (this->is_solved()) {
+                return true;
+            }
+
+            // For each corner, rotate into place.
+            for (int i = 0; i < 4; ++i) {
+                for (int j = 0; j < 2; ++j) {
+                    if (this->cubie[+face_type::up][2][2] != this->cubie[+face_type::up][1][1]) {
+                        this->apply_moves("RRRDDDRDRRRDDDRD", solution);
+                    }
+                }
+                this->apply_moves("U", solution);
+            }
+
+            return this->is_solved();
+        }
+
+    public:
+        // Solve the cube.
+        bool solve(std::string* solution = nullptr) {
+            if (!this->is_valid()) {
+                return false;
+            }
+
+            if (this->is_solved()) {
+                return true;
+            }
+
+            // Build a cross on the bottom of the cube. A "cross" means solving all four edge pieces of a particular face, in their correct position with respect to the other faces.
+            if (!this->solve_first_layer_cross(solution)) {
+                return false;
+            }
+
+            // Next solve each of the four corners on the same layer as the cross.
+            if (!this->solve_first_layer_corners(solution)) {
+                return false;
+            }
+
+            // Finish the second layer of the cube by solving the four edge pieces of the second layer.
+            if (!this->solve_middle_edges(solution)) {
+                return false;
+            }
+
+            // Build a cross on the top of the cube.
+            if (!this->solve_last_layer_cross(solution)) {
+                return false;
+            }
+
+            // Correct the edges of the top cross.
+            if (!this->solve_last_layer_edges(solution)) {
+                return false;
+            }
+
+            // Place the corners of the top surface in the right positions.
+            if (!this->solve_last_layer_corner_positions(solution)) {
+                return false;
+            }
+
+            // Finally reorient the corners top surface.
+            if (!this->solve_last_layer_corner_orientations(solution)) {
+                return false;
+            }
+
+            return this->is_solved();
+        }
+
+    public:
+        // Somewhat optimise solution string if possible.
+        static void optimise(std::string& solution) {
+            constexpr static const auto replace = [](std::string& str, const std::string& from, const std::string& to)->bool {
+                size_t start_pos = str.find(from);
+                if(start_pos == std::string::npos)
+                    return false;
+                str.replace(start_pos, from.length(), to);
+                return true;
+            };
+            // Replace sets of four as these make no changes.
+            while(replace(solution, "UUUU", ""));
+            while(replace(solution, "DDDD", ""));
+            while(replace(solution, "LLLL", ""));
+            while(replace(solution, "RRRR", ""));
+            while(replace(solution, "FFFF", ""));
+            while(replace(solution, "BBBB", ""));
+            while(replace(solution, "MMMM", ""));
+            while(replace(solution, "EEEE", ""));
+            while(replace(solution, "SSSS", ""));
+            while(replace(solution, "XXXX", ""));
+            while(replace(solution, "YYYY", ""));
+            while(replace(solution, "ZZZZ", ""));
+            // Remove all XYZ from the end as these make no changes.
+            while ((!solution.empty()) && ((solution.back() == 'X') || (solution.back() == 'Y') || (solution.back() == 'Z'))) {
+                solution.pop_back();
+            }
+            // Eliminate X, Y, and Z, completely.
+            for (size_t i = 0; i < solution.size(); ++i) {
+                if (solution[i] == 'X') {
+                    solution[i] = '*';
+                    for (size_t j = i + 1; j < solution.size(); ++j) {
+                        switch (solution[j]) {
+                        case 'F': solution[j] = 'D'; break;
+                        case 'B': solution[j] = 'U'; break;
+                        case 'L': solution[j] = 'L'; break;
+                        case 'R': solution[j] = 'R'; break;
+                        case 'U': solution[j] = 'F'; break;
+                        case 'D': solution[j] = 'B'; break;
+                        case 'X': solution[j] = 'X'; break;
+                        case 'Y': solution[j] = 'Z'; break;
+                        case 'Z': solution.replace(j, 1, "YYY"); j += 2; break;
+                        case 'M': solution[j] = 'M'; break;
+                        case 'E': solution.replace(j, 1, "SSS"); j += 2; break;
+                        case 'S': solution[j] = 'E'; break;
+                        }
+                    }
+                } else if (solution[i] == 'Y') {
+                    solution[i] = '*';
+                    for (size_t j = i + 1; j < solution.size(); ++j) {
+                        switch (solution[j]) {
+                        case 'F': solution[j] = 'R'; break;
+                        case 'B': solution[j] = 'L'; break;
+                        case 'L': solution[j] = 'F'; break;
+                        case 'R': solution[j] = 'B'; break;
+                        case 'U': solution[j] = 'U'; break;
+                        case 'D': solution[j] = 'D'; break;
+                        case 'X': solution.replace(j, 1, "ZZZ"); j += 2; break;
+                        case 'Y': solution[j] = 'Y'; break;
+                        case 'Z': solution[j] = 'X'; break;
+                        case 'M': solution[j] = 'S'; break;
+                        case 'E': solution[j] = 'E'; break;
+                        case 'S': solution.replace(j, 1, "MMM"); j += 2; break;
+                        }
+                    }
+                }
+                else if (solution[i] == 'Z') {
+                    solution[i] = '*';
+                    for (size_t j = i + 1; j < solution.size(); ++j) {
+                        switch (solution[j]) {
+                        case 'F': solution[j] = 'F'; break;
+                        case 'B': solution[j] = 'B'; break;
+                        case 'L': solution[j] = 'D'; break;
+                        case 'R': solution[j] = 'U'; break;
+                        case 'U': solution[j] = 'L'; break;
+                        case 'D': solution[j] = 'R'; break;
+                        case 'X': solution[j] = 'Y'; break;
+                        case 'Y': solution.replace(j, 1, "XXX"); j += 2; break;
+                        case 'Z': solution[j] = 'Z'; break;
+                        case 'M': solution[j] = 'E'; break;
+                        case 'E': solution.replace(j, 1, "MMM"); j += 2; break;
+                        case 'S': solution[j] = 'S'; break;
+                        }
+                    }
+                }
+            }
+            while(replace(solution, "*", ""));
+        }
+
+    public:
+        // Reorient the cube to a standard orientation.
+        void reorient() {
+            // First get white on up.
+            if      (this->cubie[+face_type::front][1][1] == colour_type::white) { this->apply_moves(move_type::x, 1); }
+            else if (this->cubie[+face_type::right][1][1] == colour_type::white) { this->apply_moves(move_type::z, -1); }
+            else if (this->cubie[+face_type::back][1][1]  == colour_type::white) { this->apply_moves(move_type::x, -1); }
+            else if (this->cubie[+face_type::left][1][1]  == colour_type::white) { this->apply_moves(move_type::z, 1); }
+            else if (this->cubie[+face_type::up][1][1]    == colour_type::white) { }
+            else if (this->cubie[+face_type::down][1][1]  == colour_type::white) { this->apply_moves(move_type::x, 2); }
+            // Then get orange on left.
+            if      (this->cubie[+face_type::front][1][1] == colour_type::orange) { this->apply_moves(move_type::y, 1); }
+            else if (this->cubie[+face_type::right][1][1] == colour_type::orange) { this->apply_moves(move_type::y, 2); }
+            else if (this->cubie[+face_type::back][1][1]  == colour_type::orange) { this->apply_moves(move_type::y, -1); }
+            else if (this->cubie[+face_type::left][1][1]  == colour_type::orange) { }
+            else if (this->cubie[+face_type::up][1][1]    == colour_type::orange) { }
+            else if (this->cubie[+face_type::down][1][1]  == colour_type::orange) { }
+        }
+    };
+}
+
+#endif // GTL_GAME_PUZZLE_CUBE_HPP
