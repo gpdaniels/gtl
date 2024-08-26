@@ -25,7 +25,6 @@ SET(CMAKE_SOURCE_DIR ${SOURCE_DIR})
 
 # Find all source files, test files, and testbench files.
 FILE(GLOB_RECURSE LICENSED_FILES RELATIVE "${CMAKE_SOURCE_DIR}/"
-    "${CMAKE_SOURCE_DIR}/CMakeLists.txt"
     "${CMAKE_SOURCE_DIR}/checks/*"
     "${CMAKE_SOURCE_DIR}/script/*"
     "${CMAKE_SOURCE_DIR}/source/*"
@@ -35,6 +34,8 @@ FILE(GLOB_RECURSE LICENSED_FILES RELATIVE "${CMAKE_SOURCE_DIR}/"
 
 # Sort list of files.
 LIST(SORT LICENSED_FILES)
+
+LIST(INSERT LICENSED_FILES 0 "CMakeLists.txt")
 
 # Check each file for the correct license text.
 FOREACH(LICENSED_FILE ${LICENSED_FILES})
