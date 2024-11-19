@@ -410,7 +410,7 @@ namespace gtl {
 
                     // Rotate the whole cube rather than just a face.
                     case move_type::x:
-                        if (record) record->append(std::string(minimal_clockwise_turns, 'X'));
+                        if (record) record->append(std::string(static_cast<std::string::size_type>(minimal_clockwise_turns), 'X'));
                         // Ignores left and right faces.
                         this->apply_moves(move_type::right, turns);
                         this->apply_moves(move_type::middle, 4 - turns);
@@ -418,7 +418,7 @@ namespace gtl {
                         // Now return rather than break as multiple turns are already handled by the recursive calls.
                         return;
                     case move_type::y:
-                        if (record) record->append(std::string(minimal_clockwise_turns, 'Y'));
+                        if (record) record->append(std::string(static_cast<std::string::size_type>(minimal_clockwise_turns), 'Y'));
                         // Ignores up and down faces.
                         this->apply_moves(move_type::up, turns);
                         this->apply_moves(move_type::equatial, 4 - turns);
@@ -426,7 +426,7 @@ namespace gtl {
                         // Now return rather than break as multiple turns are already handled by the recursive calls.
                         return;
                     case move_type::z:
-                        if (record) record->append(std::string(minimal_clockwise_turns, 'Z'));
+                        if (record) record->append(std::string(static_cast<std::string::size_type>(minimal_clockwise_turns), 'Z'));
                         // Ignores front and back faces.
                         this->apply_moves(move_type::front, turns);
                         this->apply_moves(move_type::standing, turns);
