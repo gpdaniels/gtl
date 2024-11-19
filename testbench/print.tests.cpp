@@ -57,6 +57,9 @@ namespace testbench {
             handle = stderr;
             break;
         }
+        if (!handle) {
+            return;
+        }
         setvbuf(handle, nullptr, _IONBF, 0);
     }
 
@@ -69,6 +72,9 @@ namespace testbench {
         case output_stream::error:
             handle = stderr;
             break;
+        }
+        if (!handle) {
+            return 0;
         }
 
         #if defined(_WIN32)
