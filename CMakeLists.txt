@@ -42,7 +42,8 @@ MARK_AS_ADVANCED(BUILD_MEMCHECK_PARALLELISM)
 SET(BUILD_MEMCHECK_TIMEOUT 60 CACHE STRING "The allowed run time of a memcheck test executable.")
 MARK_AS_ADVANCED(BUILD_MEMCHECK_TIMEOUT)
 
-SET(BUILD_TARGET_SEARCHPATH "*" CACHE STRING "A filter used to select which targets to include, default is everything.")
+SET(BUILD_FILTER_IGNORE_UNCHANGED OFF CACHE BOOL "A filter used to select which targets to include by checking for differences from master, default is everything.")
+SET(BUILD_FILTER_SEARCH_PATH "*" CACHE STRING "A filter used to select which targets to include by changing the glob search path, default is everything.")
 
 # Print status.
 MESSAGE(STATUS "Configuring ${PROJECT_NAME}...")
@@ -363,10 +364,10 @@ INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/source/")
 INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/tests/")
 
 # Find all library source files in the test directory recursively.
-FILE(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/source/${BUILD_TARGET_SEARCHPATH}/*")
+FILE(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/source/${BUILD_FILTER_SEARCH_PATH}/*")
 
 # Find all test source files in the test directory recursively.
-FILE(GLOB_RECURSE TEST_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/${BUILD_TARGET_SEARCHPATH}/*.test.cpp")
+FILE(GLOB_RECURSE TEST_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/${BUILD_FILTER_SEARCH_PATH}/*.test.cpp")
 
 # Get the auxiliary testbench files.
 FILE(GLOB_RECURSE TESTBENCH_HEADERS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/testbench/*.tests.hpp")
