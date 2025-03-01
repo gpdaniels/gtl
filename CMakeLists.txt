@@ -550,7 +550,7 @@ IF(BUILD_TESTING)
     # Add a test target.
     ADD_CUSTOM_TARGET(gtl_test
         COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running tests..."
-        COMMAND "${CMAKE_CTEST_COMMAND}" "-C" "$<CONFIG>" "--repeat" "after-timeout:3" "--output-on-failure" "--parallel" "${BUILD_TESTING_PARALLELISM}" "--timeout" "${BUILD_TESTING_TIMEOUT}"
+        COMMAND "${CMAKE_CTEST_COMMAND}" "-C" "$<CONFIG>" "--repeat" "after-timeout:3" "--output-on-failure" "--parallel" "${BUILD_TESTING_PARALLELISM}" "--timeout" "${BUILD_TESTING_TIMEOUT}" "--output-junit" "Testing/$<CONFIG>/results.junit.xml"
         DEPENDS gtl_build gtl_cleanup
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     )
