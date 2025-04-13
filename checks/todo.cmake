@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 
 # Define the minimum version of CMake that is required.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
-CMAKE_POLICY(VERSION 3.5.1)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
+CMAKE_POLICY(VERSION 3.10)
 
 MESSAGE(STATUS "Checking todo comments...")
 

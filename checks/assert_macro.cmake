@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 
 # Define the minimum version of CMake that is required.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
-CMAKE_POLICY(VERSION 3.5.1)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
+CMAKE_POLICY(VERSION 3.10)
 
 MESSAGE(STATUS "Checking assert macros...")   
 
@@ -50,14 +50,14 @@ FOREACH(SOURCE_FILE ${SOURCE_FILES})
     # Prepare the assert macro regex.
     SET(ASSERT_REGEX_LINES
         "^#ifndef NDEBUG$"
-        "^#   if defined\\(_MSC_VER\\)$"
-        "^#       define __builtin_trap\\(\\) __debugbreak\\(\\)$"
-        "^#   endif$"
+        "^#if defined\\(_MSC_VER\\)$"
+        "^#define __builtin_trap\\(\\) __debugbreak\\(\\)$"
+        "^#endif$"
         "^/// @brief A simple assert macro to break the program if the ${SOURCE_FILE_NAME} is misused\\.$"
-        "^#   define GTL_${SOURCE_FILE_NAME_UPPER}_ASSERT\\(ASSERTION, MESSAGE\\) static_cast<void>\\(\\(ASSERTION\\) || \\(__builtin_trap(), 0\\)\\)$"
+        "^#define GTL_${SOURCE_FILE_NAME_UPPER}_ASSERT\\(ASSERTION, MESSAGE\\) static_cast<void>\\(\\(ASSERTION\\) || \\(__builtin_trap(), 0\\)\\)$"
         "^#else$"
         "^/// @brief At release time the assert macro is implemented as a nop\\.$"
-        "^#   define GTL_${SOURCE_FILE_NAME_UPPER}_ASSERT\\(ASSERTION, MESSAGE\\) static_cast<void>\\(0\\)$"
+        "^#define GTL_${SOURCE_FILE_NAME_UPPER}_ASSERT\\(ASSERTION, MESSAGE\\) static_cast<void>\\(0\\)$"
         "^#endif$"
     )
     

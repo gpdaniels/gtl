@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 
 # Define the minimum version of CMake that is required.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
-CMAKE_POLICY(VERSION 3.5.1)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
+CMAKE_POLICY(VERSION 3.10)
 
 MESSAGE(STATUS "Checking for git branch...")
 
@@ -45,7 +45,7 @@ IF(RETURN_CODE)
 ENDIF(RETURN_CODE)
 
 # Check the git branch matches one of the valid patterns.
-IF(NOT "${COMMIT_BRANCH}" MATCHES "^master$|^dev$|^feature/.+$|^bug-fix/.+$|^HEAD$")
+IF(NOT "${COMMIT_BRANCH}" MATCHES "^master$|^dev$|^feat/.+$|^fix/.+$|^spike/.+$|^chore/.+$|^HEAD$")
     MESSAGE(FATAL_ERROR "The current branch '${COMMIT_BRANCH}' is not valid.")
 ENDIF()
         

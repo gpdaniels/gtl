@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 
 # Define the minimum version of CMake that is required.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
-CMAKE_POLICY(VERSION 3.5.1)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
+CMAKE_POLICY(VERSION 3.10)
 
 # Project name.
 SET(PROJECT_NAME "gtl")
@@ -511,22 +511,80 @@ SET_TARGET_PROPERTIES(gtl_cmake PROPERTIES FOLDER testbench)
 SET_TARGET_PROPERTIES(gtl_cmake PROPERTIES EXCLUDE_FROM_ALL TRUE)
 SET_TARGET_PROPERTIES(gtl_cmake PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 
-SET(ADDITIONAL_BUILD_OPTIONS "")
-IF(WIN32)
-    SET(ADDITIONAL_BUILD_OPTIONS "--" "-nologo" "-verbosity:quiet" "-maxcpucount")
+###############################################################################
+
+FIND_PROGRAM(CLANG_FORMAT_EXECUTABLE NAMES clang-format DOC "clang-format command line tool")
+IF(CLANG_FORMAT_EXECUTABLE)
+    # Find all source files.
+    FILE(GLOB_RECURSE CLANG_FORMAT_SOURCES
+        RELATIVE ${CMAKE_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/source/*
+        ${CMAKE_SOURCE_DIR}/tests/*
+        ${CMAKE_SOURCE_DIR}/testbench/*
+    )
+    
+    ADD_CUSTOM_TARGET(gtl_format
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Formatting code..."
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+    
+    FOREACH(SOURCE_FILE ${CLANG_FORMAT_SOURCES})
+        ADD_CUSTOM_COMMAND(
+            TARGET gtl_format
+            POST_BUILD
+            COMMAND "${CLANG_FORMAT_EXECUTABLE}" "-style=file" "-i" "${CMAKE_SOURCE_DIR}/${SOURCE_FILE}"
+        )
+    ENDFOREACH()
 ELSE()
-    SET(ADDITIONAL_BUILD_OPTIONS "--" "-j4")
+    ADD_CUSTOM_TARGET(gtl_format
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Failed to format code, clang-format tool not found..."
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
 ENDIF()
+
+###############################################################################
+
+IF(BUILD_CHECKS)
+    # Find all check scripts in the checks directory.
+    FILE(GLOB CHECK_FILES "${CMAKE_SOURCE_DIR}/checks/*.[Cc][Mm][Aa][Kk][Ee]")
+    
+    # Add a checking target to attach all the post builds to.
+    ADD_CUSTOM_TARGET(gtl_check
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running checks..."
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+    
+    # Include all found scripts.
+    FOREACH(CHECK_FILE ${CHECK_FILES})
+        ADD_CUSTOM_COMMAND(
+            TARGET gtl_check
+            POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_SOURCE_DIR}" "-DBINARY_DIR=${CMAKE_BINARY_DIR}" "-P" "${CHECK_FILE}"
+            COMMENT "Running ${CHECK_FILE}..."
+        )
+    ENDFOREACH()
+ELSE()
+    # Add a dummy checking target so that the target exists.
+    ADD_CUSTOM_TARGET(gtl_check
+        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "No checks found."
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+ENDIF()
+
+###############################################################################
 
 # Add a build target.
 ADD_CUSTOM_TARGET(gtl_build
     COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Building..."
-    COMMAND "${CMAKE_COMMAND}" "--build" "." "--config" "$<CONFIG>" ${ADDITIONAL_BUILD_OPTIONS}
+    COMMAND "${CMAKE_COMMAND}" "--build" "." "--config" "$<CONFIG>" "--parallel 4"
+    DEPENDS gtl_check
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 SET_TARGET_PROPERTIES(gtl_build PROPERTIES FOLDER testbench)
 SET_TARGET_PROPERTIES(gtl_build PROPERTIES EXCLUDE_FROM_ALL TRUE)
 SET_TARGET_PROPERTIES(gtl_build PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
+
+###############################################################################
 
 IF(BUILD_TESTING AND BUILD_COVERAGE)
     # Add a cleanup target.
@@ -546,6 +604,8 @@ SET_TARGET_PROPERTIES(gtl_cleanup PROPERTIES FOLDER testbench)
 SET_TARGET_PROPERTIES(gtl_cleanup PROPERTIES EXCLUDE_FROM_ALL TRUE)
 SET_TARGET_PROPERTIES(gtl_cleanup PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 
+###############################################################################
+
 IF(BUILD_TESTING)
     # Add a test target.
     ADD_CUSTOM_TARGET(gtl_test
@@ -564,13 +624,12 @@ SET_TARGET_PROPERTIES(gtl_test PROPERTIES FOLDER testbench)
 SET_TARGET_PROPERTIES(gtl_test PROPERTIES EXCLUDE_FROM_ALL TRUE)
 SET_TARGET_PROPERTIES(gtl_test PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 
+###############################################################################
+
 IF(BUILD_TESTING AND BUILD_MEMCHECK)
     # Add memcheck tests if valgrind is installed
     FIND_PROGRAM(VALGRIND_EXECUTABLE NAMES valgrind)
     IF(VALGRIND_EXECUTABLE)
-        # Set valgrind options.
-        SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "${CMAKE_SOURCE_DIR}/memcheck.supression")
-
         ADD_CUSTOM_TARGET(gtl_memcheck
             COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running tests under memcheck..."
             COMMAND "${CMAKE_CTEST_COMMAND}" "-C" "$<CONFIG>" "--output-on-failure" "--parallel" "${BUILD_MEMCHECK_PARALLELISM}" "--timeout" "${BUILD_MEMCHECK_TIMEOUT}" "--force-new-ctest-process" "--test-action" "memcheck"
@@ -586,7 +645,6 @@ IF(BUILD_TESTING AND BUILD_MEMCHECK)
         FILE(APPEND "${CMAKE_BINARY_DIR}/DartConfiguration.tcl" "BuildName: ${CMAKE_CXX_COMPILER}\n")
         FILE(APPEND "${CMAKE_BINARY_DIR}/DartConfiguration.tcl" "\n")
         FILE(APPEND "${CMAKE_BINARY_DIR}/DartConfiguration.tcl" "MemoryCheckCommand: ${VALGRIND_EXECUTABLE}\n")
-        FILE(APPEND "${CMAKE_BINARY_DIR}/DartConfiguration.tcl" "MemoryCheckSuppressionFile: ${CMAKE_SOURCE_DIR}/memcheck.supression\n")
     ELSE()
         ADD_CUSTOM_TARGET(gtl_memcheck
             COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Memcheck not available."
@@ -602,6 +660,8 @@ ENDIF()
 SET_TARGET_PROPERTIES(gtl_memcheck PROPERTIES FOLDER testbench)
 SET_TARGET_PROPERTIES(gtl_memcheck PROPERTIES EXCLUDE_FROM_ALL TRUE)
 SET_TARGET_PROPERTIES(gtl_memcheck PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
+
+###############################################################################
 
 IF(BUILD_TESTING AND BUILD_COVERAGE)
     FIND_PROGRAM(LLVM_PROFDATA_EXECUTABLE NAMES llvm-profdata)
@@ -634,52 +694,6 @@ ENDIF()
 SET_TARGET_PROPERTIES(gtl_coverage PROPERTIES FOLDER testbench)
 SET_TARGET_PROPERTIES(gtl_coverage PROPERTIES EXCLUDE_FROM_ALL TRUE)
 SET_TARGET_PROPERTIES(gtl_coverage PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-
-# Override the test command such that tests are built and ctest provides output on error.
-IF(BUILD_TESTING)
-    SET(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
-    CMAKE_POLICY(PUSH)
-    CMAKE_POLICY(SET CMP0037 OLD)
-    ADD_CUSTOM_TARGET(test
-        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running test pipeline..."
-        DEPENDS gtl_build gtl_test gtl_memcheck gtl_coverage
-        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-    )
-    SET_TARGET_PROPERTIES(test PROPERTIES FOLDER testbench)
-    SET_TARGET_PROPERTIES(test PROPERTIES EXCLUDE_FROM_ALL TRUE)
-    SET_TARGET_PROPERTIES(test PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-    CMAKE_POLICY(POP)
-    UNSET(CMAKE_WARN_DEPRECATED CACHE)
-ENDIF()
-
-###############################################################################
-
-IF(BUILD_CHECKS)
-    # Find all check scripts in the checks directory.
-    FILE(GLOB CHECK_FILES "${CMAKE_SOURCE_DIR}/checks/*.[Cc][Mm][Aa][Kk][Ee]")
-    
-    # Add a checking target to attach all the post builds to and add it to the ALL target.
-    ADD_CUSTOM_TARGET(gtl_check ALL
-        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "Running checks..."
-        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-    )
-    
-    # Include all found scripts.
-    FOREACH(CHECK_FILE ${CHECK_FILES})
-        ADD_CUSTOM_COMMAND(
-            TARGET gtl_check
-            POST_BUILD
-            COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_SOURCE_DIR}" "-DBINARY_DIR=${CMAKE_BINARY_DIR}" "-P" "${CHECK_FILE}"
-            COMMENT "Running ${CHECK_FILE}..."
-        )
-    ENDFOREACH()
-ELSE()
-    # Add a dummy checking target so that the target exists.
-    ADD_CUSTOM_TARGET(gtl_check
-        COMMAND "${CMAKE_COMMAND}" "-E" "echo" "No checks found."
-        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-    )
-ENDIF()
 
 ###############################################################################
 

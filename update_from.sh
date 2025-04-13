@@ -34,9 +34,8 @@ checks=$(find "checks" -type f -print)
 git checkout ${current_branch}
 
 # Try and checkout the build system files to ensure they are up to date.
-git checkout $2 compile.sh
-git checkout $2 memcheck.supression
 git checkout $2 CMakeLists.txt
+git checkout $2 clang-format.txt
 
 # Try and checkout the README.md.
 git checkout $2 README.md
