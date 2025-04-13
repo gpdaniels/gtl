@@ -14,10 +14,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <main.tests.hpp>
-#include <comparison.tests.hpp>
-#include <optimise.tests.hpp>
-#include <require.tests.hpp>
+#include <testbench/main.tests.hpp>
+#include <testbench/comparison.tests.hpp>
+#include <testbench/optimise.tests.hpp>
+#include <testbench/require.tests.hpp>
 
 #define GTL_API_EXPORT
 #include <vision/api>
@@ -27,7 +27,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 #include <string>
-#include <type_traits>
 #include <chrono>
 
 #if defined(_MSC_VER)

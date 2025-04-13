@@ -14,10 +14,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <main.tests.hpp>
-#include <comparison.tests.hpp>
-#include <optimise.tests.hpp>
-#include <require.tests.hpp>
+#include <testbench/main.tests.hpp>
+#include <testbench/comparison.tests.hpp>
+#include <testbench/optimise.tests.hpp>
+#include <testbench/require.tests.hpp>
 
 #include <io/socket>
 
@@ -249,7 +249,7 @@ TEST(socket, function, read_write_udp) {
 
     unsigned char received_message1[128] = {};
     unsigned long long int received_length1 = 128;
-    gtl::socket::ip address1;
+    gtl::socket::ip address1 = {};
     unsigned short port1 = 0;
     do {
         std::this_thread::yield();
@@ -269,7 +269,7 @@ TEST(socket, function, read_write_udp) {
 
     unsigned char received_message2[128] = {};
     unsigned long long int received_length2 = 128;
-    gtl::socket::ip address2;
+    gtl::socket::ip address2 = {};
     unsigned short port2 = 0;
     do {
         std::this_thread::yield();
