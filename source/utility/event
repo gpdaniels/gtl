@@ -21,29 +21,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Thread safe multi-in/multi-out event/messaging system.
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the event is misused.
-#   define GTL_EVENT_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_EVENT_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_EVENT_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_EVENT_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
-#include <deque>
 #include <condition_variable>
+#include <deque>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <set>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace gtl {
@@ -86,17 +86,17 @@ namespace gtl {
         /// @brief  Singleton instance helper function.
         /// @return A reference to a static instance of this class.
         static event_manager& get_instance() {
-            // Disable the exit-time-destructors warning in clang.
-            #if defined(__clang__)
-                #pragma clang diagnostic push
-                #pragma clang diagnostic ignored "-Wexit-time-destructors"
-            #endif
+// Disable the exit-time-destructors warning in clang.
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wexit-time-destructors"
+#endif
             // Construct a static instance of this class, this is guaranteed to be thread safe by the standard.
             static event_manager<event_type> instance;
-            // Re-enable warnings in clang.
-            #if defined(__clang__)
-                #pragma clang diagnostic pop
-            #endif
+// Re-enable warnings in clang.
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
             return instance;
         }
 
@@ -245,10 +245,9 @@ namespace gtl {
 
             // Raise each event.
             for (const std::shared_ptr<event_type>& event : this->events) {
-
                 // If the event_type is invocable then just call it.
-                //if constexpr (std::is_invocable<event_type>::value) { // Not supported in c++17 on mac.
-                if constexpr (std::is_constructible<std::function<void()>, std::reference_wrapper<typename std::remove_reference<event_type>::type> >::value) {
+                // if constexpr (std::is_invocable<event_type>::value) { // Not supported in c++17 on mac.
+                if constexpr (std::is_constructible<std::function<void()>, std::reference_wrapper<typename std::remove_reference<event_type>::type>>::value) {
                     (*event)();
                 }
 

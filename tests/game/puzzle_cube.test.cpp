@@ -15,15 +15,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <game/puzzle_cube>
 
 void print_cube(const gtl::puzzle_cube& cube);
+
 void print_cube(const gtl::puzzle_cube& cube) {
     PRINT("Cube:\n");
-    struct { int r, g, b; } colour_type[6] = {
+
+    struct {
+        int r, g, b;
+    } colour_type[6] = {
         {  0, 255,   0}, // gtl::puzzle_cube::cell_colour::green  == 0;
         {255,   0,   0}, // gtl::puzzle_cube::cell_colour::red    == 1;
         {  0,   0, 255}, // gtl::puzzle_cube::cell_colour::blue   == 2;
@@ -31,6 +36,7 @@ void print_cube(const gtl::puzzle_cube& cube) {
         {255, 255, 255}, // gtl::puzzle_cube::cell_colour::white  == 4;
         {255, 255,   0}  // gtl::puzzle_cube::cell_colour::yellow == 5;
     };
+
     for (int row = 0; row < 9; ++row) {
         for (int column = 0; column < 12; ++column) {
             if (((row < 3) || (row >= 6)) && ((column < 3) || (column >= 6))) {
@@ -38,12 +44,11 @@ void print_cube(const gtl::puzzle_cube& cube) {
                 continue;
             }
             gtl::puzzle_cube::face_type face =
-                (row < 3) ? gtl::puzzle_cube::face_type::up :
-                (row < 6) && (column < 3) ? gtl::puzzle_cube::face_type::left :
-                (row < 6) && (column < 6) ? gtl::puzzle_cube::face_type::front :
-                (row < 6) && (column < 9) ? gtl::puzzle_cube::face_type::right :
-                (row < 6) ? gtl::puzzle_cube::face_type::back :
-                gtl::puzzle_cube::face_type::down;
+                (row < 3) ? gtl::puzzle_cube::face_type::up : (row < 6) && (column < 3) ? gtl::puzzle_cube::face_type::left
+                                                          : (row < 6) && (column < 6)   ? gtl::puzzle_cube::face_type::front
+                                                          : (row < 6) && (column < 9)   ? gtl::puzzle_cube::face_type::right
+                                                          : (row < 6)                   ? gtl::puzzle_cube::face_type::back
+                                                                                        : gtl::puzzle_cube::face_type::down;
             const int x = column % 3;
             const int y = row % 3;
             gtl::puzzle_cube::colour_type colour = cube.get_cubie(face, x, y);
@@ -57,11 +62,13 @@ void print_cube(const gtl::puzzle_cube& cube) {
 }
 
 void scramble_cube(gtl::puzzle_cube& cube, int moves);
+
 void scramble_cube(gtl::puzzle_cube& cube, int moves) {
     class random_pcg final {
     private:
         unsigned long long int state = 0x853C49E6748FEA9Bull;
         unsigned long long int increment = 0xDA3E39CB94B95BDBull;
+
     public:
         unsigned int get_random_raw() {
             // Save current state for output calculation.
@@ -74,21 +81,46 @@ void scramble_cube(gtl::puzzle_cube& cube, int moves) {
             return (state_shift_xor_shift >> rotation) | (state_shift_xor_shift << ((-rotation) & 31));
         }
     };
+
     random_pcg rng;
     for (int i = 0; i < moves; ++i) {
-        switch (rng.get_random_raw()%12) {
-            case 0:  cube.apply_moves(gtl::puzzle_cube::move_type::up, 1); break;
-            case 1:  cube.apply_moves(gtl::puzzle_cube::move_type::down, 1); break;
-            case 2:  cube.apply_moves(gtl::puzzle_cube::move_type::front, 1); break;
-            case 3:  cube.apply_moves(gtl::puzzle_cube::move_type::back, 1); break;
-            case 4:  cube.apply_moves(gtl::puzzle_cube::move_type::left, 1); break;
-            case 5:  cube.apply_moves(gtl::puzzle_cube::move_type::right, 1); break;
-            case 6:  cube.apply_moves(gtl::puzzle_cube::move_type::equatial, 1); break;
-            case 7:  cube.apply_moves(gtl::puzzle_cube::move_type::middle, 1); break;
-            case 8:  cube.apply_moves(gtl::puzzle_cube::move_type::standing, 1); break;
-            case 9:  cube.apply_moves(gtl::puzzle_cube::move_type::x, 1); break;
-            case 10: cube.apply_moves(gtl::puzzle_cube::move_type::y, 1); break;
-            case 11: cube.apply_moves(gtl::puzzle_cube::move_type::z, 1); break;
+        switch (rng.get_random_raw() % 12) {
+            case 0:
+                cube.apply_moves(gtl::puzzle_cube::move_type::up, 1);
+                break;
+            case 1:
+                cube.apply_moves(gtl::puzzle_cube::move_type::down, 1);
+                break;
+            case 2:
+                cube.apply_moves(gtl::puzzle_cube::move_type::front, 1);
+                break;
+            case 3:
+                cube.apply_moves(gtl::puzzle_cube::move_type::back, 1);
+                break;
+            case 4:
+                cube.apply_moves(gtl::puzzle_cube::move_type::left, 1);
+                break;
+            case 5:
+                cube.apply_moves(gtl::puzzle_cube::move_type::right, 1);
+                break;
+            case 6:
+                cube.apply_moves(gtl::puzzle_cube::move_type::equatial, 1);
+                break;
+            case 7:
+                cube.apply_moves(gtl::puzzle_cube::move_type::middle, 1);
+                break;
+            case 8:
+                cube.apply_moves(gtl::puzzle_cube::move_type::standing, 1);
+                break;
+            case 9:
+                cube.apply_moves(gtl::puzzle_cube::move_type::x, 1);
+                break;
+            case 10:
+                cube.apply_moves(gtl::puzzle_cube::move_type::y, 1);
+                break;
+            case 11:
+                cube.apply_moves(gtl::puzzle_cube::move_type::z, 1);
+                break;
         }
     }
 }
@@ -130,7 +162,6 @@ TEST(puzzle_cube, function, is_solved) {
     puzzle_cube.apply_moves(gtl::puzzle_cube::move_type::z, 3);
     REQUIRE(puzzle_cube.is_solved());
 }
-
 
 TEST(puzzle_cube, function, solve_first_layer_cross) {
     for (int i = 0; i < 2000; ++i) {

@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -22,13 +23,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vision/feature/score/shi_tomasi_score>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #include <vision/feature/feature>
@@ -49,7 +50,10 @@ TEST(shi_tomasi_score, function, gradient_with_inverted_square) {
 
     constexpr static const unsigned int features_count = 4;
     gtl::feature features[features_count] = {
-        { 95, 19, 0.93951416f, 0.0f }, { 35, 47, 0.932922363f, 0.0f }, { 95, 47, 33.5926666f, 0.0f }, { 35, 19, 0.0f, 0.0f }
+        {95, 19,  0.93951416f, 0.0f},
+        {35, 47, 0.932922363f, 0.0f},
+        {95, 47,  33.5926666f, 0.0f},
+        {35, 19,         0.0f, 0.0f}
     };
 
     for (unsigned int i = 0; i < features_count; ++i) {

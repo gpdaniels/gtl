@@ -21,13 +21,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Implemetation of feature distribution from the paper "Efficient adaptive non-maximal suppression algorithms for homogeneous spatial keypoint distribution". Pattern Recognition Letters (2018). [wip]
 
 #if defined(_MSC_VER)
-    #pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <cmath>
 
 #if defined(_MSC_VER)
-    #pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #include <vision/feature/feature>
@@ -40,8 +40,8 @@ namespace gtl {
         const int max_height,
         const int min_features,
         const int max_features,
-        gtl::feature* __restrict features_distributed
-    );
+        gtl::feature* __restrict features_distributed);
+
     int square_covering(
         const gtl::feature* __restrict const features_detected_sorted,
         const int features_detected_sorted_size,
@@ -49,8 +49,7 @@ namespace gtl {
         const int max_height,
         const int min_features,
         const int max_features,
-        gtl::feature* __restrict features_distributed
-    ) {
+        gtl::feature* __restrict features_distributed) {
         constexpr static const int square_covering_radius = 2;
 
         // When we want more features than there are, just return all.
@@ -61,14 +60,14 @@ namespace gtl {
             return features_detected_sorted_size;
         }
 
-        constexpr static const auto min = [](int lhs, int rhs)->int{
+        constexpr static const auto min = [](int lhs, int rhs) -> int {
             if (lhs < rhs) {
                 return lhs;
             }
             return rhs;
         };
 
-        constexpr static const auto max = [](int lhs, int rhs)->int{
+        constexpr static const auto max = [](int lhs, int rhs) -> int {
             if (lhs > rhs) {
                 return lhs;
             }
@@ -81,7 +80,7 @@ namespace gtl {
             4ll * static_cast<long long int>(max_features) +
             4ll * static_cast<long long int>(max_height) * static_cast<long long int>(max_features) +
             1ll * static_cast<long long int>(max_height) * static_cast<long long int>(max_height) +
-            1ll * static_cast<long long int>(max_width)  * static_cast<long long int>(max_width) -
+            1ll * static_cast<long long int>(max_width) * static_cast<long long int>(max_width) -
             2ll * static_cast<long long int>(max_height) * static_cast<long long int>(max_width) +
             4ll * static_cast<long long int>(max_height) * static_cast<long long int>(max_width) * static_cast<long long int>(max_features);
         const int delta_sqrt = static_cast<int>(std::sqrt(delta));
@@ -103,7 +102,6 @@ namespace gtl {
 
         // Binary search for the optimum square size.
         while ((indexes_size < min_features) || (indexes_size > max_features)) {
-
             // Calculate the next square size to test.
             const int square_size = (square_size_max + square_size_min) / 2;
             // Check we have a valid width, and that we are not repeating the same again.
@@ -135,7 +133,7 @@ namespace gtl {
                     // If the cell is not covered add it to the results.
                     indexes[indexes_size++] = i;
                     // Check if we have too many features already.
-                    //if (indexes_size > max_features) {
+                    // if (indexes_size > max_features) {
                     //    break;
                     //}
                     // Get the range of squares around the center up to the radius.
@@ -144,8 +142,8 @@ namespace gtl {
                     const int cell_y_min = max(0, cell_y - square_covering_radius);
                     const int cell_y_max = min(grid_height, cell_y + square_covering_radius);
                     // Mark all squares within as covered.
-                    for (int y = cell_y_min; y <= cell_y_max; ++y){
-                        for (int x = cell_x_min; x <= cell_x_max; ++x){
+                    for (int y = cell_y_min; y <= cell_y_max; ++y) {
+                        for (int x = cell_x_min; x <= cell_x_max; ++x) {
                             covered_squares[y * grid_width + x] = true;
                         }
                     }

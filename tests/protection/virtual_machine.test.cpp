@@ -15,19 +15,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <protection/virtual_machine>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(virtual_machine, traits, standard) {
@@ -113,7 +114,6 @@ TEST(virtual_machine, evaluate, simple) {
     REQUIRE(successful_ticks == 1);
 }
 
-
 TEST(virtual_machine, evaluate, complex_copy) {
     unsigned char program[] = {
         0x01, 0xBB
@@ -170,12 +170,7 @@ TEST(virtual_machine, evaluate, complex_sub) {
 
 TEST(virtual_machine, evaluate, complex_push_and_pop) {
     unsigned char program[] = {
-        0x01, 0xBB,
-        0x02,
-        0x01, 0x45,
-        0x01, 0x96,
-        0x02,
-        0x02
+        0x01, 0xBB, 0x02, 0x01, 0x45, 0x01, 0x96, 0x02, 0x02
     };
 
     gtl::virtual_machine virtual_machine(program, sizeof(program));
@@ -233,7 +228,6 @@ TEST(virtual_machine, evaluate, complex_jumps) {
     virtual_machine.register_opcode<0x04, &gtl::vmo::jump_if_less_than_zero<gtl::vm::mem<gtl::vm::rn::program_counter>>>();
 
     virtual_machine.register_opcode<0xFF, &gtl::vmo::sub<gtl::vm::mem<gtl::vm::rn::program_counter>, gtl::vm::mem<gtl::vm::rn::program_counter>, gtl::vm::reg<gtl::vm::rn::general_a>>>();
-
 
     unsigned int successful_ticks = 0;
     while (virtual_machine.tick()) {
@@ -302,7 +296,6 @@ TEST(virtual_machine, evaluate, complex_calls_and_returns) {
 
     virtual_machine.register_opcode<0xFF, &gtl::vmo::sub<gtl::vm::mem<gtl::vm::rn::program_counter>, gtl::vm::mem<gtl::vm::rn::program_counter>, gtl::vm::reg<gtl::vm::rn::general_a>>>();
 
-
     unsigned int successful_ticks = 0;
     while (virtual_machine.tick()) {
         ++successful_ticks;
@@ -315,21 +308,7 @@ TEST(virtual_machine, evaluate, complex_calls_and_returns) {
 
 TEST(virtual_machine, evaluate, complex_syscall) {
     unsigned char program[] = {
-        0x01, 1, 'h',
-        0x01, 1, 'e',
-        0x01, 1, 'l',
-        0x01, 1, 'l',
-        0x01, 1, 'o',
-        0x01, 1, ' ',
-        0x01, 1, 'v',
-        0x01, 1, 'm',
-        0x01, 1, ' ',
-        0x01, 1, 'w',
-        0x01, 1, 'o',
-        0x01, 1, 'r',
-        0x01, 1, 'l',
-        0x01, 1, 'd',
-        0x01, 1, '\n'
+        0x01, 1, 'h', 0x01, 1, 'e', 0x01, 1, 'l', 0x01, 1, 'l', 0x01, 1, 'o', 0x01, 1, ' ', 0x01, 1, 'v', 0x01, 1, 'm', 0x01, 1, ' ', 0x01, 1, 'w', 0x01, 1, 'o', 0x01, 1, 'r', 0x01, 1, 'l', 0x01, 1, 'd', 0x01, 1, '\n'
     };
 
     gtl::virtual_machine virtual_machine(program, sizeof(program));
@@ -351,7 +330,7 @@ TEST(virtual_machine, evaluate, custom_opcode) {
 
     gtl::virtual_machine virtual_machine(program, sizeof(program));
 
-    constexpr static const gtl::virtual_machine::function_type custom_opcode = [](gtl::virtual_machine& vm)->void {
+    constexpr static const gtl::virtual_machine::function_type custom_opcode = [](gtl::virtual_machine& vm) -> void {
         static_cast<void>(vm);
         unsigned char register_e = gtl::vm::reg<gtl::vm::rn::general_e>::get(vm);
         register_e += 1;
@@ -382,21 +361,21 @@ TEST(virtual_machine, evaluate, custom_opcode_loop) {
     };
 
     gtl::virtual_machine virtual_machine(program, sizeof(program));
-    constexpr static const gtl::virtual_machine::function_type custom_opcode_1 = [](gtl::virtual_machine& vm_1)->void {
+    constexpr static const gtl::virtual_machine::function_type custom_opcode_1 = [](gtl::virtual_machine& vm_1) -> void {
         static_cast<void>(vm_1);
         unsigned char register_e_1 = gtl::vm::reg<gtl::vm::rn::general_e>::get(vm_1);
         register_e_1 += 1;
         PRINT("Level 1, sum: %d\n", static_cast<int>(register_e_1));
         gtl::vm::reg<gtl::vm::rn::general_e>::set(vm_1, register_e_1);
 
-        constexpr static const gtl::virtual_machine::function_type custom_opcode_10 = [](gtl::virtual_machine& vm_10)->void {
+        constexpr static const gtl::virtual_machine::function_type custom_opcode_10 = [](gtl::virtual_machine& vm_10) -> void {
             static_cast<void>(vm_10);
             unsigned char register_e_10 = gtl::vm::reg<gtl::vm::rn::general_e>::get(vm_10);
             register_e_10 += 10;
             PRINT("Level 2, sum: %d\n", static_cast<int>(register_e_10));
             gtl::vm::reg<gtl::vm::rn::general_e>::set(vm_10, register_e_10);
 
-            constexpr static const gtl::virtual_machine::function_type custom_opcode_100 = [](gtl::virtual_machine& vm_100)->void {
+            constexpr static const gtl::virtual_machine::function_type custom_opcode_100 = [](gtl::virtual_machine& vm_100) -> void {
                 static_cast<void>(vm_100);
                 unsigned char register_e_100 = gtl::vm::reg<gtl::vm::rn::general_e>::get(vm_100);
                 register_e_100 += 100;

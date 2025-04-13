@@ -15,21 +15,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
-#include <testbench/optimise.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/data.tests.hpp>
+#include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <type/enum_name>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 enum class test_enum {
@@ -39,13 +40,13 @@ enum class test_enum {
 };
 
 TEST(enum_name, traits, standard) {
-    REQUIRE((std::is_pod<gtl::enum_name<test_enum, test_enum::first> >::value == true), "Expected std::is_pod to be true.");
+    REQUIRE((std::is_pod<gtl::enum_name<test_enum, test_enum::first>>::value == true), "Expected std::is_pod to be true.");
 
-    REQUIRE((std::is_trivial<gtl::enum_name<test_enum, test_enum::first> >::value == true), "Expected std::is_trivial to be true.");
+    REQUIRE((std::is_trivial<gtl::enum_name<test_enum, test_enum::first>>::value == true), "Expected std::is_trivial to be true.");
 
-    REQUIRE((std::is_trivially_copyable<gtl::enum_name<test_enum, test_enum::first> >::value == true), "Expected std::is_trivially_copyable to be true.");
+    REQUIRE((std::is_trivially_copyable<gtl::enum_name<test_enum, test_enum::first>>::value == true), "Expected std::is_trivially_copyable to be true.");
 
-    REQUIRE((std::is_standard_layout<gtl::enum_name<test_enum, test_enum::first> >::value == true), "Expected std::is_standard_layout to be true.");
+    REQUIRE((std::is_standard_layout<gtl::enum_name<test_enum, test_enum::first>>::value == true), "Expected std::is_standard_layout to be true.");
 }
 
 TEST(enum_name, constructor, empty) {
@@ -54,25 +55,25 @@ TEST(enum_name, constructor, empty) {
 }
 
 TEST(enum_name, function, name) {
-    #if defined(__clang__) || defined(_MSC_VER) || (defined(__GNUC__) && (__GNUC__ >= 9))
-        gtl::enum_name<test_enum, test_enum::first> enum_name1;
-        REQUIRE(testbench::is_string_same(enum_name1.name(), "test_enum::first") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name(), "test_enum::first");
+#if defined(__clang__) || defined(_MSC_VER) || (defined(__GNUC__) && (__GNUC__ >= 9))
+    gtl::enum_name<test_enum, test_enum::first> enum_name1;
+    REQUIRE(testbench::is_string_same(enum_name1.name(), "test_enum::first") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name(), "test_enum::first");
 
-        gtl::enum_name<test_enum, test_enum::second> enum_name2;
-        REQUIRE(testbench::is_string_same(enum_name2.name(), "test_enum::second") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name(), "test_enum::second");
+    gtl::enum_name<test_enum, test_enum::second> enum_name2;
+    REQUIRE(testbench::is_string_same(enum_name2.name(), "test_enum::second") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name(), "test_enum::second");
 
-        gtl::enum_name<test_enum, test_enum::third> enum_name3;
-        REQUIRE(testbench::is_string_same(enum_name3.name(), "test_enum::third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name(), "test_enum::third");
-    #elif (defined(__GNUC__)  && (__GNUC__ <= 8))
-        gtl::enum_name<test_enum, test_enum::first> enum_name1;
-        REQUIRE(testbench::is_string_same(enum_name1.name(), "(test_enum)0") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name(), "(test_enum)0");
+    gtl::enum_name<test_enum, test_enum::third> enum_name3;
+    REQUIRE(testbench::is_string_same(enum_name3.name(), "test_enum::third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name(), "test_enum::third");
+#elif (defined(__GNUC__) && (__GNUC__ <= 8))
+    gtl::enum_name<test_enum, test_enum::first> enum_name1;
+    REQUIRE(testbench::is_string_same(enum_name1.name(), "(test_enum)0") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name(), "(test_enum)0");
 
-        gtl::enum_name<test_enum, test_enum::second> enum_name2;
-        REQUIRE(testbench::is_string_same(enum_name2.name(), "(test_enum)123456") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name(), "(test_enum)123456");
+    gtl::enum_name<test_enum, test_enum::second> enum_name2;
+    REQUIRE(testbench::is_string_same(enum_name2.name(), "(test_enum)123456") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name(), "(test_enum)123456");
 
-        gtl::enum_name<test_enum, test_enum::third> enum_name3;
-        REQUIRE(testbench::is_string_same(enum_name3.name(), "(test_enum)123457") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name(), "(test_enum)123457");
-    #endif
+    gtl::enum_name<test_enum, test_enum::third> enum_name3;
+    REQUIRE(testbench::is_string_same(enum_name3.name(), "(test_enum)123457") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name(), "(test_enum)123457");
+#endif
 }
 
 TEST(enum_name, function, name_type) {
@@ -87,25 +88,25 @@ TEST(enum_name, function, name_type) {
 }
 
 TEST(enum_name, function, name_value) {
-    #if defined(__clang__) || defined(_MSC_VER) || (defined(__GNUC__) && (__GNUC__ >= 9))
-        gtl::enum_name<test_enum, test_enum::first> enum_name1;
-        REQUIRE(testbench::is_string_same(enum_name1.name_value(), "first") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name_value(), "first");
+#if defined(__clang__) || defined(_MSC_VER) || (defined(__GNUC__) && (__GNUC__ >= 9))
+    gtl::enum_name<test_enum, test_enum::first> enum_name1;
+    REQUIRE(testbench::is_string_same(enum_name1.name_value(), "first") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name_value(), "first");
 
-        gtl::enum_name<test_enum, test_enum::second> enum_name2;
-        REQUIRE(testbench::is_string_same(enum_name2.name_value(), "second") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name_value(), "second");
+    gtl::enum_name<test_enum, test_enum::second> enum_name2;
+    REQUIRE(testbench::is_string_same(enum_name2.name_value(), "second") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name_value(), "second");
 
-        gtl::enum_name<test_enum, test_enum::third> enum_name3;
-        REQUIRE(testbench::is_string_same(enum_name3.name_value(), "third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_value(), "third");
-    #elif (defined(__GNUC__)  && (__GNUC__ <= 8))
-        gtl::enum_name<test_enum, test_enum::first> enum_name1;
-        REQUIRE(testbench::is_string_same(enum_name1.name_value(), "0") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name_value(), "0");
+    gtl::enum_name<test_enum, test_enum::third> enum_name3;
+    REQUIRE(testbench::is_string_same(enum_name3.name_value(), "third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_value(), "third");
+#elif (defined(__GNUC__) && (__GNUC__ <= 8))
+    gtl::enum_name<test_enum, test_enum::first> enum_name1;
+    REQUIRE(testbench::is_string_same(enum_name1.name_value(), "0") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name_value(), "0");
 
-        gtl::enum_name<test_enum, test_enum::second> enum_name2;
-        REQUIRE(testbench::is_string_same(enum_name2.name_value(), "123456") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name_value(), "123456");
+    gtl::enum_name<test_enum, test_enum::second> enum_name2;
+    REQUIRE(testbench::is_string_same(enum_name2.name_value(), "123456") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name_value(), "123456");
 
-        gtl::enum_name<test_enum, test_enum::third> enum_name3;
-        REQUIRE(testbench::is_string_same(enum_name3.name_value(), "123457") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_value(), "123457");
-    #endif
+    gtl::enum_name<test_enum, test_enum::third> enum_name3;
+    REQUIRE(testbench::is_string_same(enum_name3.name_value(), "123457") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_value(), "123457");
+#endif
 }
 
 namespace test_namespace {
@@ -117,25 +118,25 @@ namespace test_namespace {
 }
 
 TEST(enum_name, function, name_with_namespaces) {
-    #if defined(__clang__) || defined(_MSC_VER) || (defined(__GNUC__) && (__GNUC__ >= 9))
-        gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::first> enum_name1;
-        REQUIRE(testbench::is_string_same(enum_name1.name(), "test_namespace::test_enum::first") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name(), "test_namespace::test_enum::first");
+#if defined(__clang__) || defined(_MSC_VER) || (defined(__GNUC__) && (__GNUC__ >= 9))
+    gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::first> enum_name1;
+    REQUIRE(testbench::is_string_same(enum_name1.name(), "test_namespace::test_enum::first") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name(), "test_namespace::test_enum::first");
 
-        gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::second> enum_name2;
-        REQUIRE(testbench::is_string_same(enum_name2.name(), "test_namespace::test_enum::second") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name(), "test_namespace::test_enum::second");
+    gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::second> enum_name2;
+    REQUIRE(testbench::is_string_same(enum_name2.name(), "test_namespace::test_enum::second") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name(), "test_namespace::test_enum::second");
 
-        gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::third> enum_name3;
-        REQUIRE(testbench::is_string_same(enum_name3.name(), "test_namespace::test_enum::third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name(), "test_namespace::test_enum::third");
-    #elif (defined(__GNUC__)  && (__GNUC__ <= 8))
-        gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::first> enum_name1;
-        REQUIRE(testbench::is_string_same(enum_name1.name(), "(test_namespace::test_enum)0") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name(), "(test_namespace::test_enum)0");
+    gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::third> enum_name3;
+    REQUIRE(testbench::is_string_same(enum_name3.name(), "test_namespace::test_enum::third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name(), "test_namespace::test_enum::third");
+#elif (defined(__GNUC__) && (__GNUC__ <= 8))
+    gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::first> enum_name1;
+    REQUIRE(testbench::is_string_same(enum_name1.name(), "(test_namespace::test_enum)0") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name(), "(test_namespace::test_enum)0");
 
-        gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::second> enum_name2;
-        REQUIRE(testbench::is_string_same(enum_name2.name(), "(test_namespace::test_enum)123456") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name(), "(test_namespace::test_enum)123456");
+    gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::second> enum_name2;
+    REQUIRE(testbench::is_string_same(enum_name2.name(), "(test_namespace::test_enum)123456") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name(), "(test_namespace::test_enum)123456");
 
-        gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::third> enum_name3;
-        REQUIRE(testbench::is_string_same(enum_name3.name(), "(test_namespace::test_enum)123457") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name(), "(test_namespace::test_enum)123457");
-    #endif
+    gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::third> enum_name3;
+    REQUIRE(testbench::is_string_same(enum_name3.name(), "(test_namespace::test_enum)123457") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name(), "(test_namespace::test_enum)123457");
+#endif
 }
 
 TEST(enum_name, function, name_type_with_namespaces) {
@@ -150,23 +151,23 @@ TEST(enum_name, function, name_type_with_namespaces) {
 }
 
 TEST(enum_name, function, name_value_with_namespaces) {
-    #if defined(__clang__) || defined(_MSC_VER) || (defined(__GNUC__) && (__GNUC__ >= 9))
-        gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::first> enum_name1;
-        REQUIRE(testbench::is_string_same(enum_name1.name_value(), "first") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name_value(), "first");
+#if defined(__clang__) || defined(_MSC_VER) || (defined(__GNUC__) && (__GNUC__ >= 9))
+    gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::first> enum_name1;
+    REQUIRE(testbench::is_string_same(enum_name1.name_value(), "first") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name_value(), "first");
 
-        gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::second> enum_name2;
-        REQUIRE(testbench::is_string_same(enum_name2.name_value(), "second") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name_value(), "second");
+    gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::second> enum_name2;
+    REQUIRE(testbench::is_string_same(enum_name2.name_value(), "second") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name_value(), "second");
 
-        gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::third> enum_name3;
-        REQUIRE(testbench::is_string_same(enum_name3.name_value(), "third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_value(), "third");
-    #elif (defined(__GNUC__)  && (__GNUC__ <= 8))
-        gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::first> enum_name1;
-        REQUIRE(testbench::is_string_same(enum_name1.name_value(), "0") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name_value(), "0");
+    gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::third> enum_name3;
+    REQUIRE(testbench::is_string_same(enum_name3.name_value(), "third") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_value(), "third");
+#elif (defined(__GNUC__) && (__GNUC__ <= 8))
+    gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::first> enum_name1;
+    REQUIRE(testbench::is_string_same(enum_name1.name_value(), "0") == true, "gtl::test_enum<test_enum, first>::name() = '%s', expected '%s'", enum_name1.name_value(), "0");
 
-        gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::second> enum_name2;
-        REQUIRE(testbench::is_string_same(enum_name2.name_value(), "123456") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name_value(), "123456");
+    gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::second> enum_name2;
+    REQUIRE(testbench::is_string_same(enum_name2.name_value(), "123456") == true, "gtl::test_enum<test_enum, second>::name() = '%s', expected '%s'", enum_name2.name_value(), "123456");
 
-        gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::third> enum_name3;
-        REQUIRE(testbench::is_string_same(enum_name3.name_value(), "123457") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_value(), "123457");
-    #endif
+    gtl::enum_name<test_namespace::test_enum, test_namespace::test_enum::third> enum_name3;
+    REQUIRE(testbench::is_string_same(enum_name3.name_value(), "123457") == true, "gtl::test_enum<test_enum, third>::name() = '%s', expected '%s'", enum_name3.name_value(), "123457");
+#endif
 }

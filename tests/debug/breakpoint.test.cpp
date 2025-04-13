@@ -15,114 +15,114 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
-#include <testbench/optimise.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
+#include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <debug/breakpoint>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #if defined(_WIN32)
-    #define WIN32_LEAN_AND_MEAN
-    #define VC_EXTRALEAN
-    #define STRICT
+#define WIN32_LEAN_AND_MEAN
+#define VC_EXTRALEAN
+#define STRICT
 
-    #include <sdkddkver.h>
+#include <sdkddkver.h>
 
-    #if defined(_AFXDLL)
-        #include <afxwin.h>
-    #else
-        #include <Windows.h>
-    #endif
-
-    // AddVectoredExceptionHandler constants:
-    // CALL_FIRST means call this exception handler first.
-    // CALL_LAST means call this exception handler last.
-    #define CALL_FIRST 1
-    #define CALL_LAST 0
+#if defined(_AFXDLL)
+#include <afxwin.h>
 #else
-    #include <csignal>
+#include <Windows.h>
+#endif
 
-    #if !defined(SIGTRAP)
-        #define SIGTRAP 5
-    #endif
+// AddVectoredExceptionHandler constants:
+// CALL_FIRST means call this exception handler first.
+// CALL_LAST means call this exception handler last.
+#define CALL_FIRST 1
+#define CALL_LAST 0
+#else
+#include <csignal>
+
+#if !defined(SIGTRAP)
+#define SIGTRAP 5
+#endif
 #endif
 
 TEST(breakpoint, evaluate, breakpoint) {
     static bool caught = false;
 
-    #if defined(_WIN32)
-        constexpr static auto handler = [](EXCEPTION_POINTERS* exception) -> LONG {
-            if (exception->ExceptionRecord->ExceptionCode == EXCEPTION_BREAKPOINT) {
-                PRINT("Breakpoint at 0x%x skipped.\n", exception->ExceptionRecord->ExceptionAddress);
+#if defined(_WIN32)
+    constexpr static auto handler = [](EXCEPTION_POINTERS* exception) -> LONG {
+        if (exception->ExceptionRecord->ExceptionCode == EXCEPTION_BREAKPOINT) {
+            PRINT("Breakpoint at 0x%x skipped.\n", exception->ExceptionRecord->ExceptionAddress);
 
-                PCONTEXT context = exception->ContextRecord;
+            PCONTEXT context = exception->ContextRecord;
 
-                // The breakpoint instruction is 0xCC (int 3), just one byte in size.
-                #ifdef _AMD64_
-                     context->Rip++;
-                #else
-                     context->Eip++;
-                #endif
+// The breakpoint instruction is 0xCC (int 3), just one byte in size.
+#ifdef _AMD64_
+            context->Rip++;
+#else
+            context->Eip++;
+#endif
 
-                caught = true;
+            caught = true;
 
-                return EXCEPTION_CONTINUE_EXECUTION;
-            }
-            return EXCEPTION_CONTINUE_SEARCH;
-        };
+            return EXCEPTION_CONTINUE_EXECUTION;
+        }
+        return EXCEPTION_CONTINUE_SEARCH;
+    };
 
-        REQUIRE(AddVectoredExceptionHandler(CALL_FIRST, handler) != nullptr);
-    #else
-        constexpr static auto handler =  [](int signal_number, siginfo_t* info, void* extra) {
-            static_cast<void>(info);
-            static_cast<void>(extra);
-            if (signal_number == SIGTRAP) {
-                PRINT("Breakpoint skipped.\n");
-                caught = true;
+    REQUIRE(AddVectoredExceptionHandler(CALL_FIRST, handler) != nullptr);
+#else
+    constexpr static auto handler = [](int signal_number, siginfo_t* info, void* extra) {
+        static_cast<void>(info);
+        static_cast<void>(extra);
+        if (signal_number == SIGTRAP) {
+            PRINT("Breakpoint skipped.\n");
+            caught = true;
 
-                // Note: Arm cpus (unlike intel) do not increment the pc upon hitting the breakpoint instruction.
-                #if defined(__APPLE__)
-                    #if (defined(__arm__) || defined(_M_ARM))
-                        #if defined(__thumb__)
-                            reinterpret_cast<ucontext_t*>(extra)->uc_mcontext->__ss.__pc += 2;
-                        #else
-                            reinterpret_cast<ucontext_t*>(extra)->uc_mcontext->__ss.__pc += 4;
-                        #endif
-                    #elif (defined(__aarch64__))
-                        reinterpret_cast<ucontext_t*>(extra)->uc_mcontext->__ss.__pc += 4;
-                    #endif
-                #else
-                    #if (defined(__arm__) || defined(_M_ARM))
-                        #if defined(__thumb__)
-                            reinterpret_cast<ucontext_t*>(extra)->uc_mcontext.pc += 2;
-                        #else
-                            reinterpret_cast<ucontext_t*>(extra)->uc_mcontext.pc += 4;
-                        #endif
-                    #elif (defined(__aarch64__))
-                        reinterpret_cast<ucontext_t*>(extra)->uc_mcontext.pc += 4;
-                    #endif
-                #endif
-            }
-        };
+// Note: Arm cpus (unlike intel) do not increment the pc upon hitting the breakpoint instruction.
+#if defined(__APPLE__)
+#if (defined(__arm__) || defined(_M_ARM))
+#if defined(__thumb__)
+            reinterpret_cast<ucontext_t*>(extra)->uc_mcontext->__ss.__pc += 2;
+#else
+            reinterpret_cast<ucontext_t*>(extra)->uc_mcontext->__ss.__pc += 4;
+#endif
+#elif (defined(__aarch64__))
+            reinterpret_cast<ucontext_t*>(extra)->uc_mcontext->__ss.__pc += 4;
+#endif
+#else
+#if (defined(__arm__) || defined(_M_ARM))
+#if defined(__thumb__)
+            reinterpret_cast<ucontext_t*>(extra)->uc_mcontext.pc += 2;
+#else
+            reinterpret_cast<ucontext_t*>(extra)->uc_mcontext.pc += 4;
+#endif
+#elif (defined(__aarch64__))
+            reinterpret_cast<ucontext_t*>(extra)->uc_mcontext.pc += 4;
+#endif
+#endif
+        }
+    };
 
-        struct sigaction action;
-        action.sa_flags = SA_SIGINFO;
-        action.sa_sigaction = handler;
-        REQUIRE(sigaction(SIGTRAP, &action, nullptr) != -1);
-    #endif
+    struct sigaction action;
+    action.sa_flags = SA_SIGINFO;
+    action.sa_sigaction = handler;
+    REQUIRE(sigaction(SIGTRAP, &action, nullptr) != -1);
+#endif
 
     GTL_BREAKPOINT();
 
     REQUIRE(caught);
 }
-

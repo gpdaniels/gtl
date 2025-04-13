@@ -15,30 +15,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <algorithm/kmeans>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <cmath>
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(kmeans, evaluate, data) {
-
     struct xy {
         float x, y;
 
         xy operator+(const xy& other) const {
             return { x + other.x, y + other.y };
         }
+
         xy operator/(const int other) const {
             return { x / other, y / other };
         }
@@ -68,7 +69,7 @@ TEST(kmeans, evaluate, data) {
 
     std::vector<std::size_t> clusters;
 
-    clusters = gtl::kmeans<xy, float>::compute(data, 2, 100, 0.001f, [](const xy& lhs, const xy& rhs){
+    clusters = gtl::kmeans<xy, float>::compute(data, 2, 100, 0.001f, [](const xy& lhs, const xy& rhs) {
         return std::sqrt((lhs.x - rhs.x) * (lhs.x - rhs.x) + ((lhs.y - rhs.y) * (lhs.y - rhs.y)));
     });
 

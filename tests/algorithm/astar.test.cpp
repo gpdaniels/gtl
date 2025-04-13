@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/print.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -22,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <algorithm/astar>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <algorithm>
@@ -30,18 +31,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vector>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 struct xy {
     int x, y;
+
     bool operator==(const xy& other) const {
         return ((this->x == other.x) && (this->y == other.y));
     }
-    struct hash_function
-    {
-        std::size_t operator()(const xy& pos) const
-        {
+
+    struct hash_function {
+        std::size_t operator()(const xy& pos) const {
             std::size_t rowHash = std::hash<int>()(pos.x);
             std::size_t colHash = std::hash<int>()(pos.y) << 1;
             return rowHash ^ colHash;
@@ -53,33 +54,39 @@ struct map {
     constexpr static const int width = 10;
     constexpr static const int height = 10;
     bool grid[height][width] = {
-        { 1, 1, 0, 0, 0, 1, 1, 1, 0, 0 },
-        { 1, 1, 0, 1, 1, 1, 0, 1, 0, 0 },
-        { 0, 1, 0, 1, 0, 0, 0, 1, 0, 0 },
-        { 0, 1, 0, 1, 0, 0, 0, 1, 0, 0 },
-        { 0, 1, 1, 1, 0, 0, 0, 1, 1, 0 },
-        { 0, 1, 1, 1, 0, 0, 0, 1, 1, 1 },
-        { 0, 1, 1, 1, 1, 1, 0, 1, 0, 1 },
-        { 0, 1, 1, 0, 0, 1, 0, 1, 0, 1 },
-        { 0, 1, 1, 0, 0, 1, 1, 1, 0, 1 },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }
+        {1, 1, 0, 0, 0, 1, 1, 1, 0, 0},
+        {1, 1, 0, 1, 1, 1, 0, 1, 0, 0},
+        {0, 1, 0, 1, 0, 0, 0, 1, 0, 0},
+        {0, 1, 0, 1, 0, 0, 0, 1, 0, 0},
+        {0, 1, 1, 1, 0, 0, 0, 1, 1, 0},
+        {0, 1, 1, 1, 0, 0, 0, 1, 1, 1},
+        {0, 1, 1, 1, 1, 1, 0, 1, 0, 1},
+        {0, 1, 1, 0, 0, 1, 0, 1, 0, 1},
+        {0, 1, 1, 0, 0, 1, 1, 1, 0, 1},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
     };
 
-    std::vector<xy> get_moves(const xy& current){
+    std::vector<xy> get_moves(const xy& current) {
         std::vector<xy> result;
         result.reserve(4);
-        result.push_back({current.x - 1, current.y});
-        result.push_back({current.x + 1, current.y});
-        result.push_back({current.x, current.y - 1});
-        result.push_back({current.x, current.y + 1});
-        result.erase(std::remove_if(result.begin(), result.end(), [this](const xy& node){
-            if (node.x < 0) return true;
-            if (node.x >= width) return true;
-            if (node.y < 0) return true;
-            if (node.y >= height) return true;
-            if (this->grid[node.y][node.x] == false) return true;
-            return false;
-        }), result.end());
+        result.push_back({ current.x - 1, current.y });
+        result.push_back({ current.x + 1, current.y });
+        result.push_back({ current.x, current.y - 1 });
+        result.push_back({ current.x, current.y + 1 });
+        result.erase(std::remove_if(result.begin(), result.end(), [this](const xy& node) {
+                         if (node.x < 0)
+                             return true;
+                         if (node.x >= width)
+                             return true;
+                         if (node.y < 0)
+                             return true;
+                         if (node.y >= height)
+                             return true;
+                         if (this->grid[node.y][node.x] == false)
+                             return true;
+                         return false;
+                     }),
+                     result.end());
         return result;
     }
 
@@ -94,11 +101,23 @@ struct map {
             for (int x = 0; x < width; ++x) {
                 bool on_start = (x == start.x) && (y == start.y);
                 bool on_end = (x == end.x) && (y == end.y);
-                bool on_path = (std::find(path.begin(), path.end(), xy{x, y}) != path.end());
-                if (on_start) { PRINT("S"); continue; }
-                if (on_end) { PRINT("E"); continue; }
-                if (on_path) { PRINT("o"); continue; }
-                if (this->grid[y][x]) { PRINT(" "); continue; }
+                bool on_path = (std::find(path.begin(), path.end(), xy{ x, y }) != path.end());
+                if (on_start) {
+                    PRINT("S");
+                    continue;
+                }
+                if (on_end) {
+                    PRINT("E");
+                    continue;
+                }
+                if (on_path) {
+                    PRINT("o");
+                    continue;
+                }
+                if (this->grid[y][x]) {
+                    PRINT(" ");
+                    continue;
+                }
                 PRINT("X");
             }
             PRINT("#\n");
@@ -113,9 +132,8 @@ struct map {
 };
 
 TEST(astar, evaluate, solve) {
-
-    xy start = {0, 0};
-    xy end = {9, 9};
+    xy start = { 0, 0 };
+    xy end = { 9, 9 };
     std::vector<xy> path;
     map maze;
 
@@ -124,42 +142,45 @@ TEST(astar, evaluate, solve) {
     gtl::astar<xy, float>::solve(
         start,
         end,
-        [&maze](const xy& current)->std::vector<xy>{
+        [&maze](const xy& current) -> std::vector<xy> {
             return maze.get_moves(current);
         },
-        [](const xy& current, const xy& target)->float{
+        [](const xy& current, const xy& target) -> float {
             const int dx = (current.x - target.x);
             const int dy = (current.y - target.y);
             return std::sqrt(static_cast<float>((dx * dx) + (dy * dy)));
         },
-        path
-    );
+        path);
 
     maze.print(start, end, path);
 }
 
-
 struct map2 {
     constexpr static const int width = 500;
     constexpr static const int height = 500;
-    int grid[height][width] = {
-    };
+    int grid[height][width] = {};
 
-    std::vector<xy> get_moves(const xy& current){
+    std::vector<xy> get_moves(const xy& current) {
         std::vector<xy> result;
         result.reserve(4);
-        result.push_back({current.x - 1, current.y});
-        result.push_back({current.x + 1, current.y});
-        result.push_back({current.x, current.y - 1});
-        result.push_back({current.x, current.y + 1});
-        result.erase(std::remove_if(result.begin(), result.end(), [this](const xy& node){
-            if (node.x < 0) return true;
-            if (node.x >= width) return true;
-            if (node.y < 0) return true;
-            if (node.y >= height) return true;
-            if (this->grid[node.y][node.x] == 0) return true;
-            return false;
-        }), result.end());
+        result.push_back({ current.x - 1, current.y });
+        result.push_back({ current.x + 1, current.y });
+        result.push_back({ current.x, current.y - 1 });
+        result.push_back({ current.x, current.y + 1 });
+        result.erase(std::remove_if(result.begin(), result.end(), [this](const xy& node) {
+                         if (node.x < 0)
+                             return true;
+                         if (node.x >= width)
+                             return true;
+                         if (node.y < 0)
+                             return true;
+                         if (node.y >= height)
+                             return true;
+                         if (this->grid[node.y][node.x] == 0)
+                             return true;
+                         return false;
+                     }),
+                     result.end());
         return result;
     }
 
@@ -174,11 +195,23 @@ struct map2 {
             for (int x = 0; x < width; ++x) {
                 bool on_start = (x == start.x) && (y == start.y);
                 bool on_end = (x == end.x) && (y == end.y);
-                bool on_path = (std::find(path.begin(), path.end(), xy{x, y}) != path.end());
-                if (on_start) { PRINT("S"); continue; }
-                if (on_end) { PRINT("E"); continue; }
-                if (on_path) { PRINT("%d",this->grid[y][x]); continue; }
-                if (this->grid[y][x]) { PRINT(" "); continue; }
+                bool on_path = (std::find(path.begin(), path.end(), xy{ x, y }) != path.end());
+                if (on_start) {
+                    PRINT("S");
+                    continue;
+                }
+                if (on_end) {
+                    PRINT("E");
+                    continue;
+                }
+                if (on_path) {
+                    PRINT("%d", this->grid[y][x]);
+                    continue;
+                }
+                if (this->grid[y][x]) {
+                    PRINT(" ");
+                    continue;
+                }
                 PRINT("X");
             }
             PRINT("#\n");
@@ -298,8 +331,8 @@ TEST(astar, evaluate, solve_big) {
 
     map2 maze;
 
-    for (int i = 0; i < maze.height/5; ++i) {
-        for (int j = 0; j < maze.width/5; ++j) {
+    for (int i = 0; i < maze.height / 5; ++i) {
+        for (int j = 0; j < maze.width / 5; ++j) {
             maze.grid[i][j] = data[i][j] - '0';
         }
     }
@@ -309,45 +342,66 @@ TEST(astar, evaluate, solve_big) {
             if (i == 0 && j == 0) {
                 continue;
             }
-            for (int k = 0; k < maze.height/5; ++k) {
-                for (int l = 0; l < maze.width/5; ++l) {
-                    maze.grid[(maze.height/5) * i + k][(maze.width/5) * j + l] = maze.grid[k][l] + (i + j);
-                    switch (maze.grid[(maze.height/5) * i + k][(maze.width/5) * j + l]) {
-                        case 10: maze.grid[(maze.height/5) * i + k][(maze.width/5) * j + l] = 1; break;
-                        case 11: maze.grid[(maze.height/5) * i + k][(maze.width/5) * j + l] = 2; break;
-                        case 12: maze.grid[(maze.height/5) * i + k][(maze.width/5) * j + l] = 3; break;
-                        case 13: maze.grid[(maze.height/5) * i + k][(maze.width/5) * j + l] = 4; break;
-                        case 14: maze.grid[(maze.height/5) * i + k][(maze.width/5) * j + l] = 5; break;
-                        case 15: maze.grid[(maze.height/5) * i + k][(maze.width/5) * j + l] = 6; break;
-                        case 16: maze.grid[(maze.height/5) * i + k][(maze.width/5) * j + l] = 7; break;
-                        case 17: maze.grid[(maze.height/5) * i + k][(maze.width/5) * j + l] = 8; break;
-                        case 18: maze.grid[(maze.height/5) * i + k][(maze.width/5) * j + l] = 9; break;
-                        case 19: maze.grid[(maze.height/5) * i + k][(maze.width/5) * j + l] = 1; break;
-                        case 20: maze.grid[(maze.height/5) * i + k][(maze.width/5) * j + l] = 2; break;
+            for (int k = 0; k < maze.height / 5; ++k) {
+                for (int l = 0; l < maze.width / 5; ++l) {
+                    maze.grid[(maze.height / 5) * i + k][(maze.width / 5) * j + l] = maze.grid[k][l] + (i + j);
+                    switch (maze.grid[(maze.height / 5) * i + k][(maze.width / 5) * j + l]) {
+                        case 10:
+                            maze.grid[(maze.height / 5) * i + k][(maze.width / 5) * j + l] = 1;
+                            break;
+                        case 11:
+                            maze.grid[(maze.height / 5) * i + k][(maze.width / 5) * j + l] = 2;
+                            break;
+                        case 12:
+                            maze.grid[(maze.height / 5) * i + k][(maze.width / 5) * j + l] = 3;
+                            break;
+                        case 13:
+                            maze.grid[(maze.height / 5) * i + k][(maze.width / 5) * j + l] = 4;
+                            break;
+                        case 14:
+                            maze.grid[(maze.height / 5) * i + k][(maze.width / 5) * j + l] = 5;
+                            break;
+                        case 15:
+                            maze.grid[(maze.height / 5) * i + k][(maze.width / 5) * j + l] = 6;
+                            break;
+                        case 16:
+                            maze.grid[(maze.height / 5) * i + k][(maze.width / 5) * j + l] = 7;
+                            break;
+                        case 17:
+                            maze.grid[(maze.height / 5) * i + k][(maze.width / 5) * j + l] = 8;
+                            break;
+                        case 18:
+                            maze.grid[(maze.height / 5) * i + k][(maze.width / 5) * j + l] = 9;
+                            break;
+                        case 19:
+                            maze.grid[(maze.height / 5) * i + k][(maze.width / 5) * j + l] = 1;
+                            break;
+                        case 20:
+                            maze.grid[(maze.height / 5) * i + k][(maze.width / 5) * j + l] = 2;
+                            break;
                     }
                 }
             }
         }
     }
 
-    xy start = {0, 0};
-    xy end = {maze.height-1, maze.width-1};
+    xy start = { 0, 0 };
+    xy end = { maze.height - 1, maze.width - 1 };
     std::vector<xy> path;
 
     gtl::astar<xy, float>::solve(
         start,
         end,
-        [&maze](const xy& current)->std::vector<xy>{
+        [&maze](const xy& current) -> std::vector<xy> {
             return maze.get_moves(current);
         },
-        [&maze](const xy& current, const xy& target)->float{
+        [&maze](const xy& current, const xy& target) -> float {
             static_cast<void>(target);
             return static_cast<float>(maze.grid[current.y][current.x]);
         },
-        path
-    );
+        path);
 
-    //maze.print(start, end, path);
+    // maze.print(start, end, path);
 
     int risk = 0;
 

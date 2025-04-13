@@ -21,14 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: A non-owning static_view into multi-dimensional memory. [wip]
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the static_view is misused.
-#   define GTL_STATIC_VIEW_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_STATIC_VIEW_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_STATIC_VIEW_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_STATIC_VIEW_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 namespace gtl {
@@ -39,10 +39,12 @@ namespace gtl {
         struct slice_type_generator final {
             using slice_type = type*;
         };
+
         template <unsigned int first_dimension_size, unsigned int... remaining_dimension_sizes>
         struct slice_type_generator<first_dimension_size, remaining_dimension_sizes...> final {
             using slice_type = static_view<type, remaining_dimension_sizes...>;
         };
+
         using slice_type = typename slice_type_generator<dimension_sizes...>::slice_type;
 
     private:

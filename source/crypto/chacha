@@ -21,14 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: An implementation of the chacha encryption algorithm.
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the chacha is misused.
-#   define GTL_CHACHA_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_CHACHA_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_CHACHA_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_CHACHA_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 namespace gtl {
@@ -44,8 +44,8 @@ namespace gtl {
     template <chacha_mode block_cipher_mode, unsigned long long int chacha_rounds = 20>
     class chacha final {
     private:
-        static_assert (chacha_rounds > 0, "Number of rounds must be greater than zero.");
-        static_assert (chacha_rounds % 2 == 0, "Number of rounds must be an even number.");
+        static_assert(chacha_rounds > 0, "Number of rounds must be greater than zero.");
+        static_assert(chacha_rounds % 2 == 0, "Number of rounds must be an even number.");
 
     public:
         /// @brief  Handy variable for accessing the size in bits.
@@ -75,7 +75,7 @@ namespace gtl {
         /// @brief  Type used to hold blocks of data for processing.
         struct block_type {
             /// @brief  The data stored in the block.
-            word_type data[chacha::block_size] = {{}};
+            word_type data[chacha::block_size] = { {} };
         };
 
         /// @brief  Simple type to hold the key data.
@@ -101,34 +101,32 @@ namespace gtl {
         /// @brief  Pack a set of four bytes into an integer.
         /// @param  data The byte array data to store.
         /// @return An integer representation of the four bytes.
-        constexpr static unsigned int pack_bytes_32(const unsigned char* data){
-            return
-                (static_cast<unsigned int>(data[0]) <<  0) |
-                (static_cast<unsigned int>(data[1]) <<  8) |
-                (static_cast<unsigned int>(data[2]) << 16) |
-                (static_cast<unsigned int>(data[3]) << 24);
+        constexpr static unsigned int pack_bytes_32(const unsigned char* data) {
+            return (static_cast<unsigned int>(data[0]) << 0) |
+                   (static_cast<unsigned int>(data[1]) << 8) |
+                   (static_cast<unsigned int>(data[2]) << 16) |
+                   (static_cast<unsigned int>(data[3]) << 24);
         }
 
         /// @brief  Pack a set of eight bytes into a long integer.
         /// @param  data The byte array data to store.
         /// @return A long integer representation of the eight bytes.
-        constexpr static unsigned long long int pack_bytes_64(const unsigned char* data){
-            return
-                (static_cast<unsigned long long int>(data[0]) <<  0) |
-                (static_cast<unsigned long long int>(data[1]) <<  8) |
-                (static_cast<unsigned long long int>(data[2]) << 16) |
-                (static_cast<unsigned long long int>(data[3]) << 24) |
-                (static_cast<unsigned long long int>(data[4]) << 32) |
-                (static_cast<unsigned long long int>(data[5]) << 40) |
-                (static_cast<unsigned long long int>(data[6]) << 48) |
-                (static_cast<unsigned long long int>(data[7]) << 56);
+        constexpr static unsigned long long int pack_bytes_64(const unsigned char* data) {
+            return (static_cast<unsigned long long int>(data[0]) << 0) |
+                   (static_cast<unsigned long long int>(data[1]) << 8) |
+                   (static_cast<unsigned long long int>(data[2]) << 16) |
+                   (static_cast<unsigned long long int>(data[3]) << 24) |
+                   (static_cast<unsigned long long int>(data[4]) << 32) |
+                   (static_cast<unsigned long long int>(data[5]) << 40) |
+                   (static_cast<unsigned long long int>(data[6]) << 48) |
+                   (static_cast<unsigned long long int>(data[7]) << 56);
         }
 
         /// @brief  Unpack a byte from an integer given an index.
         /// @param  data The integer to unpack from.
         /// @param  index The index of the byte to unpack.
         /// @return The byte that was at the index in the integer.
-        constexpr static unsigned char unpack_byte(unsigned int data, unsigned int index){
+        constexpr static unsigned char unpack_byte(unsigned int data, unsigned int index) {
             return static_cast<unsigned char>((data >> (index * 8)) & 0xFF);
         }
 
@@ -136,7 +134,7 @@ namespace gtl {
         /// @param  data The integer to unpack from.
         /// @param  index The index of the byte to unpack.
         /// @return The byte that was at the index in the integer.
-        constexpr static unsigned char unpack_byte(unsigned long long int data, unsigned int index){
+        constexpr static unsigned char unpack_byte(unsigned long long int data, unsigned int index) {
             return static_cast<unsigned char>((data >> (index * 8)) & 0xFF);
         }
 
@@ -169,12 +167,12 @@ namespace gtl {
         constexpr static block_type transform_block(const key_type& key, const nonce_type& nonce) {
             block_type state = {
                 chacha::initialisation_constant,
-                { chacha::pack_bytes_32(&key.data[0]), chacha::pack_bytes_32(&key.data[4]), chacha::pack_bytes_32(&key.data[8]), chacha::pack_bytes_32(&key.data[12]) },
-                { chacha::pack_bytes_32(&key.data[16]), chacha::pack_bytes_32(&key.data[20]), chacha::pack_bytes_32(&key.data[24]), chacha::pack_bytes_32(&key.data[28]) },
-                { chacha::pack_bytes_32(&nonce.data[0]), chacha::pack_bytes_32(&nonce.data[4]), chacha::pack_bytes_32(&nonce.data[8]), chacha::pack_bytes_32(&nonce.data[12]) },
+                {  chacha::pack_bytes_32(&key.data[0]),   chacha::pack_bytes_32(&key.data[4]),   chacha::pack_bytes_32(&key.data[8]),   chacha::pack_bytes_32(&key.data[12])},
+                { chacha::pack_bytes_32(&key.data[16]),  chacha::pack_bytes_32(&key.data[20]),  chacha::pack_bytes_32(&key.data[24]),   chacha::pack_bytes_32(&key.data[28])},
+                {chacha::pack_bytes_32(&nonce.data[0]), chacha::pack_bytes_32(&nonce.data[4]), chacha::pack_bytes_32(&nonce.data[8]), chacha::pack_bytes_32(&nonce.data[12])},
             };
             block_type result = state;
-            for (int i = 0; i < (chacha::number_of_rounds / 2); ++i){
+            for (int i = 0; i < (chacha::number_of_rounds / 2); ++i) {
                 chacha::quarter_round(0, 0, 0, 0, result);
                 chacha::quarter_round(1, 1, 1, 1, result);
                 chacha::quarter_round(2, 2, 2, 2, result);
@@ -216,7 +214,6 @@ namespace gtl {
             }
             return result;
         }
-
 
     public:
         /// @brief  Transform a block of data from decrypted to encrypted chaining together blocks using an initialisation vector.
@@ -269,7 +266,7 @@ namespace gtl {
         /// @param  key The encryption key, must be at least the length required by the selected chacha bitsize.
         /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
         static void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, unsigned char* output) {
-            const unsigned char iv[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+            const unsigned char iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             chacha::encrypt(data, length, key, iv, output);
         }
 
@@ -279,7 +276,7 @@ namespace gtl {
         /// @param  key The decryption key, must be at least the length required by the selected chacha bitsize.
         /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
         static void decrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, unsigned char* output) {
-            const unsigned char iv[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+            const unsigned char iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             chacha::decrypt(data, length, key, iv, output);
         }
 
@@ -335,7 +332,6 @@ namespace gtl {
             for (unsigned int i = 0; i < chacha::key_size; ++i) {
                 key_data.data[i] = key[i];
             }
-
 
             nonce_type initialisation_vector;
             for (unsigned int i = 0; i < chacha::nonce_size; ++i) {

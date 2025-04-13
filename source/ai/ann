@@ -21,14 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Artificial neural network using the backpropagation algorithm for training.
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the ann is misused.
-#   define GTL_ANN_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_ANN_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_ANN_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_ANN_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 #if defined(_MSC_VER)
@@ -45,12 +45,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace gtl {
     /// @brief  A simple artifical neural network class that uses back-propagation to learn.
     /// @tparam scalar_type The floating point type used to represent values in the network.
-    template<typename scalar_type>
+    template <typename scalar_type>
     class ann final {
     private:
         /// @brief  The random_pcg class is a stripped down pcg pseudo-random-number generator.
-        class random_pcg final
-        {
+        class random_pcg final {
         private:
             /// @brief  Current state of the random number generator.
             unsigned long long int state = 0x853C49E6748FEA9Bull;
@@ -279,8 +278,7 @@ namespace gtl {
                     value += source_weight * destination_output;
                 }
 
-                this->layers_of_neurons[destination_index][destination_neuron_index].output = this->activate(this->layers_of_neurons[destination_index][destination_neuron_index].activation_function,
-                                                                                                             value);
+                this->layers_of_neurons[destination_index][destination_neuron_index].output = this->activate(this->layers_of_neurons[destination_index][destination_neuron_index].activation_function, value);
             }
         }
 
@@ -339,13 +337,20 @@ namespace gtl {
         /// @return The processed value, equivalent to "activation_function(value)".
         constexpr static scalar_type activate(activation_type activation_function, const scalar_type& value) {
             switch (activation_function) {
-                case activation_type::none:     return 0;
-                case activation_type::identity: return ann::identity(value);
-                case activation_type::step:     return ann::step(value);
-                case activation_type::sigmoid:  return ann::sigmoid(value);
-                case activation_type::softplus: return ann::softplus(value);
-                case activation_type::tanh:     return ann::tanh(value);
-                case activation_type::erf:      return ann::erf(value);
+                case activation_type::none:
+                    return 0;
+                case activation_type::identity:
+                    return ann::identity(value);
+                case activation_type::step:
+                    return ann::step(value);
+                case activation_type::sigmoid:
+                    return ann::sigmoid(value);
+                case activation_type::softplus:
+                    return ann::softplus(value);
+                case activation_type::tanh:
+                    return ann::tanh(value);
+                case activation_type::erf:
+                    return ann::erf(value);
             }
             return 0;
         }
@@ -356,13 +361,20 @@ namespace gtl {
         /// @return The gradient of the activation function at the value location.
         constexpr static scalar_type activate_differential(activation_type activation_function, const scalar_type& activiated_value) {
             switch (activation_function) {
-                case activation_type::none:     return 0;
-                case activation_type::identity: return ann::identity_differential(activiated_value);
-                case activation_type::step:     return ann::step_differential(activiated_value);
-                case activation_type::softplus: return ann::softplus_differential(activiated_value);
-                case activation_type::sigmoid:  return ann::sigmoid_differential(activiated_value);
-                case activation_type::tanh:     return ann::tanh_differential(activiated_value);
-                case activation_type::erf:      return ann::erf_differential(activiated_value);
+                case activation_type::none:
+                    return 0;
+                case activation_type::identity:
+                    return ann::identity_differential(activiated_value);
+                case activation_type::step:
+                    return ann::step_differential(activiated_value);
+                case activation_type::softplus:
+                    return ann::softplus_differential(activiated_value);
+                case activation_type::sigmoid:
+                    return ann::sigmoid_differential(activiated_value);
+                case activation_type::tanh:
+                    return ann::tanh_differential(activiated_value);
+                case activation_type::erf:
+                    return ann::erf_differential(activiated_value);
             }
             return 0;
         }

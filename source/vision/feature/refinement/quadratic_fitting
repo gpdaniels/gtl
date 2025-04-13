@@ -25,24 +25,21 @@ namespace gtl {
         const unsigned char* __restrict data_lhs,
         const int stride_lhs,
         const unsigned char* __restrict data_rhs,
-        const int stride_rhs
-    );
+        const int stride_rhs);
 
-    template<
+    template <
         int patch_width = 8,
         int patch_height = 8,
         score_function_type score_function,
         int iterations_x = 2,
-        int iterations_y = 2
-    >
+        int iterations_y = 2>
     float quadratic_fitting_2d(
         const unsigned char* __restrict data_lhs,
         const int stride_lhs,
         const unsigned char* __restrict data_rhs,
         const int stride_rhs,
         float& offset_rhs_x,
-        float& offset_rhs_y
-    ) {
+        float& offset_rhs_y) {
         float best_score = 1e35f;
         offset_rhs_x = 0.0f;
         offset_rhs_y = 0.0f;

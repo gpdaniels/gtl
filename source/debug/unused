@@ -21,10 +21,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Macro for hiding unused variable warnings.
 
 namespace gtl {
-namespace unused {
+    namespace unused {
 
-    #define GTL_UNUSED(VARIABLE) (static_cast<void>(VARIABLE))
+#define GTL_UNUSED(VARIABLE) (static_cast<void>(VARIABLE))
 
-}}
+    }
+}
 
 #endif // GTL_DEBUG_UNUSED_HPP

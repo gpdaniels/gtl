@@ -15,20 +15,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
-#include <testbench/optimise.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
+#include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <ai/ann>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(ann, traits, standard) {
@@ -47,33 +48,45 @@ TEST(ann, constructor, empty) {
 }
 
 TEST(ann, constructor, minimal_arguments) {
-    gtl::ann<float> ann({0, 0});
+    gtl::ann<float> ann({ 0, 0 });
     testbench::do_not_optimise_away(ann);
 }
 
 TEST(ann, constructor, maximal_arguments) {
-    gtl::ann<float> ann({0, 0}, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::sigmoid);
+    gtl::ann<float> ann({ 0, 0 }, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::sigmoid);
     testbench::do_not_optimise_away(ann);
 }
 
 TEST(ann, function, train) {
-    gtl::ann<float> ann({0, 0});
+    gtl::ann<float> ann({ 0, 0 });
     ann.train({}, {});
 }
 
 TEST(ann, function, process) {
-    gtl::ann<float> ann({0, 0});
+    gtl::ann<float> ann({ 0, 0 });
     std::vector<float> output = ann.process({});
 }
 
 TEST(ann, evaluate, or_gate) {
-    gtl::ann<float> ann = gtl::ann<float>({2, 5, 1});
+    gtl::ann<float> ann = gtl::ann<float>({ 2, 5, 1 });
 
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({{0.0, 0.0}, {0.0}});
-    data.push_back({{0.0, 1.0}, {1.0}});
-    data.push_back({{1.0, 0.0}, {1.0}});
-    data.push_back({{1.0, 1.0}, {1.0}});
+    data.push_back({
+        {0.0, 0.0 },
+        {0.0   }
+    });
+    data.push_back({
+        {0.0, 1.0 },
+        {1.0   }
+    });
+    data.push_back({
+        {1.0, 0.0 },
+        {1.0   }
+    });
+    data.push_back({
+        {1.0, 1.0 },
+        {1.0   }
+    });
 
     for (unsigned int iterations = 0; iterations < 4 * 10000; ++iterations) {
         ann.train(data[iterations % 4].first, data[iterations % 4].second);
@@ -94,13 +107,25 @@ TEST(ann, evaluate, or_gate) {
 }
 
 TEST(ann, evaluate, and_gate) {
-    gtl::ann<float> ann = gtl::ann<float>({2, 5, 1});
+    gtl::ann<float> ann = gtl::ann<float>({ 2, 5, 1 });
 
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({{0.0, 0.0}, {0.0}});
-    data.push_back({{0.0, 1.0}, {0.0}});
-    data.push_back({{1.0, 0.0}, {0.0}});
-    data.push_back({{1.0, 1.0}, {1.0}});
+    data.push_back({
+        {0.0, 0.0 },
+        {0.0   }
+    });
+    data.push_back({
+        {0.0, 1.0 },
+        {0.0   }
+    });
+    data.push_back({
+        {1.0, 0.0 },
+        {0.0   }
+    });
+    data.push_back({
+        {1.0, 1.0 },
+        {1.0   }
+    });
 
     for (unsigned int iterations = 0; iterations < 4 * 10000; ++iterations) {
         ann.train(data[iterations % 4].first, data[iterations % 4].second);
@@ -121,13 +146,25 @@ TEST(ann, evaluate, and_gate) {
 }
 
 TEST(ann, evaluate, nor_gate) {
-    gtl::ann<float> ann = gtl::ann<float>({2, 5, 1});
+    gtl::ann<float> ann = gtl::ann<float>({ 2, 5, 1 });
 
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({{0.0, 0.0}, {1.0}});
-    data.push_back({{0.0, 1.0}, {0.0}});
-    data.push_back({{1.0, 0.0}, {0.0}});
-    data.push_back({{1.0, 1.0}, {0.0}});
+    data.push_back({
+        {0.0, 0.0 },
+        {1.0   }
+    });
+    data.push_back({
+        {0.0, 1.0 },
+        {0.0   }
+    });
+    data.push_back({
+        {1.0, 0.0 },
+        {0.0   }
+    });
+    data.push_back({
+        {1.0, 1.0 },
+        {0.0   }
+    });
 
     for (unsigned int iterations = 0; iterations < 4 * 10000; ++iterations) {
         ann.train(data[iterations % 4].first, data[iterations % 4].second);
@@ -148,13 +185,25 @@ TEST(ann, evaluate, nor_gate) {
 }
 
 TEST(ann, evaluate, nand_gate) {
-    gtl::ann<float> ann = gtl::ann<float>({2, 5, 1});
+    gtl::ann<float> ann = gtl::ann<float>({ 2, 5, 1 });
 
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({{0.0, 0.0}, {1.0}});
-    data.push_back({{0.0, 1.0}, {1.0}});
-    data.push_back({{1.0, 0.0}, {1.0}});
-    data.push_back({{1.0, 1.0}, {0.0}});
+    data.push_back({
+        {0.0, 0.0 },
+        {1.0   }
+    });
+    data.push_back({
+        {0.0, 1.0 },
+        {1.0   }
+    });
+    data.push_back({
+        {1.0, 0.0 },
+        {1.0   }
+    });
+    data.push_back({
+        {1.0, 1.0 },
+        {0.0   }
+    });
 
     for (unsigned int iterations = 0; iterations < 4 * 10000; ++iterations) {
         ann.train(data[iterations % 4].first, data[iterations % 4].second);
@@ -175,13 +224,25 @@ TEST(ann, evaluate, nand_gate) {
 }
 
 TEST(ann, evaluate, xor_gate) {
-    gtl::ann<float> ann = gtl::ann<float>({2, 5, 1});
+    gtl::ann<float> ann = gtl::ann<float>({ 2, 5, 1 });
 
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({{0.0, 0.0}, {0.0}});
-    data.push_back({{0.0, 1.0}, {1.0}});
-    data.push_back({{1.0, 0.0}, {1.0}});
-    data.push_back({{1.0, 1.0}, {0.0}});
+    data.push_back({
+        {0.0, 0.0 },
+        {0.0   }
+    });
+    data.push_back({
+        {0.0, 1.0 },
+        {1.0   }
+    });
+    data.push_back({
+        {1.0, 0.0 },
+        {1.0   }
+    });
+    data.push_back({
+        {1.0, 1.0 },
+        {0.0   }
+    });
 
     for (unsigned int iterations = 0; iterations < 4 * 10000; ++iterations) {
         ann.train(data[iterations % 4].first, data[iterations % 4].second);
@@ -203,10 +264,22 @@ TEST(ann, evaluate, xor_gate) {
 
 TEST(ann, evaluate, learning_rate) {
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({{0.0, 0.0}, {0.0}});
-    data.push_back({{0.0, 1.0}, {1.0}});
-    data.push_back({{1.0, 0.0}, {1.0}});
-    data.push_back({{1.0, 1.0}, {0.0}});
+    data.push_back({
+        {0.0, 0.0 },
+        {0.0   }
+    });
+    data.push_back({
+        {0.0, 1.0 },
+        {1.0   }
+    });
+    data.push_back({
+        {1.0, 0.0 },
+        {1.0   }
+    });
+    data.push_back({
+        {1.0, 1.0 },
+        {0.0   }
+    });
 
     auto train_network = [&data](gtl::ann<float>& ann, unsigned int& iterations) -> bool {
         bool learnt = true;
@@ -229,29 +302,29 @@ TEST(ann, evaluate, learning_rate) {
         return learnt;
     };
 
-    unsigned int iterations_none     = 0;
+    unsigned int iterations_none = 0;
     unsigned int iterations_identity = 0;
-    unsigned int iterations_step     = 0;
-    unsigned int iterations_sigmoid  = 0;
+    unsigned int iterations_step = 0;
+    unsigned int iterations_sigmoid = 0;
     unsigned int iterations_softplus = 0;
-    unsigned int iterations_tanh     = 0;
-    unsigned int iterations_erf      = 0;
+    unsigned int iterations_tanh = 0;
+    unsigned int iterations_erf = 0;
 
-    gtl::ann<float> ann_none     = gtl::ann<float>({2, 5, 1}, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::none);
-    gtl::ann<float> ann_identity = gtl::ann<float>({2, 5, 1}, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::identity);
-    gtl::ann<float> ann_step     = gtl::ann<float>({2, 5, 1}, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::step);
-    gtl::ann<float> ann_sigmoid  = gtl::ann<float>({2, 5, 1}, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::sigmoid);
-    gtl::ann<float> ann_softplus = gtl::ann<float>({2, 5, 1}, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::softplus);
-    gtl::ann<float> ann_tanh     = gtl::ann<float>({2, 5, 1}, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::tanh);
-    gtl::ann<float> ann_erf      = gtl::ann<float>({2, 5, 1}, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::erf);
+    gtl::ann<float> ann_none = gtl::ann<float>({ 2, 5, 1 }, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::none);
+    gtl::ann<float> ann_identity = gtl::ann<float>({ 2, 5, 1 }, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::identity);
+    gtl::ann<float> ann_step = gtl::ann<float>({ 2, 5, 1 }, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::step);
+    gtl::ann<float> ann_sigmoid = gtl::ann<float>({ 2, 5, 1 }, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::sigmoid);
+    gtl::ann<float> ann_softplus = gtl::ann<float>({ 2, 5, 1 }, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::softplus);
+    gtl::ann<float> ann_tanh = gtl::ann<float>({ 2, 5, 1 }, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::tanh);
+    gtl::ann<float> ann_erf = gtl::ann<float>({ 2, 5, 1 }, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::erf);
 
-    bool learnt_none     = train_network(ann_none, iterations_none);
+    bool learnt_none = train_network(ann_none, iterations_none);
     bool learnt_identity = train_network(ann_identity, iterations_identity);
-    bool learnt_step     = train_network(ann_identity, iterations_step);
-    bool learnt_sigmoid  = train_network(ann_sigmoid, iterations_sigmoid);
+    bool learnt_step = train_network(ann_identity, iterations_step);
+    bool learnt_sigmoid = train_network(ann_sigmoid, iterations_sigmoid);
     bool learnt_softplus = train_network(ann_softplus, iterations_softplus);
-    bool learnt_tanh     = train_network(ann_tanh, iterations_tanh);
-    bool learnt_erf      = train_network(ann_erf, iterations_erf);
+    bool learnt_tanh = train_network(ann_tanh, iterations_tanh);
+    bool learnt_erf = train_network(ann_erf, iterations_erf);
 
     PRINT("Evaluate learning speed: \n");
     PRINT(" none     -> %d in %d\n", learnt_none, iterations_none);
@@ -270,23 +343,22 @@ TEST(ann, evaluate, learning_rate) {
 }
 
 TEST(ann, evaluate, adder) {
-    #if !defined(NDEBUG)
-        // This test is too slow in debug mode to do a decent amount of training.
-        constexpr static const unsigned int max_iterations = 256 * 2;
-    #else
-        constexpr static const unsigned int max_iterations = 256 * 200;
-    #endif
-    
-    gtl::ann<float> ann = gtl::ann<float>({8, 32, 32, 4}, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::sigmoid);
+#if !defined(NDEBUG)
+    // This test is too slow in debug mode to do a decent amount of training.
+    constexpr static const unsigned int max_iterations = 256 * 2;
+#else
+    constexpr static const unsigned int max_iterations = 256 * 200;
+#endif
+
+    gtl::ann<float> ann = gtl::ann<float>({ 8, 32, 32, 4 }, gtl::ann<float>::initialisation_type::random, gtl::ann<float>::activation_type::sigmoid);
 
     for (unsigned int iterations = 0; iterations < max_iterations; ++iterations) {
-        char input_lhs = (iterations>>4)&0b00001111;
-        char input_rhs = (iterations>>0)&0b00001111;
+        char input_lhs = (iterations >> 4) & 0b00001111;
+        char input_rhs = (iterations >> 0) & 0b00001111;
         char target_bits = input_lhs + input_rhs;
 
         std::vector<float> input = {
-            static_cast<float>(input_lhs >> 3 & 1), static_cast<float>(input_lhs >> 2 & 1), static_cast<float>(input_lhs >> 1 & 1), static_cast<float>(input_lhs >> 0 & 1),
-            static_cast<float>(input_rhs >> 3 & 1), static_cast<float>(input_rhs >> 2 & 1), static_cast<float>(input_rhs >> 1 & 1), static_cast<float>(input_rhs >> 0 & 1)
+            static_cast<float>(input_lhs >> 3 & 1), static_cast<float>(input_lhs >> 2 & 1), static_cast<float>(input_lhs >> 1 & 1), static_cast<float>(input_lhs >> 0 & 1), static_cast<float>(input_rhs >> 3 & 1), static_cast<float>(input_rhs >> 2 & 1), static_cast<float>(input_rhs >> 1 & 1), static_cast<float>(input_rhs >> 0 & 1)
         };
         std::vector<float> target = {
             static_cast<float>(target_bits >> 3 & 1), static_cast<float>(target_bits >> 2 & 1), static_cast<float>(target_bits >> 1 & 1), static_cast<float>(target_bits >> 0 & 1)
@@ -298,14 +370,12 @@ TEST(ann, evaluate, adder) {
     int incorrect = 0;
 
     for (unsigned int iterations = 0; iterations < 256; ++iterations) {
-
-        char input_lhs = (iterations>>4)&0b00001111;
-        char input_rhs = (iterations>>0)&0b00001111;
+        char input_lhs = (iterations >> 4) & 0b00001111;
+        char input_rhs = (iterations >> 0) & 0b00001111;
         char target_bits = input_lhs + input_rhs;
 
         std::vector<float> input = {
-            static_cast<float>(input_lhs >> 3 & 1), static_cast<float>(input_lhs >> 2 & 1), static_cast<float>(input_lhs >> 1 & 1), static_cast<float>(input_lhs >> 0 & 1),
-            static_cast<float>(input_rhs >> 3 & 1), static_cast<float>(input_rhs >> 2 & 1), static_cast<float>(input_rhs >> 1 & 1), static_cast<float>(input_rhs >> 0 & 1)
+            static_cast<float>(input_lhs >> 3 & 1), static_cast<float>(input_lhs >> 2 & 1), static_cast<float>(input_lhs >> 1 & 1), static_cast<float>(input_lhs >> 0 & 1), static_cast<float>(input_rhs >> 3 & 1), static_cast<float>(input_rhs >> 2 & 1), static_cast<float>(input_rhs >> 1 & 1), static_cast<float>(input_rhs >> 0 & 1)
         };
         std::vector<float> target = {
             static_cast<float>(target_bits >> 3 & 1), static_cast<float>(target_bits >> 2 & 1), static_cast<float>(target_bits >> 1 & 1), static_cast<float>(target_bits >> 0 & 1)

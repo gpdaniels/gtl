@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -22,13 +23,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string/static_string>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 // TODO: Broken on windows! Crashes the compiler...
@@ -162,7 +163,7 @@ TEST(static_string, function, find_last) {
 
 TEST(static_string, function, sub_string) {
     gtl::static_string static_string = GTL_STATIC_STRING("StringString");
-    gtl::static_string static_sub_string = static_string.sub_string<3,6>();
+    gtl::static_string static_sub_string = static_string.sub_string<3, 6>();
     REQUIRE(testbench::is_string_same(static_sub_string.c_str(), "ingStr"));
 }
 

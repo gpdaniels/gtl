@@ -43,27 +43,30 @@ namespace testbench {
 
     // Define a template struct to hold a collection of types.
     template <typename... types>
-    struct type_collection { };
+    struct type_collection {};
 
     // Define a template struct to hold a collection of values.
     template <unsigned long long... values>
-    struct value_collection { };
+    struct value_collection {};
 
     // Define a template struct to hold a collection of enum values.
     template <typename contained_enum_type, contained_enum_type... contained_enum_value>
-    struct enum_collection { };
+    struct enum_collection {};
 
     // Define a template struct to hold a function to call for each collection of types.
     template <typename function_type, typename type>
     struct type_function_container {
         function_type type_function;
+
         type_function_container(function_type function)
             : type_function(function) {
         }
+
         type_function_container(const type_function_container&) = default;
         type_function_container(type_function_container&&) = default;
         type_function_container& operator=(const type_function_container&) = delete;
         type_function_container& operator=(type_function_container&&) = delete;
+
         template <typename... argument_types>
         void operator()(argument_types... arguments) {
             type_function(type_container<type>{}, arguments...);
@@ -74,13 +77,16 @@ namespace testbench {
     template <typename function_type, unsigned long long value>
     struct value_function_container {
         function_type value_function;
+
         value_function_container(function_type function)
             : value_function(function) {
         }
+
         value_function_container(const value_function_container&) = default;
         value_function_container(value_function_container&&) = default;
         value_function_container& operator=(const value_function_container&) = delete;
         value_function_container& operator=(value_function_container&&) = delete;
+
         template <typename... argument_types>
         void operator()(argument_types... arguments) {
             value_function(value_container<value>{}, arguments...);
@@ -91,13 +97,16 @@ namespace testbench {
     template <typename function_type, typename enum_type, enum_type value>
     struct enum_function_container {
         function_type enum_function;
+
         enum_function_container(function_type function)
             : enum_function(function) {
         }
+
         enum_function_container(const enum_function_container&) = default;
         enum_function_container(enum_function_container&&) = default;
         enum_function_container& operator=(const enum_function_container&) = delete;
         enum_function_container& operator=(enum_function_container&&) = delete;
+
         template <typename... argument_types>
         void operator()(argument_types... arguments) {
             enum_function(enum_container<enum_type, value>{}, arguments...);
@@ -127,15 +136,18 @@ namespace testbench {
 
     // Template function to end the apply_collection template recusion for type apply_collection.
     template <typename... remaining_collections, typename function_type>
-    void apply_collection(function_type, type_collection<>, remaining_collections...) {}
+    void apply_collection(function_type, type_collection<>, remaining_collections...) {
+    }
 
     // Template function to end the apply_collection template recusion for value apply_collection.
     template <typename... remaining_collections, typename function_type>
-    void apply_collection(function_type, testbench::value_collection<>, remaining_collections...) {}
+    void apply_collection(function_type, testbench::value_collection<>, remaining_collections...) {
+    }
 
     // Template function to end the apply_collection template recusion for enum value apply_collection.
     template <typename enum_type, typename... remaining_collections, typename function_type>
-    void apply_collection(function_type, testbench::enum_collection<enum_type>, remaining_collections...) {}
+    void apply_collection(function_type, testbench::enum_collection<enum_type>, remaining_collections...) {
+    }
 
     // Apply a type followed by other collections to the function.
     template <typename type, typename first_collection, typename... remaining_collections, typename function_type>
@@ -185,11 +197,24 @@ namespace testbench {
     // Builtin types.
     using test_types = type_collection<
         bool,
-        unsigned char, char, signed char, wchar_t, char16_t, char32_t,
-        unsigned short int, signed short int, unsigned int, signed int, unsigned long int, signed long int, unsigned long long int, signed long long int,
-        float, double, long double,
-        decltype(nullptr)
-    >;
+        unsigned char,
+        char,
+        signed char,
+        wchar_t,
+        char16_t,
+        char32_t,
+        unsigned short int,
+        signed short int,
+        unsigned int,
+        signed int,
+        unsigned long int,
+        signed long int,
+        unsigned long long int,
+        signed long long int,
+        float,
+        double,
+        long double,
+        decltype(nullptr)>;
 }
 
 #endif // GTL_TEMPLATE_TESTS_HPP

@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -22,13 +23,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vision/consensus/evaluate/maximum_likelihood>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(maximum_likelihood, constructor, threshold) {

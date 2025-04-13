@@ -44,17 +44,16 @@ namespace gtl {
     public:
         static unsigned int solve(
             const std::array<unsigned int, code_length>& code,
-            const std::function<void(unsigned int turn, const std::array<unsigned int, code_length>& guess, unsigned int correct, unsigned int close)>& callback = {}
-        ) {
-            return solve([code](const std::array<unsigned int, code_length>& guess)->std::pair<unsigned int, unsigned int>{
+            const std::function<void(unsigned int turn, const std::array<unsigned int, code_length>& guess, unsigned int correct, unsigned int close)>& callback = {}) {
+            return solve([code](const std::array<unsigned int, code_length>& guess) -> std::pair<unsigned int, unsigned int> {
                 return mastermind::evaluate(guess, code);
-            }, callback);
+            },
+                         callback);
         }
 
         static unsigned int solve(
             const std::function<std::pair<unsigned int, unsigned int>(const std::array<unsigned int, code_length>& guess)>& evaluate,
-            const std::function<void(unsigned int turn, const std::array<unsigned int, code_length>& guess, unsigned int correct, unsigned int close)>& callback = {}
-        ) {
+            const std::function<void(unsigned int turn, const std::array<unsigned int, code_length>& guess, unsigned int correct, unsigned int close)>& callback = {}) {
             // Generate all possible codes.
             std::vector<std::array<unsigned int, code_length>> unguessed_codes;
             unguessed_codes.push_back(std::array<unsigned int, code_length>());
@@ -100,16 +99,14 @@ namespace gtl {
                     std::remove_if(
                         possible_codes.begin(),
                         possible_codes.end(),
-                        [guess, score_correct, score_close](const std::array<unsigned int, code_length>& possible_code)->bool{
+                        [guess, score_correct, score_close](const std::array<unsigned int, code_length>& possible_code) -> bool {
                             if (guess == possible_code) {
                                 return true;
                             }
                             auto [possible_correct, possible_close] = mastermind::evaluate(guess, possible_code);
                             return ((score_correct != possible_correct) || (score_close != possible_close));
-                        }
-                    ),
-                    possible_codes.end()
-                );
+                        }),
+                    possible_codes.end());
                 // If there is only one possible code left, select that.
                 if (possible_codes.size() == 1) {
                     guess = possible_codes.back();
@@ -123,17 +120,17 @@ namespace gtl {
                             return key.first * code_length + key.second;
                         }
                     };
+
                     // Calculate the score/pegs of each unguessed code as if a possible code was the code.
                     std::unordered_map<std::pair<unsigned int, unsigned int>, unsigned int, pair_hash> score_map;
                     for (unsigned int j = 0; j < possible_codes.size(); ++j) {
                         ++score_map[mastermind::evaluate(unguessed_codes[i], possible_codes[j])];
                     }
                     // From these scores select the maximum, this is the worst case number of possible codes for a given unguessed code.
-                    scores[i] = std::max_element(score_map.begin(), score_map.end(),
-                        [](const std::pair<const std::pair<unsigned int, unsigned int>, unsigned int>& lhs, const std::pair<const std::pair<unsigned int, unsigned int>, unsigned int>& rhs)->bool{
-                            return lhs.second < rhs.second;
-                        })->second;
-                    }
+                    scores[i] = std::max_element(score_map.begin(), score_map.end(), [](const std::pair<const std::pair<unsigned int, unsigned int>, unsigned int>& lhs, const std::pair<const std::pair<unsigned int, unsigned int>, unsigned int>& rhs) -> bool {
+                                    return lhs.second < rhs.second;
+                                })->second;
+                }
                 // Select the minimum of the maximums to get the best guess.
                 std::vector<unsigned int>::iterator min_element = std::min_element(scores.begin(), scores.end());
                 guess = unguessed_codes[static_cast<unsigned int>(std::distance(scores.begin(), min_element))];
@@ -173,7 +170,7 @@ namespace gtl {
                     }
                 }
             }
-            return {correct, close};
+            return { correct, close };
         }
     };
 }

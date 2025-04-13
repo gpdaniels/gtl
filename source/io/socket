@@ -21,52 +21,52 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Cross platform socket class, supporting tcp (server and client) and udp protocols. [wip]
 
 #if defined(linux) || defined(__linux) || defined(__linux__)
-    #include <netinet/in.h>
-    #include <netinet/tcp.h>
-    #include <sys/ioctl.h>
-    #include <sys/socket.h>
-    #include <sys/select.h>
-    #include <unistd.h>
-    #include <cerrno>
+#include <cerrno>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <sys/ioctl.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
-    #define SOCKET int
-    #define INVALID_SOCKET -1
-    #define closesocket ::close
-    #define SD_BOTH SHUT_RDWR
-    #define ioctlsocket ioctl
+#define SOCKET int
+#define INVALID_SOCKET -1
+#define closesocket ::close
+#define SD_BOTH SHUT_RDWR
+#define ioctlsocket ioctl
 #endif
 
 #if defined(_WIN32)
 
-    #if defined(_MSC_VER)
-    #   pragma warning(push, 0)
-    #endif
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
 
-    #include <winsock2.h>
-    #include <ws2tcpip.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
-    #pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "Ws2_32.lib")
 
-    #if defined(_MSC_VER)
-    #   pragma warning(pop)
-    #endif
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 #endif
 
 #if defined(__APPLE__)
-    #include <netinet/in.h>
-    #include <netinet/tcp.h>
-    #include <sys/ioctl.h>
-    #include <sys/socket.h>
-    #include <sys/select.h>
-    #include <unistd.h>
-    #include <cerrno>
+#include <cerrno>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <sys/ioctl.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
-    #define SOCKET int
-    #define INVALID_SOCKET -1
-    #define closesocket ::close
-    #define SD_BOTH SHUT_RDWR
-    #define ioctlsocket ioctl
+#define SOCKET int
+#define INVALID_SOCKET -1
+#define closesocket ::close
+#define SD_BOTH SHUT_RDWR
+#define ioctlsocket ioctl
 #endif
 
 static_assert(INVALID_SOCKET == -1, "The invalid socket definition must be negative one.");
@@ -76,21 +76,22 @@ namespace gtl {
     public:
         struct ip {
             unsigned char segment[4];
+
             bool operator==(const ip& other) const {
                 return ((this->segment[0] == other.segment[0]) && (this->segment[1] == other.segment[1]) && (this->segment[2] == other.segment[2]) && (this->segment[3] == other.segment[3]));
             }
         };
 
-        constexpr static const ip ip_any        = {0, 0, 0, 0};
-        constexpr static const ip ip_loopback   = {127, 0, 0, 1};
-        constexpr static const ip ip_broadcast  = {255, 255, 255, 255};
+        constexpr static const ip ip_any = { 0, 0, 0, 0 };
+        constexpr static const ip ip_loopback = { 127, 0, 0, 1 };
+        constexpr static const ip ip_broadcast = { 255, 255, 255, 255 };
 
-        constexpr static const unsigned short port_any  = 0;
-        constexpr static const unsigned short port_ssh  = 22;
+        constexpr static const unsigned short port_any = 0;
+        constexpr static const unsigned short port_ssh = 22;
         constexpr static const unsigned short port_smtp = 25;
-        constexpr static const unsigned short port_dns  = 53;
+        constexpr static const unsigned short port_dns = 53;
         constexpr static const unsigned short port_http = 80;
-        constexpr static const unsigned short port_ssl  = 443;
+        constexpr static const unsigned short port_ssl = 443;
 
         struct tcp_server {
             ip address;
@@ -116,24 +117,24 @@ namespace gtl {
     public:
         ~socket() {
             this->close();
-            #if defined(_WIN32)
-                WSACleanup();
-            #endif
+#if defined(_WIN32)
+            WSACleanup();
+#endif
         }
 
         socket()
             : handle(INVALID_SOCKET) {
-            #if defined(_WIN32)
-                WORD VersionRequested = MAKEWORD(2, 2);
-                WSADATA WinSockData;
-                if (WSAStartup(VersionRequested, &WinSockData) != 0) {
-                    return;
-                }
-                // Confirm that the WinSock DLL supports 2.2.
-                if (LOBYTE(WinSockData.wVersion) != 2 || HIBYTE(WinSockData.wVersion) != 2) {
-                    return;
-                }
-            #endif
+#if defined(_WIN32)
+            WORD VersionRequested = MAKEWORD(2, 2);
+            WSADATA WinSockData;
+            if (WSAStartup(VersionRequested, &WinSockData) != 0) {
+                return;
+            }
+            // Confirm that the WinSock DLL supports 2.2.
+            if (LOBYTE(WinSockData.wVersion) != 2 || HIBYTE(WinSockData.wVersion) != 2) {
+                return;
+            }
+#endif
         }
 
         socket(const socket&) = delete;
@@ -167,29 +168,29 @@ namespace gtl {
                 return false;
             }
 
-            // These are not supported by apple.
-            #if !defined(__APPLE__)
-                // Configure other keepalive options for the socket.
-                const int keepidle_value = 1;
-                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPIDLE, reinterpret_cast<const char*>(&keepidle_value), sizeof(int)) < 0) {
-                    return false;
-                }
-                const int keepintvl_value = 1;
-                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPINTVL, reinterpret_cast<const char*>(&keepintvl_value), sizeof(int)) < 0) {
-                    return false;
-                }
-                const int keepcnt_value = 10;
-                if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPCNT, reinterpret_cast<const char*>(&keepcnt_value), sizeof(int)) < 0) {
-                    return false;
-                }
-            #endif
+// These are not supported by apple.
+#if !defined(__APPLE__)
+            // Configure other keepalive options for the socket.
+            const int keepidle_value = 1;
+            if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPIDLE, reinterpret_cast<const char*>(&keepidle_value), sizeof(int)) < 0) {
+                return false;
+            }
+            const int keepintvl_value = 1;
+            if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPINTVL, reinterpret_cast<const char*>(&keepintvl_value), sizeof(int)) < 0) {
+                return false;
+            }
+            const int keepcnt_value = 10;
+            if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPCNT, reinterpret_cast<const char*>(&keepcnt_value), sizeof(int)) < 0) {
+                return false;
+            }
+#endif
 
-            // Configure the socket as blocking.
-            #if defined(_WIN32)
-                unsigned long int non_blocking_value = 0;
-            #else
-                int non_blocking_value = 0;
-            #endif
+// Configure the socket as blocking.
+#if defined(_WIN32)
+            unsigned long int non_blocking_value = 0;
+#else
+            int non_blocking_value = 0;
+#endif
             if (ioctlsocket(this->handle, FIONBIO, &non_blocking_value) < 0) {
                 return false;
             }
@@ -394,8 +395,8 @@ namespace gtl {
             }
 
             // Get the sender.
-            address.segment[0] = (address_accepted.sin_addr.s_addr >>  0) & 0xFF;
-            address.segment[1] = (address_accepted.sin_addr.s_addr >>  8) & 0xFF;
+            address.segment[0] = (address_accepted.sin_addr.s_addr >> 0) & 0xFF;
+            address.segment[1] = (address_accepted.sin_addr.s_addr >> 8) & 0xFF;
             address.segment[2] = (address_accepted.sin_addr.s_addr >> 16) & 0xFF;
             address.segment[3] = (address_accepted.sin_addr.s_addr >> 24) & 0xFF;
             port = ntohs(address_accepted.sin_port);
@@ -416,8 +417,8 @@ namespace gtl {
             if (getsockname(this->handle, reinterpret_cast<sockaddr*>(&address_config), &address_length) < 0) {
                 return false;
             }
-            address.segment[0] = (address_config.sin_addr.s_addr >>  0) & 0xFF;
-            address.segment[1] = (address_config.sin_addr.s_addr >>  8) & 0xFF;
+            address.segment[0] = (address_config.sin_addr.s_addr >> 0) & 0xFF;
+            address.segment[1] = (address_config.sin_addr.s_addr >> 8) & 0xFF;
             address.segment[2] = (address_config.sin_addr.s_addr >> 16) & 0xFF;
             address.segment[3] = (address_config.sin_addr.s_addr >> 24) & 0xFF;
             port = ntohs(address_config.sin_port);
@@ -480,33 +481,33 @@ namespace gtl {
             // The available data length.
             unsigned long long int length_available = 0;
 
-            // // Get the available data length in linux.
-            #if defined(linux) || defined(__linux) || defined(__linux__)
-                int length_available_int = 0;
-                if (ioctlsocket(this->handle, FIONREAD, &length_available_int) < 0) {
-                    return false;
-                }
-                length_available = static_cast<unsigned long long int>(length_available_int);
-            #endif
+// // Get the available data length in linux.
+#if defined(linux) || defined(__linux) || defined(__linux__)
+            int length_available_int = 0;
+            if (ioctlsocket(this->handle, FIONREAD, &length_available_int) < 0) {
+                return false;
+            }
+            length_available = static_cast<unsigned long long int>(length_available_int);
+#endif
 
-            // Get the available data length in windows.
-            #if defined(_WIN32)
-                unsigned long int length_available_int = 0;
-                if (ioctlsocket(this->handle, FIONREAD, &length_available_int) < 0) {
-                    return false;
-                }
-                length_available = static_cast<unsigned long long int>(length_available_int);
-            #endif
+// Get the available data length in windows.
+#if defined(_WIN32)
+            unsigned long int length_available_int = 0;
+            if (ioctlsocket(this->handle, FIONREAD, &length_available_int) < 0) {
+                return false;
+            }
+            length_available = static_cast<unsigned long long int>(length_available_int);
+#endif
 
-            // Get the available data length in macos.
-            #if defined(__APPLE__)
-                int length_available_int;
-                socklen_t option_length = sizeof(int);
-                if (getsockopt(this->handle, SOL_SOCKET, SO_NREAD, &length_available_int, &option_length) < 0) {
-                    return false;
-                }
-                length_available = static_cast<unsigned long long int>(length_available_int);
-            #endif
+// Get the available data length in macos.
+#if defined(__APPLE__)
+            int length_available_int;
+            socklen_t option_length = sizeof(int);
+            if (getsockopt(this->handle, SOL_SOCKET, SO_NREAD, &length_available_int, &option_length) < 0) {
+                return false;
+            }
+            length_available = static_cast<unsigned long long int>(length_available_int);
+#endif
 
             if (length_available == 0) {
                 length = 0;
@@ -522,12 +523,12 @@ namespace gtl {
             sockaddr_in address_source = {};
             socklen_t address_length = sizeof(sockaddr_in);
 
-            // Get data.
-            #if defined(_WIN32)
-                const long long int length_received = recvfrom(this->handle, reinterpret_cast<char*>(buffer), static_cast<int>(length_available), 0, reinterpret_cast<sockaddr*>(&address_source), &address_length);
-            #else
-                const long long int length_received = recvfrom(this->handle, buffer, length_available, 0, reinterpret_cast<sockaddr*>(&address_source), &address_length);
-            #endif
+// Get data.
+#if defined(_WIN32)
+            const long long int length_received = recvfrom(this->handle, reinterpret_cast<char*>(buffer), static_cast<int>(length_available), 0, reinterpret_cast<sockaddr*>(&address_source), &address_length);
+#else
+            const long long int length_received = recvfrom(this->handle, buffer, length_available, 0, reinterpret_cast<sockaddr*>(&address_source), &address_length);
+#endif
 
             // Check the read was successful.
             if (length_received < 0) {
@@ -538,8 +539,8 @@ namespace gtl {
             length = static_cast<unsigned long long int>(length_received);
 
             // Get the sender.
-            address.segment[0] = (address_source.sin_addr.s_addr >>  0) & 0xFF;
-            address.segment[1] = (address_source.sin_addr.s_addr >>  8) & 0xFF;
+            address.segment[0] = (address_source.sin_addr.s_addr >> 0) & 0xFF;
+            address.segment[1] = (address_source.sin_addr.s_addr >> 8) & 0xFF;
             address.segment[2] = (address_source.sin_addr.s_addr >> 16) & 0xFF;
             address.segment[3] = (address_source.sin_addr.s_addr >> 24) & 0xFF;
             port = ntohs(address_source.sin_port);
@@ -556,12 +557,12 @@ namespace gtl {
                 return true;
             }
 
-            // Write out the whole buffer as a single message.
-            #if defined(_WIN32)
-                const long long int length_written = send(this->handle, reinterpret_cast<const char*>(buffer), static_cast<int>(length), 0);
-            #else
-                const long long int length_written = send(this->handle, buffer, length, 0);
-            #endif
+// Write out the whole buffer as a single message.
+#if defined(_WIN32)
+            const long long int length_written = send(this->handle, reinterpret_cast<const char*>(buffer), static_cast<int>(length), 0);
+#else
+            const long long int length_written = send(this->handle, buffer, length, 0);
+#endif
 
             // Check the write was successful.
             if (length_written < 0) {
@@ -593,12 +594,12 @@ namespace gtl {
                 (static_cast<unsigned int>(address.segment[0]) << 0);
             address_target.sin_port = htons(port);
 
-            // Write out the whole buffer as a single message.
-            #if defined(_WIN32)
-                const long long int length_written = sendto(this->handle, reinterpret_cast<const char*>(buffer), static_cast<int>(length), 0, reinterpret_cast<const sockaddr*>(&address_target), sizeof(sockaddr_in));
-            #else
-                const long long int length_written = sendto(this->handle, buffer, length, 0, reinterpret_cast<const sockaddr*>(&address_target), sizeof(sockaddr_in));
-            #endif
+// Write out the whole buffer as a single message.
+#if defined(_WIN32)
+            const long long int length_written = sendto(this->handle, reinterpret_cast<const char*>(buffer), static_cast<int>(length), 0, reinterpret_cast<const sockaddr*>(&address_target), sizeof(sockaddr_in));
+#else
+            const long long int length_written = sendto(this->handle, buffer, length, 0, reinterpret_cast<const sockaddr*>(&address_target), sizeof(sockaddr_in));
+#endif
 
             // Check the write was successful.
             if (length_written < 0) {

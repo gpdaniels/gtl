@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/benchmark.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -22,13 +23,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <game/tic_tac_toe>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #undef REQUIRE
@@ -92,7 +93,7 @@ TEST(tic_tac_toe, evaluate, always_tie) {
 }
 
 TEST(tic_tac_toe, evaluate, speed) {
-    const double seconds = testbench::benchmark([](){
+    const double seconds = testbench::benchmark([]() {
         gtl::tic_tac_toe::state_type game = gtl::tic_tac_toe::new_game();
         while (!gtl::tic_tac_toe::check_win(game)) {
             if (!gtl::tic_tac_toe::try_move(game)) {
@@ -100,7 +101,9 @@ TEST(tic_tac_toe, evaluate, speed) {
             }
         }
         REQUIRE(!gtl::tic_tac_toe::check_win(game));
-    }, 10, 1.0);
+    },
+                                                10,
+                                                1.0);
     PRINT("Game speed: %0.10f seconds\n", seconds);
 }
 
@@ -110,9 +113,15 @@ TEST(tic_tac_toe, evaluate, game) {
             PRINT(" ");
             for (unsigned int column = 0; column < gtl::tic_tac_toe::grid_width; ++column) {
                 switch (game.grid[row][column]) {
-                    case gtl::tic_tac_toe::symbol_type::empty:  PRINT(" "); break;
-                    case gtl::tic_tac_toe::symbol_type::nought: PRINT("O"); break;
-                    case gtl::tic_tac_toe::symbol_type::cross:  PRINT("X"); break;
+                    case gtl::tic_tac_toe::symbol_type::empty:
+                        PRINT(" ");
+                        break;
+                    case gtl::tic_tac_toe::symbol_type::nought:
+                        PRINT("O");
+                        break;
+                    case gtl::tic_tac_toe::symbol_type::cross:
+                        PRINT("X");
+                        break;
                 }
                 if (column < gtl::tic_tac_toe::grid_width - 1) {
                     PRINT(" | ");
@@ -154,8 +163,8 @@ TEST(tic_tac_toe, evaluate, game) {
                 if (!gtl::tic_tac_toe::try_move(game)) {
                     break;
                 }
-                //print(game);
-                //PRINT("\n");
+                // print(game);
+                // PRINT("\n");
             }
             print(game);
             PRINT("\n");

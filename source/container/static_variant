@@ -21,16 +21,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: A static_variant class that can contain any one of its listed template types. [wip]
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the static_variant is misused.
-#   define GTL_STATIC_VARIANT_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_STATIC_VARIANT_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_STATIC_VARIANT_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_STATIC_VARIANT_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
-
 
 namespace gtl {
     // Forward declare class to allow a unique definition of operator new using it as a parameter.
@@ -79,7 +78,8 @@ namespace gtl {
         template <typename type>
         struct type_identifier_generator final {
             /// @brief  The actual bit of unique type information.
-            constexpr static const auto identifier = [](){};
+            constexpr static const auto identifier = []() {
+            };
         };
 
     private:
@@ -110,12 +110,12 @@ namespace gtl {
 
     private:
         unsigned long long int active_type_id = 0;
-        #if defined(_MSC_VER)
-            // Work around an MSVC bug.
-            alignas(static_variant::get_largest_type_size()) unsigned char data[get_largest_type_size()] = {};
-        #else
-            alignas(static_variant::get_largest_type_size()) unsigned char data[static_variant::get_largest_type_size()] = {};
-        #endif
+#if defined(_MSC_VER)
+        // Work around an MSVC bug.
+        alignas(static_variant::get_largest_type_size()) unsigned char data[get_largest_type_size()] = {};
+#else
+        alignas(static_variant::get_largest_type_size()) unsigned char data[static_variant::get_largest_type_size()] = {};
+#endif
 
     public:
         ~static_variant() {

@@ -15,62 +15,61 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
-#include <testbench/optimise.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/data.tests.hpp>
+#include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 #include <testbench/template.tests.hpp>
 
 #include <execution/triple_buffer>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <thread>
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(triple_buffer, traits, standard) {
     testbench::test_template<testbench::test_types>(
-       [](auto test_type)->void {
+        [](auto test_type) -> void {
             using type = typename decltype(test_type)::type;
 
             REQUIRE(std::is_pod<gtl::triple_buffer<type>>::value == false, "Expected std::is_pod to be false.");
 
             REQUIRE(std::is_trivial<gtl::triple_buffer<type>>::value == false, "Expected std::is_trivial to be false.");
 
-            #if defined(__APPLE__)
-                REQUIRE(std::is_trivially_copyable<gtl::triple_buffer<type>>::value == true, "Expected std::is_trivially_copyable to be true.");
-            #elif defined(__linux__)
-                REQUIRE(std::is_trivially_copyable<gtl::triple_buffer<type>>::value == true, "Expected std::is_trivially_copyable to be true.");
-            #elif defined(_WIN32)
-                REQUIRE(std::is_trivially_copyable<gtl::triple_buffer<type>>::value == false, "Expected std::is_trivially_copyable to be true.");
-            #endif
+#if defined(__APPLE__)
+            REQUIRE(std::is_trivially_copyable<gtl::triple_buffer<type>>::value == true, "Expected std::is_trivially_copyable to be true.");
+#elif defined(__linux__)
+            REQUIRE(std::is_trivially_copyable<gtl::triple_buffer<type>>::value == true, "Expected std::is_trivially_copyable to be true.");
+#elif defined(_WIN32)
+            REQUIRE(std::is_trivially_copyable<gtl::triple_buffer<type>>::value == false, "Expected std::is_trivially_copyable to be true.");
+#endif
 
             REQUIRE(std::is_standard_layout<gtl::triple_buffer<type>>::value == true, "Expected std::is_standard_layout to be true.");
-        }
-    );
+        });
 }
 
 TEST(triple_buffer, constructor, empty) {
     testbench::test_template<testbench::test_types>(
-       [](auto test_type)->void {
+        [](auto test_type) -> void {
             using type = typename decltype(test_type)::type;
 
             gtl::triple_buffer<type> triple_buffer;
 
             testbench::do_not_optimise_away(triple_buffer);
-        }
-    );
+        });
 }
 
 TEST(triple_buffer, function, update_read) {
     testbench::test_template<testbench::test_types>(
-       [](auto test_type)->void {
+        [](auto test_type) -> void {
             using type = typename decltype(test_type)::type;
 
             gtl::triple_buffer<type> triple_buffer;
@@ -78,13 +77,12 @@ TEST(triple_buffer, function, update_read) {
             REQUIRE(triple_buffer.update_read() == false);
             REQUIRE(triple_buffer.update_read() == false);
             REQUIRE(triple_buffer.update_read() == false);
-        }
-    );
+        });
 }
 
 TEST(triple_buffer, function, get_read) {
     testbench::test_template<testbench::test_types>(
-       [](auto test_type)->void {
+        [](auto test_type) -> void {
             using type = typename decltype(test_type)::type;
 
             gtl::triple_buffer<type> triple_buffer;
@@ -92,13 +90,12 @@ TEST(triple_buffer, function, get_read) {
             type* read_buffer = &triple_buffer.get_read();
             REQUIRE(&(triple_buffer.get_read()) == read_buffer);
             REQUIRE(&(triple_buffer.get_read()) == read_buffer);
-        }
-    );
+        });
 }
 
 TEST(triple_buffer, function, get_write) {
     testbench::test_template<testbench::test_types>(
-       [](auto test_type)->void {
+        [](auto test_type) -> void {
             using type = typename decltype(test_type)::type;
 
             gtl::triple_buffer<type> triple_buffer;
@@ -106,13 +103,12 @@ TEST(triple_buffer, function, get_write) {
             type* write_buffer = &triple_buffer.get_write();
             REQUIRE(&(triple_buffer.get_write()) == write_buffer);
             REQUIRE(&(triple_buffer.get_write()) == write_buffer);
-        }
-    );
+        });
 }
 
 TEST(triple_buffer, function, update_write) {
     testbench::test_template<testbench::test_types>(
-       [](auto test_type)->void {
+        [](auto test_type) -> void {
             using type = typename decltype(test_type)::type;
 
             gtl::triple_buffer<type> triple_buffer;
@@ -120,13 +116,12 @@ TEST(triple_buffer, function, update_write) {
             triple_buffer.update_write();
             triple_buffer.update_write();
             triple_buffer.update_write();
-        }
-    );
+        });
 }
 
 TEST(triple_buffer, evaluation, buffer_progression) {
     testbench::test_template<testbench::test_types>(
-       [](auto test_type)->void {
+        [](auto test_type) -> void {
             using type = typename decltype(test_type)::type;
 
             gtl::triple_buffer<type> triple_buffer;
@@ -166,13 +161,12 @@ TEST(triple_buffer, evaluation, buffer_progression) {
             read_buffer = &triple_buffer.get_read();
             REQUIRE(&(triple_buffer.get_read()) == read_buffer);
             REQUIRE(&(triple_buffer.get_read()) == read_buffer);
-        }
-    );
+        });
 }
 
 TEST(triple_buffer, evaluation, buffer_values) {
     testbench::test_template<testbench::test_types>(
-       [](auto test_type)->void {
+        [](auto test_type) -> void {
             using type = typename decltype(test_type)::type;
 
             gtl::triple_buffer<type> triple_buffer;
@@ -211,32 +205,36 @@ TEST(triple_buffer, evaluation, buffer_values) {
                 REQUIRE(triple_buffer.update_read() == true);
                 REQUIRE(testbench::is_value_equal(triple_buffer.get_read(), testbench::test_data<type>::data[1]));
             }
-        }
-    );
+        });
 }
+
 #include <mutex>
+
 TEST(triple_buffer, evaluation, threads) {
     constexpr static const unsigned int test_size = 100000;
 
     gtl::triple_buffer<unsigned int> triple_buffer;
 
-    std::thread writer = std::thread([&](){
+    std::thread writer = std::thread([&]() {
         for (unsigned int i = 1; i < test_size + 1; ++i) {
             triple_buffer.get_write() = i;
             triple_buffer.update_write();
         }
     });
 
-    std::thread reader = std::thread([&](){
+    std::thread reader = std::thread([&]() {
         for (unsigned int i = 0; i < test_size;) {
-            while (!triple_buffer.update_read());
+            while (!triple_buffer.update_read())
+                ;
             REQUIRE(triple_buffer.get_read() > i, "Incorrect value in triple buffer. Expected: %u > %u", triple_buffer.get_read(), i);
             i = triple_buffer.get_read();
         }
     });
 
     while (writer.joinable() || reader.joinable()) {
-        if (writer.joinable()) writer.join();
-        if (reader.joinable()) reader.join();
+        if (writer.joinable())
+            writer.join();
+        if (reader.joinable())
+            reader.join();
     }
 }

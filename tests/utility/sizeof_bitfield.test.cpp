@@ -15,19 +15,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <utility/sizeof_bitfield>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 enum class asd : unsigned long long int {
@@ -36,11 +37,11 @@ enum class asd : unsigned long long int {
 };
 
 struct test {
-    short a : 1;                // lgtm [cpp/ambiguously-signed-bit-field]
-    short b : 12;               // lgtm [cpp/ambiguously-signed-bit-field]
+    short a           : 1;  // lgtm [cpp/ambiguously-signed-bit-field]
+    short b           : 12; // lgtm [cpp/ambiguously-signed-bit-field]
     unsigned short au : 1;
     unsigned short bu : 12;
-    asd x : 2;
+    asd x             : 2;
 };
 
 TEST(sizeof_bitfield, evaluate, size) {
@@ -54,8 +55,6 @@ TEST(sizeof_bitfield, evaluate, size) {
     static_assert(b4 == 12);
     constexpr auto x = GTL_SIZEOF_BITFIELD(test, x);
     static_assert(x == 2);
-
 }
 
 // TODO: Implement tests for sizeof_bitfield.
-

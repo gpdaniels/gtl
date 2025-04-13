@@ -15,28 +15,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
-#include <testbench/optimise.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
+#include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <algorithm/gaussian_elimination>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(gaussian_elimination, traits, standard) {
     // Different on windows.
-    //REQUIRE((std::is_pod<gtl::gaussian_elimination<float, 1>>::value == true));
+    // REQUIRE((std::is_pod<gtl::gaussian_elimination<float, 1>>::value == true));
 
     // Different on windows.
-    //REQUIRE((std::is_trivial<gtl::gaussian_elimination<float, 1>>::value == true));
+    // REQUIRE((std::is_trivial<gtl::gaussian_elimination<float, 1>>::value == true));
 
     REQUIRE((std::is_trivially_copyable<gtl::gaussian_elimination<float, 1>>::value == true));
 

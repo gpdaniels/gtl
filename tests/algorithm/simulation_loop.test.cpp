@@ -15,19 +15,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/require.tests.hpp>
 
 #include <algorithm/simulation_loop>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <thread>
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(simulation_loop, traits, standard) {
@@ -48,7 +49,8 @@ TEST(simulation_loop, function, update) {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     gtl::simulation_loop<100> simulation_loop;
     REQUIRE(simulation_loop.update() == false);
-    while (!simulation_loop.update());
+    while (!simulation_loop.update())
+        ;
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     REQUIRE(std::chrono::nanoseconds(end - start).count() >= 1000000, "Failed %lld !>= %lld", static_cast<long long int>((end - start).count()), 10000000ll);
 }
@@ -68,7 +70,8 @@ TEST(simulation_loop, function, get_current_tick) {
     gtl::simulation_loop<100> simulation_loop;
     REQUIRE(simulation_loop.update() == false);
     REQUIRE(simulation_loop.get_current_tick() == 0);
-    while (!simulation_loop.update());
+    while (!simulation_loop.update())
+        ;
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     REQUIRE(std::chrono::nanoseconds(end - start).count() >= 10000000, "Failed %lld !>= %lld", static_cast<long long int>((end - start).count()), 10000000ll);
     REQUIRE(simulation_loop.get_current_tick() == 1);
@@ -85,7 +88,6 @@ TEST(simulation_loop, function, get_alpha) {
 }
 
 TEST(simulation_loop, evaluate, game_loop) {
-
     gtl::simulation_loop<100> simulation_loop;
 
     std::chrono::steady_clock::time_point last_tick = std::chrono::steady_clock::now();
@@ -93,7 +95,6 @@ TEST(simulation_loop, evaluate, game_loop) {
 
     // Simulate a small number of ticks.
     while (simulation_loop.get_current_tick() < 50) {
-
         // Add input to buffered input.
         // Required for an actual game loop, not in this test.
 
@@ -112,7 +113,7 @@ TEST(simulation_loop, evaluate, game_loop) {
         // Render using the buffered input thus far and the current alpha value for interpolating the current state forwards.
         // Required for an actual game loop, not in this test.
 
-        //PRINT("Alpha: %f\n", simulation_loop.get_alpha<float>());
+        // PRINT("Alpha: %f\n", simulation_loop.get_alpha<float>());
     }
 
     average_tick_rate /= static_cast<double>(simulation_loop.get_current_tick());

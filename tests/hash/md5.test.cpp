@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -22,14 +23,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <hash/md5>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <cstdio>
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(md5, traits, standard) {
@@ -79,7 +80,6 @@ TEST(md5, function, hash_buffer) {
 }
 
 TEST(md5, evaluate, hash_as_integer) {
-
     constexpr static const unsigned int data_count = 7;
 
     constexpr static const char* data[data_count] = {
@@ -93,13 +93,13 @@ TEST(md5, evaluate, hash_as_integer) {
     };
 
     constexpr static unsigned int result[data_count][gtl::md5::hash_size / sizeof(unsigned int)] = {
-        { 0xD41D8CD9, 0x8F00B204, 0xE9800998, 0xECF8427E },
-        { 0x0CC175B9, 0xC0F1B6A8, 0x31C399E2, 0x69772661 },
-        { 0x90015098, 0x3CD24FB0, 0xD6963F7D, 0x28E17F72 },
-        { 0xF96B697D, 0x7CB7938D, 0x525A2F31, 0xAAF161D0 },
-        { 0xC3FCD3D7, 0x6192E400, 0x7DFB496C, 0xCA67E13B },
-        { 0xD174AB98, 0xD277D9F5, 0xA5611C2C, 0x9F419D9F },
-        { 0x57EDF4A2, 0x2BE3C955, 0xAC49DA2E, 0x2107B67A }
+        {0xD41D8CD9, 0x8F00B204, 0xE9800998, 0xECF8427E},
+        {0x0CC175B9, 0xC0F1B6A8, 0x31C399E2, 0x69772661},
+        {0x90015098, 0x3CD24FB0, 0xD6963F7D, 0x28E17F72},
+        {0xF96B697D, 0x7CB7938D, 0x525A2F31, 0xAAF161D0},
+        {0xC3FCD3D7, 0x6192E400, 0x7DFB496C, 0xCA67E13B},
+        {0xD174AB98, 0xD277D9F5, 0xA5611C2C, 0x9F419D9F},
+        {0x57EDF4A2, 0x2BE3C955, 0xAC49DA2E, 0x2107B67A}
     };
 
     gtl::md5 md5;
@@ -119,7 +119,6 @@ TEST(md5, evaluate, hash_as_integer) {
 }
 
 TEST(md5, evaluate, hash_as_string) {
-
     constexpr static const unsigned int data_count = 7;
 
     constexpr static const char* data[data_count] = {
@@ -155,9 +154,7 @@ TEST(md5, evaluate, hash_as_string) {
     }
 }
 
-
 TEST(md5, evaluate, partial_insert) {
-
     constexpr static const unsigned int data_count = 7;
 
     constexpr static const char* data1[data_count] = {
@@ -181,13 +178,13 @@ TEST(md5, evaluate, partial_insert) {
     };
 
     constexpr static unsigned int result[data_count][gtl::md5::hash_size / sizeof(unsigned int)] = {
-        { 0xD41D8CD9, 0x8F00B204, 0xE9800998, 0xECF8427E },
-        { 0x0CC175B9, 0xC0F1B6A8, 0x31C399E2, 0x69772661 },
-        { 0x90015098, 0x3CD24FB0, 0xD6963F7D, 0x28E17F72 },
-        { 0xF96B697D, 0x7CB7938D, 0x525A2F31, 0xAAF161D0 },
-        { 0xC3FCD3D7, 0x6192E400, 0x7DFB496C, 0xCA67E13B },
-        { 0xD174AB98, 0xD277D9F5, 0xA5611C2C, 0x9F419D9F },
-        { 0x57EDF4A2, 0x2BE3C955, 0xAC49DA2E, 0x2107B67A }
+        {0xD41D8CD9, 0x8F00B204, 0xE9800998, 0xECF8427E},
+        {0x0CC175B9, 0xC0F1B6A8, 0x31C399E2, 0x69772661},
+        {0x90015098, 0x3CD24FB0, 0xD6963F7D, 0x28E17F72},
+        {0xF96B697D, 0x7CB7938D, 0x525A2F31, 0xAAF161D0},
+        {0xC3FCD3D7, 0x6192E400, 0x7DFB496C, 0xCA67E13B},
+        {0xD174AB98, 0xD277D9F5, 0xA5611C2C, 0x9F419D9F},
+        {0x57EDF4A2, 0x2BE3C955, 0xAC49DA2E, 0x2107B67A}
     };
 
     gtl::md5 md5;

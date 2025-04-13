@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/benchmark.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -22,13 +23,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <parser/pl0>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(pl0, traits, standard) {
@@ -127,21 +128,21 @@ CALL primes
 }
 
 TEST(pl0, benchmark, parse_empty) {
-    PRINT("Empty code: %f\n", testbench::benchmark([](){
-        std::string code = R"()";
-        gtl::pl0 pl0;
-        std::vector<gtl::pl0::token_data> tokens = pl0.parse(code);
-        REQUIRE(tokens.empty());
-    }));
+    PRINT("Empty code: %f\n", testbench::benchmark([]() {
+              std::string code = R"()";
+              gtl::pl0 pl0;
+              std::vector<gtl::pl0::token_data> tokens = pl0.parse(code);
+              REQUIRE(tokens.empty());
+          }));
 }
 
 TEST(pl0, benchmark, parse_simple) {
-    PRINT("Parse simple code: %f\n", testbench::benchmark([](){
-        std::string code = R"(VAR number; number := 42 .)";
-        gtl::pl0 pl0;
-        std::vector<gtl::pl0::token_data> tokens = pl0.parse(code);
-        REQUIRE(!tokens.empty());
-    }));
+    PRINT("Parse simple code: %f\n", testbench::benchmark([]() {
+              std::string code = R"(VAR number; number := 42 .)";
+              gtl::pl0 pl0;
+              std::vector<gtl::pl0::token_data> tokens = pl0.parse(code);
+              REQUIRE(!tokens.empty());
+          }));
 }
 
 TEST(pl0, benchmark, interpret_simple) {
@@ -149,14 +150,14 @@ TEST(pl0, benchmark, interpret_simple) {
     gtl::pl0 pl0;
     std::vector<gtl::pl0::token_data> tokens = pl0.parse(code);
     REQUIRE(!tokens.empty());
-    PRINT("Interpret simple code: %f\n", testbench::benchmark([&](){
-        pl0.interpret(tokens);
-    }));
+    PRINT("Interpret simple code: %f\n", testbench::benchmark([&]() {
+              pl0.interpret(tokens);
+          }));
 }
 
 TEST(pl0, benchmark, parse_complex) {
-    PRINT("Parse complex code: %f\n", testbench::benchmark([](){
-        std::string code = R"(
+    PRINT("Parse complex code: %f\n", testbench::benchmark([]() {
+              std::string code = R"(
 CONST max = 100;
 VAR arg, ret;
 
@@ -189,10 +190,10 @@ END;
 CALL primes
 .
     )";
-        gtl::pl0 pl0;
-        std::vector<gtl::pl0::token_data> tokens = pl0.parse(code);
-        REQUIRE(!tokens.empty());
-    }));
+              gtl::pl0 pl0;
+              std::vector<gtl::pl0::token_data> tokens = pl0.parse(code);
+              REQUIRE(!tokens.empty());
+          }));
 }
 
 TEST(pl0, benchmark, interpret_complex) {
@@ -231,8 +232,8 @@ CALL primes
 )";
     gtl::pl0 pl0;
     std::vector<gtl::pl0::token_data> tokens = pl0.parse(code);
-    PRINT("Interpret complex code: %f\n", testbench::benchmark([&](){
-        REQUIRE(!tokens.empty());
-        pl0.interpret(tokens);
-    }));
+    PRINT("Interpret complex code: %f\n", testbench::benchmark([&]() {
+              REQUIRE(!tokens.empty());
+              pl0.interpret(tokens);
+          }));
 }

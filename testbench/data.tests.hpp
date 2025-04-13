@@ -21,17 +21,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace testbench {
     // Useful test data.
     template <typename template_type>
-    struct test_data { };
+    struct test_data {};
 
-    // Macro for generating test data structures.
-    #define TEST_DATA_STRUCT(TYPE)          \
-        template <>                         \
-        struct test_data<TYPE> {            \
-            static const char* name;        \
-            static const TYPE data[];       \
-            static const TYPE* begin();     \
-            static const TYPE* end();       \
-        }
+// Macro for generating test data structures.
+#define TEST_DATA_STRUCT(TYPE)      \
+    template <>                     \
+    struct test_data<TYPE> {        \
+        static const char* name;    \
+        static const TYPE data[];   \
+        static const TYPE* begin(); \
+        static const TYPE* end();   \
+    }
 
     // Boolean.
     TEST_DATA_STRUCT(bool);
@@ -64,7 +64,7 @@ namespace testbench {
     // Pointer type.
     TEST_DATA_STRUCT(decltype(nullptr));
 
-    #undef TEST_DATA_STRUCT
+#undef TEST_DATA_STRUCT
 }
 
 #endif // GTL_DATA_TESTS_HPP

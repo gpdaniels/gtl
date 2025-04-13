@@ -21,8 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "abort.tests.hpp"
 
 #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
-#   pragma GCC diagnostic push
-#   pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 
 namespace testbench {
@@ -50,7 +50,7 @@ namespace testbench {
 }
 
 #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
-#   pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 #endif
 
 #endif // GTL_OPTIMISE_TESTS_HPP

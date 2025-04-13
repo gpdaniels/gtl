@@ -44,6 +44,7 @@ namespace gtl {
         public:
             coordinate_type coordinate_self;
             coordinate_type coordinate_parent;
+
             bool operator==(const node_type& other) const {
                 return (this->coordinate_self == other.coordinate_self);
             }
@@ -59,7 +60,7 @@ namespace gtl {
             std::vector<node_type> closed;
 
             // Add start node to open list.
-            open.emplace_back(node_type{start, start});
+            open.emplace_back(node_type{ start, start });
 
             // Search every node.
             while (!open.empty()) {
@@ -104,7 +105,7 @@ namespace gtl {
             // Rebuild path.
             path.push_back(end);
             while ((path.back() == start) == false) {
-                path.push_back(std::find(closed.begin(), closed.end(), node_type{path.back(), coordinate_type()})->coordinate_parent);
+                path.push_back(std::find(closed.begin(), closed.end(), node_type{ path.back(), coordinate_type() })->coordinate_parent);
             }
             std::reverse(path.begin(), path.end());
             return true;

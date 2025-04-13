@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -22,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vision/consensus/consensus>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <cmath>
@@ -30,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vector>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #include <vision/consensus/evaluate/inlier_support>
@@ -56,6 +57,7 @@ public:
         models[0].intercept = data[1].y - models[0].gradient * data[1].x;
         return 1;
     }
+
     virtual void compute_residuals(const data_type* const __restrict data, std::size_t data_size, const model_type& model, float* const __restrict residuals) override final {
         const float denominator = std::sqrt(model.gradient * model.gradient + 1.0f);
         for (std::size_t i = 0; i < data_size; ++i) {
@@ -65,11 +67,11 @@ public:
 };
 
 TEST(consensus, evaluate, line) {
-
     class random_pcg final {
     private:
         unsigned long long int state = 0x853C49E6748FEA9Bull;
         unsigned long long int increment = 0xDA3E39CB94B95BDBull;
+
     private:
         unsigned int get_random_raw() {
             unsigned long long int state_previous = this->state;
@@ -78,6 +80,7 @@ TEST(consensus, evaluate, line) {
             int rotation = state_previous >> 59u;
             return (state_shift_xor_shift >> rotation) | (state_shift_xor_shift << ((-rotation) & 31));
         }
+
     public:
         float get_random_exclusive_top() {
             return static_cast<float>(this->get_random_raw()) * (1.0f / static_cast<float>(1ull << 32));
@@ -122,8 +125,7 @@ TEST(consensus, evaluate, line) {
         inlier_ratio,
         probability_failure,
         iterations_minimum,
-        iterations_maximum
-    );
+        iterations_maximum);
 
     float residuals[data_size];
     std::size_t inliers[data_size];

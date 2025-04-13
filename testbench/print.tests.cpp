@@ -15,47 +15,48 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "print.tests.hpp"
+
 #include "unused.tests.hpp"
 
 #if defined(_WIN32)
-#   if defined(_MSC_VER)
-#      pragma warning(push, 0)
-#   endif
-#   define WIN32_LEAN_AND_MEAN
-#   define VC_EXTRALEAN
-#   define STRICT
-#   include <sdkddkver.h>
-#   if defined(_AFXDLL)
-#       include <afxwin.h>
-#   else
-#       include <Windows.h>
-#   endif
-#   if defined(_MSC_VER)
-#      pragma warning(pop)
-#   endif
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+#define WIN32_LEAN_AND_MEAN
+#define VC_EXTRALEAN
+#define STRICT
+#include <sdkddkver.h>
+#if defined(_AFXDLL)
+#include <afxwin.h>
+#else
+#include <Windows.h>
+#endif
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 #endif
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <cstdarg>
 #include <cstdio>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace testbench {
     void disable_output_buffering(output_stream stream) {
         FILE* handle = nullptr;
         switch (stream) {
-        case output_stream::output:
-            handle = stdout;
-            break;
-        case output_stream::error:
-            handle = stderr;
-            break;
+            case output_stream::output:
+                handle = stdout;
+                break;
+            case output_stream::error:
+                handle = stderr;
+                break;
         }
         if (!handle) {
             return;
@@ -63,49 +64,51 @@ namespace testbench {
         setvbuf(handle, nullptr, _IONBF, 0);
     }
 
-    PRINT_FORMAT_PRINT_DECORATION(1) int print(output_stream stream, PRINT_FORMAT_PRINT_ARGUMENT(const char* format), ...) {
+    PRINT_FORMAT_PRINT_DECORATION(1)
+
+    int print(output_stream stream, PRINT_FORMAT_PRINT_ARGUMENT(const char* format), ...) {
         FILE* handle = nullptr;
         switch (stream) {
-        case output_stream::output:
-            handle = stdout;
-            break;
-        case output_stream::error:
-            handle = stderr;
-            break;
+            case output_stream::output:
+                handle = stdout;
+                break;
+            case output_stream::error:
+                handle = stderr;
+                break;
         }
         if (!handle) {
             return 0;
         }
 
-        #if defined(_WIN32)
+#if defined(_WIN32)
 
-            char outputString[1024] = {};
+        char outputString[1024] = {};
 
-            va_list formatArguments;
-            va_start(formatArguments, format);
-            int outputCountDebug = _vsnprintf(outputString, sizeof(outputString), format, formatArguments);
-            va_end(formatArguments);
+        va_list formatArguments;
+        va_start(formatArguments, format);
+        int outputCountDebug = _vsnprintf(outputString, sizeof(outputString), format, formatArguments);
+        va_end(formatArguments);
 
-            ::OutputDebugStringA(outputString);
+        ::OutputDebugStringA(outputString);
 
-            int outputCountStdOut = std::fprintf(handle, "%s", outputString);
+        int outputCountStdOut = std::fprintf(handle, "%s", outputString);
 
-            std::fflush(handle);
+        std::fflush(handle);
 
-            UNUSED(outputCountStdOut);
-            return outputCountDebug;
+        UNUSED(outputCountStdOut);
+        return outputCountDebug;
 
-        #else
+#else
 
-            va_list formatArguments;
-            va_start(formatArguments, format);
-            int outputCount = std::vfprintf(handle, format, formatArguments);
-            va_end(formatArguments);
+        va_list formatArguments;
+        va_start(formatArguments, format);
+        int outputCount = std::vfprintf(handle, format, formatArguments);
+        va_end(formatArguments);
 
-            std::fflush(handle);
+        std::fflush(handle);
 
-            return outputCount;
+        return outputCount;
 
-        #endif
+#endif
     }
 }

@@ -52,13 +52,13 @@ namespace gtl {
         };
 
         /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length zero.
-        template<typename integer_type>
+        template <typename integer_type>
         struct make_integer_sequence<integer_type, 0> final
             : integer_sequence<integer_type> {
         };
 
         /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length one.
-        template<typename integer_type>
+        template <typename integer_type>
         struct make_integer_sequence<integer_type, 1> final
             : integer_sequence<integer_type, 0> {
         };
@@ -210,7 +210,7 @@ namespace gtl {
         /// @tparam sub_string_start The index at which to start the returned sub-string.
         /// @tparam sub_string_length The length of characters to copy into the returned sub-string.
         /// @return The requested sub-string.
-        template<unsigned long long sub_string_start, unsigned long long sub_string_length>
+        template <unsigned long long sub_string_start, unsigned long long sub_string_length>
         constexpr static auto sub_string() {
             static_assert(sub_string_start <= sizeof...(characters), "Sub string start must be within the parent string.");
             static_assert(sub_string_length <= sizeof...(characters), "Sub string length cannot be greater than parent string.");
@@ -222,7 +222,7 @@ namespace gtl {
         /// @tparam sub_string_start The index at which to start the returned sub-string.
         /// @tparam indexes The indexes along the string to keep in the returned sub-string.
         /// @return The requested sub-string.
-        template<unsigned long long sub_string_start, unsigned long long... indexes>
+        template <unsigned long long sub_string_start, unsigned long long... indexes>
         constexpr static auto sub_string_sequence(integer_sequence<unsigned long long, indexes...>) {
             constexpr const char data[sizeof...(characters) + 1] = { characters..., 0 };
             return static_string<data[indexes + sub_string_start]...>{};
@@ -239,7 +239,7 @@ namespace gtl {
         /// @brief  Replace all characters with their lowercase versions if they have one.
         /// @tparam indexes The indexes along the string to check and potentially replace.
         /// @return A static_string object representing the original string in lowercase.
-        template<unsigned long long... indexes>
+        template <unsigned long long... indexes>
         constexpr static auto to_lower_sequence(integer_sequence<unsigned long long, indexes...>) {
             constexpr const char data[sizeof...(characters) + 1] = { characters..., 0 };
             return static_string<to_lower_char(data[indexes])...>{};
@@ -263,7 +263,7 @@ namespace gtl {
         /// @brief  Replace all characters with their uppercase versions if they have one.
         /// @tparam indexes The indexes along the string to check and potentially replace.
         /// @return A static_string object representing the original string in uppercase.
-        template<unsigned long long... indexes>
+        template <unsigned long long... indexes>
         constexpr static auto to_upper_sequence(integer_sequence<unsigned long long, indexes...>) {
             constexpr const char data[sizeof...(characters) + 1] = { characters..., 0 };
             return static_string<to_upper_char(data[indexes])...>{};
@@ -312,7 +312,7 @@ namespace gtl {
         /// @tparam other_characters The characters in the rhs string.
         /// @param  rhs The right hand side of the comparison.
         /// @return true if this string is alphabetically less than the rhs or if equal, shorter, false otherwise.
-        template<char... other_characters>
+        template <char... other_characters>
         constexpr bool operator<(const static_string<other_characters...>& rhs) const {
             static_cast<void>(rhs);
             constexpr const char lhs_data[sizeof...(characters) + 1] = { characters..., 0 };
@@ -322,8 +322,10 @@ namespace gtl {
             const char* const lhs_end = &lhs_string[sizeof...(characters)];
             const char* const rhs_end = &rhs_string[sizeof...(other_characters)];
             while ((lhs_string != lhs_end) && (rhs_string != rhs_end)) {
-                if (*lhs_string < *rhs_string) return true;
-                if (*rhs_string < *lhs_string) return false;
+                if (*lhs_string < *rhs_string)
+                    return true;
+                if (*rhs_string < *lhs_string)
+                    return false;
                 lhs_string++;
                 rhs_string++;
             }
@@ -334,7 +336,7 @@ namespace gtl {
         /// @tparam other_characters The characters in the rhs string.
         /// @param  rhs The right hand side of the comparison.
         /// @return true if rhs is less than lhs, false otherwise.
-        template<char... other_characters>
+        template <char... other_characters>
         constexpr bool operator>(const static_string<other_characters...>& rhs) const {
             return rhs < *this;
         }
@@ -343,7 +345,7 @@ namespace gtl {
         /// @tparam other_characters The characters in the rhs string.
         /// @param  rhs The right hand side of the comparison.
         /// @return false if this is greater than rhs, true otherwise.
-        template<char... other_characters>
+        template <char... other_characters>
         constexpr bool operator<=(const static_string<other_characters...>& rhs) const {
             return !(*this > rhs);
         }
@@ -352,7 +354,7 @@ namespace gtl {
         /// @tparam other_characters The characters in the rhs string.
         /// @param  rhs The right hand side of the comparison.
         /// @return false if this is less than rhs, true otherwise.
-        template<char... other_characters>
+        template <char... other_characters>
         constexpr bool operator>=(const static_string<other_characters...>& rhs) const {
             return !(*this < rhs);
         }
@@ -361,7 +363,7 @@ namespace gtl {
         /// @tparam other_characters The characters in the rhs string.
         /// @param  rhs The right hand side of the comparison.
         /// @return true if this is less than or greater than rhs, false otherwise.
-        template<char... other_characters>
+        template <char... other_characters>
         constexpr bool operator!=(const static_string<other_characters...>& rhs) const {
             return (*this < rhs) || (*this > rhs);
         }
@@ -370,7 +372,7 @@ namespace gtl {
         /// @tparam other_characters The characters in the rhs string.
         /// @param  rhs The right hand side of the comparison.
         /// @return false if this not equal to rhs, true otherwise.
-        template<char... other_characters>
+        template <char... other_characters>
         constexpr bool operator==(const static_string<other_characters...>& rhs) const {
             return !(*this != rhs);
         }
@@ -414,29 +416,26 @@ namespace gtl {
         }
     };
 
-    #if !defined(_MSC_VER)
-        // Template argument deduction guide.
-        template<char... characters>
-        static_string() -> static_string<characters...>;
-    #endif
+#if !defined(_MSC_VER)
+    // Template argument deduction guide.
+    template <char... characters>
+    static_string() -> static_string<characters...>;
+#endif
 
-    // Macro for easy creation of encoded strings.
-    // The string lambda has to be created outside of the decltype() call before c++20.
-    // Once we have a constexpr string index function we can explode it into a varadic template.
-    // Then once we have a string as a varadic template we can do anything easily, in this code we return the type.
-    // All of this is wrapped in a lambda to group and execute the multiple expressions together.
-    #define GTL_STATIC_STRING(string)                           \
-        [](){                                                   \
-            auto string_as_lambda =                             \
-                [](unsigned long long int index) constexpr {    \
-                    return string[index];                       \
-                };                                              \
-            return decltype(                                    \
-                gtl::static_string<>::explode(                  \
-                    string_as_lambda                            \
-                )                                               \
-            ){};                                                \
-        }()                                                     \
+// Macro for easy creation of encoded strings.
+// The string lambda has to be created outside of the decltype() call before c++20.
+// Once we have a constexpr string index function we can explode it into a varadic template.
+// Then once we have a string as a varadic template we can do anything easily, in this code we return the type.
+// All of this is wrapped in a lambda to group and execute the multiple expressions together.
+#define GTL_STATIC_STRING(string)                        \
+    []() {                                               \
+        auto string_as_lambda =                          \
+            [](unsigned long long int index) constexpr { \
+            return string[index];                        \
+        };                                               \
+        return decltype(gtl::static_string<>::explode(   \
+            string_as_lambda)){};                        \
+    }()
 
     // With C++20 this macro can be shortened as lambdas can be used in non-evaulated contexts.
     //#define GTL_STATIC_STRING(string)

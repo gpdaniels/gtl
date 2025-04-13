@@ -176,9 +176,12 @@ namespace gtl {
     private:
         static symbol_type flip_symbol(const symbol_type& symbol) {
             switch (symbol) {
-                case symbol_type::empty: return symbol_type::empty;
-                case symbol_type::nought: return symbol_type::cross;
-                case symbol_type::cross: return symbol_type::nought;
+                case symbol_type::empty:
+                    return symbol_type::empty;
+                case symbol_type::nought:
+                    return symbol_type::cross;
+                case symbol_type::cross:
+                    return symbol_type::nought;
             }
             return symbol;
         }

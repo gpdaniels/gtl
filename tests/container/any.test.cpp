@@ -15,22 +15,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
-#include <testbench/optimise.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/data.tests.hpp>
+#include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 #include <testbench/template.tests.hpp>
 
 #include <container/any>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(any, traits, standard) {
@@ -59,7 +60,7 @@ TEST(any, evaluate, any) {
 
     any = 1.0;
     REQUIRE(static_cast<int>(any) != 1, "Unexpected value '%d' in any, expected %f.", static_cast<int>(any), 1.0);
-    REQUIRE(static_cast<double>(any) == 1.0,  "Unexpected value '%f' in any, expected %f.", static_cast<double>(any), 1.0);
+    REQUIRE(static_cast<double>(any) == 1.0, "Unexpected value '%f' in any, expected %f.", static_cast<double>(any), 1.0);
 
     const char* string = "Hello world!";
     any = string;

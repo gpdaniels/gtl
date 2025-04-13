@@ -15,20 +15,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
-#include <testbench/optimise.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
+#include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <utility/error>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(error, traits, standard) {
@@ -36,14 +37,14 @@ TEST(error, traits, standard) {
 
     REQUIRE((std::is_trivial<gtl::error>::value == false));
 
-    #if defined(_MSC_VER)
-        #if 0
+#if defined(_MSC_VER)
+#if 0
             // Not reliable across compiler / os.
             REQUIRE((std::is_trivially_copyable<gtl::error>::value == false));
-        #endif
-    #else
-        REQUIRE((std::is_trivially_copyable<gtl::error>::value == true));
-    #endif
+#endif
+#else
+    REQUIRE((std::is_trivially_copyable<gtl::error>::value == true));
+#endif
 
     REQUIRE((std::is_standard_layout<gtl::error>::value == true));
 }
@@ -52,7 +53,6 @@ TEST(error, constructor, empty) {
     gtl::error error;
     REQUIRE(error);
 }
-
 
 TEST(error, constructor, enum_class) {
     enum class error_code {
@@ -136,26 +136,25 @@ TEST(error, parameter, name) {
     gtl::error error4(error_code2::fail);
     REQUIRE(!error4);
 
-    #if defined(__clang__)
-        REQUIRE(testbench::is_string_same(error1.name, "error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "error_code1");
-        REQUIRE(testbench::is_string_same(error2.name, "error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "error_code1");
-        REQUIRE(testbench::is_string_same(error3.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "error_code2");
-        REQUIRE(testbench::is_string_same(error4.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "error_code2");
-    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
-        REQUIRE(testbench::is_string_same(error1.name, "test_error_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "test_error_parameter_name()::error_code1");
-        REQUIRE(testbench::is_string_same(error2.name, "test_error_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "test_error_parameter_name()::error_code1");
-        REQUIRE(testbench::is_string_same(error3.name, "test_error_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "test_error_parameter_name()::error_code2");
-        REQUIRE(testbench::is_string_same(error4.name, "test_error_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "test_error_parameter_name()::error_code2");
-    #elif defined(_MSC_VER)
-        REQUIRE(testbench::is_string_same(error1.name, "test_error_parameter_name::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "test_error_parameter_name::error_code1");
-        REQUIRE(testbench::is_string_same(error2.name, "test_error_parameter_name::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "test_error_parameter_name::error_code1");
-        REQUIRE(testbench::is_string_same(error3.name, "test_error_parameter_name::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "test_error_parameter_name::error_code2");
-        REQUIRE(testbench::is_string_same(error4.name, "test_error_parameter_name::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "test_error_parameter_name::error_code2");
-    #endif
+#if defined(__clang__)
+    REQUIRE(testbench::is_string_same(error1.name, "error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "error_code1");
+    REQUIRE(testbench::is_string_same(error2.name, "error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "error_code1");
+    REQUIRE(testbench::is_string_same(error3.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "error_code2");
+    REQUIRE(testbench::is_string_same(error4.name, "error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "error_code2");
+#elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
+    REQUIRE(testbench::is_string_same(error1.name, "test_error_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "test_error_parameter_name()::error_code1");
+    REQUIRE(testbench::is_string_same(error2.name, "test_error_parameter_name()::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "test_error_parameter_name()::error_code1");
+    REQUIRE(testbench::is_string_same(error3.name, "test_error_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "test_error_parameter_name()::error_code2");
+    REQUIRE(testbench::is_string_same(error4.name, "test_error_parameter_name()::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "test_error_parameter_name()::error_code2");
+#elif defined(_MSC_VER)
+    REQUIRE(testbench::is_string_same(error1.name, "test_error_parameter_name::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error1.name, "test_error_parameter_name::error_code1");
+    REQUIRE(testbench::is_string_same(error2.name, "test_error_parameter_name::error_code1") == true, "gtl::error.name = '%s', expected '%s'", error2.name, "test_error_parameter_name::error_code1");
+    REQUIRE(testbench::is_string_same(error3.name, "test_error_parameter_name::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error3.name, "test_error_parameter_name::error_code2");
+    REQUIRE(testbench::is_string_same(error4.name, "test_error_parameter_name::error_code2") == true, "gtl::error.name = '%s', expected '%s'", error4.name, "test_error_parameter_name::error_code2");
+#endif
 }
 
 TEST(error, evaluate, call_stack) {
-
     enum class error_code1 {
         pass = 0,
         fail = 1
@@ -193,11 +192,11 @@ TEST(error, evaluate, call_stack) {
     };
 
     REQUIRE(function3(false, false, false) == gtl::error(error_code3::fail));
-    REQUIRE(function3(false, false,  true) == gtl::error(error_code3::fail));
-    REQUIRE(function3(false,  true, false) == gtl::error(error_code3::fail));
-    REQUIRE(function3(false,  true,  true) == gtl::error(error_code3::fail));
-    REQUIRE(function3( true, false, false) == gtl::error(error_code2::fail));
-    REQUIRE(function3( true, false,  true) == gtl::error(error_code2::fail));
-    REQUIRE(function3( true,  true, false) == gtl::error(error_code1::fail));
-    REQUIRE(function3( true,  true,  true) == gtl::error(error_code1::pass));
+    REQUIRE(function3(false, false, true) == gtl::error(error_code3::fail));
+    REQUIRE(function3(false, true, false) == gtl::error(error_code3::fail));
+    REQUIRE(function3(false, true, true) == gtl::error(error_code3::fail));
+    REQUIRE(function3(true, false, false) == gtl::error(error_code2::fail));
+    REQUIRE(function3(true, false, true) == gtl::error(error_code2::fail));
+    REQUIRE(function3(true, true, false) == gtl::error(error_code1::fail));
+    REQUIRE(function3(true, true, true) == gtl::error(error_code1::pass));
 }

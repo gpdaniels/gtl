@@ -21,29 +21,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Implemetation of feature angle from the paper "ORB: An efficient alternative to SIFT or SURF". IEEE International Conference on Computer Vision (2011). [wip]
 
 #if defined(_MSC_VER)
-    #pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <cmath>
 
 #if defined(_MSC_VER)
-    #pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace gtl {
     float orb_angle(
         const unsigned char* __restrict const data,
-        const int stride
-    );
+        const int stride);
+
     float orb_angle(
         const unsigned char* __restrict const data,
-        const int stride
-    ) {
+        const int stride) {
         // This is the standard set of pattern sample locations for a patch size of 31.
         constexpr static const int patch_size = 31;
         constexpr static const int patch_radius = patch_size / 2;
         constexpr static const int patch_width[patch_radius + 1] = { 15, 15, 15, 15, 14, 14, 14, 13, 13, 12, 11, 10, 9, 8, 6, 3 };
-
 
         // Sum the pixel weighted centre row.
         int sum_x = 0;

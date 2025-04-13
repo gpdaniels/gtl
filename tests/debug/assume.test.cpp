@@ -15,23 +15,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/require.tests.hpp>
 
 #include <debug/assume>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #ifdef _MSC_VER
-#   pragma warning(push)
-#   pragma warning(disable: 4702)
+#pragma warning(push)
+#pragma warning(disable : 4702)
 #endif
 
 TEST(assume, evaluate, assume) {
@@ -52,7 +53,7 @@ TEST(assume, evaluate, assume) {
         if (true) {
             GTL_ASSUME(true);
         }
-        
+
         if (true) {
             GTL_ASSUME(true);
         }
@@ -87,45 +88,45 @@ TEST(assume, evaluate, assume) {
         else
             REQUIRE(true);
     }
-    
+
     // Assuming in a for loop, with {}.
     {
         for (bool loop = true; loop; loop = false) {
             GTL_ASSUME(true);
         }
 
-        #if defined(__clang__)
-            #pragma clang diagnostic push
-            #pragma clang diagnostic ignored "-Wunreachable-code-loop-increment"
-        #endif
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code-loop-increment"
+#endif
 
         for (bool loop = false; loop; loop = false) {
             GTL_ASSUME(false);
         }
 
-        #if defined(__clang__)
-            #pragma clang diagnostic pop
-        #endif
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
     }
-    
+
     // Assuming in a for loop, without {}.
     {
         for (bool loop = true; loop; loop = false)
             GTL_ASSUME(true);
 
-        #if defined(__clang__)
-            #pragma clang diagnostic push
-            #pragma clang diagnostic ignored "-Wunreachable-code-loop-increment"
-        #endif
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code-loop-increment"
+#endif
 
         for (bool loop = false; loop; loop = false)
             GTL_ASSUME(false);
 
-        #if defined(__clang__)
-            #pragma clang diagnostic pop
-        #endif
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
     }
-    
+
     // Assuming in a while loop, with {}.
     {
         bool loop = true;
@@ -138,7 +139,7 @@ TEST(assume, evaluate, assume) {
             GTL_ASSUME(false);
         }
     }
-    
+
     // Assuming in a while loop, without {}.
     {
         bool loop = true;
@@ -155,7 +156,7 @@ TEST(assume, evaluate, assume) {
             GTL_ASSUME(true);
         } while (false);
     }
-    
+
     // Assuming in a do while loop, without {}.
     {
         do
@@ -165,5 +166,5 @@ TEST(assume, evaluate, assume) {
 }
 
 #ifdef _MSC_VER
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif

@@ -15,14 +15,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
-#include <testbench/optimise.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
+#include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <algorithm/quicksort>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <algorithm>
@@ -33,15 +34,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(quicksort, traits, standard) {
     // Different on windows.
-    //REQUIRE((std::is_pod<gtl::quicksort>::value == true));
+    // REQUIRE((std::is_pod<gtl::quicksort>::value == true));
 
     // Different on windows.
-    //REQUIRE((std::is_trivial<gtl::quicksort>::value == true));
+    // REQUIRE((std::is_trivial<gtl::quicksort>::value == true));
 
     REQUIRE((std::is_trivially_copyable<gtl::quicksort>::value == true));
 
@@ -198,7 +199,9 @@ TEST(quicksort, function, sort_10_random) {
 TEST(quicksort, function, sort_10_random_decending) {
     std::array<int, 10> data_original = { 0, 1, 3, 9, 4, 6, 7, 8, 5, 2 };
     std::array<int, 10> data_sorted = data_original;
-    std::sort(data_sorted.begin(), data_sorted.end(), [](const int& lhs, const int& rhs){ return lhs > rhs; });
+    std::sort(data_sorted.begin(), data_sorted.end(), [](const int& lhs, const int& rhs) {
+        return lhs > rhs;
+    });
 
     std::array<int, 10> data = data_original;
     gtl::quicksort::sort(data.data(), data.size(), gtl::quicksort::comparitor_descending<int>);
@@ -210,11 +213,15 @@ TEST(quicksort, function, sort_10_random_indexed) {
     std::array<int, 10> data_original = { 0, 1, 3, 9, 4, 6, 7, 8, 5, 2 };
     std::array<int, 10> data_sorted = data_original;
     std::array<unsigned long long int, 10> data_sorted_indexes = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-    std::sort(data_sorted_indexes.begin(), data_sorted_indexes.end(), [data_sorted](const unsigned long long int& lhs, const unsigned long long int& rhs){ return data_sorted[lhs] < data_sorted[rhs]; });
+    std::sort(data_sorted_indexes.begin(), data_sorted_indexes.end(), [data_sorted](const unsigned long long int& lhs, const unsigned long long int& rhs) {
+        return data_sorted[lhs] < data_sorted[rhs];
+    });
 
     std::array<int, 10> data = data_original;
     std::array<unsigned long long int, 10> data_indexes = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-    gtl::quicksort::sort(data_indexes.data(), data_indexes.size(), [data](const unsigned long long int& lhs, const unsigned long long int& rhs){ return data[lhs] < data[rhs]; });
+    gtl::quicksort::sort(data_indexes.data(), data_indexes.size(), [data](const unsigned long long int& lhs, const unsigned long long int& rhs) {
+        return data[lhs] < data[rhs];
+    });
 
     REQUIRE(data_indexes == data_sorted_indexes);
 }
@@ -384,7 +391,9 @@ TEST(quicksort, function, partial_sort_10_random_decending) {
     unsigned int partial_length = 5;
     std::array<int, 10> data_original = { 0, 1, 3, 9, 4, 6, 7, 8, 5, 2 };
     std::array<int, 10> data_sorted = data_original;
-    std::partial_sort(data_sorted.begin(), data_sorted.begin() + partial_length, data_sorted.end(), [](const int& lhs, const int& rhs){ return lhs > rhs; });
+    std::partial_sort(data_sorted.begin(), data_sorted.begin() + partial_length, data_sorted.end(), [](const int& lhs, const int& rhs) {
+        return lhs > rhs;
+    });
 
     std::array<int, 10> data = data_original;
     gtl::quicksort::sort_partial(data.data(), data.size(), partial_length, gtl::quicksort::comparitor_descending<int>);
@@ -397,27 +406,31 @@ TEST(quicksort, function, partial_sort_10_random_indexed) {
     std::array<int, 10> data_original = { 0, 1, 3, 9, 4, 6, 7, 8, 5, 2 };
     std::array<int, 10> data_sorted = data_original;
     std::array<unsigned long long int, 10> data_sorted_indexes = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-    std::partial_sort(data_sorted_indexes.begin(), data_sorted_indexes.begin() + partial_length, data_sorted_indexes.end(), [data_sorted](const unsigned long long int& lhs, const unsigned long long int& rhs){ return data_sorted[lhs] < data_sorted[rhs]; });
+    std::partial_sort(data_sorted_indexes.begin(), data_sorted_indexes.begin() + partial_length, data_sorted_indexes.end(), [data_sorted](const unsigned long long int& lhs, const unsigned long long int& rhs) {
+        return data_sorted[lhs] < data_sorted[rhs];
+    });
 
     std::array<int, 10> data = data_original;
     std::array<unsigned long long int, 10> data_indexes = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-    gtl::quicksort::sort_partial(data_indexes.data(), data_indexes.size(), partial_length, [data](const unsigned long long int& lhs, const unsigned long long int& rhs){ return data[lhs] < data[rhs]; });
+    gtl::quicksort::sort_partial(data_indexes.data(), data_indexes.size(), partial_length, [data](const unsigned long long int& lhs, const unsigned long long int& rhs) {
+        return data[lhs] < data[rhs];
+    });
 
     REQUIRE(testbench::is_memory_same(data_indexes.data(), data_sorted_indexes.data(), partial_length));
 }
 
 TEST(quicksort, evaluate, benchmark_sort) {
-    constexpr static const auto create_random_data = [](unsigned long long int size)->std::vector<int> {
+    constexpr static const auto create_random_data = [](unsigned long long int size) -> std::vector<int> {
         std::random_device entropy;
-        std::seed_seq      seed{entropy(), entropy(), entropy(), entropy(), entropy(), entropy(), entropy(), entropy()};
-        std::mt19937       engine(seed);
+        std::seed_seq seed{ entropy(), entropy(), entropy(), entropy(), entropy(), entropy(), entropy(), entropy() };
+        std::mt19937 engine(seed);
         std::uniform_int_distribution<int> distribution;
         std::vector<int> random_data(size);
         std::generate(random_data.begin(), random_data.end(), std::bind(distribution, engine));
         return random_data;
     };
 
-    static const auto standard = [](const std::vector<int>& random_data){
+    static const auto standard = [](const std::vector<int>& random_data) {
         for (int i = 0; i < 5; ++i) {
             std::vector<int> data = random_data;
             std::sort(data.begin(), data.end());
@@ -429,7 +442,7 @@ TEST(quicksort, evaluate, benchmark_sort) {
         PRINT("Standard:    %7.3fms\n", static_cast<double>((end - start).count()) / 1000000.0);
     };
 
-    static const auto quicksort = [](const std::vector<int>& random_data){
+    static const auto quicksort = [](const std::vector<int>& random_data) {
         for (int i = 0; i < 5; ++i) {
             std::vector<int> data = random_data;
             gtl::quicksort::sort(data.data(), data.size());
@@ -450,17 +463,17 @@ TEST(quicksort, evaluate, benchmark_sort) {
 }
 
 TEST(quicksort, evaluate, benchmark_partial) {
-    constexpr static const auto create_random_data = [](unsigned long long int size)->std::vector<int> {
+    constexpr static const auto create_random_data = [](unsigned long long int size) -> std::vector<int> {
         std::random_device entropy;
-        std::seed_seq      seed{entropy(), entropy(), entropy(), entropy(), entropy(), entropy(), entropy(), entropy()};
-        std::mt19937       engine(seed);
+        std::seed_seq seed{ entropy(), entropy(), entropy(), entropy(), entropy(), entropy(), entropy(), entropy() };
+        std::mt19937 engine(seed);
         std::uniform_int_distribution<int> distribution;
         std::vector<int> random_data(size);
         std::generate(random_data.begin(), random_data.end(), std::bind(distribution, engine));
         return random_data;
     };
 
-    static const auto standard = [](const std::vector<int>& random_data){
+    static const auto standard = [](const std::vector<int>& random_data) {
         for (int i = 0; i < 5; ++i) {
             std::vector<int> data = random_data;
             std::sort(data.begin(), data.end());
@@ -472,7 +485,7 @@ TEST(quicksort, evaluate, benchmark_partial) {
         PRINT("Partial Standard:    %7.3fms\n", static_cast<double>((end - start).count()) / 1000000.0);
     };
 
-    static const auto quicksort = [](const std::vector<int>& random_data){
+    static const auto quicksort = [](const std::vector<int>& random_data) {
         for (int i = 0; i < 5; ++i) {
             std::vector<int> data = random_data;
             gtl::quicksort::sort(data.data(), data.size());

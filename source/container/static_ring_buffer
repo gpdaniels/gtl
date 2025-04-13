@@ -21,13 +21,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Statically sized thread-safe multi-producer multi-consumer ring-buffer.
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <atomic>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace gtl {
@@ -82,7 +82,7 @@ namespace gtl {
         /// @brief  Get a boolean that represents if the ring buffer is empty, ignoring pending reads and writess.
         /// @return true if the ring buffer is empty, false otherwise.
         bool empty() const {
-            //Both the reader and writer are used here to get both the current read and current write locations.
+            // Both the reader and writer are used here to get both the current read and current write locations.
             const index_type current_reader = this->reader.load();
             const index_type current_writer = this->writer.load();
             // If the current read is equal to the pending write then the ring buffer is full.
@@ -92,7 +92,7 @@ namespace gtl {
         /// @brief  Get a boolean that represents if the ring buffer is full, ignoring pending reads and writes.
         /// @return true if the ring buffer is full, false otherwise.
         bool full() const {
-            //Both the reader and writer are used here to get both the current read and current write locations.
+            // Both the reader and writer are used here to get both the current read and current write locations.
             const index_type current_reader = this->reader.load();
             const index_type current_writer = this->writer.load();
             // First calculate the current size, as the locations can be either size of one another use the ternary operator to compare them first.
@@ -105,7 +105,7 @@ namespace gtl {
         /// @brief  Get the size of the ring buffer that is filled with elements, ignoring pending reads and writes.
         /// @return The number of items pushed into the ring buffer that have not been popped out.
         unsigned long long size() const {
-            //Both the reader and writer are used here to get both the current read and current write locations.
+            // Both the reader and writer are used here to get both the current read and current write locations.
             const index_type current_reader = this->writer.load();
             const index_type current_writer = this->reader.load();
             // First calculate the current size, as the locations can be either size of one another use the ternary operator to compare them first.
@@ -150,8 +150,7 @@ namespace gtl {
             do {
                 // Overwrite the readers current write location to ensure that pushes are finalised in order.
                 current_reader.write = current_writer.write;
-            }
-            while (!std::atomic_compare_exchange_weak(&this->reader, &current_reader, { current_reader.read, new_writer.write }));
+            } while (!std::atomic_compare_exchange_weak(&this->reader, &current_reader, { current_reader.read, new_writer.write }));
 
             // Success.
             return true;
@@ -191,8 +190,7 @@ namespace gtl {
             do {
                 // Overwrite the writers current read location to ensure that pops are finalised in order.
                 current_writer.read = current_reader.read;
-            }
-            while (!std::atomic_compare_exchange_weak(&this->writer, &current_writer, { new_reader.read, current_writer.write }));
+            } while (!std::atomic_compare_exchange_weak(&this->writer, &current_writer, { new_reader.read, current_writer.write }));
 
             // Success.
             return true;

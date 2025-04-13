@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
@@ -25,13 +26,12 @@ TEST(standard, traits, standard) {
     REQUIRE(sizeof(gtl::u16) == 2);
     REQUIRE(sizeof(gtl::u32) == 4);
     REQUIRE(sizeof(gtl::u64) == 8);
-                             
+
     REQUIRE(sizeof(gtl::s8) == 1);
     REQUIRE(sizeof(gtl::s16) == 2);
     REQUIRE(sizeof(gtl::s32) == 4);
     REQUIRE(sizeof(gtl::s64) == 8);
-                             
+
     REQUIRE(sizeof(gtl::f32) == 4);
     REQUIRE(sizeof(gtl::f64) == 8);
 }
-

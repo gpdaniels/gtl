@@ -15,19 +15,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <container/lambda>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(lambda, traits, standard) {
@@ -46,14 +47,15 @@ TEST(lambda, constructor, empty) {
 }
 
 TEST(lambda, constructor, function) {
-    gtl::lambda<void()> lambda([](){});
+    gtl::lambda<void()> lambda([]() {
+    });
     testbench::do_not_optimise_away(lambda);
 }
 
 TEST(lambda, constructor, capturing_function) {
     {
         int variable = 123;
-        gtl::lambda<void()> lambda([=](){
+        gtl::lambda<void()> lambda([=]() {
             UNUSED(variable == 123);
         });
         testbench::do_not_optimise_away(lambda);
@@ -62,7 +64,7 @@ TEST(lambda, constructor, capturing_function) {
 
     {
         int variable = 123;
-        gtl::lambda<void()> lambda([&](){
+        gtl::lambda<void()> lambda([&]() {
             UNUSED(variable == 123);
             variable = 321;
             UNUSED(variable == 321);
@@ -75,7 +77,7 @@ TEST(lambda, constructor, capturing_function) {
         int variable1 = 123;
         unsigned char variable2 = 234;
         float variable3 = 345.678f;
-        gtl::lambda<void()> lambda([variable1, variable2, variable3](){
+        gtl::lambda<void()> lambda([variable1, variable2, variable3]() {
             UNUSED(variable1 == 123);
             UNUSED(variable2 == 234);
             UNUSED(variable3 > 345.677f);
@@ -90,7 +92,8 @@ TEST(lambda, constructor, capturing_function) {
 }
 
 TEST(lambda, constructor, copying) {
-    gtl::lambda<void()> static_lambda1([](){});
+    gtl::lambda<void()> static_lambda1([]() {
+    });
     testbench::do_not_optimise_away(static_lambda1);
     const gtl::lambda<void()> static_lambda2(static_lambda1);
     testbench::do_not_optimise_away(static_lambda2);
@@ -99,14 +102,16 @@ TEST(lambda, constructor, copying) {
 }
 
 TEST(lambda, constructor, moving) {
-    gtl::lambda<void()> static_lambda1([](){});
+    gtl::lambda<void()> static_lambda1([]() {
+    });
     testbench::do_not_optimise_away(static_lambda1);
     gtl::lambda<void()> static_lambda2(static_cast<gtl::lambda<void()>&&>(static_lambda1));
     testbench::do_not_optimise_away(static_lambda2);
 }
 
 TEST(lambda, operator, copying) {
-    auto function = [](){};
+    auto function = []() {
+    };
     gtl::lambda<void()> static_lambda1 = function;
     testbench::do_not_optimise_away(static_lambda1);
     gtl::lambda<void()> static_lambda2 = static_lambda1;
@@ -114,7 +119,8 @@ TEST(lambda, operator, copying) {
 }
 
 TEST(lambda, operator, moving) {
-    auto function = [](){};
+    auto function = []() {
+    };
     gtl::lambda<void()> static_lambda1 = static_cast<decltype(function)&&>(function);
     testbench::do_not_optimise_away(static_lambda1);
     gtl::lambda<void()> static_lambda2 = static_cast<gtl::lambda<void()>&&>(static_lambda1);
@@ -124,23 +130,26 @@ TEST(lambda, operator, moving) {
 TEST(lambda, operator, bool) {
     gtl::lambda<void()> lambda;
     REQUIRE(lambda == false);
-    lambda = gtl::lambda<void()>([](){});
+    lambda = gtl::lambda<void()>([]() {
+    });
     REQUIRE(lambda == true);
 }
 
 TEST(lambda, operator, executing) {
     {
-        gtl::lambda<void()> lambda([](){});
+        gtl::lambda<void()> lambda([]() {
+        });
         lambda();
     }
     {
-        auto function = [](){};
+        auto function = []() {
+        };
         gtl::lambda<void()> lambda(function);
         lambda();
     }
     {
         int variable = 123;
-        gtl::lambda<void()> lambda([=](){
+        gtl::lambda<void()> lambda([=]() {
             REQUIRE(variable == 123);
         });
         lambda();
@@ -149,7 +158,7 @@ TEST(lambda, operator, executing) {
 
     {
         int variable = 123;
-        gtl::lambda<void()> lambda([&](){
+        gtl::lambda<void()> lambda([&]() {
             REQUIRE(variable == 123);
             variable = 321;
             REQUIRE(variable == 321);
@@ -162,7 +171,7 @@ TEST(lambda, operator, executing) {
         int variable1 = 123;
         unsigned char variable2 = 234;
         float variable3 = 345.678f;
-        gtl::lambda<void()> lambda([variable1, variable2, variable3](){
+        gtl::lambda<void()> lambda([variable1, variable2, variable3]() {
             REQUIRE(variable1 == 123);
             REQUIRE(variable2 == 234);
             REQUIRE(variable3 > 345.677f);
@@ -177,7 +186,7 @@ TEST(lambda, operator, executing) {
     {
         int variable1 = 123;
         int variable2 = 234;
-        gtl::lambda<void()> lambda([variable1, &variable2](){
+        gtl::lambda<void()> lambda([variable1, &variable2]() {
             REQUIRE(variable1 == 123);
             REQUIRE(variable2 == 567);
             PRINT("Print inside lambda with two variables %d and %d.\n", variable1, variable2);
@@ -194,7 +203,7 @@ TEST(lambda, operator, executing) {
 TEST(lambda, operator, executing_with_arguments) {
     {
         bool flag = false;
-        gtl::lambda<void(bool&)> lambda([](bool& flag_argument){
+        gtl::lambda<void(bool&)> lambda([](bool& flag_argument) {
             REQUIRE(!flag_argument);
             flag_argument = true;
             REQUIRE(flag_argument);
@@ -203,7 +212,7 @@ TEST(lambda, operator, executing_with_arguments) {
         REQUIRE(flag);
     }
     {
-        auto function = [](bool& flag){
+        auto function = [](bool& flag) {
             REQUIRE(!flag);
             flag = true;
             REQUIRE(flag);
@@ -216,7 +225,7 @@ TEST(lambda, operator, executing_with_arguments) {
     {
         int variable = 123;
         bool flag = false;
-        gtl::lambda<void(bool&)> lambda([=](bool& flag_argument){
+        gtl::lambda<void(bool&)> lambda([=](bool& flag_argument) {
             REQUIRE(!flag_argument);
             flag_argument = true;
             REQUIRE(flag_argument);
@@ -230,7 +239,7 @@ TEST(lambda, operator, executing_with_arguments) {
     {
         int variable = 123;
         bool flag = false;
-        gtl::lambda<void(bool&)> lambda([&](bool& flag_argument){
+        gtl::lambda<void(bool&)> lambda([&](bool& flag_argument) {
             REQUIRE(!flag_argument);
             flag_argument = true;
             REQUIRE(flag_argument);
@@ -248,7 +257,7 @@ TEST(lambda, operator, executing_with_arguments) {
         unsigned char variable2 = 234;
         float variable3 = 345.678f;
         bool flag = false;
-        gtl::lambda<void(bool&)> lambda([variable1, variable2, variable3](bool& flag_argument){
+        gtl::lambda<void(bool&)> lambda([variable1, variable2, variable3](bool& flag_argument) {
             REQUIRE(!flag_argument);
             flag_argument = true;
             REQUIRE(flag_argument);
@@ -268,7 +277,7 @@ TEST(lambda, operator, executing_with_arguments) {
         int variable1 = 123;
         int variable2 = 234;
         bool flag = false;
-        gtl::lambda<void(bool&)> lambda([variable1, &variable2](bool& flag_argument){
+        gtl::lambda<void(bool&)> lambda([variable1, &variable2](bool& flag_argument) {
             REQUIRE(!flag_argument);
             flag_argument = true;
             REQUIRE(flag_argument);
@@ -288,13 +297,13 @@ TEST(lambda, operator, executing_with_arguments) {
 
 TEST(lambda, operator, executing_with_return) {
     {
-        gtl::lambda<bool()> lambda([](){
+        gtl::lambda<bool()> lambda([]() {
             return true;
         });
         REQUIRE(lambda());
     }
     {
-        auto function = []()->bool{
+        auto function = []() -> bool {
             return true;
         };
         gtl::lambda<bool()> lambda(function);
@@ -302,7 +311,7 @@ TEST(lambda, operator, executing_with_return) {
     }
     {
         int variable = 123;
-        gtl::lambda<bool()> lambda([=]()->bool{
+        gtl::lambda<bool()> lambda([=]() -> bool {
             REQUIRE(variable == 123);
             return true;
         });
@@ -312,7 +321,7 @@ TEST(lambda, operator, executing_with_return) {
 
     {
         int variable = 123;
-        gtl::lambda<bool()> lambda([&](){
+        gtl::lambda<bool()> lambda([&]() {
             REQUIRE(variable == 123);
             variable = 321;
             REQUIRE(variable == 321);
@@ -326,7 +335,7 @@ TEST(lambda, operator, executing_with_return) {
         int variable1 = 123;
         unsigned char variable2 = 234;
         float variable3 = 345.678f;
-        gtl::lambda<bool()> lambda([variable1, variable2, variable3](){
+        gtl::lambda<bool()> lambda([variable1, variable2, variable3]() {
             REQUIRE(variable1 == 123);
             REQUIRE(variable2 == 234);
             REQUIRE(variable3 > 345.677f);
@@ -342,7 +351,7 @@ TEST(lambda, operator, executing_with_return) {
     {
         int variable1 = 123;
         int variable2 = 234;
-        gtl::lambda<bool()> lambda([variable1, &variable2](){
+        gtl::lambda<bool()> lambda([variable1, &variable2]() {
             REQUIRE(variable1 == 123);
             REQUIRE(variable2 == 567);
             PRINT("Print inside lambda with two variables %d and %d.\n", variable1, variable2);
@@ -368,17 +377,22 @@ TEST(lambda, evaluate, construction_and_destruction) {
         function_type() {
             ++constructed;
         }
+
         function_type(const function_type&) {
             ++copied;
         }
+
         function_type(function_type&&) {
             ++moved;
         }
+
         function_type& operator=(const function_type&) = delete;
         function_type& operator=(function_type&&) = delete;
+
         void operator()() const {
             ++operated;
         }
+
         ~function_type() {
             ++destructed;
         }

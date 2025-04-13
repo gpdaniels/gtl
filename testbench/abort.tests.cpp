@@ -20,18 +20,18 @@ extern "C" int raise(int signal_number);
 
 namespace testbench {
     [[noreturn]] void abort() {
-
         // Try and raise a sigabort.
         constexpr static const int sigabort = 6;
         raise(sigabort);
 
-        // Silence the static analyser as the below is an intentional segfault.
-        #ifndef __clang_analyzer__
-            // Force a segfault just in case.
-            *static_cast<volatile char*>(nullptr) = static_cast<char(*)()>(nullptr)();
-        #endif
+// Silence the static analyser as the below is an intentional segfault.
+#ifndef __clang_analyzer__
+        // Force a segfault just in case.
+        *static_cast<volatile char*>(nullptr) = static_cast<char (*)()>(nullptr)();
+#endif
 
         // This function can never return.
-        for (;;);
+        for (;;)
+            ;
     }
 }

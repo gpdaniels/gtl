@@ -15,20 +15,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/require.tests.hpp>
 #include <testbench/template.tests.hpp>
 
 #include <utility/event>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <functional>
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 struct test_event {
@@ -42,17 +43,17 @@ TEST(event, traits, standard) {
 
     REQUIRE(std::is_trivially_copyable<gtl::event_manager<test_event>>::value == false, "Expected std::is_trivially_copyable to be false.");
 
-    #if defined(__APPLE__)
-        REQUIRE(std::is_standard_layout<gtl::event_manager<test_event>>::value == true, "Expected std::is_standard_layout to be true.");
-    #else
-        // This test seems to be unreliable between compilers and operating systems.
-        //REQUIRE(std::is_standard_layout<gtl::event_manager<test_event>>::value == false, "Expected std::is_standard_layout to be false.");
-    #endif
+#if defined(__APPLE__)
+    REQUIRE(std::is_standard_layout<gtl::event_manager<test_event>>::value == true, "Expected std::is_standard_layout to be true.");
+#else
+    // This test seems to be unreliable between compilers and operating systems.
+    // REQUIRE(std::is_standard_layout<gtl::event_manager<test_event>>::value == false, "Expected std::is_standard_layout to be false.");
+#endif
 }
 
 class test_class
     : private gtl::event_queue<test_event>
-    , private gtl::event_queue<std::function<void(void)>>{
+    , private gtl::event_queue<std::function<void(void)>> {
 public:
     int value = 0;
 
@@ -80,7 +81,7 @@ TEST(event, evaluate, emit_and_process_event) {
 
     REQUIRE(test.value == 0, "Expected the value in the test_class to be initialised to zero.");
 
-    gtl::event_manager<test_event>::emit(test_event{1});
+    gtl::event_manager<test_event>::emit(test_event{ 1 });
 
     REQUIRE(test.value == 0, "Expected the value in the test_class to be zero before processing any events.");
 
@@ -94,7 +95,7 @@ TEST(event, evaluate, emit_and_process_invokable_event) {
 
     REQUIRE(test.value == 0, "Expected the value in the test_class to be initialised to zero.");
 
-    gtl::event_manager<std::function<void(void)>>::emit([&test](){
+    gtl::event_manager<std::function<void(void)>>::emit([&test]() {
         test.value = 1;
     });
 

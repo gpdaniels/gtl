@@ -17,22 +17,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "benchmark.tests.hpp"
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <chrono>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace testbench {
     long long int get_timestamp_nanoseconds();
+
     long long int get_timestamp_nanoseconds() {
         return std::chrono::steady_clock::now().time_since_epoch().count();
     }
 
     double get_difference_seconds(long long int start_nanoseconds, long long int end_nanoseconds);
+
     double get_difference_seconds(long long int start_nanoseconds, long long int end_nanoseconds) {
         long long int difference_nanoseconds = end_nanoseconds - start_nanoseconds;
         return static_cast<double>(difference_nanoseconds) / 1e9;

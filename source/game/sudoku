@@ -21,14 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: A sudoku solver for standard 9x9 grids. [wip]
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the sudoku is misused.
-#   define GTL_SUDOKU_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_SUDOKU_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_SUDOKU_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_SUDOKU_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 #include <algorithm/satisfiability>
@@ -41,6 +41,7 @@ namespace gtl {
             constexpr static const int height = 9;
             constexpr static const int width = 9;
             constexpr static const int values = 9;
+
         public:
             int cells[height][width]{};
         };
@@ -72,7 +73,7 @@ namespace gtl {
                     this->solver.add_clause(variables);
                     for (std::size_t i = 0; i < variables.size(); ++i) {
                         for (std::size_t j = i + 1; j < variables.size(); ++j) {
-                            this->solver.add_clause(std::vector<int>{-variables[i], -variables[j]});
+                            this->solver.add_clause(std::vector<int>{ -variables[i], -variables[j] });
                         }
                     }
                 }
@@ -89,7 +90,7 @@ namespace gtl {
                     this->solver.add_clause(variables);
                     for (std::size_t i = 0; i < variables.size(); ++i) {
                         for (std::size_t j = i + 1; j < variables.size(); ++j) {
-                            this->solver.add_clause(std::vector<int>{-variables[i], -variables[j]});
+                            this->solver.add_clause(std::vector<int>{ -variables[i], -variables[j] });
                         }
                     }
                 }
@@ -105,7 +106,7 @@ namespace gtl {
                     this->solver.add_clause(variables);
                     for (std::size_t i = 0; i < variables.size(); ++i) {
                         for (std::size_t j = i + 1; j < variables.size(); ++j) {
-                            this->solver.add_clause(std::vector<int>{-variables[i], -variables[j]});
+                            this->solver.add_clause(std::vector<int>{ -variables[i], -variables[j] });
                         }
                     }
                 }
@@ -124,7 +125,7 @@ namespace gtl {
                         this->solver.add_clause(variables);
                         for (std::size_t i = 0; i < variables.size(); ++i) {
                             for (std::size_t j = i + 1; j < variables.size(); ++j) {
-                                this->solver.add_clause(std::vector<int>{-variables[i], -variables[j]});
+                                this->solver.add_clause(std::vector<int>{ -variables[i], -variables[j] });
                             }
                         }
                     }
@@ -136,7 +137,7 @@ namespace gtl {
             for (int y = 0; y < board_type::height; ++y) {
                 for (int x = 0; x < board_type::width; ++x) {
                     if (board.cells[y][x] != 0) {
-                        this->solver.add_clause(std::vector<int>{get_variable_id(x, y, board.cells[y][x] - 1)});
+                        this->solver.add_clause(std::vector<int>{ get_variable_id(x, y, board.cells[y][x] - 1) });
                     }
                 }
             }

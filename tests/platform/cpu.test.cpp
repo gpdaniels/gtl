@@ -15,19 +15,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <platform/cpu>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(cpu, traits, standard) {
@@ -116,5 +117,4 @@ TEST(cpu, evaluate, print_flags) {
 
     PRINT("has_bmi:                     %d\n", cpu.has_bmi());
     PRINT("has_bmi2:                    %d\n", cpu.has_bmi2());
-
 }

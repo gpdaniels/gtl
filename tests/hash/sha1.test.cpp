@@ -15,21 +15,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
-#include <testbench/optimise.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
+#include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <hash/sha1>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <cstdio>
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(sha1, traits, standard) {
@@ -79,7 +80,6 @@ TEST(sha1, function, hash_buffer) {
 }
 
 TEST(sha1, evaluate, hash_as_integer) {
-
     constexpr static const unsigned int data_count = 7;
 
     constexpr static const char* data[data_count] = {
@@ -93,13 +93,13 @@ TEST(sha1, evaluate, hash_as_integer) {
     };
 
     constexpr static unsigned int result[data_count][gtl::sha1::hash_size / sizeof(unsigned int)] = {
-        { 0xDA39A3EE, 0x5E6B4B0D, 0x3255BFEF, 0x95601890, 0xAFD80709 },
-        { 0x86F7E437, 0xFAA5A7FC, 0xE15D1DDC, 0xB9EAEAEA, 0x377667B8 },
-        { 0xA9993E36, 0x4706816A, 0xBA3E2571, 0x7850C26C, 0x9CD0D89D },
-        { 0xC12252CE, 0xDA8BE899, 0x4D5FA029, 0x0A47231C, 0x1D16AAE3 },
-        { 0x32D10C7B, 0x8CF96570, 0xCA04CE37, 0xF2A19D84, 0x240D3A89 },
-        { 0x761C457B, 0xF73B14D2, 0x7E9E9265, 0xC46F4B4D, 0xDA11F940 },
-        { 0x50ABF570, 0x6A150990, 0xA08B2C5E, 0xA40FA0E5, 0x85554732 }
+        {0xDA39A3EE, 0x5E6B4B0D, 0x3255BFEF, 0x95601890, 0xAFD80709},
+        {0x86F7E437, 0xFAA5A7FC, 0xE15D1DDC, 0xB9EAEAEA, 0x377667B8},
+        {0xA9993E36, 0x4706816A, 0xBA3E2571, 0x7850C26C, 0x9CD0D89D},
+        {0xC12252CE, 0xDA8BE899, 0x4D5FA029, 0x0A47231C, 0x1D16AAE3},
+        {0x32D10C7B, 0x8CF96570, 0xCA04CE37, 0xF2A19D84, 0x240D3A89},
+        {0x761C457B, 0xF73B14D2, 0x7E9E9265, 0xC46F4B4D, 0xDA11F940},
+        {0x50ABF570, 0x6A150990, 0xA08B2C5E, 0xA40FA0E5, 0x85554732}
     };
 
     gtl::sha1 sha1;
@@ -119,7 +119,6 @@ TEST(sha1, evaluate, hash_as_integer) {
 }
 
 TEST(sha1, evaluate, hash_as_string) {
-
     constexpr static const unsigned int data_count = 7;
 
     constexpr static const char* data[data_count] = {
@@ -154,9 +153,7 @@ TEST(sha1, evaluate, hash_as_string) {
     }
 }
 
-
 TEST(sha1, evaluate, partial_insert) {
-
     constexpr static const unsigned int data_count = 7;
 
     constexpr static const char* data1[data_count] = {
@@ -180,13 +177,13 @@ TEST(sha1, evaluate, partial_insert) {
     };
 
     constexpr static unsigned int result[data_count][gtl::sha1::hash_size / sizeof(unsigned int)] = {
-        { 0xDA39A3EE, 0x5E6B4B0D, 0x3255BFEF, 0x95601890, 0xAFD80709 },
-        { 0x86F7E437, 0xFAA5A7FC, 0xE15D1DDC, 0xB9EAEAEA, 0x377667B8 },
-        { 0xA9993E36, 0x4706816A, 0xBA3E2571, 0x7850C26C, 0x9CD0D89D },
-        { 0xC12252CE, 0xDA8BE899, 0x4D5FA029, 0x0A47231C, 0x1D16AAE3 },
-        { 0x32D10C7B, 0x8CF96570, 0xCA04CE37, 0xF2A19D84, 0x240D3A89 },
-        { 0x761C457B, 0xF73B14D2, 0x7E9E9265, 0xC46F4B4D, 0xDA11F940 },
-        { 0x50ABF570, 0x6A150990, 0xA08B2C5E, 0xA40FA0E5, 0x85554732 }
+        {0xDA39A3EE, 0x5E6B4B0D, 0x3255BFEF, 0x95601890, 0xAFD80709},
+        {0x86F7E437, 0xFAA5A7FC, 0xE15D1DDC, 0xB9EAEAEA, 0x377667B8},
+        {0xA9993E36, 0x4706816A, 0xBA3E2571, 0x7850C26C, 0x9CD0D89D},
+        {0xC12252CE, 0xDA8BE899, 0x4D5FA029, 0x0A47231C, 0x1D16AAE3},
+        {0x32D10C7B, 0x8CF96570, 0xCA04CE37, 0xF2A19D84, 0x240D3A89},
+        {0x761C457B, 0xF73B14D2, 0x7E9E9265, 0xC46F4B4D, 0xDA11F940},
+        {0x50ABF570, 0x6A150990, 0xA08B2C5E, 0xA40FA0E5, 0x85554732}
     };
 
     gtl::sha1 sha1;

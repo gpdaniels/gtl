@@ -21,24 +21,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Function to get a monotonically increasing timestamp.
 
 #if ((defined(linux) || defined(__linux) || defined(__linux__)) || (__APPLE__))
-    #include <ctime>
+#include <ctime>
 #endif
 
 #if (defined(_WIN32) || defined(_WIN64))
-    #if (defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64))
-        #define _AMD64_
-    #elif (defined(i386) || defined(__i386) || defined(__i386__) || defined(__i386__) || defined(_M_IX86))
-        #define _X86_
-    #elif (defined(__arm__) || defined(_M_ARM) || defined(_M_ARMT))
-        #define _ARM_
-    #endif
+#if (defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64))
+#define _AMD64_
+#elif (defined(i386) || defined(__i386) || defined(__i386__) || defined(__i386__) || defined(_M_IX86))
+#define _X86_
+#elif (defined(__arm__) || defined(_M_ARM) || defined(_M_ARMT))
+#define _ARM_
+#endif
 
-    #pragma warning(push, 0)
+#pragma warning(push, 0)
 
-    #include <realtimeapiset.h>
-    #pragma comment( lib, "mincore.lib" )
+#include <realtimeapiset.h>
+#pragma comment(lib, "mincore.lib")
 
-    #pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace gtl {
@@ -47,23 +47,24 @@ namespace gtl {
     /// @note    The clock will continue incrementing when the computer is sleeping.
     /// @warning The timestamp epoch is not related to the unix epoch.
     inline long long int timestamp();
+
     inline long long int timestamp() {
-        #if (defined(linux) || defined(__linux) || defined(__linux__))
-            struct timespec ts;
-            int return_code = clock_gettime(CLOCK_BOOTTIME, &ts);
-            if (return_code != 0) {
-                return 0;
-            }
-            return (1000000000ll * static_cast<long long int>(ts.tv_sec) + static_cast<long long int>(ts.tv_nsec));
-        #elif (defined(_WIN32) || defined(_WIN64))
-            unsigned long long int centinanoseconds;
-            QueryInterruptTimePrecise(&centinanoseconds);
-            return static_cast<long long int>(centinanoseconds) * 100ll;
-        #elif (defined(__APPLE__))
-            return static_cast<long long int>(clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW));
-        #else
-            #error "Failed to define timestamp function."
-        #endif
+#if (defined(linux) || defined(__linux) || defined(__linux__))
+        struct timespec ts;
+        int return_code = clock_gettime(CLOCK_BOOTTIME, &ts);
+        if (return_code != 0) {
+            return 0;
+        }
+        return (1000000000ll * static_cast<long long int>(ts.tv_sec) + static_cast<long long int>(ts.tv_nsec));
+#elif (defined(_WIN32) || defined(_WIN64))
+        unsigned long long int centinanoseconds;
+        QueryInterruptTimePrecise(&centinanoseconds);
+        return static_cast<long long int>(centinanoseconds) * 100ll;
+#elif (defined(__APPLE__))
+        return static_cast<long long int>(clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW));
+#else
+#error "Failed to define timestamp function."
+#endif
     }
 }
 

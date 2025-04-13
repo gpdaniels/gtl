@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/print.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -22,13 +23,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <game/mastermind>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <random>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(mastermind, constructor, empty) {
@@ -42,11 +43,11 @@ TEST(mastermind, function, solve) {
     constexpr static const unsigned int code_length = 4;
     constexpr static const unsigned int code_base = 6;
     {
-        unsigned int turns = gtl::mastermind<code_length, code_base>::solve({1,2,3,4});
+        unsigned int turns = gtl::mastermind<code_length, code_base>::solve({ 1, 2, 3, 4 });
         REQUIRE(turns <= 5);
     }
     {
-        unsigned int turns = gtl::mastermind<code_length, code_base>::solve({5,4,3,2}, [](unsigned int turn, const std::array<unsigned int, 4>& guess, unsigned int correct, unsigned int close){
+        unsigned int turns = gtl::mastermind<code_length, code_base>::solve({ 5, 4, 3, 2 }, [](unsigned int turn, const std::array<unsigned int, 4>& guess, unsigned int correct, unsigned int close) {
             PRINT("GUESS %d: %d %d %d %d ==> %d %d\n", turn, guess[0], guess[1], guess[2], guess[3], correct, close);
         });
         REQUIRE(turns <= 5);
@@ -73,7 +74,7 @@ TEST(mastermind, evaluate, all) {
 #if !defined(NDEBUG)
     // Sample the full set as running the full set is slow.
     std::vector<std::array<unsigned int, code_length>> test_codes;
-    std::sample(all_codes.begin(), all_codes.end(), std::back_inserter(test_codes), 10, std::mt19937{std::random_device{}()});
+    std::sample(all_codes.begin(), all_codes.end(), std::back_inserter(test_codes), 10, std::mt19937{ std::random_device{}() });
 #else
     std::vector<std::array<unsigned int, code_length>>& test_codes = all_codes;
 #endif
@@ -84,7 +85,6 @@ TEST(mastermind, evaluate, all) {
         REQUIRE(turns <= 5, "Code %d %d %d %d took %d turns.", test_codes[i][0], test_codes[i][1], test_codes[i][2], test_codes[i][3], turns);
     }
 }
-
 
 #if 0
 TEST(mastermind, interactive, game) {

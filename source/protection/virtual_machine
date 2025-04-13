@@ -31,13 +31,13 @@ namespace gtl {
         /// @brief  Names of each of the 8 registers, indexed into the registers array.
         enum class register_names : unsigned char {
             program_counter = 0,
-            stack_pointer   = 1,
-            flags           = 2,
-            general_a       = 3,
-            general_b       = 4,
-            general_c       = 5,
-            general_d       = 6,
-            general_e       = 7
+            stack_pointer = 1,
+            flags = 2,
+            general_a = 3,
+            general_b = 4,
+            general_c = 5,
+            general_d = 6,
+            general_e = 7
         };
 
         /// @brief  Helper short type name for the register names enum to keep code short.
@@ -45,14 +45,14 @@ namespace gtl {
 
         /// @brief  Names of potental ALU flags, each maps to one bit of the flags register.
         enum class flag_values : unsigned char {
-            fault           = 1,   // true if there was a fault.
-            zero            = 2,   // true if the last ALU result was zero.
-            sign_positive   = 4,   // true if the last ALU result was positive.
-            parity_even     = 8,   // true if the last ALU result was even.
-            overflow        = 16,  // true if the last ALU result required a carry or borrow.
-            reserved_0      = 32,  // Unused.
-            reserved_1      = 64,  // Unused.
-            reserved_2      = 128  // Unused.
+            fault = 1,         // true if there was a fault.
+            zero = 2,          // true if the last ALU result was zero.
+            sign_positive = 4, // true if the last ALU result was positive.
+            parity_even = 8,   // true if the last ALU result was even.
+            overflow = 16,     // true if the last ALU result required a carry or borrow.
+            reserved_0 = 32,   // Unused.
+            reserved_1 = 64,   // Unused.
+            reserved_2 = 128   // Unused.
         };
 
         /// @brief  Helper short type name for the flag values enum to keep code short.
@@ -79,7 +79,8 @@ namespace gtl {
         };
 
         /// @brief  Helper short type name for register getters/setters to keep code short.
-        template <rn r> using reg = using_register<r>;
+        template <rn r>
+        using reg = using_register<r>;
 
         /// @brief  Helper getter and setter functions for memory cells templated on the register name enum.
         /// @tparam register_name The name of the register whos value will point at a memory cell that we want to set or get.
@@ -101,11 +102,12 @@ namespace gtl {
         };
 
         /// @brief  Helper short type name for memory getters/setters to keep code short.
-        template <rn r> using mem = using_memory<r>;
+        template <rn r>
+        using mem = using_memory<r>;
 
     public:
         /// @brief  The type used for all opcode functions.
-        using function_type = void(*)(virtual_machine&);
+        using function_type = void (*)(virtual_machine&);
 
     private:
         /// @brief  The opcodes of the virtual machine.
@@ -251,14 +253,11 @@ namespace gtl {
             const signed char result = static_cast<signed char>(result_large);
 
             unsigned char flags = virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm);
-            flags &= ~(static_cast<unsigned char>(virtual_machine::flag_values::zero) |
-                       static_cast<unsigned char>(virtual_machine::flag_values::sign_positive) |
-                       static_cast<unsigned char>(virtual_machine::flag_values::parity_even) |
-                       static_cast<unsigned char>(virtual_machine::flag_values::overflow));
-            flags |= (result == 0)          ? static_cast<unsigned char>(virtual_machine::flag_values::zero) : 0;
-            flags |= (result & 0x80)        ? 0 : static_cast<unsigned char>(virtual_machine::flag_values::sign_positive);
-            flags |= (result & 0x01)        ? 0 : static_cast<unsigned char>(virtual_machine::flag_values::parity_even);
-            flags |= (result_large > 127)   ? static_cast<unsigned char>(virtual_machine::flag_values::overflow) : 0;
+            flags &= ~(static_cast<unsigned char>(virtual_machine::flag_values::zero) | static_cast<unsigned char>(virtual_machine::flag_values::sign_positive) | static_cast<unsigned char>(virtual_machine::flag_values::parity_even) | static_cast<unsigned char>(virtual_machine::flag_values::overflow));
+            flags |= (result == 0) ? static_cast<unsigned char>(virtual_machine::flag_values::zero) : 0;
+            flags |= (result & 0x80) ? 0 : static_cast<unsigned char>(virtual_machine::flag_values::sign_positive);
+            flags |= (result & 0x01) ? 0 : static_cast<unsigned char>(virtual_machine::flag_values::parity_even);
+            flags |= (result_large > 127) ? static_cast<unsigned char>(virtual_machine::flag_values::overflow) : 0;
 
             virtual_machine::using_register<virtual_machine::register_names::flags>::set(vm, flags);
             operand_result::set(vm, *reinterpret_cast<const unsigned char*>(&result));
@@ -278,14 +277,11 @@ namespace gtl {
             const signed char result = static_cast<signed char>(result_large);
 
             unsigned char flags = virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm);
-            flags &= ~(static_cast<unsigned char>(virtual_machine::flag_values::zero) |
-                       static_cast<unsigned char>(virtual_machine::flag_values::sign_positive) |
-                       static_cast<unsigned char>(virtual_machine::flag_values::parity_even) |
-                       static_cast<unsigned char>(virtual_machine::flag_values::overflow));
-            flags |= (result == 0)          ? static_cast<unsigned char>(virtual_machine::flag_values::zero) : 0;
-            flags |= (result & 0x80)        ? 0 : static_cast<unsigned char>(virtual_machine::flag_values::sign_positive);
-            flags |= (result & 0x01)        ? 0 : static_cast<unsigned char>(virtual_machine::flag_values::parity_even);
-            flags |= (result_large < -128)  ? static_cast<unsigned char>(virtual_machine::flag_values::overflow) : 0;
+            flags &= ~(static_cast<unsigned char>(virtual_machine::flag_values::zero) | static_cast<unsigned char>(virtual_machine::flag_values::sign_positive) | static_cast<unsigned char>(virtual_machine::flag_values::parity_even) | static_cast<unsigned char>(virtual_machine::flag_values::overflow));
+            flags |= (result == 0) ? static_cast<unsigned char>(virtual_machine::flag_values::zero) : 0;
+            flags |= (result & 0x80) ? 0 : static_cast<unsigned char>(virtual_machine::flag_values::sign_positive);
+            flags |= (result & 0x01) ? 0 : static_cast<unsigned char>(virtual_machine::flag_values::parity_even);
+            flags |= (result_large < -128) ? static_cast<unsigned char>(virtual_machine::flag_values::overflow) : 0;
 
             virtual_machine::using_register<virtual_machine::register_names::flags>::set(vm, flags);
             operand_result::set(vm, *reinterpret_cast<const unsigned char*>(&result));
@@ -451,16 +447,16 @@ namespace gtl {
         inline void syscall(virtual_machine& vm) {
             const unsigned char call_id = operand_call::get(vm);
             switch (call_id) {
-            case 0:
-                operand_input_or_output::set(vm, static_cast<unsigned char>(getchar()));
-                break;
-            case 1:
-                putchar(operand_input_or_output::get(vm));
-                break;
-            default:
-                unsigned char flags = virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm);
-                flags |= static_cast<unsigned char>(virtual_machine::flag_values::fault);
-                virtual_machine::using_register<virtual_machine::register_names::flags>::set(vm, flags);
+                case 0:
+                    operand_input_or_output::set(vm, static_cast<unsigned char>(getchar()));
+                    break;
+                case 1:
+                    putchar(operand_input_or_output::get(vm));
+                    break;
+                default:
+                    unsigned char flags = virtual_machine::using_register<virtual_machine::register_names::flags>::get(vm);
+                    flags |= static_cast<unsigned char>(virtual_machine::flag_values::fault);
+                    virtual_machine::using_register<virtual_machine::register_names::flags>::set(vm, flags);
             }
         }
     }

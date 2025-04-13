@@ -15,59 +15,56 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/optimise.tests.hpp>
-#include <testbench/template.tests.hpp>
 #include <testbench/require.tests.hpp>
+#include <testbench/template.tests.hpp>
 
 #include <container/static_variant>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(static_variant, traits, standard) {
     testbench::test_template<testbench::test_types>(
-        [](auto test_type_1)->void {
+        [](auto test_type_1) -> void {
             using type1 = typename decltype(test_type_1)::type;
-            REQUIRE((std::is_pod<gtl::static_variant<type1> >::value == false), "Expected std::is_pod to be false.");
-            REQUIRE((std::is_trivial<gtl::static_variant<type1> >::value == false), "Expected std::is_trivial to be false.");
-            REQUIRE((std::is_trivially_copyable<gtl::static_variant<type1> >::value == false), "Expected std::is_trivially_copyable to be false.");
-            REQUIRE((std::is_standard_layout<gtl::static_variant<type1> >::value == true), "Expected std::is_standard_layout to be true.");
+            REQUIRE((std::is_pod<gtl::static_variant<type1>>::value == false), "Expected std::is_pod to be false.");
+            REQUIRE((std::is_trivial<gtl::static_variant<type1>>::value == false), "Expected std::is_trivial to be false.");
+            REQUIRE((std::is_trivially_copyable<gtl::static_variant<type1>>::value == false), "Expected std::is_trivially_copyable to be false.");
+            REQUIRE((std::is_standard_layout<gtl::static_variant<type1>>::value == true), "Expected std::is_standard_layout to be true.");
             testbench::test_template<testbench::test_types>(
-                [](auto test_type_2)->void {
+                [](auto test_type_2) -> void {
                     using type2 = typename decltype(test_type_2)::type;
-                    REQUIRE((std::is_pod<gtl::static_variant<type1, type2> >::value == false), "Expected std::is_pod to be false.");
-                    REQUIRE((std::is_trivial<gtl::static_variant<type1, type2> >::value == false), "Expected std::is_trivial to be false.");
-                    REQUIRE((std::is_trivially_copyable<gtl::static_variant<type1, type2> >::value == false), "Expected std::is_trivially_copyable to be false.");
-                    REQUIRE((std::is_standard_layout<gtl::static_variant<type1, type2> >::value == true), "Expected std::is_standard_layout to be true.");
-                }
-            );
-        }
-    );
+                    REQUIRE((std::is_pod<gtl::static_variant<type1, type2>>::value == false), "Expected std::is_pod to be false.");
+                    REQUIRE((std::is_trivial<gtl::static_variant<type1, type2>>::value == false), "Expected std::is_trivial to be false.");
+                    REQUIRE((std::is_trivially_copyable<gtl::static_variant<type1, type2>>::value == false), "Expected std::is_trivially_copyable to be false.");
+                    REQUIRE((std::is_standard_layout<gtl::static_variant<type1, type2>>::value == true), "Expected std::is_standard_layout to be true.");
+                });
+        });
 }
 
 TEST(static_variant, constructor, empty) {
     testbench::test_template<testbench::test_types>(
-        [](auto test_type_1)->void {
+        [](auto test_type_1) -> void {
             using type1 = typename decltype(test_type_1)::type;
             gtl::static_variant<type1> variant1;
             testbench::do_not_optimise_away(variant1);
             testbench::test_template<testbench::test_types>(
-                [](auto test_type_2)->void {
+                [](auto test_type_2) -> void {
                     using type2 = typename decltype(test_type_2)::type;
                     gtl::static_variant<type1, type2> variant2;
                     testbench::do_not_optimise_away(variant2);
-                }
-            );
-        }
-    );
+                });
+        });
 }
 
 TEST(static_variant, constructor, value) {

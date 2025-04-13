@@ -15,20 +15,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <algorithm/maxn>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <functional>
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 class state {
@@ -37,7 +38,11 @@ public:
 
 public:
     char next_player = 'X';
-    char grid[3][3] = {{' ',' ',' '},{' ',' ',' '},{' ',' ',' '}};
+    char grid[3][3] = {
+        {' ', ' ', ' '},
+        {' ', ' ', ' '},
+        {' ', ' ', ' '}
+    };
 
 public:
     unsigned int get_entity_id() const {
@@ -82,22 +87,54 @@ public:
 
 public:
     bool check_win() const {
-        if ((this->grid[0][0] == 'X') && (this->grid[0][1] == 'X') && (this->grid[0][2] == 'X')) { return true; }
-        if ((this->grid[1][0] == 'X') && (this->grid[1][1] == 'X') && (this->grid[1][2] == 'X')) { return true; }
-        if ((this->grid[2][0] == 'X') && (this->grid[2][1] == 'X') && (this->grid[2][2] == 'X')) { return true; }
-        if ((this->grid[0][0] == 'X') && (this->grid[1][0] == 'X') && (this->grid[2][0] == 'X')) { return true; }
-        if ((this->grid[0][1] == 'X') && (this->grid[1][1] == 'X') && (this->grid[2][1] == 'X')) { return true; }
-        if ((this->grid[0][2] == 'X') && (this->grid[1][2] == 'X') && (this->grid[2][2] == 'X')) { return true; }
-        if ((this->grid[0][0] == 'X') && (this->grid[1][1] == 'X') && (this->grid[2][2] == 'X')) { return true; }
-        if ((this->grid[0][2] == 'X') && (this->grid[1][1] == 'X') && (this->grid[2][0] == 'X')) { return true; }
-        if ((this->grid[0][0] == 'O') && (this->grid[0][1] == 'O') && (this->grid[0][2] == 'O')) { return true; }
-        if ((this->grid[1][0] == 'O') && (this->grid[1][1] == 'O') && (this->grid[1][2] == 'O')) { return true; }
-        if ((this->grid[2][0] == 'O') && (this->grid[2][1] == 'O') && (this->grid[2][2] == 'O')) { return true; }
-        if ((this->grid[0][0] == 'O') && (this->grid[1][0] == 'O') && (this->grid[2][0] == 'O')) { return true; }
-        if ((this->grid[0][1] == 'O') && (this->grid[1][1] == 'O') && (this->grid[2][1] == 'O')) { return true; }
-        if ((this->grid[0][2] == 'O') && (this->grid[1][2] == 'O') && (this->grid[2][2] == 'O')) { return true; }
-        if ((this->grid[0][0] == 'O') && (this->grid[1][1] == 'O') && (this->grid[2][2] == 'O')) { return true; }
-        if ((this->grid[0][2] == 'O') && (this->grid[1][1] == 'O') && (this->grid[2][0] == 'O')) { return true; }
+        if ((this->grid[0][0] == 'X') && (this->grid[0][1] == 'X') && (this->grid[0][2] == 'X')) {
+            return true;
+        }
+        if ((this->grid[1][0] == 'X') && (this->grid[1][1] == 'X') && (this->grid[1][2] == 'X')) {
+            return true;
+        }
+        if ((this->grid[2][0] == 'X') && (this->grid[2][1] == 'X') && (this->grid[2][2] == 'X')) {
+            return true;
+        }
+        if ((this->grid[0][0] == 'X') && (this->grid[1][0] == 'X') && (this->grid[2][0] == 'X')) {
+            return true;
+        }
+        if ((this->grid[0][1] == 'X') && (this->grid[1][1] == 'X') && (this->grid[2][1] == 'X')) {
+            return true;
+        }
+        if ((this->grid[0][2] == 'X') && (this->grid[1][2] == 'X') && (this->grid[2][2] == 'X')) {
+            return true;
+        }
+        if ((this->grid[0][0] == 'X') && (this->grid[1][1] == 'X') && (this->grid[2][2] == 'X')) {
+            return true;
+        }
+        if ((this->grid[0][2] == 'X') && (this->grid[1][1] == 'X') && (this->grid[2][0] == 'X')) {
+            return true;
+        }
+        if ((this->grid[0][0] == 'O') && (this->grid[0][1] == 'O') && (this->grid[0][2] == 'O')) {
+            return true;
+        }
+        if ((this->grid[1][0] == 'O') && (this->grid[1][1] == 'O') && (this->grid[1][2] == 'O')) {
+            return true;
+        }
+        if ((this->grid[2][0] == 'O') && (this->grid[2][1] == 'O') && (this->grid[2][2] == 'O')) {
+            return true;
+        }
+        if ((this->grid[0][0] == 'O') && (this->grid[1][0] == 'O') && (this->grid[2][0] == 'O')) {
+            return true;
+        }
+        if ((this->grid[0][1] == 'O') && (this->grid[1][1] == 'O') && (this->grid[2][1] == 'O')) {
+            return true;
+        }
+        if ((this->grid[0][2] == 'O') && (this->grid[1][2] == 'O') && (this->grid[2][2] == 'O')) {
+            return true;
+        }
+        if ((this->grid[0][0] == 'O') && (this->grid[1][1] == 'O') && (this->grid[2][2] == 'O')) {
+            return true;
+        }
+        if ((this->grid[0][2] == 'O') && (this->grid[1][1] == 'O') && (this->grid[2][0] == 'O')) {
+            return true;
+        }
         return false;
     }
 
@@ -106,9 +143,15 @@ public:
             PRINT(" ");
             for (unsigned int column = 0; column < 3; ++column) {
                 switch (this->grid[row][column]) {
-                case ' ':  PRINT(" "); break;
-                case 'O': PRINT("O"); break;
-                case 'X':  PRINT("X"); break;
+                    case ' ':
+                        PRINT(" ");
+                        break;
+                    case 'O':
+                        PRINT("O");
+                        break;
+                    case 'X':
+                        PRINT("X");
+                        break;
                 }
                 if (column < 3 - 1) {
                     PRINT(" | ");
@@ -129,11 +172,11 @@ public:
 TEST(maxn, evaluate, tic_tac_toe) {
     // Known values for the search space of tic tac toe.
     constexpr static const unsigned int games_potential = 19683;
-    constexpr static const unsigned int games_valid     = 8533 + 2423;
-    constexpr static const unsigned int games_ended     = 1916;
-    constexpr static const unsigned int games_won       = 1884;
-    constexpr static const unsigned int games_filled    = 156;
-    constexpr static const unsigned int games_tied      = 32;
+    constexpr static const unsigned int games_valid = 8533 + 2423;
+    constexpr static const unsigned int games_ended = 1916;
+    constexpr static const unsigned int games_won = 1884;
+    constexpr static const unsigned int games_filled = 156;
+    constexpr static const unsigned int games_tied = 32;
 
     // Generate all games:
     char option[3] = { ' ', 'X', 'O' };
@@ -169,7 +212,7 @@ TEST(maxn, evaluate, tic_tac_toe) {
             if (game.next_player == 'X') {
                 valid_player_difference = (count_O >= count_X);
             }
-            else  {
+            else {
                 valid_player_difference = (count_X >= count_O);
             }
             if (!valid_player_difference) {
@@ -181,23 +224,103 @@ TEST(maxn, evaluate, tic_tac_toe) {
                 state game_copy = game;
                 valid_win = false;
                 // Remove the win.
-                char winner = [](state& g){
-                    if ((g.grid[0][0] == 'X') && (g.grid[0][1] == 'X') && (g.grid[0][2] == 'X')) { g.grid[0][0] = ' '; g.grid[0][1] = ' '; g.grid[0][2] = ' '; return 'X'; }
-                    if ((g.grid[1][0] == 'X') && (g.grid[1][1] == 'X') && (g.grid[1][2] == 'X')) { g.grid[1][0] = ' '; g.grid[1][1] = ' '; g.grid[1][2] = ' '; return 'X'; }
-                    if ((g.grid[2][0] == 'X') && (g.grid[2][1] == 'X') && (g.grid[2][2] == 'X')) { g.grid[2][0] = ' '; g.grid[2][1] = ' '; g.grid[2][2] = ' '; return 'X'; }
-                    if ((g.grid[0][0] == 'X') && (g.grid[1][0] == 'X') && (g.grid[2][0] == 'X')) { g.grid[0][0] = ' '; g.grid[1][0] = ' '; g.grid[2][0] = ' '; return 'X'; }
-                    if ((g.grid[0][1] == 'X') && (g.grid[1][1] == 'X') && (g.grid[2][1] == 'X')) { g.grid[0][1] = ' '; g.grid[1][1] = ' '; g.grid[2][1] = ' '; return 'X'; }
-                    if ((g.grid[0][2] == 'X') && (g.grid[1][2] == 'X') && (g.grid[2][2] == 'X')) { g.grid[0][2] = ' '; g.grid[1][2] = ' '; g.grid[2][2] = ' '; return 'X'; }
-                    if ((g.grid[0][0] == 'X') && (g.grid[1][1] == 'X') && (g.grid[2][2] == 'X')) { g.grid[0][0] = ' '; g.grid[1][1] = ' '; g.grid[2][2] = ' '; return 'X'; }
-                    if ((g.grid[0][2] == 'X') && (g.grid[1][1] == 'X') && (g.grid[2][0] == 'X')) { g.grid[0][2] = ' '; g.grid[1][1] = ' '; g.grid[2][0] = ' '; return 'X'; }
-                    if ((g.grid[0][0] == 'O') && (g.grid[0][1] == 'O') && (g.grid[0][2] == 'O')) { g.grid[0][0] = ' '; g.grid[0][1] = ' '; g.grid[0][2] = ' '; return 'O'; }
-                    if ((g.grid[1][0] == 'O') && (g.grid[1][1] == 'O') && (g.grid[1][2] == 'O')) { g.grid[1][0] = ' '; g.grid[1][1] = ' '; g.grid[1][2] = ' '; return 'O'; }
-                    if ((g.grid[2][0] == 'O') && (g.grid[2][1] == 'O') && (g.grid[2][2] == 'O')) { g.grid[2][0] = ' '; g.grid[2][1] = ' '; g.grid[2][2] = ' '; return 'O'; }
-                    if ((g.grid[0][0] == 'O') && (g.grid[1][0] == 'O') && (g.grid[2][0] == 'O')) { g.grid[0][0] = ' '; g.grid[1][0] = ' '; g.grid[2][0] = ' '; return 'O'; }
-                    if ((g.grid[0][1] == 'O') && (g.grid[1][1] == 'O') && (g.grid[2][1] == 'O')) { g.grid[0][1] = ' '; g.grid[1][1] = ' '; g.grid[2][1] = ' '; return 'O'; }
-                    if ((g.grid[0][2] == 'O') && (g.grid[1][2] == 'O') && (g.grid[2][2] == 'O')) { g.grid[0][2] = ' '; g.grid[1][2] = ' '; g.grid[2][2] = ' '; return 'O'; }
-                    if ((g.grid[0][0] == 'O') && (g.grid[1][1] == 'O') && (g.grid[2][2] == 'O')) { g.grid[0][0] = ' '; g.grid[1][1] = ' '; g.grid[2][2] = ' '; return 'O'; }
-                    if ((g.grid[0][2] == 'O') && (g.grid[1][1] == 'O') && (g.grid[2][0] == 'O')) { g.grid[0][2] = ' '; g.grid[1][1] = ' '; g.grid[2][0] = ' '; return 'O'; }
+                char winner = [](state& g) {
+                    if ((g.grid[0][0] == 'X') && (g.grid[0][1] == 'X') && (g.grid[0][2] == 'X')) {
+                        g.grid[0][0] = ' ';
+                        g.grid[0][1] = ' ';
+                        g.grid[0][2] = ' ';
+                        return 'X';
+                    }
+                    if ((g.grid[1][0] == 'X') && (g.grid[1][1] == 'X') && (g.grid[1][2] == 'X')) {
+                        g.grid[1][0] = ' ';
+                        g.grid[1][1] = ' ';
+                        g.grid[1][2] = ' ';
+                        return 'X';
+                    }
+                    if ((g.grid[2][0] == 'X') && (g.grid[2][1] == 'X') && (g.grid[2][2] == 'X')) {
+                        g.grid[2][0] = ' ';
+                        g.grid[2][1] = ' ';
+                        g.grid[2][2] = ' ';
+                        return 'X';
+                    }
+                    if ((g.grid[0][0] == 'X') && (g.grid[1][0] == 'X') && (g.grid[2][0] == 'X')) {
+                        g.grid[0][0] = ' ';
+                        g.grid[1][0] = ' ';
+                        g.grid[2][0] = ' ';
+                        return 'X';
+                    }
+                    if ((g.grid[0][1] == 'X') && (g.grid[1][1] == 'X') && (g.grid[2][1] == 'X')) {
+                        g.grid[0][1] = ' ';
+                        g.grid[1][1] = ' ';
+                        g.grid[2][1] = ' ';
+                        return 'X';
+                    }
+                    if ((g.grid[0][2] == 'X') && (g.grid[1][2] == 'X') && (g.grid[2][2] == 'X')) {
+                        g.grid[0][2] = ' ';
+                        g.grid[1][2] = ' ';
+                        g.grid[2][2] = ' ';
+                        return 'X';
+                    }
+                    if ((g.grid[0][0] == 'X') && (g.grid[1][1] == 'X') && (g.grid[2][2] == 'X')) {
+                        g.grid[0][0] = ' ';
+                        g.grid[1][1] = ' ';
+                        g.grid[2][2] = ' ';
+                        return 'X';
+                    }
+                    if ((g.grid[0][2] == 'X') && (g.grid[1][1] == 'X') && (g.grid[2][0] == 'X')) {
+                        g.grid[0][2] = ' ';
+                        g.grid[1][1] = ' ';
+                        g.grid[2][0] = ' ';
+                        return 'X';
+                    }
+                    if ((g.grid[0][0] == 'O') && (g.grid[0][1] == 'O') && (g.grid[0][2] == 'O')) {
+                        g.grid[0][0] = ' ';
+                        g.grid[0][1] = ' ';
+                        g.grid[0][2] = ' ';
+                        return 'O';
+                    }
+                    if ((g.grid[1][0] == 'O') && (g.grid[1][1] == 'O') && (g.grid[1][2] == 'O')) {
+                        g.grid[1][0] = ' ';
+                        g.grid[1][1] = ' ';
+                        g.grid[1][2] = ' ';
+                        return 'O';
+                    }
+                    if ((g.grid[2][0] == 'O') && (g.grid[2][1] == 'O') && (g.grid[2][2] == 'O')) {
+                        g.grid[2][0] = ' ';
+                        g.grid[2][1] = ' ';
+                        g.grid[2][2] = ' ';
+                        return 'O';
+                    }
+                    if ((g.grid[0][0] == 'O') && (g.grid[1][0] == 'O') && (g.grid[2][0] == 'O')) {
+                        g.grid[0][0] = ' ';
+                        g.grid[1][0] = ' ';
+                        g.grid[2][0] = ' ';
+                        return 'O';
+                    }
+                    if ((g.grid[0][1] == 'O') && (g.grid[1][1] == 'O') && (g.grid[2][1] == 'O')) {
+                        g.grid[0][1] = ' ';
+                        g.grid[1][1] = ' ';
+                        g.grid[2][1] = ' ';
+                        return 'O';
+                    }
+                    if ((g.grid[0][2] == 'O') && (g.grid[1][2] == 'O') && (g.grid[2][2] == 'O')) {
+                        g.grid[0][2] = ' ';
+                        g.grid[1][2] = ' ';
+                        g.grid[2][2] = ' ';
+                        return 'O';
+                    }
+                    if ((g.grid[0][0] == 'O') && (g.grid[1][1] == 'O') && (g.grid[2][2] == 'O')) {
+                        g.grid[0][0] = ' ';
+                        g.grid[1][1] = ' ';
+                        g.grid[2][2] = ' ';
+                        return 'O';
+                    }
+                    if ((g.grid[0][2] == 'O') && (g.grid[1][1] == 'O') && (g.grid[2][0] == 'O')) {
+                        g.grid[0][2] = ' ';
+                        g.grid[1][1] = ' ';
+                        g.grid[2][0] = ' ';
+                        return 'O';
+                    }
                     return ' ';
                 }(game_copy);
 
@@ -206,7 +329,7 @@ TEST(maxn, evaluate, tic_tac_toe) {
                         if (winner == 'X') {
                             valid_win = (count_X >= count_O);
                         }
-                        else  {
+                        else {
                             valid_win = (count_O >= count_X);
                         }
                     }
@@ -270,7 +393,7 @@ TEST(maxn, evaluate, tic_tac_toe) {
     REQUIRE(games_to_evaluate.size() == games_valid - games_ended);
 
     std::function<int(const state& game, bool isMax, unsigned int player)> evaluate_minimax;
-    evaluate_minimax = [&evaluate_minimax](const state& g, bool isMax, unsigned int player)->int{
+    evaluate_minimax = [&evaluate_minimax](const state& g, bool isMax, unsigned int player) -> int {
         if (g.check_win()) {
             if (g.get_entity_id() != player) {
                 return 1;
@@ -300,19 +423,18 @@ TEST(maxn, evaluate, tic_tac_toe) {
     };
 
     // Evaluate games:
-    unsigned int evaluate_start_X   = 0;
-    unsigned int evaluate_start_O   = 0;
-    unsigned int evaluate_wins_X    = 0;
-    unsigned int evaluate_wins_O    = 0;
-    unsigned int evaluate_ties      = 0;
-    unsigned int evaluate_moves_X   = 0;
-    unsigned int evaluate_moves_O   = 0;
-    unsigned int required_wins_X    = 0;
-    unsigned int required_wins_O    = 0;
-    unsigned int required_ties      = 0;
+    unsigned int evaluate_start_X = 0;
+    unsigned int evaluate_start_O = 0;
+    unsigned int evaluate_wins_X = 0;
+    unsigned int evaluate_wins_O = 0;
+    unsigned int evaluate_ties = 0;
+    unsigned int evaluate_moves_X = 0;
+    unsigned int evaluate_moves_O = 0;
+    unsigned int required_wins_X = 0;
+    unsigned int required_wins_O = 0;
+    unsigned int required_ties = 0;
 
     for (const state& game : games_to_evaluate) {
-
         evaluate_start_X += (game.next_player == 'X');
         evaluate_start_O += (game.next_player == 'O');
 
@@ -325,12 +447,20 @@ TEST(maxn, evaluate, tic_tac_toe) {
             current_game = move;
         }
 
-        if (game.next_player == 'X') { evaluate_moves_X += moves; }
-        if (game.next_player == 'O') { evaluate_moves_O += moves; }
+        if (game.next_player == 'X') {
+            evaluate_moves_X += moves;
+        }
+        if (game.next_player == 'O') {
+            evaluate_moves_O += moves;
+        }
 
         if (current_game.check_win()) {
-            if (current_game.next_player == 'X') { ++evaluate_wins_O; }
-            if (current_game.next_player == 'O') { ++evaluate_wins_X; }
+            if (current_game.next_player == 'X') {
+                ++evaluate_wins_O;
+            }
+            if (current_game.next_player == 'O') {
+                ++evaluate_wins_X;
+            }
         }
         else {
             ++evaluate_ties;
@@ -338,11 +468,21 @@ TEST(maxn, evaluate, tic_tac_toe) {
 
         // Solve using recursive minimax
         const int score = evaluate_minimax(game, true, game.get_entity_id());
-        if ((score < 0) && (game.next_player == 'X')) { ++required_wins_O; }
-        if ((score < 0) && (game.next_player == 'O')) { ++required_wins_X; }
-        if (score == 0) { ++required_ties; }
-        if ((score > 0) && (game.next_player == 'X')) { ++required_wins_X; }
-        if ((score > 0) && (game.next_player == 'O')) { ++required_wins_O; }
+        if ((score < 0) && (game.next_player == 'X')) {
+            ++required_wins_O;
+        }
+        if ((score < 0) && (game.next_player == 'O')) {
+            ++required_wins_X;
+        }
+        if (score == 0) {
+            ++required_ties;
+        }
+        if ((score > 0) && (game.next_player == 'X')) {
+            ++required_wins_X;
+        }
+        if ((score > 0) && (game.next_player == 'O')) {
+            ++required_wins_O;
+        }
 
         static bool print_first_failure = true;
         if (print_first_failure) {
@@ -350,9 +490,15 @@ TEST(maxn, evaluate, tic_tac_toe) {
                 print_first_failure = false;
                 REQUIRE(false, "Failed to correctly solve this game.");
                 game.print();
-                if (evaluate_wins_X != required_wins_X) { PRINT("Wins for X do not match. EVAL:%d REQ:%d\n", evaluate_wins_X, required_wins_X); }
-                if (evaluate_wins_O != required_wins_O) { PRINT("Wins for O do not match. EVAL:%d REQ:%d\n", evaluate_wins_O, required_wins_O); }
-                if (evaluate_ties != required_ties)     { PRINT("Ties do not match. EVAL:%d REQ:%d\n", evaluate_ties, required_ties);       }
+                if (evaluate_wins_X != required_wins_X) {
+                    PRINT("Wins for X do not match. EVAL:%d REQ:%d\n", evaluate_wins_X, required_wins_X);
+                }
+                if (evaluate_wins_O != required_wins_O) {
+                    PRINT("Wins for O do not match. EVAL:%d REQ:%d\n", evaluate_wins_O, required_wins_O);
+                }
+                if (evaluate_ties != required_ties) {
+                    PRINT("Ties do not match. EVAL:%d REQ:%d\n", evaluate_ties, required_ties);
+                }
                 current_game.print();
             }
         }

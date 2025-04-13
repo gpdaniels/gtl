@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -22,17 +23,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vision/feature/distributor/square_covering>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(square_covering, function, zero_points) {
-    const gtl::feature features_detected_sorted[1] = {{ 2, 3, 16, 0.7f }};
+    const gtl::feature features_detected_sorted[1] = {
+        {2, 3, 16, 0.7f}
+    };
     const int features_detected_sorted_size = 0;
     const int max_width = 80;
     const int max_height = 80;
@@ -48,7 +51,9 @@ TEST(square_covering, function, zero_points) {
 }
 
 TEST(square_covering, function, one_point) {
-    const gtl::feature features_detected_sorted[1] = {{ 2, 3, 16, 0.7f }};
+    const gtl::feature features_detected_sorted[1] = {
+        {2, 3, 16, 0.7f}
+    };
     const int features_detected_sorted_size = 1;
     const int max_width = 80;
     const int max_height = 80;
@@ -65,16 +70,16 @@ TEST(square_covering, function, one_point) {
 
 TEST(square_covering, function, square_ten_points) {
     const gtl::feature features_detected_sorted[10] = {
-        {  1, 21, 89, 0.2f },
-        { 42, 42, 65, 0.6f },
-        { 26,  1, 35, 0.3f },
-        { 21, 15, 21, 0.4f },
-        { 48, 72, 10, 0.7f },
-        { 72,  2,  3, 0.9f },
-        {  7,  3,  2, 0.1f },
-        { 63, 16,  2, 0.8f },
-        { 79, 68,  2, 1.0f },
-        { 24, 29,  1, 0.5f }
+        { 1, 21, 89, 0.2f},
+        {42, 42, 65, 0.6f},
+        {26,  1, 35, 0.3f},
+        {21, 15, 21, 0.4f},
+        {48, 72, 10, 0.7f},
+        {72,  2,  3, 0.9f},
+        { 7,  3,  2, 0.1f},
+        {63, 16,  2, 0.8f},
+        {79, 68,  2, 1.0f},
+        {24, 29,  1, 0.5f}
     };
     const int features_detected_sorted_size = 10;
     const int max_width = 80;
@@ -88,16 +93,16 @@ TEST(square_covering, function, square_ten_points) {
         2, 3, 4, 5, 6, 7, 8, 9, 10, 10
     };
     int distributed_indexes[10][10] = {
-        { 0, 4, 0, 0, 0, 0, 0, 0, 0, 0 },
-        { 0, 1, 4, 0, 0, 0, 0, 0, 0, 0 },
-        { 0, 1, 5, 8, 0, 0, 0, 0, 0, 0 },
-        { 0, 1, 4, 7, 8, 0, 0, 0, 0, 0 },
-        { 0, 1, 2, 4, 5, 8, 0, 0, 0, 0 },
-        { 0, 1, 2, 4, 5, 8, 9, 0, 0, 0 },
-        { 0, 1, 2, 4, 5, 6, 8, 9, 0, 0 },
-        { 0, 1, 2, 3, 4, 5, 6, 7, 8, 0 },
-        { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 },
-        { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }
+        {0, 4, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 1, 4, 0, 0, 0, 0, 0, 0, 0},
+        {0, 1, 5, 8, 0, 0, 0, 0, 0, 0},
+        {0, 1, 4, 7, 8, 0, 0, 0, 0, 0},
+        {0, 1, 2, 4, 5, 8, 0, 0, 0, 0},
+        {0, 1, 2, 4, 5, 8, 9, 0, 0, 0},
+        {0, 1, 2, 4, 5, 6, 8, 9, 0, 0},
+        {0, 1, 2, 3, 4, 5, 6, 7, 8, 0},
+        {0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
     };
 
     for (int i = 0; i < 10; ++i) {

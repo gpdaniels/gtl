@@ -21,18 +21,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Class that can hold any variable type.
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <memory>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #if defined(__clang__)
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wweak-vtables"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wweak-vtables"
 #endif
 
 namespace gtl {
@@ -72,7 +72,6 @@ namespace gtl {
         template <typename type>
         class variable final
             : public abstract_variable {
-
         public:
             /// @brief  The data of the type to be held in the variable.
             type value;
@@ -150,7 +149,7 @@ namespace gtl {
         template <typename type>
         any& operator=(const type& any_value) {
             // Allocate a variable to hold the value and store this in value
-            this->value = std::make_unique<variable<type > >(any_value);
+            this->value = std::make_unique<variable<type>>(any_value);
 
             // Return this
             return *this;
@@ -160,7 +159,7 @@ namespace gtl {
         /// @param  any_value The value to be stored in the any.
         template <typename type>
         any(const type& any_value)
-            : value(std::make_unique<variable<type> >(any_value)) {
+            : value(std::make_unique<variable<type>>(any_value)) {
         }
 
         /// @brief  Templated conversion operator will cast any to anything.
@@ -176,7 +175,7 @@ namespace gtl {
 }
 
 #if defined(__clang__)
-    #pragma clang diagnostic pop
+#pragma clang diagnostic pop
 #endif
 
 #endif // GTL_CONTAINER_ANY_HPP

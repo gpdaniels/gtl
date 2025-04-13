@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -23,14 +24,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vision/api>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
-#include <string>
 #include <chrono>
+#include <string>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 // Mock of the API.
@@ -40,7 +41,6 @@ extern "C" struct gtl_vision_system {
     long long int timestamp_start = 0;
 
     ~gtl_vision_system() {
-
     }
 
     gtl_vision_system() {
@@ -49,36 +49,36 @@ extern "C" struct gtl_vision_system {
 };
 
 #if defined(_MSC_VER)
-    #if defined(GTL_API_EXPORT)
-        #define GTL_API_VISIBILITY __declspec(dllexport)
-    #else
-        #define GTL_API_VISIBILITY __declspec(dllimport)
-    #endif
-
-    #define GTL_API_CALL __stdcall
-
-    #define GTL_API_STATIC_ASSERT(ASSERTION, MESSAGE) static_assert(ASSERTION, MESSAGE);
+#if defined(GTL_API_EXPORT)
+#define GTL_API_VISIBILITY __declspec(dllexport)
 #else
-    #if defined(GTL_API_EXPORT)
-        #define GTL_API_VISIBILITY __attribute__((visibility("default")))
-    #else
-        #define GTL_API_VISIBILITY __attribute__((visibility("default")))
-    #endif
-
-    #define GTL_API_CALL
-
-    #if defined(__cplusplus)
-        #define GTL_API_STATIC_ASSERT(ASSERTION, MESSAGE) static_assert(ASSERTION, MESSAGE);
-    #else
-        #define GTL_API_STATIC_ASSERT(ASSERTION, MESSAGE) _Static_assert(ASSERTION, MESSAGE);
-    #endif
+#define GTL_API_VISIBILITY __declspec(dllimport)
 #endif
 
-GTL_API_STATIC_ASSERT(sizeof(char) == 1,            "For ABI compatibility the sizeof(char) must be 1 byte.")
-GTL_API_STATIC_ASSERT(sizeof(short int) == 2,       "For ABI compatibility the sizeof(short int) must be 2 bytes.")
-GTL_API_STATIC_ASSERT(sizeof(int) == 4,             "For ABI compatibility the sizeof(int) must be 4 bytes.")
-GTL_API_STATIC_ASSERT(sizeof(long long int) == 8,   "For ABI compatibility the sizeof(long long int) must be 8 bytes.")
-GTL_API_STATIC_ASSERT(sizeof(float) == 4,           "For ABI compatibility the sizeof(float) must be 4 bytes.")
+#define GTL_API_CALL __stdcall
+
+#define GTL_API_STATIC_ASSERT(ASSERTION, MESSAGE) static_assert(ASSERTION, MESSAGE);
+#else
+#if defined(GTL_API_EXPORT)
+#define GTL_API_VISIBILITY __attribute__((visibility("default")))
+#else
+#define GTL_API_VISIBILITY __attribute__((visibility("default")))
+#endif
+
+#define GTL_API_CALL
+
+#if defined(__cplusplus)
+#define GTL_API_STATIC_ASSERT(ASSERTION, MESSAGE) static_assert(ASSERTION, MESSAGE);
+#else
+#define GTL_API_STATIC_ASSERT(ASSERTION, MESSAGE) _Static_assert(ASSERTION, MESSAGE);
+#endif
+#endif
+
+GTL_API_STATIC_ASSERT(sizeof(char) == 1, "For ABI compatibility the sizeof(char) must be 1 byte.")
+GTL_API_STATIC_ASSERT(sizeof(short int) == 2, "For ABI compatibility the sizeof(short int) must be 2 bytes.")
+GTL_API_STATIC_ASSERT(sizeof(int) == 4, "For ABI compatibility the sizeof(int) must be 4 bytes.")
+GTL_API_STATIC_ASSERT(sizeof(long long int) == 8, "For ABI compatibility the sizeof(long long int) must be 8 bytes.")
+GTL_API_STATIC_ASSERT(sizeof(float) == 4, "For ABI compatibility the sizeof(float) must be 4 bytes.")
 
 extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_create(gtl_vision_system** system) {
     if (!system) {
@@ -236,28 +236,28 @@ extern "C" GTL_API_VISIBILITY gtl_vision_return_enum GTL_API_CALL gtl_vision_get
 // Tests for the enum to sting functions.
 
 TEST(api, function, return_enum_to_string) {
-    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_success),                          "success"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_success), "success"));
     REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_insufficient_data_length), "failure: insufficient data length"));
-    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_invalid_system),           "failure: invalid system"));
-    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_invalid_argument),         "failure: invalid argument"));
-    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_invalid_configuration),    "failure: invalid configuration"));
-    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_invalid_rig_sensor),       "failure: invalid rig sensor"));
-    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_invalid_sensor_data),      "failure: invalid sensor_data"));
-    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_invalid),                          "invalid"));
-    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(static_cast<gtl_vision_return_enum>(0xFFFFFFFE)),    "unknown"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_invalid_system), "failure: invalid system"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_invalid_argument), "failure: invalid argument"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_invalid_configuration), "failure: invalid configuration"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_invalid_rig_sensor), "failure: invalid rig sensor"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_failure_invalid_sensor_data), "failure: invalid sensor_data"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(gtl_vision_return_invalid), "invalid"));
+    REQUIRE(testbench::is_string_same(gtl_vision_return_enum_to_string(static_cast<gtl_vision_return_enum>(0xFFFFFFFE)), "unknown"));
 }
 
 TEST(api, function, sensor_emum_to_string) {
-    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_empty),                            "empty"));
-    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_map_chunk),                        "map chunk"));
-    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_local_scale),                      "local scale"));
-    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_local_linear),                     "local linear"));
-    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_local_angular),                    "local augular"));
-    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_remote_range),                     "remote range"));
-    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_remote_bearing),                   "remote bearing"));
-    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_remote_description),               "remote description"));
-    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_invalid),                          "invalid"));
-    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(static_cast<gtl_vision_sensor_emum>(0xFFFFFFFE)),    "unknown"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_empty), "empty"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_map_chunk), "map chunk"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_local_scale), "local scale"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_local_linear), "local linear"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_local_angular), "local augular"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_remote_range), "remote range"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_remote_bearing), "remote bearing"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_remote_description), "remote description"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(gtl_vision_sensor_invalid), "invalid"));
+    REQUIRE(testbench::is_string_same(gtl_vision_sensor_emum_to_string(static_cast<gtl_vision_sensor_emum>(0xFFFFFFFE)), "unknown"));
 }
 
 // Tests for the API functionality.
@@ -433,7 +433,7 @@ TEST(api, function, get_map_chunk) {
 
     REQUIRE(gtl_vision_create(&system) == gtl_vision_return_success);
     REQUIRE(gtl_vision_get_map_chunk(nullptr, 0.0f, 0.0f, 0.0f, nullptr) == gtl_vision_return_failure_invalid_system);
-    REQUIRE(gtl_vision_get_map_chunk(nullptr, 0.0f, 0.0f, 0.0f,  &map) == gtl_vision_return_failure_invalid_system);
+    REQUIRE(gtl_vision_get_map_chunk(nullptr, 0.0f, 0.0f, 0.0f, &map) == gtl_vision_return_failure_invalid_system);
 
     REQUIRE(gtl_vision_get_map_chunk(system, 0.0f, 0.0f, 0.0f, nullptr) == gtl_vision_return_failure_invalid_argument);
 
@@ -458,4 +458,3 @@ TEST(api, function, get_map_chunk) {
     REQUIRE(gtl_vision_destroy(&system) == gtl_vision_return_success);
     REQUIRE(system == nullptr);
 }
-

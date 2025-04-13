@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -22,14 +23,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <crypto/rc4>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <string>
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 static std::string hex_2_string(const unsigned char* hex, const unsigned int length) {
@@ -49,8 +50,8 @@ TEST(rc4, constructor, empty) {
 TEST(rc4, evaluate, examples) {
     constexpr static const unsigned int length_data = 16;
     constexpr static const unsigned int length_key = 16;
-    const unsigned char plain[length_data] =     { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF };
-    const unsigned char key[length_key] =        { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F };
+    const unsigned char plain[length_data] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF };
+    const unsigned char key[length_key] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F };
     const unsigned char encrypted[length_data] = { 0xE9, 0x8D, 0x62, 0xCA, 0x03, 0xB7, 0x7F, 0xBB, 0x8E, 0x42, 0x3D, 0x7D, 0xC2, 0x00, 0xC4, 0xB0 };
 
     unsigned char output[length_data];
@@ -61,11 +62,11 @@ TEST(rc4, evaluate, examples) {
 }
 
 TEST(rc4, evaluate, roundtrip) {
-
     class random_pcg final {
     private:
         unsigned long long int state = 0x853C49E6748FEA9Bull;
         unsigned long long int increment = 0xDA3E39CB94B95BDBull;
+
     public:
         unsigned int get_random_raw() {
             unsigned long long int state_previous = this->state;
