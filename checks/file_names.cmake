@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 
 # Define the minimum version of CMake that is required.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
-CMAKE_POLICY(VERSION 3.5.1)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
+CMAKE_POLICY(VERSION 3.10)
 
 MESSAGE(STATUS "Checking file names...")
 
@@ -47,7 +47,7 @@ FOREACH(PROJECT_FILE ${PROJECT_FILES})
     ENDIF()
     
     # Check specific patterns for specific directories.
-    IF("${PROJECT_FILE}" MATCHES "^[.][a-z]+([.][a-z]+)?$")
+    IF("${PROJECT_FILE}" MATCHES "^[.][-a-z]+([.][-a-z]+)?$")
         # Root hidden files.
         CONTINUE()
     ELSEIF("${PROJECT_FILE}" MATCHES "^[a-z]+[a-z_0-9]*[.][a-z]+$")
