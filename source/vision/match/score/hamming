@@ -21,18 +21,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Simple hamming matching without the popcount instruction. [wip]
 
 namespace gtl {
-    template<unsigned int bits>
+    template <unsigned int bits>
     unsigned int hamming(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs
-    );
+        const unsigned char* __restrict const data_rhs);
 
-    template<>
+    template <>
     unsigned int hamming<8>(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs
-    )
-    {
+        const unsigned char* __restrict const data_rhs) {
         constexpr static const unsigned char Ox01 = 0x01u;
         constexpr static const unsigned char Ox0F = 0x0Fu;
         constexpr static const unsigned char Ox33 = 0x33u;
@@ -51,12 +48,10 @@ namespace gtl {
         return distance;
     }
 
-    template<>
+    template <>
     unsigned int hamming<16>(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs
-    )
-    {
+        const unsigned char* __restrict const data_rhs) {
         constexpr static const unsigned short int Ox01 = 0x0101u;
         constexpr static const unsigned short int Ox0F = 0x0F0Fu;
         constexpr static const unsigned short int Ox33 = 0x3333u;
@@ -83,12 +78,10 @@ namespace gtl {
         return distance;
     }
 
-    template<>
+    template <>
     unsigned int hamming<32>(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs
-    )
-    {
+        const unsigned char* __restrict const data_rhs) {
         constexpr static const unsigned int Ox01 = 0x01010101u;
         constexpr static const unsigned int Ox0F = 0x0F0F0F0Fu;
         constexpr static const unsigned int Ox33 = 0x33333333u;
@@ -115,12 +108,10 @@ namespace gtl {
         return distance;
     }
 
-    template<>
+    template <>
     unsigned int hamming<64>(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs
-    )
-    {
+        const unsigned char* __restrict const data_rhs) {
         constexpr static const unsigned long long int Ox01 = 0x0101010101010101ull;
         constexpr static const unsigned long long int Ox0F = 0x0F0F0F0F0F0F0F0Full;
         constexpr static const unsigned long long int Ox33 = 0x3333333333333333ull;
@@ -147,30 +138,24 @@ namespace gtl {
         return distance;
     }
 
-    template<>
+    template <>
     unsigned int hamming<128>(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs
-    )
-    {
+        const unsigned char* __restrict const data_rhs) {
         return hamming<64>(&data_lhs[0], &data_rhs[0]) + hamming<64>(&data_lhs[8], &data_rhs[8]);
     }
 
-    template<>
+    template <>
     unsigned int hamming<256>(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs
-    )
-    {
+        const unsigned char* __restrict const data_rhs) {
         return hamming<128>(&data_lhs[0], &data_rhs[0]) + hamming<128>(&data_lhs[16], &data_rhs[16]);
     }
 
-    template<>
+    template <>
     unsigned int hamming<512>(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs
-    )
-    {
+        const unsigned char* __restrict const data_rhs) {
         return hamming<256>(&data_lhs[0], &data_rhs[0]) + hamming<256>(&data_lhs[32], &data_rhs[32]);
     }
 }

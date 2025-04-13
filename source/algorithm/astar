@@ -26,8 +26,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <functional>
 #include <queue>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #if defined(_MSC_VER)
@@ -47,24 +47,28 @@ namespace gtl {
             coordinate_type coordinate_parent;
             coordinate_type coordinate_self;
             cost_type cost;
+
             bool operator==(const node_type& other) const {
                 return (this->coordinate_self == other.coordinate_self);
             }
+
             bool operator<(const node_type& other) const {
                 return this->cost > other.cost;
             }
         };
 
-        template <typename type, typename container = std::vector<type>, typename comparitor = std::less<typename container::value_type> >
+        template <typename type, typename container = std::vector<type>, typename comparitor = std::less<typename container::value_type>>
         class heap_queue final
             : public std::priority_queue<type, container, comparitor> {
         public:
             typename container::iterator begin() {
                 return this->c.begin();
             }
+
             typename container::iterator end() {
                 return this->c.end();
             }
+
             void sort() {
                 std::make_heap(this->c.begin(), this->c.end(), this->comp);
             }
@@ -76,8 +80,7 @@ namespace gtl {
             const coordinate_type& end,
             const search_type& search,
             const heuristic_type& heuristic,
-            std::vector<coordinate_type>& path
-        ) {
+            std::vector<coordinate_type>& path) {
             // Clear outputs.
             path.clear();
 
@@ -86,7 +89,7 @@ namespace gtl {
             std::unordered_map<coordinate_type, node_type, typename coordinate_type::hash_function> closed;
 
             // Add start node to open list.
-            open.push(node_type{start, start, heuristic(start, end)});
+            open.push(node_type{ start, start, heuristic(start, end) });
 
             while (!open.empty()) {
                 // Get next best node.
@@ -109,7 +112,6 @@ namespace gtl {
 
                 // See if we need to add these new nodes to the open list.
                 for (const coordinate_type& next_coordinate : next_coordinates) {
-
                     // Check if the node is already in the closed list.
                     if (closed.find(next_coordinate) != closed.end()) {
                         // It is assumed you have an admissible heuristic.

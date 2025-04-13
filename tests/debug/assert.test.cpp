@@ -15,48 +15,49 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/require.tests.hpp>
 
 #include <debug/assert>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #ifdef _MSC_VER
-#   pragma warning(push)
-#   pragma warning(disable: 4702)
+#pragma warning(push)
+#pragma warning(disable : 4702)
 #endif
 
 TEST(assert, evaluate, assert) {
     // Asserting without a message.
     GTL_ASSERT(true);
-    
+
     // Asserting with a message.
     GTL_ASSERT(true, "Message.");
-    
+
     // Asserting with a format string and parameter.
     GTL_ASSERT(true, "%s", "Parameter.");
-    
+
     // Asserting with a variable.
     {
         constexpr static const int variable1 = -1;
         volatile double variable2 = 2.0;
         GTL_ASSERT(variable1 < variable2);
     }
-    
+
     // Asserting in an if statement, with {}.
     {
         if (true) {
             GTL_ASSERT(true);
         }
-        
+
         if (true) {
             GTL_ASSERT(true);
         }
@@ -91,7 +92,7 @@ TEST(assert, evaluate, assert) {
         else
             REQUIRE(true);
     }
-    
+
     // Asserting in a for loop, with {}.
     {
         for (bool loop = true; loop; loop = false) {
@@ -102,7 +103,7 @@ TEST(assert, evaluate, assert) {
             GTL_ASSERT(false);
         }
     }
-    
+
     // Asserting in a for loop, without {}.
     {
         for (bool loop = true; loop; loop = false)
@@ -111,7 +112,7 @@ TEST(assert, evaluate, assert) {
         for (bool loop = false; loop; loop = false)
             GTL_ASSERT(false);
     }
-    
+
     // Asserting in a while loop, with {}.
     {
         bool loop = true;
@@ -124,7 +125,7 @@ TEST(assert, evaluate, assert) {
             GTL_ASSERT(false);
         }
     }
-    
+
     // Asserting in a while loop, without {}.
     {
         bool loop = true;
@@ -141,7 +142,7 @@ TEST(assert, evaluate, assert) {
             GTL_ASSERT(true);
         } while (false);
     }
-    
+
     // Asserting in a do while loop, without {}.
     {
         do
@@ -151,16 +152,17 @@ TEST(assert, evaluate, assert) {
 }
 
 #ifdef _MSC_VER
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace gtl_assert_test {
     static bool triggered = false;
     void abort();
+
     void abort() {
         triggered = true;
     }
-} 
+}
 
 // The assert uses std::abort to quit, this redefines the namespace of the abort function to the above.
 #define std gtl_assert_test
@@ -169,15 +171,15 @@ TEST(assert, trigger, assert) {
     gtl_assert_test::triggered = false;
     GTL_ASSERT(false);
     REQUIRE(gtl_assert_test::triggered);
-    
+
     gtl_assert_test::triggered = false;
     GTL_ASSERT(false, "\n");
     REQUIRE(gtl_assert_test::triggered);
-    
+
     gtl_assert_test::triggered = false;
     GTL_ASSERT(false, "Message\n");
     REQUIRE(gtl_assert_test::triggered);
-    
+
     gtl_assert_test::triggered = false;
     GTL_ASSERT(false, "%s\n", "Parameter.");
     REQUIRE(gtl_assert_test::triggered);

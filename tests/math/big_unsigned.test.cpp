@@ -15,23 +15,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
-#include <testbench/optimise.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
+#include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <math/big_unsigned>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 bool check_power_of_two(gtl::big_unsigned big_unsigned, signed long long int initial_offset, unsigned long long int exponent, unsigned long long int final_value);
+
 bool check_power_of_two(gtl::big_unsigned big_unsigned, signed long long int initial_offset, unsigned long long int exponent, unsigned long long int final_value) {
     if (initial_offset > 0) {
         big_unsigned -= initial_offset;
@@ -132,10 +134,7 @@ TEST(big_unsigned, constructor, bytes) {
     REQUIRE(check_power_of_two(big_unsigned_95, 0, 95, 1));
 
     constexpr static const unsigned char two_power_333[42] = {
-        0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
     gtl::big_unsigned big_unsigned_333(&two_power_333[0], 42);
     REQUIRE(check_power_of_two(big_unsigned_333, 0, 333, 1));
@@ -712,14 +711,14 @@ TEST(big_unsigned, function, to_bytes) {
     const unsigned long long int lhs = 1ull << 62;
     const unsigned long long int rhs = 2;
 
-    constexpr static const auto swap_endian = [](unsigned long long value)->unsigned long long{
+    constexpr static const auto swap_endian = [](unsigned long long value) -> unsigned long long {
         return (value >> 56) |
-              ((value << 40) & 0x00FF000000000000ull) |
-              ((value << 24) & 0x0000FF0000000000ull) |
-              ((value <<  8) & 0x000000FF00000000ull) |
-              ((value >>  8) & 0x00000000FF000000ull) |
-              ((value >> 24) & 0x0000000000FF0000ull) |
-              ((value >> 40) & 0x000000000000FF00ull) |
+               ((value << 40) & 0x00FF000000000000ull) |
+               ((value << 24) & 0x0000FF0000000000ull) |
+               ((value << 8) & 0x000000FF00000000ull) |
+               ((value >> 8) & 0x00000000FF000000ull) |
+               ((value >> 24) & 0x0000000000FF0000ull) |
+               ((value >> 40) & 0x000000000000FF00ull) |
                (value << 56);
     };
 
@@ -738,10 +737,7 @@ TEST(big_unsigned, function, to_bytes) {
     REQUIRE(testbench::is_memory_same(&bytes_rhs_padded[0], &swapped_rhs, 8));
 
     constexpr static const unsigned char two_power_333[42] = {
-        0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
     unsigned char bytes_333[42];
     gtl::big_unsigned big_unsigned_333(two_power_333, 42);

@@ -15,35 +15,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <io/paths>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(paths, traits, standard) {
-    #if defined(__clang__)
-        REQUIRE((std::is_pod<gtl::paths>::value == false));
-        REQUIRE((std::is_trivial<gtl::paths>::value == false));
-        REQUIRE((std::is_trivially_copyable<gtl::paths>::value == false));
-    #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
-        REQUIRE((std::is_pod<gtl::paths>::value == true));
-        REQUIRE((std::is_trivial<gtl::paths>::value == true));
-        REQUIRE((std::is_trivially_copyable<gtl::paths>::value == true));
-    #elif defined(_MSC_VER)
-        REQUIRE((std::is_pod<gtl::paths>::value == false));
-        REQUIRE((std::is_trivial<gtl::paths>::value == false));
-        REQUIRE((std::is_trivially_copyable<gtl::paths>::value == false));
-    #endif
+#if defined(__clang__)
+    REQUIRE((std::is_pod<gtl::paths>::value == false));
+    REQUIRE((std::is_trivial<gtl::paths>::value == false));
+    REQUIRE((std::is_trivially_copyable<gtl::paths>::value == false));
+#elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
+    REQUIRE((std::is_pod<gtl::paths>::value == true));
+    REQUIRE((std::is_trivial<gtl::paths>::value == true));
+    REQUIRE((std::is_trivially_copyable<gtl::paths>::value == true));
+#elif defined(_MSC_VER)
+    REQUIRE((std::is_pod<gtl::paths>::value == false));
+    REQUIRE((std::is_trivial<gtl::paths>::value == false));
+    REQUIRE((std::is_trivially_copyable<gtl::paths>::value == false));
+#endif
 
     REQUIRE((std::is_standard_layout<gtl::paths>::value == true));
 }

@@ -21,13 +21,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Fixed time step helper class for creating game loops.
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <chrono>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace gtl {
@@ -59,10 +59,10 @@ namespace gtl {
         simulation_loop()
             : current_time(std::chrono::steady_clock::now())
             , last_tick_time(current_time)
-            , current_tick{0}
-            , lag_duration{0} {
+            , current_tick{ 0 }
+            , lag_duration{ 0 } {
         }
-        
+
         /// @brief  Update returns true if the simulation should be updated.
         /// @return True if the tick time step has passed and the current tick has been incremented, false otherwise.
         bool update() {
@@ -74,7 +74,6 @@ namespace gtl {
 
             // While the current state is lagging perform an update.
             if (this->lag_duration >= simulation_loop::tick_step) {
-
                 // Advance the last tick time by the tick time step.
                 this->last_tick_time += simulation_loop::tick_step;
 

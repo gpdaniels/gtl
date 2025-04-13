@@ -31,50 +31,50 @@ namespace testbench {
     class lambda<return_type(argument_types...)> final {
     private:
         /// @brief  A template to remove references from types.
-        template<typename type>
+        template <typename type>
         struct remove_reference final {
             using type_unreferenced = type;
         };
 
         /// @brief  A template to remove references from types.
-        template<typename type>
+        template <typename type>
         struct remove_reference<type&> final {
             using type_unreferenced = type;
         };
 
         /// @brief  A template to remove references from types.
-        template<typename type>
+        template <typename type>
         struct remove_reference<type&&> final {
             using type_unreferenced = type;
         };
 
         /// @brief  A template to check if two types are the same.
-        template<typename lhs_type, typename rhs_type>
+        template <typename lhs_type, typename rhs_type>
         struct is_same_type final {
             constexpr static const bool value = false;
         };
 
         /// @brief  A template to check if two types are the same.
-        template<typename type>
+        template <typename type>
         struct is_same_type<type, type> final {
             constexpr static const bool value = true;
         };
 
     private:
         /// @brief  The type used to store and modify the passed in lambda function.
-        using erased_type       = void*;
+        using erased_type = void*;
 
         /// @brief  The type used to store and access the passed in lambda function.
         using erased_type_const = const void*;
 
         /// @brief  The type of the copier function created on construction of the internal lambda.
-        using copier_type       = void (*)(erased_type_const, erased_type&);
+        using copier_type = void (*)(erased_type_const, erased_type&);
 
         /// @brief  The type of the executer function created on construction of the internal lambda.
-        using executor_type     = return_type (*)(erased_type_const, argument_types...);
+        using executor_type = return_type (*)(erased_type_const, argument_types...);
 
         /// @brief  The type of the destructor function created on construction of the internal lambda.
-        using destructor_type   = void (*)(erased_type&);
+        using destructor_type = void (*)(erased_type&);
 
     private:
         /// @brief  An allocated buffer to store the lambda function.

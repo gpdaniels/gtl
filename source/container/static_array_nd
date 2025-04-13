@@ -21,14 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: N-dimensional statically sized array.
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the static_array_nd is misused.
-#   define GTL_STATIC_ARRAY_ND_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_STATIC_ARRAY_ND_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_STATIC_ARRAY_ND_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_STATIC_ARRAY_ND_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 namespace gtl {
@@ -69,13 +69,13 @@ namespace gtl {
             /// @brief  The array_type is an array of slice_type the size of the dimension.
             template <unsigned long long first_deferred_dimension, unsigned long long... deferred_dimensions>
             struct array_type_validator final {
-                 using array_type = static_array_nd<type, deferred_dimensions...>[first_deferred_dimension];
+                using array_type = static_array_nd<type, deferred_dimensions...>[first_deferred_dimension];
             };
 
             /// @brief  When the size of the dimension is zero the array_type is not valid.
             template <unsigned long long... deferred_dimensions>
             struct array_type_validator<0, deferred_dimensions...> final {
-                struct array_type final { };
+                struct array_type final {};
             };
         };
 
@@ -89,13 +89,13 @@ namespace gtl {
             /// @brief  The final array_type is an array of slice_type the size of the dimension.
             template <unsigned long long first_deferred_dimension, unsigned long long... deferred_dimensions>
             struct array_type_validator final {
-                 using array_type = type[first_deferred_dimension];
+                using array_type = type[first_deferred_dimension];
             };
 
             /// @brief  When the size of the dimension is zero the array_type is not valid.
             template <unsigned long long... deferred_dimensions>
             struct array_type_validator<0, deferred_dimensions...> final {
-                struct array_type { };
+                struct array_type {};
             };
         };
 
@@ -104,21 +104,21 @@ namespace gtl {
         struct deferred_invalid final {
             /// @brief  When the number of dimension_sizes is zero the slice_type is not valid.
             template <unsigned long long... deferred_dimensions>
-            struct slice_type final { };
+            struct slice_type final {};
 
             /// @brief  When the number of dimension_sizes is zero the array_type is not valid.
             template <unsigned long long... deferred_dimensions>
             struct array_type_validator final {
-                struct array_type final { };
+                struct array_type final {};
             };
         };
 
     public:
         /// @brief  This is the type of the elements of the array at this dimension.
-        using slice_type = typename switch_zero_one_or_more_type<sizeof...(dimension_sizes), deferred_invalid<static_array_nd>, deferred_element<static_array_nd>, deferred_array<static_array_nd> >::type::template slice_type<dimension_sizes...>;
+        using slice_type = typename switch_zero_one_or_more_type<sizeof...(dimension_sizes), deferred_invalid<static_array_nd>, deferred_element<static_array_nd>, deferred_array<static_array_nd>>::type::template slice_type<dimension_sizes...>;
 
         /// @brief  This is the type of data stored at this dimension.
-        using array_type = typename switch_zero_one_or_more_type<sizeof...(dimension_sizes), deferred_invalid<static_array_nd>, deferred_element<static_array_nd>, deferred_array<static_array_nd> >::type::template array_type_validator<dimension_sizes...>::array_type;
+        using array_type = typename switch_zero_one_or_more_type<sizeof...(dimension_sizes), deferred_invalid<static_array_nd>, deferred_element<static_array_nd>, deferred_array<static_array_nd>>::type::template array_type_validator<dimension_sizes...>::array_type;
 
     public:
         /// @brief  The actual multi-dimensional array data.

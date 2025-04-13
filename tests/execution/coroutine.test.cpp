@@ -15,25 +15,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
-#include <testbench/optimise.tests.hpp>
+
 #include <testbench/data.tests.hpp>
+#include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 #include <testbench/template.tests.hpp>
 
 #include <execution/coroutine>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(coroutine, traits, standard) {
-
     REQUIRE(std::is_pod<gtl::coroutine>::value == false, "Expected std::is_pod to be false.");
 
     REQUIRE(std::is_trivial<gtl::coroutine>::value == false, "Expected std::is_trivial to be false.");
@@ -48,35 +48,38 @@ TEST(coroutine, constructor, empty) {
     testbench::do_not_optimise_away(coroutine);
 }
 
-
 TEST(coroutine, constructor, lambda) {
-    gtl::coroutine coroutine([](){});
+    gtl::coroutine coroutine([]() {
+    });
     // Ensure coroutine has run.
     coroutine.join();
 }
 
 TEST(coroutine, constructor, lamda_argument) {
     testbench::test_template<testbench::test_types>(
-        [](auto test_type)->void {
+        [](auto test_type) -> void {
             using type = typename decltype(test_type)::type;
             for (const type& value : testbench::test_data<type>()) {
-                gtl::coroutine coroutine([](type){}, value);
+                gtl::coroutine coroutine([](type) {
+                },
+                                         value);
                 // Ensure coroutine has run.
                 coroutine.join();
             }
-        }
-    );
+        });
 }
 
 TEST(coroutine, constructor, move) {
-    gtl::coroutine coroutine1([](){});
+    gtl::coroutine coroutine1([]() {
+    });
     gtl::coroutine coroutine2(std::move(coroutine1));
     // Ensure coroutine2 has run.
     coroutine2.join();
 }
 
 TEST(coroutine, operator, move_assignment) {
-    gtl::coroutine coroutine1([](){});
+    gtl::coroutine coroutine1([]() {
+    });
     gtl::coroutine coroutine2;
     coroutine2 = std::move(coroutine1);
     // Ensure coroutine2 has run.
@@ -86,7 +89,8 @@ TEST(coroutine, operator, move_assignment) {
 TEST(coroutine, function, get_id) {
     gtl::coroutine coroutine1;
     REQUIRE(coroutine1.get_id() == gtl::coroutine::id{}, "Extected get_id() to be null for an empty coroutine.");
-    gtl::coroutine coroutine2 = gtl::coroutine([](){});
+    gtl::coroutine coroutine2 = gtl::coroutine([]() {
+    });
     REQUIRE(coroutine2.get_id() != gtl::coroutine::id{}, "Extected get_id() to not be null for a coroutine with an uncalled function.");
     // Ensure coroutine2 has run.
     coroutine2.join();
@@ -95,7 +99,8 @@ TEST(coroutine, function, get_id) {
 TEST(coroutine, function, joinable) {
     gtl::coroutine coroutine1;
     REQUIRE(coroutine1.joinable() == false, "Extected joinable() to be false for an empty coroutine.");
-    gtl::coroutine coroutine2([](){});
+    gtl::coroutine coroutine2([]() {
+    });
     REQUIRE(coroutine2.joinable() == true, "Extected joinable() to be true for a coroutine with an uncalled function.");
     // Ensure coroutine2 has run.
     coroutine2.join();
@@ -103,7 +108,7 @@ TEST(coroutine, function, joinable) {
 
 TEST(coroutine, function, join) {
     bool result = false;
-    gtl::coroutine coroutine([&result](){
+    gtl::coroutine coroutine([&result]() {
         result = true;
     });
     REQUIRE(result == false, "Expected result to be set to false before coroutine run.");
@@ -113,7 +118,7 @@ TEST(coroutine, function, join) {
 
 TEST(coroutine, function, current_get_id) {
     gtl::coroutine::id id;
-    gtl::coroutine coroutine([&id](){
+    gtl::coroutine coroutine([&id]() {
         id = gtl::this_coroutine::get_id();
     });
     REQUIRE(coroutine.get_id() != gtl::coroutine::id{}, "Extected get_id() to not be null for a coroutine with an uncalled function.");
@@ -123,7 +128,7 @@ TEST(coroutine, function, current_get_id) {
 
 TEST(coroutine, function, current_yield) {
     int result = 0;
-    gtl::coroutine coroutine([&result](){
+    gtl::coroutine coroutine([&result]() {
         result = 1;
         gtl::this_coroutine::yield();
         result = 2;
@@ -136,14 +141,14 @@ TEST(coroutine, function, current_yield) {
 }
 
 TEST(coroutine, function, current_sleep_for) {
-    gtl::coroutine coroutine([](){
+    gtl::coroutine coroutine([]() {
         gtl::this_coroutine::sleep_for(std::chrono::milliseconds(100));
     });
     coroutine.join();
 }
 
 TEST(coroutine, function, current_sleep_until) {
-    gtl::coroutine coroutine([](){
+    gtl::coroutine coroutine([]() {
         gtl::this_coroutine::sleep_until(std::chrono::steady_clock::now() + std::chrono::milliseconds(100));
     });
     coroutine.join();

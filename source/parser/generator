@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: A parser generator to generate parsers defined using a collection of parsing primitives.
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <functional>
@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vector>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace {
@@ -51,29 +51,29 @@ namespace gtl {
 
     public:
         /// @brief  The function type used for the generator parsing function.
-        using parse_function_type                   = std::function<void(char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)>;
+        using parse_function_type = std::function<void(char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)>;
 
     public:
         /// @brief  The type of tokens that can be emitted by the generated parser.
-        using token_type                            = template_token_type;
+        using token_type = template_token_type;
 
         /// @brief  The function type used for emitting tokens.
-        using token_function_type                   = std::function<token_type()>;
+        using token_function_type = std::function<token_type()>;
 
         /// @brief  The function type used for emitting tokens, providing access to branch status.
-        using token_status_function_type            = std::function<token_type(parse_branch_type&)>;
+        using token_status_function_type = std::function<token_type(parse_branch_type&)>;
 
         /// @brief  The function type used for emitting tokens using captured terminals.
-        using token_terminals_function_type         = std::function<token_type(const std::vector<char>&)>;
+        using token_terminals_function_type = std::function<token_type(const std::vector<char>&)>;
 
         /// @brief  The function type used for emitting tokens using captured terminals, providing access to branch status.
-        using token_terminals_status_function_type  = std::function<token_type(const std::vector<char>&, parse_branch_type&)>;
+        using token_terminals_status_function_type = std::function<token_type(const std::vector<char>&, parse_branch_type&)>;
 
         /// @brief  The function type used for reemitting tokens using captured tokens.
-        using token_tokens_function_type            = std::function<token_type(const std::vector<token_type>&)>;
+        using token_tokens_function_type = std::function<token_type(const std::vector<token_type>&)>;
 
         /// @brief  The function type used for reemitting tokens using captured tokens, providing access to branch status.
-        using token_tokens_status_function_type     = std::function<token_type(const std::vector<token_type>&, parse_branch_type&)>;
+        using token_tokens_status_function_type = std::function<token_type(const std::vector<token_type>&, parse_branch_type&)>;
 
     public:
         /// @brief  Structure to store a collection of possible parse branches.
@@ -96,7 +96,7 @@ namespace gtl {
             std::vector<std::vector<char>> captured_terminals;
 
             /// @brief  Stack of captured tokens.
-            std::vector<std::vector<token_type>> captured_tokens = {{}};
+            std::vector<std::vector<token_type>> captured_tokens = { {} };
 
             /// @brief  Error status of the branch, if empty there is currently no error.
             std::string error;
@@ -189,7 +189,7 @@ namespace gtl {
     public:
         /// @brief  Empty constructor to create a generator, it creates an empty generator.
         constexpr generator()
-            : generator(false, false, [](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+            : generator(false, false, [](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                 static_cast<void>(input);
                 static_cast<void>(self);
                 static_cast<void>(branch);
@@ -204,8 +204,7 @@ namespace gtl {
         constexpr generator(
             bool generator_requires_input,
             bool generator_recurses,
-            parse_function_type generator_function
-        )
+            parse_function_type generator_function)
             : id(generator::id_generator++)
             , requires_input(generator_requires_input)
             , recurses(generator_recurses)
@@ -302,7 +301,7 @@ namespace gtl {
         template <typename... character_types>
         constexpr static generator barrier_any(character_types... characters) {
             static_assert((std::is_same<char, character_types>::value && ...), "All arguments to a barrier_any generator must be of char type.");
-            return generator(true, false, [characters...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+            return generator(true, false, [characters...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                 static_cast<void>(self);
                 static_cast<void>(forest);
                 if constexpr (sizeof...(characters) != 0) {
@@ -320,7 +319,7 @@ namespace gtl {
         template <typename... character_types>
         constexpr static generator barrier_not(character_types... characters) {
             static_assert((std::is_same<char, character_types>::value && ...), "All arguments to a barrier_not generator must be of char type.");
-            return generator(true, false, [characters...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+            return generator(true, false, [characters...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                 static_cast<void>(self);
                 static_cast<void>(forest);
                 if constexpr (sizeof...(characters) != 0) {
@@ -338,7 +337,7 @@ namespace gtl {
         template <typename... character_types>
         constexpr static generator terminal_any(character_types... characters) {
             static_assert((std::is_same<char, character_types>::value && ...), "All arguments to a terminal_any generator must be of char type.");
-            return generator(true, false, [characters...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+            return generator(true, false, [characters...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                 static_cast<void>(self);
                 static_cast<void>(forest);
                 if constexpr (sizeof...(characters) != 0) {
@@ -361,7 +360,7 @@ namespace gtl {
         template <typename... character_types>
         constexpr static generator terminal_not(character_types... characters) {
             static_assert((std::is_same<char, character_types>::value && ...), "All arguments to a terminal_not generator must be of char type.");
-            return generator(true, false, [characters...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+            return generator(true, false, [characters...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                 static_cast<void>(self);
                 static_cast<void>(forest);
                 if constexpr (sizeof...(characters) != 0) {
@@ -381,7 +380,7 @@ namespace gtl {
         /// @param  string A series of characters that will be added to the branch to be parsed in sequence.
         /// @return A generator that can be used by itself to parse input, or combined with other generators.
         constexpr static generator terminal(const std::string& string) {
-            return generator(false, false, [string](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+            return generator(false, false, [string](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                 static_cast<void>(input);
                 static_cast<void>(self);
                 static_cast<void>(forest);
@@ -398,7 +397,7 @@ namespace gtl {
         template <typename... generator_types>
         constexpr static generator sequence(generator_types... generators) {
             static_assert((std::is_same<generator, generator_types>::value && ...), "All arguments to a sequence generator must be of generator type.");
-            return generator(false, false, [generators...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+            return generator(false, false, [generators...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                 static_cast<void>(input);
                 static_cast<void>(self);
                 static_cast<void>(forest);
@@ -418,7 +417,7 @@ namespace gtl {
         template <typename... generator_types>
         constexpr static generator disjunction(generator_types... generators) {
             static_assert((std::is_same<generator, generator_types>::value && ...), "All arguments to a disjunction generator must be of generator type.");
-            return generator(false, false, [generators...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+            return generator(false, false, [generators...](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                 static_cast<void>(input);
                 static_cast<void>(self);
                 if constexpr (sizeof...(generator_types) != 0) {
@@ -438,7 +437,7 @@ namespace gtl {
         /// @param  count The number of times to add the provided generator to the branch.
         /// @return A generator that can be used by itself to parse input, or combined with other generators.
         constexpr static generator repeat(generator to_repeat, unsigned int count) {
-            return generator(false, false, [to_repeat, count](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+            return generator(false, false, [to_repeat, count](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                 static_cast<void>(input);
                 static_cast<void>(self);
                 static_cast<void>(forest);
@@ -452,7 +451,7 @@ namespace gtl {
         /// @param  to_recurse The generator that will be continually added to the branch.
         /// @return A generator that can be used by itself to parse input, or combined with other generators.
         constexpr static generator recurse(generator to_recurse) {
-            return generator(false, true, [to_recurse](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+            return generator(false, true, [to_recurse](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                 static_cast<void>(input);
                 static_cast<void>(forest);
                 // When recursing the recursion happens after the other generator to ensure the generator can progress.
@@ -468,21 +467,25 @@ namespace gtl {
         /// @param  token The token emitted.
         /// @return A generator that can be used by itself to parse input, or combined with other generators.
         constexpr static generator emit(token_type token) {
-            return generator::emit([token](parse_branch_type&){ return token; });
+            return generator::emit([token](parse_branch_type&) {
+                return token;
+            });
         }
 
         /// @brief  Emit generator, used to produce a token by calling a custom function.
         /// @param  token_function The function called to emit a token.
         /// @return A generator that can be used by itself to parse input, or combined with other generators.
         constexpr static generator emit(token_function_type token_function) {
-            return generator::emit([token_function](parse_branch_type&){ return token_function(); });
+            return generator::emit([token_function](parse_branch_type&) {
+                return token_function();
+            });
         }
 
         /// @brief  Emit generator, used to produce a token by calling a custom function and providing access to the branch status.
         /// @param  token_status_function The function called to emit a token.
         /// @return A generator that can be used by itself to parse input, or combined with other generators.
         constexpr static generator emit(token_status_function_type token_status_function) {
-            return generator(false, false, [token_status_function](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+            return generator(false, false, [token_status_function](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                 static_cast<void>(input);
                 static_cast<void>(self);
                 static_cast<void>(forest);
@@ -498,7 +501,9 @@ namespace gtl {
         /// @param  token The token emitted when the requrement has been successfully parsed.
         /// @return A generator that can be used by itself to parse input, or combined with other generators.
         constexpr static generator emit(generator requirement, token_type token) {
-            return generator::emit(requirement, [token](parse_branch_type&){ return token; });
+            return generator::emit(requirement, [token](parse_branch_type&) {
+                return token;
+            });
         }
 
         /// @brief  Emit generator, used to produce a token when satisfied by calling a custom function.
@@ -506,7 +511,9 @@ namespace gtl {
         /// @param  token_function The function called to emit a token when the requrement has been successfully parsed.
         /// @return A generator that can be used by itself to parse input, or combined with other generators.
         constexpr static generator emit(generator requirement, token_function_type token_function) {
-            return generator::emit(requirement, [token_function](parse_branch_type&){ return token_function(); });
+            return generator::emit(requirement, [token_function](parse_branch_type&) {
+                return token_function();
+            });
         }
 
         /// @brief  Emit generator, used to produce a token when satisfied by calling a custom function and providing access to the branch status.
@@ -516,14 +523,13 @@ namespace gtl {
         constexpr static generator emit(generator requirement, token_status_function_type token_status_function) {
             return generator::sequence(
                 requirement,
-                generator(false, false, [token_status_function](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                generator(false, false, [token_status_function](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                     static_cast<void>(input);
                     static_cast<void>(self);
                     static_cast<void>(forest);
                     // Call the function and store the returned token.
                     branch.captured_tokens.back().push_back(token_status_function(branch));
-                })
-            );
+                }));
         }
 
         /// Emit, emit a token dependent on captured terminals with a reqirement.
@@ -533,7 +539,9 @@ namespace gtl {
         /// @param  token_function The function called to emit a token when the requrement has been successfully parsed, all processed terminals are captured and one token is emitted.
         /// @return A generator that can be used by itself to parse input, or combined with other generators.
         static generator emit(generator requirement, token_terminals_function_type token_function) {
-            return generator::emit(requirement, [token_function](const std::vector<char>& terminals, parse_branch_type&){ return token_function(terminals); });
+            return generator::emit(requirement, [token_function](const std::vector<char>& terminals, parse_branch_type&) {
+                return token_function(terminals);
+            });
         }
 
         /// @brief  Emit generator, used to produce a token when satisfied by calling a custom function with all terminals captured from the sequence and providing access to the branch status.
@@ -542,7 +550,7 @@ namespace gtl {
         /// @return A generator that can be used by itself to parse input, or combined with other generators.
         static generator emit(generator requirement, token_terminals_status_function_type token_status_function) {
             return generator::sequence(
-                generator(false, false, [](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                generator(false, false, [](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                     static_cast<void>(input);
                     static_cast<void>(self);
                     static_cast<void>(branch);
@@ -551,7 +559,7 @@ namespace gtl {
                     branch.captured_terminals.push_back({});
                 }),
                 requirement,
-                generator(false, false, [token_status_function](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                generator(false, false, [token_status_function](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                     static_cast<void>(input);
                     static_cast<void>(self);
                     static_cast<void>(forest);
@@ -559,8 +567,7 @@ namespace gtl {
                     branch.captured_tokens.back().push_back(token_status_function(branch.captured_terminals.back(), branch));
                     // Remove the collected captured_terminals from the stack.
                     branch.captured_terminals.pop_back();
-                })
-            );
+                }));
         }
 
         /// Reemit, emit a token dependent on captured tokens with a reqirement.
@@ -570,7 +577,9 @@ namespace gtl {
         /// @param  token_function The function called to emit a token when the requrement has been successfully parsed, all generated tokens are captured and only one token is reemitted.
         /// @return A generator that can be used by itself to parse input, or combined with other generators.
         static generator reemit(generator requirement, token_tokens_function_type token_function) {
-            return generator::reemit(requirement, [token_function](const std::vector<token_type>& tokens, parse_branch_type&){ return token_function(tokens); });
+            return generator::reemit(requirement, [token_function](const std::vector<token_type>& tokens, parse_branch_type&) {
+                return token_function(tokens);
+            });
         }
 
         /// @brief  Reemit generator, used to produce a token when satisfied by calling a custom function with all tokens captured from the sequence and providing access to the branch status.
@@ -579,7 +588,7 @@ namespace gtl {
         /// @return A generator that can be used by itself to parse input, or combined with other generators.
         static generator reemit(generator requirement, token_tokens_status_function_type token_status_function) {
             return generator::sequence(
-                generator(false, false, [](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                generator(false, false, [](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                     static_cast<void>(input);
                     static_cast<void>(self);
                     static_cast<void>(branch);
@@ -588,23 +597,22 @@ namespace gtl {
                     branch.captured_tokens.push_back({});
                 }),
                 requirement,
-                generator(false, false, [token_status_function](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+                generator(false, false, [token_status_function](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                     static_cast<void>(input);
                     static_cast<void>(self);
                     static_cast<void>(forest);
                     // Call the function and store the returned token.
-                    branch.captured_tokens[branch.captured_tokens.size()-2].push_back(token_status_function(branch.captured_tokens.back(), branch));
+                    branch.captured_tokens[branch.captured_tokens.size() - 2].push_back(token_status_function(branch.captured_tokens.back(), branch));
                     // Remove the collected captured_tokens from the stack.
                     branch.captured_tokens.pop_back();
-                })
-            );
+                }));
         }
 
         /// @brief  Reference generator, to call a reference to an already defined generator.
         /// @param  shared A reference to the parser that should be called when this parser is called.
         /// @return A generator that can be used by itself to parse input, or combined with other generators.
         static generator reference(const generator& shared) {
-            return generator(false, false, [&shared](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest)->void{
+            return generator(false, false, [&shared](char input, generator& self, parse_branch_type& branch, parse_forest_type& forest) -> void {
                 static_cast<void>(input);
                 static_cast<void>(self);
                 static_cast<void>(forest);
@@ -689,9 +697,10 @@ namespace gtl {
                 }
 
                 // Remove any failed branches.
-                forest.branches.erase(std::remove_if(forest.branches.begin(), forest.branches.end(), [](parse_branch_type& branch){
-                    return (!branch.error.empty());
-                }), forest.branches.end());
+                forest.branches.erase(std::remove_if(forest.branches.begin(), forest.branches.end(), [](parse_branch_type& branch) {
+                                          return (!branch.error.empty());
+                                      }),
+                                      forest.branches.end());
 
                 // See if we are done.
                 bool all_consumed = true;
@@ -788,9 +797,10 @@ namespace gtl {
                 }
 
                 // Remove any failed branches.
-                forest.branches.erase(std::remove_if(forest.branches.begin(), forest.branches.end(), [](parse_branch_type& branch){
-                    return (!branch.error.empty());
-                }), forest.branches.end());
+                forest.branches.erase(std::remove_if(forest.branches.begin(), forest.branches.end(), [](parse_branch_type& branch) {
+                                          return (!branch.error.empty());
+                                      }),
+                                      forest.branches.end());
 
                 // See if we are done.
                 bool all_finished = true;

@@ -23,12 +23,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace gtl {
     float fast_score(
         const unsigned char* __restrict const data,
-        const int stride
-    );
+        const int stride);
+
     float fast_score(
         const unsigned char* __restrict const data,
-        const int stride
-    ) {
+        const int stride) {
         constexpr static const int patch_size = 7;
         constexpr static const int patch_radius = patch_size / 2;
         constexpr static const int pattern_size = 16;
@@ -46,12 +45,7 @@ namespace gtl {
 
         // The pattern loops from 0 to F and back to 7 so that every pixel can be compared against one 8 ahead of it.
         const int pattern_offset[24] = {
-             patch_radius * stride + 0,  patch_radius * stride + 1, +2 * stride + 2,  patch_radius + stride + 0,
-             patch_radius,               patch_radius - stride + 0, -2 * stride + 2, -patch_radius * stride + 1,
-            -patch_radius * stride + 0, -patch_radius * stride - 1, -2 * stride - 2, -patch_radius - stride + 0,
-            -patch_radius,              -patch_radius + stride + 0, +2 * stride - 2,  patch_radius * stride - 1,
-             patch_radius * stride + 0,  patch_radius * stride + 1, +2 * stride + 2,  patch_radius + stride + 0,
-             patch_radius,               patch_radius - stride + 0, -2 * stride + 2, -patch_radius * stride + 1
+            patch_radius * stride + 0, patch_radius * stride + 1, +2 * stride + 2, patch_radius + stride + 0, patch_radius, patch_radius - stride + 0, -2 * stride + 2, -patch_radius * stride + 1, -patch_radius * stride + 0, -patch_radius * stride - 1, -2 * stride - 2, -patch_radius - stride + 0, -patch_radius, -patch_radius + stride + 0, +2 * stride - 2, patch_radius * stride - 1, patch_radius * stride + 0, patch_radius * stride + 1, +2 * stride + 2, patch_radius + stride + 0, patch_radius, patch_radius - stride + 0, -2 * stride + 2, -patch_radius * stride + 1
         };
 
         // Compute the differences between each pattern pixel and the center pixel.
@@ -60,14 +54,14 @@ namespace gtl {
             pattern_differences[i] = static_cast<int>(data[0]) - static_cast<int>(data[pattern_offset[i]]);
         }
 
-        constexpr static const auto min = [](int lhs, int rhs)->int{
+        constexpr static const auto min = [](int lhs, int rhs) -> int {
             if (lhs < rhs) {
                 return lhs;
             }
             return rhs;
         };
 
-        constexpr static const auto max = [](int lhs, int rhs)->int{
+        constexpr static const auto max = [](int lhs, int rhs) -> int {
             if (lhs > rhs) {
                 return lhs;
             }

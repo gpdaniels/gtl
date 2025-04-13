@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -22,16 +23,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <math/big_integer>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 bool check_power_of_two(gtl::big_integer big_unsigned, bool negative, signed long long int initial_offset, signed long long int exponent, signed long long int final_value);
+
 bool check_power_of_two(gtl::big_integer big_unsigned, bool negative, signed long long int initial_offset, signed long long int exponent, signed long long int final_value) {
     if ((big_unsigned < 0) != negative) {
         return false;
@@ -107,7 +109,6 @@ TEST(big_integer, constructor, value) {
     gtl::big_integer big_integer_sll(value_sll);
     REQUIRE(big_integer_sll == value_sll);
 
-
     gtl::big_integer big_integer_c_negative(value_c_negative);
     REQUIRE(big_integer_c_negative == value_c_negative);
 
@@ -122,7 +123,6 @@ TEST(big_integer, constructor, value) {
 
     gtl::big_integer big_integer_sll_negative(value_sll_negative);
     REQUIRE(big_integer_sll_negative == value_sll_negative);
-
 
     gtl::big_integer big_integer_uc(value_uc);
     REQUIRE(big_integer_uc == value_uc);
@@ -148,7 +148,6 @@ TEST(big_integer, constructor, string) {
     constexpr static const char* two_power_333 = "17498005798264095394980017816940970922825355447145699491406164851279623993595007385788105416184430592";
     gtl::big_integer big_integer_333(two_power_333, testbench::string_length(two_power_333));
     REQUIRE(check_power_of_two(big_integer_333, false, 0, 333, 1));
-
 
     gtl::big_integer big_integer_negative("-123456", 7);
     REQUIRE(big_integer_negative == -123456);
@@ -411,7 +410,7 @@ TEST(big_integer, operator, add) {
     REQUIRE(check_power_of_two(big_integer_333 + 1, false, 1, 333, 1));
     REQUIRE(check_power_of_two(big_integer_333 + 333, false, 333, 333, 1));
 
-    signed long long int lhs_negative= -(1ll << 62);
+    signed long long int lhs_negative = -(1ll << 62);
     signed long long int rhs_negative = -2;
 
     gtl::big_integer big_integer_lhs_negative(lhs_negative);

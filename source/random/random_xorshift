@@ -21,14 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Xorshift pseudo-random number generator.
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the random_xorshift is misused.
-#   define GTL_RANDOM_XORSHIFT_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_RANDOM_XORSHIFT_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_RANDOM_XORSHIFT_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_RANDOM_XORSHIFT_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 namespace gtl {
@@ -104,7 +104,7 @@ namespace gtl {
         /// @param  inclusive_min Minimum number that can be returned.
         /// @param  inclusive_max Max number than can be returned.
         /// @return A pseudo-random number.
-        unsigned int get_random(unsigned int inclusive_min, unsigned int inclusive_max)  {
+        unsigned int get_random(unsigned int inclusive_min, unsigned int inclusive_max) {
             GTL_RANDOM_XORSHIFT_ASSERT(inclusive_min < inclusive_max, "Minimum bound must be lower than maximum bound.");
             return (this->get_random_raw() % (1 + inclusive_max - inclusive_min)) + inclusive_min;
         }

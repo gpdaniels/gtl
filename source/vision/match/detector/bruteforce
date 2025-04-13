@@ -28,18 +28,17 @@ namespace gtl {
     class bruteforce final {
     public:
         template <typename descriptor_type>
-        using score_function_type = float(*)(const descriptor_type&, const descriptor_type&);
+        using score_function_type = float (*)(const descriptor_type&, const descriptor_type&);
 
         template <typename descriptor_type>
-        static size_t find_matches (
+        static size_t find_matches(
             const descriptor_type* lhs_descriptors,
             const size_t lhs_descriptors_size,
             const descriptor_type* rhs_descriptors,
             const size_t rhs_descriptors_size,
             const score_function_type<descriptor_type> score_function,
             match* matches,
-            const size_t matches_size
-        ) {
+            const size_t matches_size) {
             size_t count = 0;
             for (size_t lhs_index = 0; lhs_index < lhs_descriptors_size; ++lhs_index) {
                 if (count >= matches_size) {
@@ -60,7 +59,7 @@ namespace gtl {
         }
 
         template <typename descriptor_type>
-        static size_t find_matches (
+        static size_t find_matches(
             const descriptor_type* lhs_descriptors,
             const size_t lhs_descriptors_size,
             const descriptor_type* rhs_descriptors,
@@ -68,8 +67,7 @@ namespace gtl {
             const score_function_type<descriptor_type> score_function,
             const float threshold,
             match* matches,
-            const size_t matches_size
-        ) {
+            const size_t matches_size) {
             size_t count = 0;
             for (size_t lhs_index = 0; lhs_index < lhs_descriptors_size; ++lhs_index) {
                 if (count >= matches_size) {
@@ -92,7 +90,7 @@ namespace gtl {
         }
 
         template <typename descriptor_type>
-        static size_t find_matches (
+        static size_t find_matches(
             const descriptor_type* lhs_descriptors,
             const size_t lhs_descriptors_size,
             const descriptor_type* rhs_descriptors,
@@ -100,8 +98,7 @@ namespace gtl {
             const score_function_type<descriptor_type> score_function,
             const size_t matches_count,
             match* matches,
-            const size_t matches_size
-        ) {
+            const size_t matches_size) {
             // TODO: Assert matches_count > 0 ?
             size_t count = 0;
             for (size_t lhs_index = 0; lhs_index < lhs_descriptors_size; ++lhs_index) {
@@ -132,7 +129,7 @@ namespace gtl {
         }
 
         template <typename descriptor_type>
-        static size_t find_matches (
+        static size_t find_matches(
             const descriptor_type* lhs_descriptors,
             const size_t lhs_descriptors_size,
             const descriptor_type* rhs_descriptors,
@@ -141,8 +138,7 @@ namespace gtl {
             const float threshold,
             const size_t matches_count,
             match* matches,
-            const size_t matches_size
-        ) {
+            const size_t matches_size) {
             // TODO: Assert matches_count > 0 ?
             size_t count = 0;
             for (size_t lhs_index = 0; lhs_index < lhs_descriptors_size; ++lhs_index) {

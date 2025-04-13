@@ -15,21 +15,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
-#include <testbench/optimise.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
+#include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <random/random_mt>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <cmath>
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(random_mt, traits, standard) {
@@ -85,7 +86,9 @@ TEST(random_mt, function, get_random_raw) {
 }
 
 TEST(random_mt, function, get_random_exclusive) {
-    auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
+    auto round = [](double value) -> double {
+        return std::round(value * 1000000.0) / 1000000.0;
+    };
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
     double random_exclusive = round(random_mt.get_random_exclusive());
@@ -101,7 +104,9 @@ TEST(random_mt, function, get_random_exclusive) {
 }
 
 TEST(random_mt, function, get_random_exclusive_top) {
-    auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
+    auto round = [](double value) -> double {
+        return std::round(value * 1000000.0) / 1000000.0;
+    };
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
     double random_exclusive_top = round(random_mt.get_random_exclusive_top());
@@ -117,7 +122,9 @@ TEST(random_mt, function, get_random_exclusive_top) {
 }
 
 TEST(random_mt, function, get_random_inclusive) {
-    auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
+    auto round = [](double value) -> double {
+        return std::round(value * 1000000.0) / 1000000.0;
+    };
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
     double random_inclusive = round(random_mt.get_random_inclusive());
@@ -148,7 +155,9 @@ TEST(random_mt, function, get_random_bounded_long) {
 }
 
 TEST(random_mt, function, get_random_bounded_double) {
-    auto round = [](double value) -> double { return std::round(value * 1000000.0) / 1000000.0; };
+    auto round = [](double value) -> double {
+        return std::round(value * 1000000.0) / 1000000.0;
+    };
     gtl::random_mt random_mt;
     random_mt.seed(0x01234567);
     double random = round(random_mt.get_random(-1.0, 0.0));

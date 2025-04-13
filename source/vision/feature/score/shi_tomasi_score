@@ -21,24 +21,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Implemetation of feature quality score from the paper "Good Features to Track". IEEE Conference on Computer Vision and Pattern Recognition (1994). [wip]
 
 #if defined(_MSC_VER)
-    #pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <cmath>
 
 #if defined(_MSC_VER)
-    #pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace gtl {
     float shi_tomasi_score(
         const unsigned char* __restrict data,
-        const int stride
-    );
+        const int stride);
+
     float shi_tomasi_score(
         const unsigned char* __restrict data,
-        const int stride
-    ) {
+        const int stride) {
         constexpr static const int patch_size = 7;
         constexpr static const float scale_inverse = 1.0f / static_cast<float>(patch_size * patch_size);
         constexpr static const float scale_inverse_squared = scale_inverse * scale_inverse;
@@ -54,7 +53,7 @@ namespace gtl {
                 const int dx =
                     (data[1] - data[-1]) * 2 +
                     (data[-stride + 1] - data[-stride - 1]) +
-                    (data[ stride + 1] - data[ stride - 1]);
+                    (data[stride + 1] - data[stride - 1]);
                 const int dy =
                     (data[stride] - data[-stride]) * 2 +
                     (data[stride - 1] - data[-stride - 1]) +

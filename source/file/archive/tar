@@ -123,17 +123,28 @@ namespace gtl {
 
             constexpr record_type get_record_type() const {
                 switch (this->record_identifier) {
-                    case 0:   return record_type::file;
-                    case '0': return record_type::file;
-                    case '1': return record_type::hard_link;
-                    case '2': return record_type::symbolic_link;
-                    case '3': return record_type::device_file;
-                    case '4': return record_type::block_device;
-                    case '5': return record_type::directory;
-                    case '6': return record_type::named_pipe;
-                    case 'L': return record_type::long_file_name;
-                    case 'K': return record_type::long_symbolic_link;
-                    default:  return record_type::unknown;
+                    case 0:
+                        return record_type::file;
+                    case '0':
+                        return record_type::file;
+                    case '1':
+                        return record_type::hard_link;
+                    case '2':
+                        return record_type::symbolic_link;
+                    case '3':
+                        return record_type::device_file;
+                    case '4':
+                        return record_type::block_device;
+                    case '5':
+                        return record_type::directory;
+                    case '6':
+                        return record_type::named_pipe;
+                    case 'L':
+                        return record_type::long_file_name;
+                    case 'K':
+                        return record_type::long_symbolic_link;
+                    default:
+                        return record_type::unknown;
                 }
                 return record_type::unknown;
             }
@@ -142,8 +153,8 @@ namespace gtl {
                 constexpr const int alternate_count = 2;
                 constexpr const int length_expected = 6;
                 constexpr const char expected[alternate_count][length_expected] = {
-                    { 'u', 's', 't', 'a', 'r', 0 },
-                    { 'u', 's', 't', 'a', 'r', ' ' }
+                    {'u', 's', 't', 'a', 'r',   0},
+                    {'u', 's', 't', 'a', 'r', ' '}
                 };
                 for (int alternate_index = 0; alternate_index < alternate_count; ++alternate_index) {
                     const char* __restrict string_expected = &expected[alternate_index][0];
@@ -166,8 +177,8 @@ namespace gtl {
                 constexpr const int alternate_count = 2;
                 constexpr const int length_expected = 2;
                 constexpr const char expected[alternate_count][length_expected] = {
-                    { '0', '0' },
-                    { ' ', 0 }
+                    {'0', '0'},
+                    {' ',   0}
                 };
                 for (int alternate_index = 0; alternate_index < alternate_count; ++alternate_index) {
                     const char* __restrict string_expected = &expected[alternate_index][0];
@@ -255,7 +266,7 @@ namespace gtl {
                 // Move to the next block and round to the next block.
                 index = (tar::size_block + index + tar::size_block - 1) & -tar::size_block;
             }
-            for (;index < this->length; ++index) {
+            for (; index < this->length; ++index) {
                 if (this->data[index] != 0) {
                     return false;
                 }

@@ -28,10 +28,10 @@ namespace testbench {
     template <typename type>
     bool is_value_equal(const type& lhs, const type& rhs);
 
-    // Macro for generating test functions.
-    #define TEST_IS_VALUE_EQUAL_FUNCTION(TYPE)                  \
-        template <>                                             \
-        bool is_value_equal(const TYPE& lhs, const TYPE& rhs)   \
+// Macro for generating test functions.
+#define TEST_IS_VALUE_EQUAL_FUNCTION(TYPE) \
+    template <>                            \
+    bool is_value_equal(const TYPE& lhs, const TYPE& rhs)
 
     // Boolean.
     TEST_IS_VALUE_EQUAL_FUNCTION(bool);
@@ -64,7 +64,7 @@ namespace testbench {
     // Pointer type.
     TEST_IS_VALUE_EQUAL_FUNCTION(decltype(nullptr));
 
-    #undef TEST_IS_VALUE_EQUAL_FUNCTION
+#undef TEST_IS_VALUE_EQUAL_FUNCTION
 
     template <typename array_type>
     bool are_values_equal(const array_type& lhs, const array_type& rhs, unsigned long long int length) {
@@ -79,7 +79,7 @@ namespace testbench {
     template <typename type>
     bool is_value_approx(const type& lhs, const type& rhs, const type& epsilon) {
         const type difference = (lhs - rhs) + epsilon + epsilon;
-        return  ((difference >= epsilon) && (difference <= epsilon + epsilon + epsilon));
+        return ((difference >= epsilon) && (difference <= epsilon + epsilon + epsilon));
     }
 
     template <typename array_type, typename epsilon_type>

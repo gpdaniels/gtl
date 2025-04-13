@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "main.tests.hpp"
+
 #include "comparison.tests.hpp"
 #include "debugger.tests.hpp"
 #include "print.tests.hpp"
@@ -23,7 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "sanitizers.tests.hpp"
 
 int main(int argument_count, char* arguments[]) {
-
     // Disable output buffering.
     testbench::disable_output_buffering(testbench::output_stream::output);
     testbench::disable_output_buffering(testbench::output_stream::error);
@@ -98,35 +98,35 @@ int main(int argument_count, char* arguments[]) {
         }
     }
 
-    // Notifiy if any sanitizers are running.
-    #if GTL_HAS_SANITIZER_ADDRESS
-        if (!quiet) {
-            PRINT("Testing under address sanitizer.\n");
-        }
-    #endif
+// Notifiy if any sanitizers are running.
+#if GTL_HAS_SANITIZER_ADDRESS
+    if (!quiet) {
+        PRINT("Testing under address sanitizer.\n");
+    }
+#endif
 
-    #if GTL_HAS_SANITIZER_MEMORY
-        if (!quiet) {
-            PRINT("Testing under memory sanitizer.\n");
-        }
-    #endif
+#if GTL_HAS_SANITIZER_MEMORY
+    if (!quiet) {
+        PRINT("Testing under memory sanitizer.\n");
+    }
+#endif
 
-    #if GTL_HAS_SANITIZER_THREAD
-        if (!quiet) {
-            PRINT("Testing under thread sanitizer.\n");
-        }
-    #endif
+#if GTL_HAS_SANITIZER_THREAD
+    if (!quiet) {
+        PRINT("Testing under thread sanitizer.\n");
+    }
+#endif
 
-    #if GTL_HAS_SANITIZER_UNDEFINED_BEHAVIOR
-        if (!quiet) {
-            PRINT("Testing under undefined behavior sanitizer.\n");
-        }
-    #endif
+#if GTL_HAS_SANITIZER_UNDEFINED_BEHAVIOR
+    if (!quiet) {
+        PRINT("Testing under undefined behavior sanitizer.\n");
+    }
+#endif
 
     if (!quiet) {
         PRINT("Starting tests...\n");
     }
-    
+
     unsigned long long TEST_COUNT = 0;
     unsigned long long TEST_FAILURE_COUNT = 0;
 

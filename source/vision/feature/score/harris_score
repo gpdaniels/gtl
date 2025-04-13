@@ -23,12 +23,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace gtl {
     float harris_score(
         const unsigned char* __restrict data,
-        const int stride
-    );
+        const int stride);
+
     float harris_score(
         const unsigned char* __restrict data,
-        const int stride
-    ) {
+        const int stride) {
         constexpr static const int patch_size = 7;
         constexpr static const float sensitivity = 0.04f;
         constexpr static const float scale_inverse = 1.0f / static_cast<float>(patch_size * patch_size);
@@ -45,7 +44,7 @@ namespace gtl {
                 const int dx =
                     (data[1] - data[-1]) * 2 +
                     (data[-stride + 1] - data[-stride - 1]) +
-                    (data[ stride + 1] - data[ stride - 1]);
+                    (data[stride + 1] - data[stride - 1]);
                 const int dy =
                     (data[stride] - data[-stride]) * 2 +
                     (data[stride - 1] - data[-stride - 1]) +

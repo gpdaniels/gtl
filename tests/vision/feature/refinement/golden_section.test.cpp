@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -22,13 +23,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vision/feature/refinement/golden_section>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #include <vision/image_processing/sub_pixel_patch>
@@ -40,27 +41,27 @@ TEST(golden_section, function, search_2d) {
     constexpr static const unsigned int data_width = 8;
     constexpr static const unsigned int data_height = 8;
     constexpr static const unsigned char data_lhs[data_height][data_width] = {
-        {   0,   0,   0,   0,   0,   0,   0,   0 },
-        {   0, 254, 127,   0,   0,   0,   0,   0 },
-        {   0, 127,  64,   0,   0,   0,   0,   0 },
-        {   0,   0,   0,   0,   0,   0,   0,   0 },
-        {   0,   0,   0,   0,   0,   0,   0,   0 },
-        {   0,   0,   0,   0,   0,   0,   0,   0 },
-        {   0,   0,   0,   0,   0,   0,   0,   0 },
-        {   0,   0,   0,   0,   0,   0,   0,   0 }
+        {0,   0,   0, 0, 0, 0, 0, 0},
+        {0, 254, 127, 0, 0, 0, 0, 0},
+        {0, 127,  64, 0, 0, 0, 0, 0},
+        {0,   0,   0, 0, 0, 0, 0, 0},
+        {0,   0,   0, 0, 0, 0, 0, 0},
+        {0,   0,   0, 0, 0, 0, 0, 0},
+        {0,   0,   0, 0, 0, 0, 0, 0},
+        {0,   0,   0, 0, 0, 0, 0, 0}
     };
     constexpr static const unsigned int start_lhs_x = 1;
     constexpr static const unsigned int start_lhs_y = 1;
 
     constexpr static const unsigned char data_rhs[data_height][data_width] = {
-        {   0,   0,   0,   0,   0,   0,   0,   0 },
-        {   0,   0,   0,   0,   0,   0,   0,   0 },
-        {   0,   0, 254, 254,   0,   0,   0,   0 },
-        {   0,   0, 254, 254,   0,   0,   0,   0 },
-        {   0,   0,   0,   0,   0,   0,   0,   0 },
-        {   0,   0,   0,   0,   0,   0,   0,   0 },
-        {   0,   0,   0,   0,   0,   0,   0,   0 },
-        {   0,   0,   0,   0,   0,   0,   0,   0 }
+        {0, 0,   0,   0, 0, 0, 0, 0},
+        {0, 0,   0,   0, 0, 0, 0, 0},
+        {0, 0, 254, 254, 0, 0, 0, 0},
+        {0, 0, 254, 254, 0, 0, 0, 0},
+        {0, 0,   0,   0, 0, 0, 0, 0},
+        {0, 0,   0,   0, 0, 0, 0, 0},
+        {0, 0,   0,   0, 0, 0, 0, 0},
+        {0, 0,   0,   0, 0, 0, 0, 0}
     };
 
     constexpr static const unsigned int start_rhs_x = 2;
@@ -81,8 +82,7 @@ TEST(golden_section, function, search_2d) {
         &data_rhs[start_rhs_y][start_rhs_x],
         data_width,
         offset_rhs_x,
-        offset_rhs_y
-    );
+        offset_rhs_y);
 
     // The rhs should shift by +0.5 in both x and y.
     // As patch at rhs[2.5][2.5] is equal to the lhs[1][1]
@@ -96,8 +96,7 @@ TEST(golden_section, function, search_2d) {
         &data_rhs[start_rhs_y][start_rhs_x],
         data_width,
         offset_rhs_x,
-        offset_rhs_y
-    );
+        offset_rhs_y);
 
     // The rhs should shift by +0.5 in both x and y.
     // As patch at rhs[2.5][2.5] is equal to the lhs[1][1]
@@ -111,8 +110,7 @@ TEST(golden_section, function, search_2d) {
         &data_rhs[start_rhs_y][start_rhs_x],
         data_width,
         offset_rhs_x,
-        offset_rhs_y
-    );
+        offset_rhs_y);
 
     // The rhs should shift by +0.5 in both x and y.
     // As patch at rhs[2.5][2.5] is equal to the lhs[1][1]

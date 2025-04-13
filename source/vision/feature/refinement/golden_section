@@ -26,38 +26,34 @@ namespace gtl {
         const int stride,
         const float offset_x,
         const float offset_y,
-        float* __restrict patch
-    );
+        float* __restrict patch);
 
     using score_function_type = float (*)(
         const unsigned char* __restrict data_lhs,
         const int stride_lhs,
         const float* __restrict data_rhs,
-        const int stride_rhs
-    );
+        const int stride_rhs);
 
-    template<
+    template <
         unsigned int patch_width = 8,
         unsigned int patch_height = 8,
         sub_pixel_function_type sub_pixel_function,
         score_function_type score_function,
         int tolerance_x_inverse = 100,
-        int tolerance_y_inverse = 100
-    >
+        int tolerance_y_inverse = 100>
     float golden_section_2d(
         const unsigned char* __restrict data_lhs,
         const int stride_lhs,
         const unsigned char* __restrict data_rhs,
         const int stride_rhs,
         float& offset_rhs_x,
-        float& offset_rhs_y
-    ) {
+        float& offset_rhs_y) {
         constexpr static const float tolerance_x = 1.0f / static_cast<float>(tolerance_x_inverse);
         constexpr static const float tolerance_y = 1.0f / static_cast<float>(tolerance_y_inverse);
 
         // Golden ratio.
         constexpr static const float sqrt_5 = 2.2360679775f;
-        constexpr static const float golden_ratio =(sqrt_5 + 1.0f) / 2.0f;
+        constexpr static const float golden_ratio = (sqrt_5 + 1.0f) / 2.0f;
         constexpr static const float golden_ratio_inverse = 1.0f / golden_ratio;
 
         offset_rhs_x = 0.0f;

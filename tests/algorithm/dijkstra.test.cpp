@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/print.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -22,18 +23,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <algorithm/dijkstra>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 #include <vector>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 struct xy {
     int x, y;
+
     bool operator==(const xy& other) const {
         return ((this->x == other.x) && (this->y == other.y));
     }
@@ -43,33 +45,39 @@ struct map {
     constexpr static const int width = 10;
     constexpr static const int height = 10;
     bool grid[height][width] = {
-        { 1, 1, 0, 0, 0, 1, 1, 1, 0, 0 },
-        { 1, 1, 0, 1, 1, 1, 0, 1, 0, 0 },
-        { 0, 1, 0, 1, 0, 0, 0, 1, 0, 0 },
-        { 0, 1, 0, 1, 0, 0, 0, 1, 0, 0 },
-        { 0, 1, 1, 1, 0, 0, 0, 1, 1, 0 },
-        { 0, 1, 1, 1, 0, 0, 0, 1, 1, 1 },
-        { 0, 1, 1, 1, 1, 1, 0, 1, 0, 1 },
-        { 0, 1, 1, 0, 0, 1, 0, 1, 0, 1 },
-        { 0, 1, 1, 0, 0, 1, 1, 1, 0, 1 },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }
+        {1, 1, 0, 0, 0, 1, 1, 1, 0, 0},
+        {1, 1, 0, 1, 1, 1, 0, 1, 0, 0},
+        {0, 1, 0, 1, 0, 0, 0, 1, 0, 0},
+        {0, 1, 0, 1, 0, 0, 0, 1, 0, 0},
+        {0, 1, 1, 1, 0, 0, 0, 1, 1, 0},
+        {0, 1, 1, 1, 0, 0, 0, 1, 1, 1},
+        {0, 1, 1, 1, 1, 1, 0, 1, 0, 1},
+        {0, 1, 1, 0, 0, 1, 0, 1, 0, 1},
+        {0, 1, 1, 0, 0, 1, 1, 1, 0, 1},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
     };
 
-    std::vector<xy> get_moves(const xy& current){
+    std::vector<xy> get_moves(const xy& current) {
         std::vector<xy> result;
         result.reserve(4);
-        result.push_back({current.x - 1, current.y});
-        result.push_back({current.x + 1, current.y});
-        result.push_back({current.x, current.y - 1});
-        result.push_back({current.x, current.y + 1});
-        result.erase(std::remove_if(result.begin(), result.end(), [this](const xy& node){
-            if (node.x < 0) return true;
-            if (node.x >= width) return true;
-            if (node.y < 0) return true;
-            if (node.y >= height) return true;
-            if (this->grid[node.y][node.x] == false) return true;
-            return false;
-        }), result.end());
+        result.push_back({ current.x - 1, current.y });
+        result.push_back({ current.x + 1, current.y });
+        result.push_back({ current.x, current.y - 1 });
+        result.push_back({ current.x, current.y + 1 });
+        result.erase(std::remove_if(result.begin(), result.end(), [this](const xy& node) {
+                         if (node.x < 0)
+                             return true;
+                         if (node.x >= width)
+                             return true;
+                         if (node.y < 0)
+                             return true;
+                         if (node.y >= height)
+                             return true;
+                         if (this->grid[node.y][node.x] == false)
+                             return true;
+                         return false;
+                     }),
+                     result.end());
         return result;
     }
 
@@ -84,11 +92,23 @@ struct map {
             for (int x = 0; x < width; ++x) {
                 bool on_start = (x == start.x) && (y == start.y);
                 bool on_end = (x == end.x) && (y == end.y);
-                bool on_path = (std::find(path.begin(), path.end(), xy{x, y}) != path.end());
-                if (on_start) { PRINT("S"); continue; }
-                if (on_end) { PRINT("E"); continue; }
-                if (on_path) { PRINT("o"); continue; }
-                if (this->grid[y][x]) { PRINT(" "); continue; }
+                bool on_path = (std::find(path.begin(), path.end(), xy{ x, y }) != path.end());
+                if (on_start) {
+                    PRINT("S");
+                    continue;
+                }
+                if (on_end) {
+                    PRINT("E");
+                    continue;
+                }
+                if (on_path) {
+                    PRINT("o");
+                    continue;
+                }
+                if (this->grid[y][x]) {
+                    PRINT(" ");
+                    continue;
+                }
                 PRINT("X");
             }
             PRINT("#\n");
@@ -103,9 +123,8 @@ struct map {
 };
 
 TEST(dijkstra, evaluate, solve) {
-
-    xy start = {0, 0};
-    xy end = {9, 9};
+    xy start = { 0, 0 };
+    xy end = { 9, 9 };
     std::vector<xy> path;
     map maze;
 
@@ -114,11 +133,10 @@ TEST(dijkstra, evaluate, solve) {
     gtl::dijkstra<xy>::solve(
         start,
         end,
-        [&maze](const xy& current)->std::vector<xy>{
+        [&maze](const xy& current) -> std::vector<xy> {
             return maze.get_moves(current);
         },
-        path
-    );
+        path);
 
     maze.print(start, end, path);
 }

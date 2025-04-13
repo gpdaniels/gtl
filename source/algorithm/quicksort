@@ -26,18 +26,22 @@ namespace gtl {
     public:
         /// @brief  The default comparitor type, takes two values and returns true or false.
         /// @tparam type The type of the values to compare.
-        template<typename type>
-        using default_comparitor_type = bool(*)(const type& lhs, const type& rhs);
+        template <typename type>
+        using default_comparitor_type = bool (*)(const type& lhs, const type& rhs);
 
         /// @brief  A comparitor that will sort values into ascending order.
         // /// @tparam type The type of the values to compare.
-        template<typename type>
-        constexpr static const default_comparitor_type<type> comparitor_ascending = [](const type& lhs, const type& rhs){ return lhs < rhs; };
+        template <typename type>
+        constexpr static const default_comparitor_type<type> comparitor_ascending = [](const type& lhs, const type& rhs) {
+            return lhs < rhs;
+        };
 
         /// @brief  A comparitor that will sort values into descending order.
         // /// @tparam type The type of the values to compare.
-        template<typename type>
-        constexpr static const default_comparitor_type<type> comparitor_descending = [](const type& lhs, const type& rhs){ return lhs > rhs; };
+        template <typename type>
+        constexpr static const default_comparitor_type<type> comparitor_descending = [](const type& lhs, const type& rhs) {
+            return lhs > rhs;
+        };
 
     private:
         /// @brief  Deleted constructor.
@@ -61,7 +65,7 @@ namespace gtl {
         /// @param  values The array of values to sort in place.
         /// @param  size The size of the array of values.
         /// @param  comparitor The comparitor function used to determine the order.
-        template<typename type, typename comparitor_type = default_comparitor_type<type>>
+        template <typename type, typename comparitor_type = default_comparitor_type<type>>
         static void sort(type* values, const unsigned long long int size, const comparitor_type comparitor = quicksort::comparitor_ascending<type>) {
             // Can only sort if there are more than two values.
             if (size < 2) {
@@ -100,7 +104,7 @@ namespace gtl {
         /// @param  size The size of the array of values.
         /// @param  length_sorted The number of elements to sort.
         /// @param  comparitor The comparitor function used to determine the order.
-        template<typename type, typename comparitor_type = default_comparitor_type<type>>
+        template <typename type, typename comparitor_type = default_comparitor_type<type>>
         static void sort_partial(type* values, const unsigned long long int size, const unsigned long long int length_sorted, const comparitor_type comparitor = quicksort::comparitor_ascending<type>) {
             // Can only sort if there are more than two values.
             if (size < 2) {

@@ -30,8 +30,8 @@ namespace gtl {
         const int stride,
         const int threshold,
         const int feature_point_buffer_size,
-        gtl::feature* __restrict feature_point_buffer
-    );
+        gtl::feature* __restrict feature_point_buffer);
+
     int fast(
         const unsigned char* __restrict const data,
         const int width,
@@ -39,8 +39,7 @@ namespace gtl {
         const int stride,
         const int threshold,
         const int feature_point_buffer_size,
-        gtl::feature* __restrict feature_point_buffer
-    ) {
+        gtl::feature* __restrict feature_point_buffer) {
         constexpr static const int patch_size = 7;
         constexpr static const int patch_radius = 3;
         constexpr static const int pattern_size = 16;
@@ -60,12 +59,7 @@ namespace gtl {
 
         // The pattern loops from 0 to F and back to 7 so that every pixel can be compared against one 8 ahead of it.
         const int pattern_offset[24] = {
-             patch_radius * stride + 0,  patch_radius * stride + 1, +2 * stride + 2,  patch_radius + stride + 0,
-             patch_radius,               patch_radius - stride + 0, -2 * stride + 2, -patch_radius * stride + 1,
-            -patch_radius * stride + 0, -patch_radius * stride - 1, -2 * stride - 2, -patch_radius - stride + 0,
-            -patch_radius,              -patch_radius + stride + 0, +2 * stride - 2,  patch_radius * stride - 1,
-             patch_radius * stride + 0,  patch_radius * stride + 1, +2 * stride + 2,  patch_radius + stride + 0,
-             patch_radius,               patch_radius - stride + 0, -2 * stride + 2, -patch_radius * stride + 1
+            patch_radius * stride + 0, patch_radius * stride + 1, +2 * stride + 2, patch_radius + stride + 0, patch_radius, patch_radius - stride + 0, -2 * stride + 2, -patch_radius * stride + 1, -patch_radius * stride + 0, -patch_radius * stride - 1, -2 * stride - 2, -patch_radius - stride + 0, -patch_radius, -patch_radius + stride + 0, +2 * stride - 2, patch_radius * stride - 1, patch_radius * stride + 0, patch_radius * stride + 1, +2 * stride + 2, patch_radius + stride + 0, patch_radius, patch_radius - stride + 0, -2 * stride + 2, -patch_radius * stride + 1
         };
 
         // A threshold lookup table for pixel intensities.
@@ -79,7 +73,6 @@ namespace gtl {
 
         // Process the entire data buffer, keeping half the patch size from every edge.
         for (int y = patch_radius; y < height - patch_radius; ++y) {
-
             const unsigned char* data_pointer = data + y * stride + patch_radius;
 
             for (int x = patch_radius; x < width - patch_radius; ++x, ++data_pointer) {

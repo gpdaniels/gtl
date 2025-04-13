@@ -22,7 +22,7 @@ namespace testbench {
     // Define the test_node type, used to create a linked list of tests at program startup.
     class test_node final {
     public:
-        using function_type = void(*)();
+        using function_type = void (*)();
 
     public:
         static inline test_node* root = nullptr;

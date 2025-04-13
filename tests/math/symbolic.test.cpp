@@ -15,20 +15,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
-#include <testbench/optimise.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
+#include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <math/symbolic>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(symbolic, types, inputs) {
@@ -44,12 +45,12 @@ TEST(symbolic, types, inputs) {
 TEST(symbolic, types, basic_operations) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation_plus_op       = gtl::symbolic::plus_op<decltype(parameter)>{};
-    auto equation_minus_op      = gtl::symbolic::minus_op<decltype(parameter)>{};
-    auto equation_add_op        = gtl::symbolic::add_op<decltype(parameter), decltype(parameter)>{};
-    auto equation_subtract_op   = gtl::symbolic::subtract_op<decltype(parameter), decltype(parameter)>{};
-    auto equation_multiply_op   = gtl::symbolic::multiply_op<decltype(parameter), decltype(parameter)>{};
-    auto equation_divide_op     = gtl::symbolic::divide_op<decltype(parameter), decltype(parameter)>{};
+    auto equation_plus_op = gtl::symbolic::plus_op<decltype(parameter)>{};
+    auto equation_minus_op = gtl::symbolic::minus_op<decltype(parameter)>{};
+    auto equation_add_op = gtl::symbolic::add_op<decltype(parameter), decltype(parameter)>{};
+    auto equation_subtract_op = gtl::symbolic::subtract_op<decltype(parameter), decltype(parameter)>{};
+    auto equation_multiply_op = gtl::symbolic::multiply_op<decltype(parameter), decltype(parameter)>{};
+    auto equation_divide_op = gtl::symbolic::divide_op<decltype(parameter), decltype(parameter)>{};
 
     testbench::do_not_optimise_away(equation_plus_op);
     testbench::do_not_optimise_away(equation_minus_op);
@@ -62,12 +63,12 @@ TEST(symbolic, types, basic_operations) {
 TEST(symbolic, types, basic_operation_overloads) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation_plus_symbol       = +parameter;
-    auto equation_minus_symbol      = -parameter;
-    auto equation_add_symbol        = parameter + parameter;
-    auto equation_subtract_symbol   = parameter - parameter;
-    auto equation_multiply_symbol   = parameter * parameter;
-    auto equation_divide_symbol     = parameter / parameter;
+    auto equation_plus_symbol = +parameter;
+    auto equation_minus_symbol = -parameter;
+    auto equation_add_symbol = parameter + parameter;
+    auto equation_subtract_symbol = parameter - parameter;
+    auto equation_multiply_symbol = parameter * parameter;
+    auto equation_divide_symbol = parameter / parameter;
 
     testbench::do_not_optimise_away(equation_plus_symbol);
     testbench::do_not_optimise_away(equation_minus_symbol);
@@ -80,33 +81,33 @@ TEST(symbolic, types, basic_operation_overloads) {
 TEST(symbolic, types, math_operations) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation_sign  = sign(parameter);
-    auto equation_abs   = abs(parameter);
-    auto equation_ceil  = ceil(parameter);
+    auto equation_sign = sign(parameter);
+    auto equation_abs = abs(parameter);
+    auto equation_ceil = ceil(parameter);
     auto equation_floor = floor(parameter);
-    auto equation_exp   = exp(parameter);
-    auto equation_log   = log(parameter);
-    auto equation_exp2  = exp2(parameter);
-    auto equation_log2  = log2(parameter);
-    auto equation_sin   = sin(parameter);
-    auto equation_asin  = asin(parameter);
-    auto equation_cos   = cos(parameter);
-    auto equation_acos  = acos(parameter);
-    auto equation_tan   = tan(parameter);
-    auto equation_atan  = atan(parameter);
-    auto equation_sinh  = sinh(parameter);
+    auto equation_exp = exp(parameter);
+    auto equation_log = log(parameter);
+    auto equation_exp2 = exp2(parameter);
+    auto equation_log2 = log2(parameter);
+    auto equation_sin = sin(parameter);
+    auto equation_asin = asin(parameter);
+    auto equation_cos = cos(parameter);
+    auto equation_acos = acos(parameter);
+    auto equation_tan = tan(parameter);
+    auto equation_atan = atan(parameter);
+    auto equation_sinh = sinh(parameter);
     auto equation_asinh = asinh(parameter);
-    auto equation_cosh  = cosh(parameter);
+    auto equation_cosh = cosh(parameter);
     auto equation_acosh = acosh(parameter);
-    auto equation_tanh  = tanh(parameter);
+    auto equation_tanh = tanh(parameter);
     auto equation_atanh = atanh(parameter);
-    auto equation_sqrt  = sqrt(parameter);
-    auto equation_cbrt  = cbrt(parameter);
-    auto equation_min   = min(parameter, parameter);
-    auto equation_max   = max(parameter, parameter);
+    auto equation_sqrt = sqrt(parameter);
+    auto equation_cbrt = cbrt(parameter);
+    auto equation_min = min(parameter, parameter);
+    auto equation_max = max(parameter, parameter);
     auto equation_hypot = hypot(parameter, parameter);
     auto equation_atan2 = atan2(parameter, parameter);
-    auto equation_pow   = pow(parameter, parameter);
+    auto equation_pow = pow(parameter, parameter);
 
     testbench::do_not_optimise_away(equation_sign);
     testbench::do_not_optimise_away(equation_abs);
@@ -156,12 +157,12 @@ TEST(symbolic, solve, inputs) {
 TEST(symbolic, solve, basic_operations) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation_plus_op       = gtl::symbolic::plus_op<decltype(parameter)>{};
-    auto equation_minus_op      = gtl::symbolic::minus_op<decltype(parameter)>{};
-    auto equation_add_op        = gtl::symbolic::add_op<decltype(parameter), decltype(parameter)>{};
-    auto equation_subtract_op   = gtl::symbolic::subtract_op<decltype(parameter), decltype(parameter)>{};
-    auto equation_multiply_op   = gtl::symbolic::multiply_op<decltype(parameter), decltype(parameter)>{};
-    auto equation_divide_op     = gtl::symbolic::divide_op<decltype(parameter), decltype(parameter)>{};
+    auto equation_plus_op = gtl::symbolic::plus_op<decltype(parameter)>{};
+    auto equation_minus_op = gtl::symbolic::minus_op<decltype(parameter)>{};
+    auto equation_add_op = gtl::symbolic::add_op<decltype(parameter), decltype(parameter)>{};
+    auto equation_subtract_op = gtl::symbolic::subtract_op<decltype(parameter), decltype(parameter)>{};
+    auto equation_multiply_op = gtl::symbolic::multiply_op<decltype(parameter), decltype(parameter)>{};
+    auto equation_divide_op = gtl::symbolic::divide_op<decltype(parameter), decltype(parameter)>{};
 
     REQUIRE(equation_plus_op.solve<int>(123) == (+123));
     REQUIRE(equation_minus_op.solve<int>(123) == (-123));
@@ -488,7 +489,6 @@ TEST(symbolic, solve, math_operation_pow) {
 ///////////////////////////////////////////////////////////////////////////////
 
 TEST(symbolic, simplify, remove_plus_on_zero) {
-
     auto equation = +gtl::symbolic::zero{};
     auto simplified = gtl::symbolic::simplify_fully(equation);
     auto result = gtl::symbolic::zero{};
@@ -497,7 +497,6 @@ TEST(symbolic, simplify, remove_plus_on_zero) {
 }
 
 TEST(symbolic, simplify, remove_minus_on_zero) {
-
     auto equation = -gtl::symbolic::zero{};
     auto simplified = gtl::symbolic::simplify_fully(equation);
     auto result = gtl::symbolic::zero{};
@@ -580,203 +579,203 @@ TEST(symbolic, simplify, constants_abs) {
 }
 
 TEST(symbolic, simplify, constants_ceil) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = ceil(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = ceil(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_floor) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = floor(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = floor(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_exp) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = exp(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = exp(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_log) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = log(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = log(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_exp2) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = exp2(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = exp2(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_log2) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = log2(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = log2(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_sin) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = sin(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = sin(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_asin) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = asin(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = asin(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_cos) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = cos(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = cos(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_acos) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = acos(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = acos(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_tan) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = tan(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = tan(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_atan) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = atan(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = atan(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_sinh) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = sinh(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = sinh(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_asinh) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = asinh(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = asinh(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_cosh) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = cosh(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = cosh(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_acosh) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = acosh(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = acosh(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_tanh) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = tanh(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = tanh(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_atanh) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = atanh(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = atanh(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_sqrt) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = sqrt(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = sqrt(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_cbrt) {
-    //gtl::symbolic::constant<???> constant;
+    // gtl::symbolic::constant<???> constant;
 
-    //auto equation = cbrt(constant);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = cbrt(constant);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_min) {
@@ -802,36 +801,36 @@ TEST(symbolic, simplify, constants_max) {
 }
 
 TEST(symbolic, simplify, constants_hypot) {
-    //gtl::symbolic::constant<???> constant0;
-    //gtl::symbolic::constant<???> constant1;
+    // gtl::symbolic::constant<???> constant0;
+    // gtl::symbolic::constant<???> constant1;
 
-    //auto equation = hypot(constant0, constant1);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = hypot(constant0, constant1);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_atan2) {
-    //gtl::symbolic::constant<???> constant0;
-    //gtl::symbolic::constant<???> constant1;
+    // gtl::symbolic::constant<???> constant0;
+    // gtl::symbolic::constant<???> constant1;
 
-    //auto equation = atan2(constant0, constant1);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = atan2(constant0, constant1);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, constants_pow) {
-    //gtl::symbolic::constant<???> constant0;
-    //gtl::symbolic::constant<???> constant1;
+    // gtl::symbolic::constant<???> constant0;
+    // gtl::symbolic::constant<???> constant1;
 
-    //auto equation = pow(constant0, constant1);
-    //auto simplified = gtl::symbolic::simplify_fully(equation);
-    //auto result = gtl::symbolic::constant<???>{};
+    // auto equation = pow(constant0, constant1);
+    // auto simplified = gtl::symbolic::simplify_fully(equation);
+    // auto result = gtl::symbolic::constant<???>{};
 
-    //REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
+    // REQUIRE((gtl::symbolic::is_same_type<decltype(simplified), decltype(result)>));
 }
 
 TEST(symbolic, simplify, remove_zeros_add) {
@@ -881,13 +880,11 @@ TEST(symbolic, simplify, remove_zeros_divide) {
 ///////////////////////////////////////////////////////////////////////////////
 
 template <
-    typename equation_type
->
+    typename equation_type>
 inline double numerical_derivative(
     equation_type equation,
     double value,
-    double delta = 1e-8
-) {
+    double delta = 1e-8) {
     const double measurment_origin = equation.template solve<double>(value - 0.5 * delta, 0);
     const double measurment_offset = equation.template solve<double>(value + 0.5 * delta, 0);
     return (measurment_offset - measurment_origin) / delta;
@@ -915,39 +912,39 @@ TEST(symbolic, derive, inputs) {
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived_constant), decltype(result_constant)>));
 
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation_parameter, -1.0), derived_parameter.solve<double>(-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_variable,  -1.0), derived_variable.solve<double> (-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_constant,  -1.0), derived_constant.solve<double> (-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_parameter,  0.0), derived_parameter.solve<double>( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_variable,   0.0), derived_variable.solve<double> ( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_constant,   0.0), derived_constant.solve<double> ( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_parameter,  1.0), derived_parameter.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_variable,   1.0), derived_variable.solve<double> ( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_constant,   1.0), derived_constant.solve<double> ( 1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_variable, -1.0), derived_variable.solve<double>(-1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_constant, -1.0), derived_constant.solve<double>(-1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_parameter, 0.0), derived_parameter.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_variable, 0.0), derived_variable.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_constant, 0.0), derived_constant.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_parameter, 1.0), derived_parameter.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_variable, 1.0), derived_variable.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_constant, 1.0), derived_constant.solve<double>(1.0), 1e-5));
 }
 
 TEST(symbolic, derive, basic_operations) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation_plus_op       = gtl::symbolic::plus_op<decltype(parameter)>{};
-    auto equation_minus_op      = gtl::symbolic::minus_op<decltype(parameter)>{};
-    auto equation_add_op        = gtl::symbolic::add_op<decltype(parameter), decltype(parameter)>{};
-    auto equation_subtract_op   = gtl::symbolic::subtract_op<decltype(parameter), decltype(parameter)>{};
-    auto equation_multiply_op   = gtl::symbolic::multiply_op<decltype(parameter), decltype(parameter)>{};
-    auto equation_divide_op     = gtl::symbolic::divide_op<decltype(parameter), decltype(parameter)>{};
+    auto equation_plus_op = gtl::symbolic::plus_op<decltype(parameter)>{};
+    auto equation_minus_op = gtl::symbolic::minus_op<decltype(parameter)>{};
+    auto equation_add_op = gtl::symbolic::add_op<decltype(parameter), decltype(parameter)>{};
+    auto equation_subtract_op = gtl::symbolic::subtract_op<decltype(parameter), decltype(parameter)>{};
+    auto equation_multiply_op = gtl::symbolic::multiply_op<decltype(parameter), decltype(parameter)>{};
+    auto equation_divide_op = gtl::symbolic::divide_op<decltype(parameter), decltype(parameter)>{};
 
-    auto derived_plus_op       = gtl::symbolic::derive_to_depth<0, 0>(equation_plus_op);
-    auto derived_minus_op      = gtl::symbolic::derive_to_depth<0, 0>(equation_minus_op);
-    auto derived_add_op        = gtl::symbolic::derive_to_depth<0, 0>(equation_add_op);
-    auto derived_subtract_op   = gtl::symbolic::derive_to_depth<0, 0>(equation_subtract_op);
-    auto derived_multiply_op   = gtl::symbolic::derive_to_depth<0, 0>(equation_multiply_op);
-    auto derived_divide_op     = gtl::symbolic::derive_to_depth<0, 0>(equation_divide_op);
+    auto derived_plus_op = gtl::symbolic::derive_to_depth<0, 0>(equation_plus_op);
+    auto derived_minus_op = gtl::symbolic::derive_to_depth<0, 0>(equation_minus_op);
+    auto derived_add_op = gtl::symbolic::derive_to_depth<0, 0>(equation_add_op);
+    auto derived_subtract_op = gtl::symbolic::derive_to_depth<0, 0>(equation_subtract_op);
+    auto derived_multiply_op = gtl::symbolic::derive_to_depth<0, 0>(equation_multiply_op);
+    auto derived_divide_op = gtl::symbolic::derive_to_depth<0, 0>(equation_divide_op);
 
-    auto result_plus_op       = gtl::symbolic::one{};
-    auto result_minus_op      = gtl::symbolic::minus_one{};
-    auto result_add_op        = gtl::symbolic::two{};
-    auto result_subtract_op   = gtl::symbolic::zero{};
-    auto result_multiply_op   = gtl::symbolic::two{} * parameter;
-    auto result_divide_op     = gtl::symbolic::zero{};
+    auto result_plus_op = gtl::symbolic::one{};
+    auto result_minus_op = gtl::symbolic::minus_one{};
+    auto result_add_op = gtl::symbolic::two{};
+    auto result_subtract_op = gtl::symbolic::zero{};
+    auto result_multiply_op = gtl::symbolic::two{} * parameter;
+    auto result_divide_op = gtl::symbolic::zero{};
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived_plus_op), decltype(result_plus_op)>));
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived_minus_op), decltype(result_minus_op)>));
@@ -956,51 +953,51 @@ TEST(symbolic, derive, basic_operations) {
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived_multiply_op), decltype(result_multiply_op)>));
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived_divide_op), decltype(result_divide_op)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_plus_op,       -1.0), derived_plus_op.solve<double>        (-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_minus_op,      -1.0), derived_minus_op.solve<double>       (-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_add_op,        -1.0), derived_add_op.solve<double>         (-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_subtract_op,   -1.0), derived_subtract_op.solve<double>    (-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_multiply_op,   -1.0), derived_multiply_op.solve<double>    (-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_divide_op,     -1.0), derived_divide_op.solve<double>      (-1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_plus_op, -1.0), derived_plus_op.solve<double>(-1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_minus_op, -1.0), derived_minus_op.solve<double>(-1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_add_op, -1.0), derived_add_op.solve<double>(-1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_subtract_op, -1.0), derived_subtract_op.solve<double>(-1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_multiply_op, -1.0), derived_multiply_op.solve<double>(-1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_divide_op, -1.0), derived_divide_op.solve<double>(-1.0), 1e-5));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_plus_op,        0.0), derived_plus_op.solve<double>        ( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_minus_op,       0.0), derived_minus_op.solve<double>       ( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_add_op,         0.0), derived_add_op.solve<double>         ( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_subtract_op,    0.0), derived_subtract_op.solve<double>    ( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_multiply_op,    0.0), derived_multiply_op.solve<double>    ( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_divide_op,      0.0), derived_divide_op.solve<double>      ( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_plus_op, 0.0), derived_plus_op.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_minus_op, 0.0), derived_minus_op.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_add_op, 0.0), derived_add_op.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_subtract_op, 0.0), derived_subtract_op.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_multiply_op, 0.0), derived_multiply_op.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_divide_op, 0.0), derived_divide_op.solve<double>(0.0), 1e-5));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_plus_op,        1.0), derived_plus_op.solve<double>        ( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_minus_op,       1.0), derived_minus_op.solve<double>       ( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_add_op,         1.0), derived_add_op.solve<double>         ( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_subtract_op,    1.0), derived_subtract_op.solve<double>    ( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_multiply_op,    1.0), derived_multiply_op.solve<double>    ( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_divide_op,      1.0), derived_divide_op.solve<double>      ( 1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_plus_op, 1.0), derived_plus_op.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_minus_op, 1.0), derived_minus_op.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_add_op, 1.0), derived_add_op.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_subtract_op, 1.0), derived_subtract_op.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_multiply_op, 1.0), derived_multiply_op.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_divide_op, 1.0), derived_divide_op.solve<double>(1.0), 1e-5));
 }
 
 TEST(symbolic, derive, basic_operation_overloads) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation_plus_op       = +parameter;
-    auto equation_minus_op      = -parameter;
-    auto equation_add_op        = parameter + parameter;
-    auto equation_subtract_op   = parameter - parameter;
-    auto equation_multiply_op   = parameter * parameter;
-    auto equation_divide_op     = parameter / parameter;
+    auto equation_plus_op = +parameter;
+    auto equation_minus_op = -parameter;
+    auto equation_add_op = parameter + parameter;
+    auto equation_subtract_op = parameter - parameter;
+    auto equation_multiply_op = parameter * parameter;
+    auto equation_divide_op = parameter / parameter;
 
-    auto derived_plus_op       = gtl::symbolic::derive_to_depth<0, 0>(equation_plus_op);
-    auto derived_minus_op      = gtl::symbolic::derive_to_depth<0, 0>(equation_minus_op);
-    auto derived_add_op        = gtl::symbolic::derive_to_depth<0, 0>(equation_add_op);
-    auto derived_subtract_op   = gtl::symbolic::derive_to_depth<0, 0>(equation_subtract_op);
-    auto derived_multiply_op   = gtl::symbolic::derive_to_depth<0, 0>(equation_multiply_op);
-    auto derived_divide_op     = gtl::symbolic::derive_to_depth<0, 0>(equation_divide_op);
+    auto derived_plus_op = gtl::symbolic::derive_to_depth<0, 0>(equation_plus_op);
+    auto derived_minus_op = gtl::symbolic::derive_to_depth<0, 0>(equation_minus_op);
+    auto derived_add_op = gtl::symbolic::derive_to_depth<0, 0>(equation_add_op);
+    auto derived_subtract_op = gtl::symbolic::derive_to_depth<0, 0>(equation_subtract_op);
+    auto derived_multiply_op = gtl::symbolic::derive_to_depth<0, 0>(equation_multiply_op);
+    auto derived_divide_op = gtl::symbolic::derive_to_depth<0, 0>(equation_divide_op);
 
-    auto result_plus_op       = gtl::symbolic::one{};
-    auto result_minus_op      = gtl::symbolic::minus_one{};
-    auto result_add_op        = gtl::symbolic::two{};
-    auto result_subtract_op   = gtl::symbolic::zero{};
-    auto result_multiply_op   = gtl::symbolic::two{} * parameter;
-    auto result_divide_op     = gtl::symbolic::zero{};
+    auto result_plus_op = gtl::symbolic::one{};
+    auto result_minus_op = gtl::symbolic::minus_one{};
+    auto result_add_op = gtl::symbolic::two{};
+    auto result_subtract_op = gtl::symbolic::zero{};
+    auto result_multiply_op = gtl::symbolic::two{} * parameter;
+    auto result_divide_op = gtl::symbolic::zero{};
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived_plus_op), decltype(result_plus_op)>));
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived_minus_op), decltype(result_minus_op)>));
@@ -1009,109 +1006,109 @@ TEST(symbolic, derive, basic_operation_overloads) {
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived_multiply_op), decltype(result_multiply_op)>));
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived_divide_op), decltype(result_divide_op)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_plus_op,       -1.0), derived_plus_op.solve<double>        (-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_minus_op,      -1.0), derived_minus_op.solve<double>       (-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_add_op,        -1.0), derived_add_op.solve<double>         (-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_subtract_op,   -1.0), derived_subtract_op.solve<double>    (-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_multiply_op,   -1.0), derived_multiply_op .solve<double>   (-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_divide_op,     -1.0), derived_divide_op.solve<double>      (-1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_plus_op, -1.0), derived_plus_op.solve<double>(-1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_minus_op, -1.0), derived_minus_op.solve<double>(-1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_add_op, -1.0), derived_add_op.solve<double>(-1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_subtract_op, -1.0), derived_subtract_op.solve<double>(-1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_multiply_op, -1.0), derived_multiply_op.solve<double>(-1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_divide_op, -1.0), derived_divide_op.solve<double>(-1.0), 1e-5));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_plus_op,        0.0), derived_plus_op.solve<double>        ( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_minus_op,       0.0), derived_minus_op.solve<double>       ( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_add_op,         0.0), derived_add_op.solve<double>         ( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_subtract_op,    0.0), derived_subtract_op.solve<double>    ( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_multiply_op,    0.0), derived_multiply_op .solve<double>   ( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_divide_op,      0.0), derived_divide_op.solve<double>      ( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_plus_op, 0.0), derived_plus_op.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_minus_op, 0.0), derived_minus_op.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_add_op, 0.0), derived_add_op.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_subtract_op, 0.0), derived_subtract_op.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_multiply_op, 0.0), derived_multiply_op.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_divide_op, 0.0), derived_divide_op.solve<double>(0.0), 1e-5));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_plus_op,        1.0), derived_plus_op.solve<double>        ( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_minus_op,       1.0), derived_minus_op.solve<double>       ( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_add_op,         1.0), derived_add_op.solve<double>         ( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_subtract_op,    1.0), derived_subtract_op.solve<double>    ( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_multiply_op,    1.0), derived_multiply_op .solve<double>   ( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_divide_op,      1.0), derived_divide_op.solve<double>      ( 1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_plus_op, 1.0), derived_plus_op.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_minus_op, 1.0), derived_minus_op.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_add_op, 1.0), derived_add_op.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_subtract_op, 1.0), derived_subtract_op.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_multiply_op, 1.0), derived_multiply_op.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation_divide_op, 1.0), derived_divide_op.solve<double>(1.0), 1e-5));
 }
 
 TEST(symbolic, derive, math_operation_sign) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = sign(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::zero{};
+    auto equation = sign(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::zero{};
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.0), derived.solve<double>(-1.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.1), derived.solve<double>(-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.1), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.1), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
 }
 
 TEST(symbolic, derive, math_operation_abs) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = abs(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::sign_op<decltype(parameter)>{};
+    auto equation = abs(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::sign_op<decltype(parameter)>{};
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.0), derived.solve<double>(-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
 }
 
 TEST(symbolic, derive, math_operation_ceil) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = ceil(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::zero{};
+    auto equation = ceil(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::zero{};
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.5), derived.solve<double>(-1.5), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.1), derived.solve<double>(-0.1), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.1), derived.solve<double>( 0.1), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.5), derived.solve<double>( 1.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.1), derived.solve<double>(0.1), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.5), derived.solve<double>(1.5), 1e-5));
 }
 
 TEST(symbolic, derive, math_operation_floor) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = floor(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::zero{};
+    auto equation = floor(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::zero{};
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.5), derived.solve<double>(-1.5), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.1), derived.solve<double>(-0.1), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.1), derived.solve<double>( 0.1), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.5), derived.solve<double>( 1.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.1), derived.solve<double>(0.1), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.5), derived.solve<double>(1.5), 1e-5));
 }
 
 TEST(symbolic, derive, math_operation_exp) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = exp(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = exp(parameter);
+    auto equation = exp(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = exp(parameter);
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -2.0), derived.solve<double>(-2.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.0), derived.solve<double>(-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  2.0), derived.solve<double>( 2.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 2.0), derived.solve<double>(2.0), 1e-5));
 }
 
 TEST(symbolic, derive, math_operation_log) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = log(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::one{} / parameter;
+    auto equation = log(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::one{} / parameter;
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
@@ -1123,25 +1120,25 @@ TEST(symbolic, derive, math_operation_log) {
 TEST(symbolic, derive, math_operation_exp2) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = exp2(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = log(gtl::symbolic::two{}) * exp2(parameter);
+    auto equation = exp2(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = log(gtl::symbolic::two{}) * exp2(parameter);
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -2.0), derived.solve<double>(-2.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.0), derived.solve<double>(-1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  2.0), derived.solve<double>( 2.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 2.0), derived.solve<double>(2.0), 1e-5));
 }
 
 TEST(symbolic, derive, math_operation_log2) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = log2(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::one{} / (log(gtl::symbolic::two{}) * parameter);
+    auto equation = log2(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::one{} / (log(gtl::symbolic::two{}) * parameter);
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
@@ -1153,15 +1150,15 @@ TEST(symbolic, derive, math_operation_log2) {
 TEST(symbolic, derive, math_operation_sin) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = sin(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = cos(parameter);
+    auto equation = sin(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = cos(parameter);
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  5.0), derived.solve<double>( 5.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 5.0), derived.solve<double>(5.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.0), derived.solve<double>(-1.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -5.0), derived.solve<double>(-5.0), 1e-5));
 }
@@ -1169,15 +1166,15 @@ TEST(symbolic, derive, math_operation_sin) {
 TEST(symbolic, derive, math_operation_asin) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = asin(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::one{} / sqrt(gtl::symbolic::one{} - pow(parameter, gtl::symbolic::two{}));
+    auto equation = asin(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::one{} / sqrt(gtl::symbolic::one{} - pow(parameter, gtl::symbolic::two{}));
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.5), derived.solve<double>(-0.5), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.9), derived.solve<double>(-0.9), 1e-5));
 }
@@ -1185,15 +1182,15 @@ TEST(symbolic, derive, math_operation_asin) {
 TEST(symbolic, derive, math_operation_cos) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = cos(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = -sin(parameter);
+    auto equation = cos(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = -sin(parameter);
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  5.0), derived.solve<double>( 5.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 5.0), derived.solve<double>(5.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.0), derived.solve<double>(-1.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -5.0), derived.solve<double>(-5.0), 1e-5));
 }
@@ -1201,15 +1198,15 @@ TEST(symbolic, derive, math_operation_cos) {
 TEST(symbolic, derive, math_operation_acos) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = acos(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::minus_one{} / sqrt(gtl::symbolic::one{} - pow(parameter, gtl::symbolic::two{}));
+    auto equation = acos(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::minus_one{} / sqrt(gtl::symbolic::one{} - pow(parameter, gtl::symbolic::two{}));
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.5), derived.solve<double>(-0.5), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.9), derived.solve<double>(-0.9), 1e-5));
 }
@@ -1217,15 +1214,15 @@ TEST(symbolic, derive, math_operation_acos) {
 TEST(symbolic, derive, math_operation_tan) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = tan(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::one{} / pow(cos(parameter), gtl::symbolic::two{});
+    auto equation = tan(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::one{} / pow(cos(parameter), gtl::symbolic::two{});
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  5.0), derived.solve<double>( 5.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 5.0), derived.solve<double>(5.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.0), derived.solve<double>(-1.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -5.0), derived.solve<double>(-5.0), 1e-5));
 }
@@ -1233,15 +1230,15 @@ TEST(symbolic, derive, math_operation_tan) {
 TEST(symbolic, derive, math_operation_atan) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = atan(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::one{} / (gtl::symbolic::one{} + pow(parameter, gtl::symbolic::two{}));
+    auto equation = atan(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::one{} / (gtl::symbolic::one{} + pow(parameter, gtl::symbolic::two{}));
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.5), derived.solve<double>(-0.5), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.9), derived.solve<double>(-0.9), 1e-5));
 }
@@ -1249,17 +1246,17 @@ TEST(symbolic, derive, math_operation_atan) {
 TEST(symbolic, derive, math_operation_sinh) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = sinh(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = cosh(parameter);
+    auto equation = sinh(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = cosh(parameter);
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  5.0), derived.solve<double>( 5.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 5.0), derived.solve<double>(5.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.5), derived.solve<double>(-0.5), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.9), derived.solve<double>(-0.9), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.0), derived.solve<double>(-1.0), 1e-5));
@@ -1269,17 +1266,17 @@ TEST(symbolic, derive, math_operation_sinh) {
 TEST(symbolic, derive, math_operation_asinh) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = asinh(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::one{} / sqrt(pow(parameter, gtl::symbolic::two{}) + gtl::symbolic::one{});
+    auto equation = asinh(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::one{} / sqrt(pow(parameter, gtl::symbolic::two{}) + gtl::symbolic::one{});
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>), "%s == %s\n", derived.to_string().c_str(), result.to_string().c_str());
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  5.0), derived.solve<double>( 5.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 5.0), derived.solve<double>(5.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.5), derived.solve<double>(-0.5), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.9), derived.solve<double>(-0.9), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.0), derived.solve<double>(-1.0), 1e-5));
@@ -1289,17 +1286,17 @@ TEST(symbolic, derive, math_operation_asinh) {
 TEST(symbolic, derive, math_operation_cosh) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = cosh(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = sinh(parameter);
+    auto equation = cosh(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = sinh(parameter);
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  5.0), derived.solve<double>( 5.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 5.0), derived.solve<double>(5.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.5), derived.solve<double>(-0.5), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.9), derived.solve<double>(-0.9), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.0), derived.solve<double>(-1.0), 1e-5));
@@ -1309,33 +1306,33 @@ TEST(symbolic, derive, math_operation_cosh) {
 TEST(symbolic, derive, math_operation_acosh) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = acosh(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::one{} / sqrt(pow(parameter, gtl::symbolic::two{}) - gtl::symbolic::one{});
+    auto equation = acosh(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::one{} / sqrt(pow(parameter, gtl::symbolic::two{}) - gtl::symbolic::one{});
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 25.0), derived.solve<double>(25.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 11.0), derived.solve<double>(11.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 10.0), derived.solve<double>(10.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  5.0), derived.solve<double>( 5.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.1), derived.solve<double>( 1.1), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 5.0), derived.solve<double>(5.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.1), derived.solve<double>(1.1), 1e-5));
 }
 
 TEST(symbolic, derive, math_operation_tanh) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = tanh(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::one{} / (pow(cosh(parameter), gtl::symbolic::two{}));
+    auto equation = tanh(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::one{} / (pow(cosh(parameter), gtl::symbolic::two{}));
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  5.0), derived.solve<double>( 5.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 5.0), derived.solve<double>(5.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.5), derived.solve<double>(-0.5), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.9), derived.solve<double>(-0.9), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.0), derived.solve<double>(-1.0), 1e-5));
@@ -1345,15 +1342,15 @@ TEST(symbolic, derive, math_operation_tanh) {
 TEST(symbolic, derive, math_operation_atanh) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = atanh(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::one{} / (gtl::symbolic::one{} - pow(parameter, gtl::symbolic::two{}));
+    auto equation = atanh(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::one{} / (gtl::symbolic::one{} - pow(parameter, gtl::symbolic::two{}));
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.5), derived.solve<double>(-0.5), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.9), derived.solve<double>(-0.9), 1e-5));
 }
@@ -1361,51 +1358,51 @@ TEST(symbolic, derive, math_operation_atanh) {
 TEST(symbolic, derive, math_operation_sqrt) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = sqrt(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::one{} / (gtl::symbolic::two{} * sqrt(parameter));
+    auto equation = sqrt(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::one{} / (gtl::symbolic::two{} * sqrt(parameter));
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 25.0), derived.solve<double>(25.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 11.0), derived.solve<double>(11.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 10.0), derived.solve<double>(10.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
 }
 
 TEST(symbolic, derive, math_operation_cbrt) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = cbrt(parameter);
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::one{} / (gtl::symbolic::three{} * pow(cbrt(parameter), gtl::symbolic::two{}));
+    auto equation = cbrt(parameter);
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::one{} / (gtl::symbolic::three{} * pow(cbrt(parameter), gtl::symbolic::two{}));
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>), "%s == %s\n", derived.to_string().c_str(), result.to_string().c_str());
 
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 25.0), derived.solve<double>(25.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 11.0), derived.solve<double>(11.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 10.0), derived.solve<double>(10.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
 }
 
 TEST(symbolic, derive, math_operation_min) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = min((gtl::symbolic::two{} * parameter), gtl::symbolic::three{});
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = ((sign((gtl::symbolic::two{} * parameter) - gtl::symbolic::three{}) * gtl::symbolic::minus_two{}) + gtl::symbolic::two{}) / gtl::symbolic::two{};
+    auto equation = min((gtl::symbolic::two{} * parameter), gtl::symbolic::three{});
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = ((sign((gtl::symbolic::two{} * parameter) - gtl::symbolic::three{}) * gtl::symbolic::minus_two{}) + gtl::symbolic::two{}) / gtl::symbolic::two{};
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  5.0), derived.solve<double>( 5.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 5.0), derived.solve<double>(5.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.5), derived.solve<double>(-0.5), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.9), derived.solve<double>(-0.9), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.0), derived.solve<double>(-1.0), 1e-5));
@@ -1415,17 +1412,17 @@ TEST(symbolic, derive, math_operation_min) {
 TEST(symbolic, derive, math_operation_max) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = max((gtl::symbolic::two{} * parameter), gtl::symbolic::three{});
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = ((sign((gtl::symbolic::two{} * parameter) - gtl::symbolic::three{}) * gtl::symbolic::two{}) + gtl::symbolic::two{}) / gtl::symbolic::two{};
+    auto equation = max((gtl::symbolic::two{} * parameter), gtl::symbolic::three{});
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = ((sign((gtl::symbolic::two{} * parameter) - gtl::symbolic::three{}) * gtl::symbolic::two{}) + gtl::symbolic::two{}) / gtl::symbolic::two{};
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  5.0), derived.solve<double>( 5.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 5.0), derived.solve<double>(5.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.5), derived.solve<double>(-0.5), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.9), derived.solve<double>(-0.9), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.0), derived.solve<double>(-1.0), 1e-5));
@@ -1435,17 +1432,17 @@ TEST(symbolic, derive, math_operation_max) {
 TEST(symbolic, derive, math_operation_hypot) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = hypot((gtl::symbolic::two{} * parameter), gtl::symbolic::three{});
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = ((gtl::symbolic::two{} * parameter * gtl::symbolic::two{}) / sqrt(pow(gtl::symbolic::two{} * parameter, gtl::symbolic::two{}) + pow(gtl::symbolic::three{}, gtl::symbolic::two{})));
+    auto equation = hypot((gtl::symbolic::two{} * parameter), gtl::symbolic::three{});
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = ((gtl::symbolic::two{} * parameter * gtl::symbolic::two{}) / sqrt(pow(gtl::symbolic::two{} * parameter, gtl::symbolic::two{}) + pow(gtl::symbolic::three{}, gtl::symbolic::two{})));
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  5.0), derived.solve<double>( 5.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 5.0), derived.solve<double>(5.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.5), derived.solve<double>(-0.5), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.9), derived.solve<double>(-0.9), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.0), derived.solve<double>(-1.0), 1e-5));
@@ -1455,17 +1452,17 @@ TEST(symbolic, derive, math_operation_hypot) {
 TEST(symbolic, derive, math_operation_atan2) {
     gtl::symbolic::parameter<0> parameter;
 
-    auto equation   = atan2((gtl::symbolic::two{} * parameter), gtl::symbolic::three{});
-    auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-    auto result     = gtl::symbolic::constant<gtl::symbolic::integer<6>>{} / (pow(gtl::symbolic::two{} * parameter, gtl::symbolic::two{}) + pow(gtl::symbolic::three{}, gtl::symbolic::two{}));
+    auto equation = atan2((gtl::symbolic::two{} * parameter), gtl::symbolic::three{});
+    auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+    auto result = gtl::symbolic::constant<gtl::symbolic::integer<6>>{} / (pow(gtl::symbolic::two{} * parameter, gtl::symbolic::two{}) + pow(gtl::symbolic::three{}, gtl::symbolic::two{}));
 
     REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>));
 
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  5.0), derived.solve<double>( 5.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
-    REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.1), derived.solve<double>( 0.1), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 5.0), derived.solve<double>(5.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
+    REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.1), derived.solve<double>(0.1), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.1), derived.solve<double>(-0.1), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.5), derived.solve<double>(-0.5), 1e-5));
     REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.9), derived.solve<double>(-0.9), 1e-5));
@@ -1477,17 +1474,17 @@ TEST(symbolic, derive, math_operation_pow) {
     {
         gtl::symbolic::parameter<0> parameter;
 
-        auto equation   = pow((gtl::symbolic::two{} * parameter), gtl::symbolic::three{});
-        auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-        auto result     = gtl::symbolic::three{} * pow(gtl::symbolic::two{} * parameter, gtl::symbolic::two{}) * gtl::symbolic::two{};
+        auto equation = pow((gtl::symbolic::two{} * parameter), gtl::symbolic::three{});
+        auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+        auto result = gtl::symbolic::three{} * pow(gtl::symbolic::two{} * parameter, gtl::symbolic::two{}) * gtl::symbolic::two{};
 
         REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>), "%s == %s\n", derived.to_string().c_str(), result.to_string().c_str());
 
-        REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  5.0), derived.solve<double>( 5.0), 1e-4));
-        REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-        REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-        REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
-        REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.0), derived.solve<double>( 0.0), 1e-5));
+        REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 5.0), derived.solve<double>(5.0), 1e-4));
+        REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+        REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+        REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
+        REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.0), derived.solve<double>(0.0), 1e-5));
         REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.5), derived.solve<double>(-0.5), 1e-5));
         REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -0.9), derived.solve<double>(-0.9), 1e-5));
         REQUIRE(testbench::is_value_approx(numerical_derivative(equation, -1.0), derived.solve<double>(-1.0), 1e-5));
@@ -1496,169 +1493,169 @@ TEST(symbolic, derive, math_operation_pow) {
     {
         gtl::symbolic::parameter<0> parameter;
 
-        auto equation   = pow(parameter, parameter);
-        auto derived    = gtl::symbolic::derive_to_depth<0, 0>(equation);
-        auto result     = pow(parameter, parameter) * (log(parameter) + gtl::symbolic::one{});
+        auto equation = pow(parameter, parameter);
+        auto derived = gtl::symbolic::derive_to_depth<0, 0>(equation);
+        auto result = pow(parameter, parameter) * (log(parameter) + gtl::symbolic::one{});
 
         REQUIRE((gtl::symbolic::is_same_type<decltype(derived), decltype(result)>), "%s == %s\n", derived.to_string().c_str(), result.to_string().c_str());
 
-        REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  5.0), derived.solve<double>( 5.0), 1e-3));
-        REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  1.0), derived.solve<double>( 1.0), 1e-5));
-        REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.9), derived.solve<double>( 0.9), 1e-5));
-        REQUIRE(testbench::is_value_approx(numerical_derivative(equation,  0.5), derived.solve<double>( 0.5), 1e-5));
+        REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 5.0), derived.solve<double>(5.0), 1e-3));
+        REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 1.0), derived.solve<double>(1.0), 1e-5));
+        REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.9), derived.solve<double>(0.9), 1e-5));
+        REQUIRE(testbench::is_value_approx(numerical_derivative(equation, 0.5), derived.solve<double>(0.5), 1e-5));
     }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 TEST(symbolic, types, matrices) {
-    auto mat2x3 = gtl::symbolic::matrix<2,3,gtl::symbolic::parameter<0>,gtl::symbolic::parameter<1>,gtl::symbolic::parameter<2>,gtl::symbolic::parameter<3>,gtl::symbolic::parameter<4>,gtl::symbolic::parameter<5>>{};
-    auto mat3x2 = gtl::symbolic::matrix<3,2,gtl::symbolic::parameter<6>,gtl::symbolic::parameter<7>,gtl::symbolic::parameter<8>,gtl::symbolic::parameter<9>,gtl::symbolic::parameter<10>,gtl::symbolic::parameter<11>>{};
+    auto mat2x3 = gtl::symbolic::matrix<2, 3, gtl::symbolic::parameter<0>, gtl::symbolic::parameter<1>, gtl::symbolic::parameter<2>, gtl::symbolic::parameter<3>, gtl::symbolic::parameter<4>, gtl::symbolic::parameter<5>>{};
+    auto mat3x2 = gtl::symbolic::matrix<3, 2, gtl::symbolic::parameter<6>, gtl::symbolic::parameter<7>, gtl::symbolic::parameter<8>, gtl::symbolic::parameter<9>, gtl::symbolic::parameter<10>, gtl::symbolic::parameter<11>>{};
 
     testbench::do_not_optimise_away(mat2x3);
     testbench::do_not_optimise_away(mat3x2);
 }
 
 TEST(symbolic, solve, matrix_add_scalar) {
-    auto mat2x3 = gtl::symbolic::matrix<2,3,gtl::symbolic::parameter<0>,gtl::symbolic::parameter<1>,gtl::symbolic::parameter<2>,gtl::symbolic::parameter<3>,gtl::symbolic::parameter<4>,gtl::symbolic::parameter<5>>{};
+    auto mat2x3 = gtl::symbolic::matrix<2, 3, gtl::symbolic::parameter<0>, gtl::symbolic::parameter<1>, gtl::symbolic::parameter<2>, gtl::symbolic::parameter<3>, gtl::symbolic::parameter<4>, gtl::symbolic::parameter<5>>{};
 
     auto result = gtl::symbolic::one{} + mat2x3 + gtl::symbolic::parameter<6>{};
 
-    auto result00 = gtl::symbolic::get_cell<0,0>(result);
-    auto result01 = gtl::symbolic::get_cell<0,1>(result);
-    auto result02 = gtl::symbolic::get_cell<0,2>(result);
-    auto result10 = gtl::symbolic::get_cell<1,0>(result);
-    auto result11 = gtl::symbolic::get_cell<1,1>(result);
-    auto result12 = gtl::symbolic::get_cell<1,2>(result);
+    auto result00 = gtl::symbolic::get_cell<0, 0>(result);
+    auto result01 = gtl::symbolic::get_cell<0, 1>(result);
+    auto result02 = gtl::symbolic::get_cell<0, 2>(result);
+    auto result10 = gtl::symbolic::get_cell<1, 0>(result);
+    auto result11 = gtl::symbolic::get_cell<1, 1>(result);
+    auto result12 = gtl::symbolic::get_cell<1, 2>(result);
 
-    REQUIRE(result00.solve<int>(0,1,2,3,4,5,6) == 1 + 0 + 6);
-    REQUIRE(result01.solve<int>(0,1,2,3,4,5,6) == 1 + 1 + 6);
-    REQUIRE(result02.solve<int>(0,1,2,3,4,5,6) == 1 + 2 + 6);
-    REQUIRE(result10.solve<int>(0,1,2,3,4,5,6) == 1 + 3 + 6);
-    REQUIRE(result11.solve<int>(0,1,2,3,4,5,6) == 1 + 4 + 6);
-    REQUIRE(result12.solve<int>(0,1,2,3,4,5,6) == 1 + 5 + 6);
+    REQUIRE(result00.solve<int>(0, 1, 2, 3, 4, 5, 6) == 1 + 0 + 6);
+    REQUIRE(result01.solve<int>(0, 1, 2, 3, 4, 5, 6) == 1 + 1 + 6);
+    REQUIRE(result02.solve<int>(0, 1, 2, 3, 4, 5, 6) == 1 + 2 + 6);
+    REQUIRE(result10.solve<int>(0, 1, 2, 3, 4, 5, 6) == 1 + 3 + 6);
+    REQUIRE(result11.solve<int>(0, 1, 2, 3, 4, 5, 6) == 1 + 4 + 6);
+    REQUIRE(result12.solve<int>(0, 1, 2, 3, 4, 5, 6) == 1 + 5 + 6);
 }
 
 TEST(symbolic, solve, matrix_subtract_scalar) {
-    auto mat2x3 = gtl::symbolic::matrix<2,3,gtl::symbolic::parameter<0>,gtl::symbolic::parameter<1>,gtl::symbolic::parameter<2>,gtl::symbolic::parameter<3>,gtl::symbolic::parameter<4>,gtl::symbolic::parameter<5>>{};
+    auto mat2x3 = gtl::symbolic::matrix<2, 3, gtl::symbolic::parameter<0>, gtl::symbolic::parameter<1>, gtl::symbolic::parameter<2>, gtl::symbolic::parameter<3>, gtl::symbolic::parameter<4>, gtl::symbolic::parameter<5>>{};
 
     auto result = gtl::symbolic::one{} - mat2x3 - gtl::symbolic::parameter<6>{};
 
-    auto result00 = gtl::symbolic::get_cell<0,0>(result);
-    auto result01 = gtl::symbolic::get_cell<0,1>(result);
-    auto result02 = gtl::symbolic::get_cell<0,2>(result);
-    auto result10 = gtl::symbolic::get_cell<1,0>(result);
-    auto result11 = gtl::symbolic::get_cell<1,1>(result);
-    auto result12 = gtl::symbolic::get_cell<1,2>(result);
+    auto result00 = gtl::symbolic::get_cell<0, 0>(result);
+    auto result01 = gtl::symbolic::get_cell<0, 1>(result);
+    auto result02 = gtl::symbolic::get_cell<0, 2>(result);
+    auto result10 = gtl::symbolic::get_cell<1, 0>(result);
+    auto result11 = gtl::symbolic::get_cell<1, 1>(result);
+    auto result12 = gtl::symbolic::get_cell<1, 2>(result);
 
-    REQUIRE(result00.solve<int>(0,1,2,3,4,5,6) == 1 - 0 - 6);
-    REQUIRE(result01.solve<int>(0,1,2,3,4,5,6) == 1 - 1 - 6);
-    REQUIRE(result02.solve<int>(0,1,2,3,4,5,6) == 1 - 2 - 6);
-    REQUIRE(result10.solve<int>(0,1,2,3,4,5,6) == 1 - 3 - 6);
-    REQUIRE(result11.solve<int>(0,1,2,3,4,5,6) == 1 - 4 - 6);
-    REQUIRE(result12.solve<int>(0,1,2,3,4,5,6) == 1 - 5 - 6);
+    REQUIRE(result00.solve<int>(0, 1, 2, 3, 4, 5, 6) == 1 - 0 - 6);
+    REQUIRE(result01.solve<int>(0, 1, 2, 3, 4, 5, 6) == 1 - 1 - 6);
+    REQUIRE(result02.solve<int>(0, 1, 2, 3, 4, 5, 6) == 1 - 2 - 6);
+    REQUIRE(result10.solve<int>(0, 1, 2, 3, 4, 5, 6) == 1 - 3 - 6);
+    REQUIRE(result11.solve<int>(0, 1, 2, 3, 4, 5, 6) == 1 - 4 - 6);
+    REQUIRE(result12.solve<int>(0, 1, 2, 3, 4, 5, 6) == 1 - 5 - 6);
 }
 
 TEST(symbolic, solve, matrix_multiply_scalar) {
-    auto mat2x3 = gtl::symbolic::matrix<2,3,gtl::symbolic::parameter<0>,gtl::symbolic::parameter<1>,gtl::symbolic::parameter<2>,gtl::symbolic::parameter<3>,gtl::symbolic::parameter<4>,gtl::symbolic::parameter<5>>{};
+    auto mat2x3 = gtl::symbolic::matrix<2, 3, gtl::symbolic::parameter<0>, gtl::symbolic::parameter<1>, gtl::symbolic::parameter<2>, gtl::symbolic::parameter<3>, gtl::symbolic::parameter<4>, gtl::symbolic::parameter<5>>{};
 
     auto result = gtl::symbolic::two{} * mat2x3 * gtl::symbolic::parameter<6>{};
 
-    auto result00 = gtl::symbolic::get_cell<0,0>(result);
-    auto result01 = gtl::symbolic::get_cell<0,1>(result);
-    auto result02 = gtl::symbolic::get_cell<0,2>(result);
-    auto result10 = gtl::symbolic::get_cell<1,0>(result);
-    auto result11 = gtl::symbolic::get_cell<1,1>(result);
-    auto result12 = gtl::symbolic::get_cell<1,2>(result);
+    auto result00 = gtl::symbolic::get_cell<0, 0>(result);
+    auto result01 = gtl::symbolic::get_cell<0, 1>(result);
+    auto result02 = gtl::symbolic::get_cell<0, 2>(result);
+    auto result10 = gtl::symbolic::get_cell<1, 0>(result);
+    auto result11 = gtl::symbolic::get_cell<1, 1>(result);
+    auto result12 = gtl::symbolic::get_cell<1, 2>(result);
 
-    REQUIRE(result00.solve<int>(0,1,2,3,4,5,6) == 2 * 0 * 6);
-    REQUIRE(result01.solve<int>(0,1,2,3,4,5,6) == 2 * 1 * 6);
-    REQUIRE(result02.solve<int>(0,1,2,3,4,5,6) == 2 * 2 * 6);
-    REQUIRE(result10.solve<int>(0,1,2,3,4,5,6) == 2 * 3 * 6);
-    REQUIRE(result11.solve<int>(0,1,2,3,4,5,6) == 2 * 4 * 6);
-    REQUIRE(result12.solve<int>(0,1,2,3,4,5,6) == 2 * 5 * 6);
+    REQUIRE(result00.solve<int>(0, 1, 2, 3, 4, 5, 6) == 2 * 0 * 6);
+    REQUIRE(result01.solve<int>(0, 1, 2, 3, 4, 5, 6) == 2 * 1 * 6);
+    REQUIRE(result02.solve<int>(0, 1, 2, 3, 4, 5, 6) == 2 * 2 * 6);
+    REQUIRE(result10.solve<int>(0, 1, 2, 3, 4, 5, 6) == 2 * 3 * 6);
+    REQUIRE(result11.solve<int>(0, 1, 2, 3, 4, 5, 6) == 2 * 4 * 6);
+    REQUIRE(result12.solve<int>(0, 1, 2, 3, 4, 5, 6) == 2 * 5 * 6);
 }
 
 TEST(symbolic, solve, matrix_add) {
-    auto mat2x2a = gtl::symbolic::matrix<2,2,gtl::symbolic::parameter<0>,gtl::symbolic::parameter<1>,gtl::symbolic::parameter<2>,gtl::symbolic::parameter<3>>{};
-    auto mat2x2b = gtl::symbolic::matrix<2,2,gtl::symbolic::parameter<4>,gtl::symbolic::parameter<5>,gtl::symbolic::parameter<6>,gtl::symbolic::parameter<7>>{};
+    auto mat2x2a = gtl::symbolic::matrix<2, 2, gtl::symbolic::parameter<0>, gtl::symbolic::parameter<1>, gtl::symbolic::parameter<2>, gtl::symbolic::parameter<3>>{};
+    auto mat2x2b = gtl::symbolic::matrix<2, 2, gtl::symbolic::parameter<4>, gtl::symbolic::parameter<5>, gtl::symbolic::parameter<6>, gtl::symbolic::parameter<7>>{};
 
     auto result = mat2x2a + mat2x2b;
 
-    auto result00 = gtl::symbolic::get_cell<0,0>(result);
-    auto result01 = gtl::symbolic::get_cell<0,1>(result);
-    auto result10 = gtl::symbolic::get_cell<1,0>(result);
-    auto result11 = gtl::symbolic::get_cell<1,1>(result);
+    auto result00 = gtl::symbolic::get_cell<0, 0>(result);
+    auto result01 = gtl::symbolic::get_cell<0, 1>(result);
+    auto result10 = gtl::symbolic::get_cell<1, 0>(result);
+    auto result11 = gtl::symbolic::get_cell<1, 1>(result);
 
-    REQUIRE(result00.solve<int>(0,1,2,3,4,5,6,7) == 0 + 4);
-    REQUIRE(result01.solve<int>(0,1,2,3,4,5,6,7) == 1 + 5);
-    REQUIRE(result10.solve<int>(0,1,2,3,4,5,6,7) == 2 + 6);
-    REQUIRE(result11.solve<int>(0,1,2,3,4,5,6,7) == 3 + 7);
+    REQUIRE(result00.solve<int>(0, 1, 2, 3, 4, 5, 6, 7) == 0 + 4);
+    REQUIRE(result01.solve<int>(0, 1, 2, 3, 4, 5, 6, 7) == 1 + 5);
+    REQUIRE(result10.solve<int>(0, 1, 2, 3, 4, 5, 6, 7) == 2 + 6);
+    REQUIRE(result11.solve<int>(0, 1, 2, 3, 4, 5, 6, 7) == 3 + 7);
 }
 
 TEST(symbolic, solve, matrix_subtract) {
-    auto mat2x2a = gtl::symbolic::matrix<2,2,gtl::symbolic::parameter<0>,gtl::symbolic::parameter<1>,gtl::symbolic::parameter<2>,gtl::symbolic::parameter<3>>{};
-    auto mat2x2b = gtl::symbolic::matrix<2,2,gtl::symbolic::parameter<4>,gtl::symbolic::parameter<5>,gtl::symbolic::parameter<6>,gtl::symbolic::parameter<7>>{};
+    auto mat2x2a = gtl::symbolic::matrix<2, 2, gtl::symbolic::parameter<0>, gtl::symbolic::parameter<1>, gtl::symbolic::parameter<2>, gtl::symbolic::parameter<3>>{};
+    auto mat2x2b = gtl::symbolic::matrix<2, 2, gtl::symbolic::parameter<4>, gtl::symbolic::parameter<5>, gtl::symbolic::parameter<6>, gtl::symbolic::parameter<7>>{};
 
     auto result = mat2x2a - mat2x2b;
 
-    auto result00 = gtl::symbolic::get_cell<0,0>(result);
-    auto result01 = gtl::symbolic::get_cell<0,1>(result);
-    auto result10 = gtl::symbolic::get_cell<1,0>(result);
-    auto result11 = gtl::symbolic::get_cell<1,1>(result);
+    auto result00 = gtl::symbolic::get_cell<0, 0>(result);
+    auto result01 = gtl::symbolic::get_cell<0, 1>(result);
+    auto result10 = gtl::symbolic::get_cell<1, 0>(result);
+    auto result11 = gtl::symbolic::get_cell<1, 1>(result);
 
-    REQUIRE(result00.solve<int>(0,1,2,3,4,5,6,7) == 0 - 4);
-    REQUIRE(result01.solve<int>(0,1,2,3,4,5,6,7) == 1 - 5);
-    REQUIRE(result10.solve<int>(0,1,2,3,4,5,6,7) == 2 - 6);
-    REQUIRE(result11.solve<int>(0,1,2,3,4,5,6,7) == 3 - 7);
+    REQUIRE(result00.solve<int>(0, 1, 2, 3, 4, 5, 6, 7) == 0 - 4);
+    REQUIRE(result01.solve<int>(0, 1, 2, 3, 4, 5, 6, 7) == 1 - 5);
+    REQUIRE(result10.solve<int>(0, 1, 2, 3, 4, 5, 6, 7) == 2 - 6);
+    REQUIRE(result11.solve<int>(0, 1, 2, 3, 4, 5, 6, 7) == 3 - 7);
 }
 
 TEST(symbolic, solve, matrix_multiply) {
-    auto mat2x3 = gtl::symbolic::matrix<2,3,gtl::symbolic::parameter<0>,gtl::symbolic::parameter<1>,gtl::symbolic::parameter<2>,gtl::symbolic::parameter<3>,gtl::symbolic::parameter<4>,gtl::symbolic::parameter<5>>{};
-    auto mat3x2 = gtl::symbolic::matrix<3,2,gtl::symbolic::parameter<6>,gtl::symbolic::parameter<7>,gtl::symbolic::parameter<8>,gtl::symbolic::parameter<9>,gtl::symbolic::parameter<10>,gtl::symbolic::parameter<11>>{};
+    auto mat2x3 = gtl::symbolic::matrix<2, 3, gtl::symbolic::parameter<0>, gtl::symbolic::parameter<1>, gtl::symbolic::parameter<2>, gtl::symbolic::parameter<3>, gtl::symbolic::parameter<4>, gtl::symbolic::parameter<5>>{};
+    auto mat3x2 = gtl::symbolic::matrix<3, 2, gtl::symbolic::parameter<6>, gtl::symbolic::parameter<7>, gtl::symbolic::parameter<8>, gtl::symbolic::parameter<9>, gtl::symbolic::parameter<10>, gtl::symbolic::parameter<11>>{};
 
     auto mat2x2 = mat2x3 * mat3x2;
 
-    auto result00 = gtl::symbolic::get_cell<0,0>(mat2x2);
-    auto result01 = gtl::symbolic::get_cell<0,1>(mat2x2);
-    auto result10 = gtl::symbolic::get_cell<1,0>(mat2x2);
-    auto result11 = gtl::symbolic::get_cell<1,1>(mat2x2);
+    auto result00 = gtl::symbolic::get_cell<0, 0>(mat2x2);
+    auto result01 = gtl::symbolic::get_cell<0, 1>(mat2x2);
+    auto result10 = gtl::symbolic::get_cell<1, 0>(mat2x2);
+    auto result11 = gtl::symbolic::get_cell<1, 1>(mat2x2);
 
-    REQUIRE(result00.solve<int>(0,1,2,3,4,5,6,7,8,9,10,11) == 28);
-    REQUIRE(result01.solve<int>(0,1,2,3,4,5,6,7,8,9,10,11) == 100);
-    REQUIRE(result10.solve<int>(0,1,2,3,4,5,6,7,8,9,10,11) == 31);
-    REQUIRE(result11.solve<int>(0,1,2,3,4,5,6,7,8,9,10,11) == 112);
+    REQUIRE(result00.solve<int>(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11) == 28);
+    REQUIRE(result01.solve<int>(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11) == 100);
+    REQUIRE(result10.solve<int>(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11) == 31);
+    REQUIRE(result11.solve<int>(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11) == 112);
 }
 
 TEST(symbolic, solve, matrix_transpose) {
     {
-        auto mat2x3 = gtl::symbolic::matrix<2,3,gtl::symbolic::parameter<0>,gtl::symbolic::parameter<1>,gtl::symbolic::parameter<2>,gtl::symbolic::parameter<3>,gtl::symbolic::parameter<4>,gtl::symbolic::parameter<5>>{};
+        auto mat2x3 = gtl::symbolic::matrix<2, 3, gtl::symbolic::parameter<0>, gtl::symbolic::parameter<1>, gtl::symbolic::parameter<2>, gtl::symbolic::parameter<3>, gtl::symbolic::parameter<4>, gtl::symbolic::parameter<5>>{};
         auto mat3x2 = gtl::symbolic::transpose(mat2x3);
 
-        REQUIRE((gtl::symbolic::get_cell<0,0>(mat3x2).solve<int>(0,1,2,3,4,5) == gtl::symbolic::get_cell<0,0>(mat2x3).solve<int>(0,1,2,3,4,5)));
-        REQUIRE((gtl::symbolic::get_cell<0,1>(mat3x2).solve<int>(0,1,2,3,4,5) == gtl::symbolic::get_cell<1,0>(mat2x3).solve<int>(0,1,2,3,4,5)));
-        REQUIRE((gtl::symbolic::get_cell<1,0>(mat3x2).solve<int>(0,1,2,3,4,5) == gtl::symbolic::get_cell<0,1>(mat2x3).solve<int>(0,1,2,3,4,5)));
-        REQUIRE((gtl::symbolic::get_cell<1,1>(mat3x2).solve<int>(0,1,2,3,4,5) == gtl::symbolic::get_cell<1,1>(mat2x3).solve<int>(0,1,2,3,4,5)));
-        REQUIRE((gtl::symbolic::get_cell<2,0>(mat3x2).solve<int>(0,1,2,3,4,5) == gtl::symbolic::get_cell<0,2>(mat2x3).solve<int>(0,1,2,3,4,5)));
-        REQUIRE((gtl::symbolic::get_cell<2,1>(mat3x2).solve<int>(0,1,2,3,4,5) == gtl::symbolic::get_cell<1,2>(mat2x3).solve<int>(0,1,2,3,4,5)));
+        REQUIRE((gtl::symbolic::get_cell<0, 0>(mat3x2).solve<int>(0, 1, 2, 3, 4, 5) == gtl::symbolic::get_cell<0, 0>(mat2x3).solve<int>(0, 1, 2, 3, 4, 5)));
+        REQUIRE((gtl::symbolic::get_cell<0, 1>(mat3x2).solve<int>(0, 1, 2, 3, 4, 5) == gtl::symbolic::get_cell<1, 0>(mat2x3).solve<int>(0, 1, 2, 3, 4, 5)));
+        REQUIRE((gtl::symbolic::get_cell<1, 0>(mat3x2).solve<int>(0, 1, 2, 3, 4, 5) == gtl::symbolic::get_cell<0, 1>(mat2x3).solve<int>(0, 1, 2, 3, 4, 5)));
+        REQUIRE((gtl::symbolic::get_cell<1, 1>(mat3x2).solve<int>(0, 1, 2, 3, 4, 5) == gtl::symbolic::get_cell<1, 1>(mat2x3).solve<int>(0, 1, 2, 3, 4, 5)));
+        REQUIRE((gtl::symbolic::get_cell<2, 0>(mat3x2).solve<int>(0, 1, 2, 3, 4, 5) == gtl::symbolic::get_cell<0, 2>(mat2x3).solve<int>(0, 1, 2, 3, 4, 5)));
+        REQUIRE((gtl::symbolic::get_cell<2, 1>(mat3x2).solve<int>(0, 1, 2, 3, 4, 5) == gtl::symbolic::get_cell<1, 2>(mat2x3).solve<int>(0, 1, 2, 3, 4, 5)));
     }
 
     {
-        auto mat1x3 = gtl::symbolic::matrix<1,3,gtl::symbolic::parameter<0>,gtl::symbolic::parameter<1>,gtl::symbolic::parameter<2>>{};
+        auto mat1x3 = gtl::symbolic::matrix<1, 3, gtl::symbolic::parameter<0>, gtl::symbolic::parameter<1>, gtl::symbolic::parameter<2>>{};
         auto mat3x1 = gtl::symbolic::transpose(mat1x3);
 
-        REQUIRE((gtl::symbolic::get_cell<0,0>(mat1x3).solve<int>(0,1,2) == gtl::symbolic::get_cell<0,0>(mat3x1).solve<int>(0,1,2)));
-        REQUIRE((gtl::symbolic::get_cell<0,1>(mat1x3).solve<int>(0,1,2) == gtl::symbolic::get_cell<1,0>(mat3x1).solve<int>(0,1,2)));
-        REQUIRE((gtl::symbolic::get_cell<0,2>(mat1x3).solve<int>(0,1,2) == gtl::symbolic::get_cell<2,0>(mat3x1).solve<int>(0,1,2)));
+        REQUIRE((gtl::symbolic::get_cell<0, 0>(mat1x3).solve<int>(0, 1, 2) == gtl::symbolic::get_cell<0, 0>(mat3x1).solve<int>(0, 1, 2)));
+        REQUIRE((gtl::symbolic::get_cell<0, 1>(mat1x3).solve<int>(0, 1, 2) == gtl::symbolic::get_cell<1, 0>(mat3x1).solve<int>(0, 1, 2)));
+        REQUIRE((gtl::symbolic::get_cell<0, 2>(mat1x3).solve<int>(0, 1, 2) == gtl::symbolic::get_cell<2, 0>(mat3x1).solve<int>(0, 1, 2)));
     }
 
     {
-        auto mat2x2a = gtl::symbolic::matrix<2,2,gtl::symbolic::parameter<0>,gtl::symbolic::parameter<1>,gtl::symbolic::parameter<2>,gtl::symbolic::parameter<3>>{};
+        auto mat2x2a = gtl::symbolic::matrix<2, 2, gtl::symbolic::parameter<0>, gtl::symbolic::parameter<1>, gtl::symbolic::parameter<2>, gtl::symbolic::parameter<3>>{};
         auto mat2x2b = gtl::symbolic::transpose(mat2x2a);
 
-        REQUIRE((gtl::symbolic::get_cell<0,0>(mat2x2a).solve<int>(0,1,2,3) == gtl::symbolic::get_cell<0,0>(mat2x2b).solve<int>(0,1,2,3)));
-        REQUIRE((gtl::symbolic::get_cell<0,1>(mat2x2a).solve<int>(0,1,2,3) == gtl::symbolic::get_cell<1,0>(mat2x2b).solve<int>(0,1,2,3)));
-        REQUIRE((gtl::symbolic::get_cell<1,0>(mat2x2a).solve<int>(0,1,2,3) == gtl::symbolic::get_cell<0,1>(mat2x2b).solve<int>(0,1,2,3)));
-        REQUIRE((gtl::symbolic::get_cell<1,1>(mat2x2a).solve<int>(0,1,2,3) == gtl::symbolic::get_cell<1,1>(mat2x2b).solve<int>(0,1,2,3)));
+        REQUIRE((gtl::symbolic::get_cell<0, 0>(mat2x2a).solve<int>(0, 1, 2, 3) == gtl::symbolic::get_cell<0, 0>(mat2x2b).solve<int>(0, 1, 2, 3)));
+        REQUIRE((gtl::symbolic::get_cell<0, 1>(mat2x2a).solve<int>(0, 1, 2, 3) == gtl::symbolic::get_cell<1, 0>(mat2x2b).solve<int>(0, 1, 2, 3)));
+        REQUIRE((gtl::symbolic::get_cell<1, 0>(mat2x2a).solve<int>(0, 1, 2, 3) == gtl::symbolic::get_cell<0, 1>(mat2x2b).solve<int>(0, 1, 2, 3)));
+        REQUIRE((gtl::symbolic::get_cell<1, 1>(mat2x2a).solve<int>(0, 1, 2, 3) == gtl::symbolic::get_cell<1, 1>(mat2x2b).solve<int>(0, 1, 2, 3)));
     }
 }

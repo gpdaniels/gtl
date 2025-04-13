@@ -21,18 +21,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Multi-queue thread-pool that performs jobs in priority order.
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the thread_pool is misused.
-#   define GTL_THREAD_POOL_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_THREAD_POOL_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_THREAD_POOL_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_THREAD_POOL_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <atomic>
@@ -45,7 +45,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vector>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace gtl {
@@ -152,7 +152,7 @@ namespace gtl {
         thread_pool(unsigned int thread_count = std::max(std::thread::hardware_concurrency(), 1u) - 1u)
             : running(true) {
             this->threads.reserve(thread_count);
-            for (unsigned int thread_index = 0; thread_index < thread_count; ++ thread_index) {
+            for (unsigned int thread_index = 0; thread_index < thread_count; ++thread_index) {
                 this->threads.emplace_back(&thread_pool::thread_loop, this);
             }
         }
@@ -172,7 +172,6 @@ namespace gtl {
     private:
         /// @brief  The core loop that is run on each thread_pool thread.
         void thread_loop() {
-
             queue* queue = nullptr;
             std::function<void()> task;
 
@@ -212,7 +211,9 @@ namespace gtl {
                     std::unique_lock<std::mutex> lock(this->queue_mutex);
 
                     // Wait for more work, or exit signal.
-                    this->queue_available.wait(lock, [&]{ return !this->running || !this->queues.empty(); });
+                    this->queue_available.wait(lock, [&] {
+                        return !this->running || !this->queues.empty();
+                    });
 
                     // Check for exit.
                     if (!this->running && this->queues.empty()) {
@@ -229,7 +230,6 @@ namespace gtl {
         /// @brief  Block until all tasks in a queue have been completed by the thread_pool.
         /// @param  queue The queue of tasks to empty.
         void drain(queue& queue) {
-
             std::function<void()> task;
 
             for (;;) {

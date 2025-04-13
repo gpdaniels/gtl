@@ -15,47 +15,45 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
+#include <testbench/ignored.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 #include <testbench/template.tests.hpp>
-#include <testbench/ignored.tests.hpp>
 
 #include <io/file>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <cstdio>
 #include <string>
-#include <utility>
 #include <type_traits>
+#include <utility>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 using access_types = testbench::enum_collection<
     gtl::file::access_type,
     gtl::file::access_type::read_only,
     gtl::file::access_type::write_only,
-    gtl::file::access_type::read_and_write
->;
+    gtl::file::access_type::read_and_write>;
 
 using creation_types = testbench::enum_collection<
     gtl::file::creation_type,
     gtl::file::creation_type::open_only,
     gtl::file::creation_type::create_only,
-    gtl::file::creation_type::create_or_open
->;
+    gtl::file::creation_type::create_or_open>;
 
 using cursor_types = testbench::enum_collection<
     gtl::file::cursor_type,
     gtl::file::cursor_type::start_of_file,
     gtl::file::cursor_type::start_of_truncated,
     gtl::file::cursor_type::end_of_file,
-    gtl::file::cursor_type::end_of_truncated
->;
+    gtl::file::cursor_type::end_of_truncated>;
 
 TEST(file, traits, standard) {
     REQUIRE((std::is_pod<gtl::file>::value == false));
@@ -80,13 +78,12 @@ TEST(file, constructor, parameterised) {
 
     // Ensure every combination works.
     testbench::test_template<access_types, creation_types, cursor_types>(
-        [&temp_filename](auto test_access, auto test_creation, auto test_cursor)->void {
+        [&temp_filename](auto test_access, auto test_creation, auto test_cursor) -> void {
             constexpr static const gtl::file::access_type access = decltype(test_access)::value;
             constexpr static const gtl::file::creation_type creation = decltype(test_creation)::value;
             constexpr static const gtl::file::cursor_type cursor = decltype(test_cursor)::value;
             gtl::file file(temp_filename.c_str(), access, creation, cursor);
-        }
-    );
+        });
 
     IGNORED(std::remove(temp_filename.c_str()));
 }
@@ -139,7 +136,6 @@ TEST(file, function, is_eof) {
     REQUIRE(file.is_eof(eof) == true);
     REQUIRE(eof == false);
 
-
     REQUIRE(file.set_cursor_position(0, gtl::file::position_type::end));
 
     eof = false;
@@ -157,14 +153,13 @@ TEST(file, function, open) {
 
     // Ensure every combination doesn't crash.
     testbench::test_template<access_types, creation_types, cursor_types>(
-        [&temp_filename](auto test_access, auto test_creation, auto test_cursor)->void {
+        [&temp_filename](auto test_access, auto test_creation, auto test_cursor) -> void {
             constexpr static const gtl::file::access_type access = decltype(test_access)::value;
             constexpr static const gtl::file::creation_type creation = decltype(test_creation)::value;
             constexpr static const gtl::file::cursor_type cursor = decltype(test_cursor)::value;
             gtl::file file;
             file.open(temp_filename.c_str(), access, creation, cursor);
-        }
-    );
+        });
 
     {
         gtl::file file;
@@ -278,7 +273,6 @@ TEST(file, function, close) {
     IGNORED(std::remove(temp_filename.c_str()));
 }
 
-
 TEST(file, function, get_handle) {
     gtl::file file;
 
@@ -332,7 +326,6 @@ TEST(file, function, get_size) {
 
     IGNORED(std::remove(temp_filename.c_str()));
 }
-
 
 TEST(file, function, get_cursor_position) {
     gtl::file file;
@@ -492,7 +485,7 @@ TEST(file, function, write) {
     REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_and_write));
 
     {
-        char buffer[2] = {'a', 'b'};
+        char buffer[2] = { 'a', 'b' };
         gtl::file::size_type length = 2;
         REQUIRE(file.write(buffer, length));
         REQUIRE(length == 2);

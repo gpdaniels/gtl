@@ -21,14 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Implementation of a random dataset sampler. [wip]
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the random is misused.
-#   define GTL_RANDOM_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_RANDOM_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_RANDOM_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_RANDOM_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 #include <vision/consensus/sampler>
@@ -46,6 +46,7 @@ namespace gtl {
         private:
             unsigned long long int state = 0x853C49E6748FEA9Bull;
             unsigned long long int increment = 0xDA3E39CB94B95BDBull;
+
         public:
             unsigned int get_random() {
                 unsigned long long int state_previous = this->state;
@@ -62,8 +63,7 @@ namespace gtl {
 
     public:
         virtual void prepare(
-            const size_t data_size
-        ) override final {
+            const size_t data_size) override final {
             GTL_RANDOM_ASSERT(data_size > 0, "Data size must be greater than zero.");
             GTL_RANDOM_ASSERT(data_size >= sample_size, "Data size must be greater or equal to the sample size.");
             this->size = data_size;
@@ -71,8 +71,7 @@ namespace gtl {
 
     public:
         virtual void sample(
-            size_t* const __restrict indices
-        ) override final {
+            size_t* const __restrict indices) override final {
             GTL_RANDOM_ASSERT(this->size > 0, "Data size must be greater than zero.");
             GTL_RANDOM_ASSERT(this->size >= sample_size, "Data size must be greater or equal to the sample size.");
             for (size_t i = 0; i < sample_size; ++i) {

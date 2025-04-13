@@ -21,194 +21,188 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Replacement for the __FILE__ macro to prevent build path being leaked into the binary.
 
 namespace gtl {
-namespace short_file {
-    /// @brief  Template struct that holds a sequence of integers, derived from http://stackoverflow.com/a/32223343.
-    template <typename integer_type, integer_type... indexes>
-    struct integer_sequence {
-        using sequence_type = integer_sequence;
-    };
+    namespace short_file {
+        /// @brief  Template struct that holds a sequence of integers, derived from http://stackoverflow.com/a/32223343.
+        template <typename integer_type, integer_type... indexes>
+        struct integer_sequence {
+            using sequence_type = integer_sequence;
+        };
 
-    /// @brief  Template struct declaration that combines two sequences into one.
-    template <typename integer_type, typename lhs_sequence, typename rhs_sequence>
-    struct merge_sequences;
+        /// @brief  Template struct declaration that combines two sequences into one.
+        template <typename integer_type, typename lhs_sequence, typename rhs_sequence>
+        struct merge_sequences;
 
-    /// @brief  Template struct definition and partial specialisation for merging two interger_sequences.
-    template <typename integer_type, integer_type... lhs_indexes, integer_type... rhs_indexes>
-    struct merge_sequences<integer_type, integer_sequence<integer_type, lhs_indexes...>, integer_sequence<integer_type, rhs_indexes...>>
-        : integer_sequence<integer_type, lhs_indexes..., (sizeof...(lhs_indexes) + rhs_indexes)...> {
-    };
+        /// @brief  Template struct definition and partial specialisation for merging two interger_sequences.
+        template <typename integer_type, integer_type... lhs_indexes, integer_type... rhs_indexes>
+        struct merge_sequences<integer_type, integer_sequence<integer_type, lhs_indexes...>, integer_sequence<integer_type, rhs_indexes...>>
+            : integer_sequence<integer_type, lhs_indexes..., (sizeof...(lhs_indexes) + rhs_indexes)...> {
+        };
 
-    /// @brief  Template struct to create an integer_sequence from zero to the given length.
-    template <typename integer_type, unsigned long long length>
-    struct make_integer_sequence final
-        : merge_sequences<integer_type, typename make_integer_sequence<integer_type, length / 2>::sequence_type, typename make_integer_sequence<integer_type, length - length / 2>::sequence_type> {
-    };
+        /// @brief  Template struct to create an integer_sequence from zero to the given length.
+        template <typename integer_type, unsigned long long length>
+        struct make_integer_sequence final
+            : merge_sequences<integer_type, typename make_integer_sequence<integer_type, length / 2>::sequence_type, typename make_integer_sequence<integer_type, length - length / 2>::sequence_type> {
+        };
 
-    /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length zero.
-    template<typename integer_type>
-    struct make_integer_sequence<integer_type, 0> final
-        : integer_sequence<integer_type> {
-    };
+        /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length zero.
+        template <typename integer_type>
+        struct make_integer_sequence<integer_type, 0> final
+            : integer_sequence<integer_type> {
+        };
 
-    /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length one.
-    template<typename integer_type>
-    struct make_integer_sequence<integer_type, 1> final
-        : integer_sequence<integer_type, 0> {
-    };
+        /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length one.
+        template <typename integer_type>
+        struct make_integer_sequence<integer_type, 1> final
+            : integer_sequence<integer_type, 0> {
+        };
 
-    /// @brief  Type to hold a compile time string as a parameter pack of characters.
-    /// @tparam characters The characters of the string (without a null terminator).
-    template <char... characters>
-    class string_exploded final {
-    public:
-        /// @brief  The number of characters in the string.
-        constexpr static const unsigned long long int length = sizeof...(characters);
+        /// @brief  Type to hold a compile time string as a parameter pack of characters.
+        /// @tparam characters The characters of the string (without a null terminator).
+        template <char... characters>
+        class string_exploded final {
+        public:
+            /// @brief  The number of characters in the string.
+            constexpr static const unsigned long long int length = sizeof...(characters);
 
-        /// @brief  The characters of the string reassembled into a null terminated string array.
-        constexpr static const char data[length + 1] = { characters..., 0 };
-    };
+            /// @brief  The characters of the string reassembled into a null terminated string array.
+            constexpr static const char data[length + 1] = { characters..., 0 };
+        };
 
-    /// @brief  Get the length of a string represented as a lambda function.
-    /// @tparam string_as_lambda_type The type of the string lambda passed to the function.
-    /// @param  string_as_lambda A string represented by a lambda function allowing compile time indexing each character.
-    /// @return The length of the string in characters, not counting the null termination.
-    template <typename string_as_lambda_type>
-    constexpr unsigned long long int string_as_lambda_length(string_as_lambda_type string_as_lambda) {
-        unsigned long long int length = 0;
-        while (string_as_lambda(length)) {
-            ++length;
-        }
-        return length;
-    }
-
-    /// @brief  Explode a string represented as a lambda function into a string represented as a string_exploded type.
-    /// @tparam string_as_lambda_type The type of the string lambda passed to the function.
-    /// @param  string_as_lambda A string represented by a lambda function allowing indexing each character.
-    /// @return A string_exploded object representing the string as a unique type.
-    template <typename string_as_lambda_type>
-    constexpr auto string_explode(string_as_lambda_type string_as_lambda) {
-        return string_explode(string_as_lambda, make_integer_sequence<unsigned long long int, string_as_lambda_length(string_as_lambda)>{});
-    }
-
-    /// @brief  Explode a string represented as a lambda function into a string represented as a string_exploded type.
-    /// @tparam string_as_lambda_type The type of the string lambda passed to the function.
-    /// @tparam indexes The indexes of each character in the string.
-    /// @param  string_as_lambda A string represented by a lambda function allowing compile time indexing each character.
-    /// @param  character_index_sequence An object of a type holding the indexes of each character in the string.
-    /// @return A string_exploded object representing the string as a unique type.
-    template <typename string_as_lambda_type, unsigned long long int... indexes>
-    constexpr auto string_explode(string_as_lambda_type string_as_lambda, integer_sequence<unsigned long long int, indexes...> character_index_sequence) {
-        static_cast<void>(string_as_lambda);
-        static_cast<void>(character_index_sequence);
-        return string_exploded<string_as_lambda(indexes)...>{};
-    }
-
-
-    /// @brief  Find a character in a string, searing backwards from a given location.
-    /// @tparam characters The characters in the string.
-    /// @param  string A string represented by a string_exploded type.
-    /// @param  character The character to seach for.
-    /// @param  starting_index The index within the string to start searching at.
-    /// @return The index of the character, or 0xFFFFFFFFFFFFFFFF if it was not found.
-    template <char... characters>
-    constexpr unsigned long long int find_reverse(string_exploded<characters...> string, char character, unsigned long long int starting_index = sizeof...(characters) - 1) {
-        static_cast<void>(string);
-        static_assert(sizeof...(characters) > 0, "Cannot call find_reverse on an empty string.");
-        do {
-            if (string_exploded<characters...>::data[starting_index] == character) {
-                return starting_index;
+        /// @brief  Get the length of a string represented as a lambda function.
+        /// @tparam string_as_lambda_type The type of the string lambda passed to the function.
+        /// @param  string_as_lambda A string represented by a lambda function allowing compile time indexing each character.
+        /// @return The length of the string in characters, not counting the null termination.
+        template <typename string_as_lambda_type>
+        constexpr unsigned long long int string_as_lambda_length(string_as_lambda_type string_as_lambda) {
+            unsigned long long int length = 0;
+            while (string_as_lambda(length)) {
+                ++length;
             }
-        } while (starting_index-- > 0);
-        return 0xFFFFFFFFFFFFFFFF;
-    }
+            return length;
+        }
 
-    /// @brief  Create a substring from a string using a start location and length.
-    /// @tparam substring_start The index of the first character to copy from the string to the substring.
-    /// @tparam substring_length The length to copy from the string to the substring.
-    /// @tparam characters The characters in the string.
-    /// @param  string A string represented by a string_exploded type.
-    /// @return A string_exploded object representing the substring as a unique type.
-    template <unsigned long long int substring_start, unsigned long long int substring_length, char... characters>
-    constexpr auto substring(string_exploded<characters...> string) {
-        static_cast<void>(string);
-        return substring<substring_start>(string_exploded<characters...>{}, make_integer_sequence<unsigned long long int, substring_length>{});
-    }
+        /// @brief  Explode a string represented as a lambda function into a string represented as a string_exploded type.
+        /// @tparam string_as_lambda_type The type of the string lambda passed to the function.
+        /// @param  string_as_lambda A string represented by a lambda function allowing indexing each character.
+        /// @return A string_exploded object representing the string as a unique type.
+        template <typename string_as_lambda_type>
+        constexpr auto string_explode(string_as_lambda_type string_as_lambda) {
+            return string_explode(string_as_lambda, make_integer_sequence<unsigned long long int, string_as_lambda_length(string_as_lambda)>{});
+        }
 
-    /// @brief  Create a substring from a string using a start location and length.
-    /// @tparam substring_start The index of the first character to copy from the string to the substring.
-    /// @tparam characters The characters in the string.
-    /// @tparam indexes The indexes of each character in the substring.
-    /// @param  string A string represented by a string_exploded type.
-    /// @param  substring_index_sequence An object of a type holding the indexes of each character in the substring.
-    /// @return A string_exploded object representing the substring as a unique type.
-    template <unsigned long long int substring_start, char... characters, unsigned long long int... indexes>
-    constexpr auto substring(string_exploded<characters...> string, integer_sequence<unsigned long long int, indexes...> substring_index_sequence) {
-        static_cast<void>(string);
-        static_cast<void>(substring_index_sequence);
-        return string_exploded<string.data[substring_start + indexes]...>{};
-    }
+        /// @brief  Explode a string represented as a lambda function into a string represented as a string_exploded type.
+        /// @tparam string_as_lambda_type The type of the string lambda passed to the function.
+        /// @tparam indexes The indexes of each character in the string.
+        /// @param  string_as_lambda A string represented by a lambda function allowing compile time indexing each character.
+        /// @param  character_index_sequence An object of a type holding the indexes of each character in the string.
+        /// @return A string_exploded object representing the string as a unique type.
+        template <typename string_as_lambda_type, unsigned long long int... indexes>
+        constexpr auto string_explode(string_as_lambda_type string_as_lambda, integer_sequence<unsigned long long int, indexes...> character_index_sequence) {
+            static_cast<void>(string_as_lambda);
+            static_cast<void>(character_index_sequence);
+            return string_exploded<string_as_lambda(indexes)...>{};
+        }
 
-    /// @brief  Trim all characters before and including the last slash in the string.
-    /// @tparam characters The characters in the string.
-    /// @param  string A string represented by a string_exploded type.
-    /// @return A string_exploded object representing the trimmed string as a unique type.
-    template <char... characters>
-    constexpr auto string_basename(string_exploded<characters...> string) {
-        static_cast<void>(string);
-        // Search for the last slash.
-        #ifdef _WIN32
+        /// @brief  Find a character in a string, searing backwards from a given location.
+        /// @tparam characters The characters in the string.
+        /// @param  string A string represented by a string_exploded type.
+        /// @param  character The character to seach for.
+        /// @param  starting_index The index within the string to start searching at.
+        /// @return The index of the character, or 0xFFFFFFFFFFFFFFFF if it was not found.
+        template <char... characters>
+        constexpr unsigned long long int find_reverse(string_exploded<characters...> string, char character, unsigned long long int starting_index = sizeof...(characters) - 1) {
+            static_cast<void>(string);
+            static_assert(sizeof...(characters) > 0, "Cannot call find_reverse on an empty string.");
+            do {
+                if (string_exploded<characters...>::data[starting_index] == character) {
+                    return starting_index;
+                }
+            } while (starting_index-- > 0);
+            return 0xFFFFFFFFFFFFFFFF;
+        }
+
+        /// @brief  Create a substring from a string using a start location and length.
+        /// @tparam substring_start The index of the first character to copy from the string to the substring.
+        /// @tparam substring_length The length to copy from the string to the substring.
+        /// @tparam characters The characters in the string.
+        /// @param  string A string represented by a string_exploded type.
+        /// @return A string_exploded object representing the substring as a unique type.
+        template <unsigned long long int substring_start, unsigned long long int substring_length, char... characters>
+        constexpr auto substring(string_exploded<characters...> string) {
+            static_cast<void>(string);
+            return substring<substring_start>(string_exploded<characters...>{}, make_integer_sequence<unsigned long long int, substring_length>{});
+        }
+
+        /// @brief  Create a substring from a string using a start location and length.
+        /// @tparam substring_start The index of the first character to copy from the string to the substring.
+        /// @tparam characters The characters in the string.
+        /// @tparam indexes The indexes of each character in the substring.
+        /// @param  string A string represented by a string_exploded type.
+        /// @param  substring_index_sequence An object of a type holding the indexes of each character in the substring.
+        /// @return A string_exploded object representing the substring as a unique type.
+        template <unsigned long long int substring_start, char... characters, unsigned long long int... indexes>
+        constexpr auto substring(string_exploded<characters...> string, integer_sequence<unsigned long long int, indexes...> substring_index_sequence) {
+            static_cast<void>(string);
+            static_cast<void>(substring_index_sequence);
+            return string_exploded<string.data[substring_start + indexes]...>{};
+        }
+
+        /// @brief  Trim all characters before and including the last slash in the string.
+        /// @tparam characters The characters in the string.
+        /// @param  string A string represented by a string_exploded type.
+        /// @return A string_exploded object representing the trimmed string as a unique type.
+        template <char... characters>
+        constexpr auto string_basename(string_exploded<characters...> string) {
+            static_cast<void>(string);
+// Search for the last slash.
+#ifdef _WIN32
             constexpr char separator = '\\';
-        #else
+#else
             constexpr char separator = '/';
-        #endif
-        constexpr unsigned long long int index = find_reverse(string_exploded<characters...>{}, separator);
-        // If not found, return the entire string,
-        if constexpr (index == 0xFFFFFFFFFFFFFFFF) {
-            return string_exploded<characters...>{};
+#endif
+            constexpr unsigned long long int index = find_reverse(string_exploded<characters...>{}, separator);
+            // If not found, return the entire string,
+            if constexpr (index == 0xFFFFFFFFFFFFFFFF) {
+                return string_exploded<characters...>{};
+            }
+            // If found return a substring from the character after the slash, with a length to the end
+            else {
+                return substring<index + 1, sizeof...(characters) - (index + 1)>(string_exploded<characters...>{});
+            }
         }
-        // If found return a substring from the character after the slash, with a length to the end
-        else {
-            return substring<index + 1, sizeof...(characters) - (index + 1)>(string_exploded<characters...>{});
-        }
+
+// Macro that can be used in place of __FILE__ to prevent a users build path being leaked into the executable.
+// The string lambda has to be created outside of the decltype() call before c++20.
+// Once we have a constexpr string index function we can explode it into a varadic template.
+// Then once we have a string as a varadic template we can do anything easily, in this code we trim the string to just the filename.
+// The trimmed string as a varadic template can then be used in place of the __FILE__ macro.
+// All of this is wrapped in a lambda to group and execute the multiple expressions together.
+#define GTL_SHORT_FILE                                   \
+    []() {                                               \
+        auto string_as_lambda =                          \
+            [](unsigned long long int index) constexpr { \
+            return __FILE__[index];                      \
+        };                                               \
+        using string_exploded =                          \
+            decltype(gtl::short_file::string_explode(    \
+                string_as_lambda));                      \
+        using string_trimmed =                           \
+            decltype(gtl::short_file::string_basename(   \
+                string_exploded{}));                     \
+        return string_trimmed::data;                     \
+    }()
+
+        // With C++20 this macro can be shortened as lambdas can be used in non-evaulated contexts.
+        //#define GTL_SHORT_FILE
+        //    decltype(gtl::short_file::string_basename(
+        //        gtl::short_file::string_explode(
+        //            [](unsigned long long int index) constexpr {
+        //                return __FILE__[index];
+        //            };
+        //        )
+        //    ))::data;
+
     }
-
-    // Macro that can be used in place of __FILE__ to prevent a users build path being leaked into the executable.
-    // The string lambda has to be created outside of the decltype() call before c++20.
-    // Once we have a constexpr string index function we can explode it into a varadic template.
-    // Then once we have a string as a varadic template we can do anything easily, in this code we trim the string to just the filename.
-    // The trimmed string as a varadic template can then be used in place of the __FILE__ macro.
-    // All of this is wrapped in a lambda to group and execute the multiple expressions together.
-    #define GTL_SHORT_FILE                                      \
-        [](){                                                   \
-            auto string_as_lambda =                             \
-                [](unsigned long long int index) constexpr {    \
-                    return __FILE__[index];                     \
-                };                                              \
-            using string_exploded =                             \
-                decltype(                                       \
-                    gtl::short_file::string_explode(            \
-                        string_as_lambda                        \
-                    )                                           \
-                );                                              \
-            using string_trimmed =                              \
-                decltype(                                       \
-                    gtl::short_file::string_basename(           \
-                        string_exploded{}                       \
-                    )                                           \
-                );                                              \
-            return string_trimmed::data;                        \
-        }()                                                     \
-
-    // With C++20 this macro can be shortened as lambdas can be used in non-evaulated contexts.
-    //#define GTL_SHORT_FILE
-    //    decltype(gtl::short_file::string_basename(
-    //        gtl::short_file::string_explode(
-    //            [](unsigned long long int index) constexpr {
-    //                return __FILE__[index];
-    //            };
-    //        )
-    //    ))::data;
-
-}}
+}
 
 #endif // GTL_DEBUG_SHORT_FILE_HPP

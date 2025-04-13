@@ -21,28 +21,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Normalised cross correleation between two patches. [wip]
 
 #if defined(_MSC_VER)
-    #pragma warning(push, 0) 
+#pragma warning(push, 0)
 #endif
 
 #include <cmath>
 
 #if defined(_MSC_VER)
-    #pragma warning(pop) 
+#pragma warning(pop)
 #endif
 
 namespace gtl {
-    template<
+    template <
         int patch_width = 8,
         int patch_height = 8,
         typename type_lhs = unsigned char,
-        typename type_rhs = unsigned char
-    >
+        typename type_rhs = unsigned char>
     float ncc(
         const type_lhs* __restrict data_lhs,
         const int stride_lhs,
         const type_rhs* __restrict data_rhs,
-        const int stride_rhs
-    ) {
+        const int stride_rhs) {
         const int step_lhs = stride_lhs - patch_width;
         const int step_rhs = stride_rhs - patch_width;
 

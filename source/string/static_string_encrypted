@@ -21,317 +21,300 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Compile-time string encryption with runtime decryption to obfuscate strings.
 
 namespace gtl {
-namespace static_string_encrypted {
-    /// @brief  Template struct that holds a sequence of integers, derived from http://stackoverflow.com/a/32223343.
-    template <typename integer_type, integer_type... indexes>
-    struct integer_sequence {
-        using sequence_type = integer_sequence;
-    };
-
-    /// @brief  Template struct declaration that combines two sequences into one.
-    template <typename integer_type, typename lhs_sequence, typename rhs_sequence>
-    struct merge_sequences;
-
-    /// @brief  Template struct definition and partial specialisation for merging two interger_sequences.
-    template <typename integer_type, integer_type... lhs_indexes, integer_type... rhs_indexes>
-    struct merge_sequences<integer_type, integer_sequence<integer_type, lhs_indexes...>, integer_sequence<integer_type, rhs_indexes...>>
-        : integer_sequence<integer_type, lhs_indexes..., (sizeof...(lhs_indexes) + rhs_indexes)...> {
-    };
-
-    /// @brief  Template struct to create an integer_sequence from zero to the given length.
-    template <typename integer_type, unsigned long long length>
-    struct make_integer_sequence final
-        : merge_sequences<integer_type, typename make_integer_sequence<integer_type, length / 2>::sequence_type, typename make_integer_sequence<integer_type, length - length / 2>::sequence_type> {
-    };
-
-    /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length zero.
-    template<typename integer_type>
-    struct make_integer_sequence<integer_type, 0> final
-        : integer_sequence<integer_type> {
-    };
-
-    /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length one.
-    template<typename integer_type>
-    struct make_integer_sequence<integer_type, 1> final
-        : integer_sequence<integer_type, 0> {
-    };
-
-    /// @brief  Type to hold a compile time string as a parameter pack of characters.
-    /// @tparam characters The characters of the string (without a null terminator).
-    template <unsigned char... characters>
-    class string_exploded final {
-    public:
-        /// @brief  The number of characters in the string.
-        constexpr static const unsigned long long int length = sizeof...(characters);
-
-        /// @brief  The characters of the string reassembled into a null terminated string array.
-        constexpr static const unsigned char data[length + 1] = { characters..., 0 };
-    };
-
-    /// @brief  Get the length of a string represented as a lambda function.
-    /// @tparam string_as_lambda_type The type of the string lambda passed to the function.
-    /// @param  string_as_lambda A string represented by a lambda function allowing compile time indexing each character.
-    /// @return The length of the string in characters, not counting the null termination.
-    template <typename string_as_lambda_type>
-    constexpr unsigned long long int string_as_lambda_length(string_as_lambda_type string_as_lambda) {
-        unsigned long long int length = 0;
-        while (string_as_lambda(length)) {
-            ++length;
-        }
-        return length;
-    }
-
-    /// @brief  Explode a string represented as a lambda function into a string represented as a string_exploded type.
-    /// @tparam string_as_lambda_type The type of the string lambda passed to the function.
-    /// @param  string_as_lambda A string represented by a lambda function allowing indexing each character.
-    /// @return A string_exploded object representing the string as a unique type.
-    template <typename string_as_lambda_type>
-    constexpr auto string_explode(string_as_lambda_type string_as_lambda) {
-        return string_explode(string_as_lambda, make_integer_sequence<unsigned long long int, string_as_lambda_length(string_as_lambda)>{});
-    }
-
-    /// @brief  Explode a string represented as a lambda function into a string represented as a string_exploded type.
-    /// @tparam string_as_lambda_type The type of the string lambda passed to the function.
-    /// @tparam indexes The indexes of each character in the string.
-    /// @param  string_as_lambda A string represented by a lambda function allowing compile time indexing each character.
-    /// @param  character_index_sequence An object of a type holding the indexes of each character in the string.
-    /// @return A string_exploded object representing the string as a unique type.
-    template <typename string_as_lambda_type, unsigned long long int... indexes>
-    constexpr auto string_explode(string_as_lambda_type string_as_lambda, integer_sequence<unsigned long long int, indexes...> character_index_sequence) {
-        static_cast<void>(string_as_lambda);
-        static_cast<void>(character_index_sequence);
-        return string_exploded<string_as_lambda(indexes)...>{};
-    }
-
-    /// @brief  Single function version of the pcg random number generator, to be used at compile time.
-    /// @param  seed Value to seed the random number generator.
-    /// @param  rounds Number of rounds of generation to perform before returning a value.
-    /// @return A generated random number.
-    constexpr unsigned long long int random_pcg(unsigned long long int seed, unsigned long long int rounds) {
-        constexpr auto generate = [](unsigned long long int& state, unsigned long long int& increment) constexpr -> unsigned long long int {
-            // Save current state.
-            unsigned long long int state_previous = state;
-            // Advance internal state.
-            state = state_previous * 0x5851F42D4C957F2Dull + increment;
-            // Calculate output function.
-            unsigned int state_shift_xor_shift = static_cast<unsigned int>(((state_previous >> 18u) ^ state_previous) >> 27u);
-            int rotation = state_previous >> 59u;
-            return (state_shift_xor_shift >> rotation) | (state_shift_xor_shift << ((-rotation) & 31));
+    namespace static_string_encrypted {
+        /// @brief  Template struct that holds a sequence of integers, derived from http://stackoverflow.com/a/32223343.
+        template <typename integer_type, integer_type... indexes>
+        struct integer_sequence {
+            using sequence_type = integer_sequence;
         };
-        unsigned long long int state = 0;
-        unsigned long long int increment = (seed << 1) | 1;
-        generate(state, increment);
-        state += seed;
-        generate(state, increment);
-        for (unsigned long long int round = 0; round < rounds; ++round) {
+
+        /// @brief  Template struct declaration that combines two sequences into one.
+        template <typename integer_type, typename lhs_sequence, typename rhs_sequence>
+        struct merge_sequences;
+
+        /// @brief  Template struct definition and partial specialisation for merging two interger_sequences.
+        template <typename integer_type, integer_type... lhs_indexes, integer_type... rhs_indexes>
+        struct merge_sequences<integer_type, integer_sequence<integer_type, lhs_indexes...>, integer_sequence<integer_type, rhs_indexes...>>
+            : integer_sequence<integer_type, lhs_indexes..., (sizeof...(lhs_indexes) + rhs_indexes)...> {
+        };
+
+        /// @brief  Template struct to create an integer_sequence from zero to the given length.
+        template <typename integer_type, unsigned long long length>
+        struct make_integer_sequence final
+            : merge_sequences<integer_type, typename make_integer_sequence<integer_type, length / 2>::sequence_type, typename make_integer_sequence<integer_type, length - length / 2>::sequence_type> {
+        };
+
+        /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length zero.
+        template <typename integer_type>
+        struct make_integer_sequence<integer_type, 0> final
+            : integer_sequence<integer_type> {
+        };
+
+        /// @brief  Template struct partial specialisation of make_integer_sequence for an integer_sequence of length one.
+        template <typename integer_type>
+        struct make_integer_sequence<integer_type, 1> final
+            : integer_sequence<integer_type, 0> {
+        };
+
+        /// @brief  Type to hold a compile time string as a parameter pack of characters.
+        /// @tparam characters The characters of the string (without a null terminator).
+        template <unsigned char... characters>
+        class string_exploded final {
+        public:
+            /// @brief  The number of characters in the string.
+            constexpr static const unsigned long long int length = sizeof...(characters);
+
+            /// @brief  The characters of the string reassembled into a null terminated string array.
+            constexpr static const unsigned char data[length + 1] = { characters..., 0 };
+        };
+
+        /// @brief  Get the length of a string represented as a lambda function.
+        /// @tparam string_as_lambda_type The type of the string lambda passed to the function.
+        /// @param  string_as_lambda A string represented by a lambda function allowing compile time indexing each character.
+        /// @return The length of the string in characters, not counting the null termination.
+        template <typename string_as_lambda_type>
+        constexpr unsigned long long int string_as_lambda_length(string_as_lambda_type string_as_lambda) {
+            unsigned long long int length = 0;
+            while (string_as_lambda(length)) {
+                ++length;
+            }
+            return length;
+        }
+
+        /// @brief  Explode a string represented as a lambda function into a string represented as a string_exploded type.
+        /// @tparam string_as_lambda_type The type of the string lambda passed to the function.
+        /// @param  string_as_lambda A string represented by a lambda function allowing indexing each character.
+        /// @return A string_exploded object representing the string as a unique type.
+        template <typename string_as_lambda_type>
+        constexpr auto string_explode(string_as_lambda_type string_as_lambda) {
+            return string_explode(string_as_lambda, make_integer_sequence<unsigned long long int, string_as_lambda_length(string_as_lambda)>{});
+        }
+
+        /// @brief  Explode a string represented as a lambda function into a string represented as a string_exploded type.
+        /// @tparam string_as_lambda_type The type of the string lambda passed to the function.
+        /// @tparam indexes The indexes of each character in the string.
+        /// @param  string_as_lambda A string represented by a lambda function allowing compile time indexing each character.
+        /// @param  character_index_sequence An object of a type holding the indexes of each character in the string.
+        /// @return A string_exploded object representing the string as a unique type.
+        template <typename string_as_lambda_type, unsigned long long int... indexes>
+        constexpr auto string_explode(string_as_lambda_type string_as_lambda, integer_sequence<unsigned long long int, indexes...> character_index_sequence) {
+            static_cast<void>(string_as_lambda);
+            static_cast<void>(character_index_sequence);
+            return string_exploded<string_as_lambda(indexes)...>{};
+        }
+
+        /// @brief  Single function version of the pcg random number generator, to be used at compile time.
+        /// @param  seed Value to seed the random number generator.
+        /// @param  rounds Number of rounds of generation to perform before returning a value.
+        /// @return A generated random number.
+        constexpr unsigned long long int random_pcg(unsigned long long int seed, unsigned long long int rounds) {
+            constexpr auto generate = [](unsigned long long int& state, unsigned long long int& increment) constexpr->unsigned long long int {
+                // Save current state.
+                unsigned long long int state_previous = state;
+                // Advance internal state.
+                state = state_previous * 0x5851F42D4C957F2Dull + increment;
+                // Calculate output function.
+                unsigned int state_shift_xor_shift = static_cast<unsigned int>(((state_previous >> 18u) ^ state_previous) >> 27u);
+                int rotation = state_previous >> 59u;
+                return (state_shift_xor_shift >> rotation) | (state_shift_xor_shift << ((-rotation) & 31));
+            };
+            unsigned long long int state = 0;
+            unsigned long long int increment = (seed << 1) | 1;
             generate(state, increment);
+            state += seed;
+            generate(state, increment);
+            for (unsigned long long int round = 0; round < rounds; ++round) {
+                generate(state, increment);
+            }
+            return generate(state, increment);
         }
-        return generate(state, increment);
-    }
 
-    /// @brief  Rotate an 8 bit value right by a shift amount.
-    /// @param  value The value to rotate.
-    /// @param  shift The number of bits to rotate by.
-    /// @return The value after it has been rotated right by shift bits.
-    constexpr static unsigned char rotate_right(unsigned char value, unsigned char shift) {
-        constexpr const unsigned int mask = (8 * sizeof(unsigned char) - 1);
-        shift &= mask;
-        return static_cast<unsigned char>((value >> shift) | (value << ((static_cast<unsigned int>(-static_cast<signed int>(shift))) & mask)));
-    }
+        /// @brief  Rotate an 8 bit value right by a shift amount.
+        /// @param  value The value to rotate.
+        /// @param  shift The number of bits to rotate by.
+        /// @return The value after it has been rotated right by shift bits.
+        constexpr static unsigned char rotate_right(unsigned char value, unsigned char shift) {
+            constexpr const unsigned int mask = (8 * sizeof(unsigned char) - 1);
+            shift &= mask;
+            return static_cast<unsigned char>((value >> shift) | (value << ((static_cast<unsigned int>(-static_cast<signed int>(shift))) & mask)));
+        }
 
-    /// @brief  Rotate an 8 bit value left by a shift amount.
-    /// @param  value The value to rotate.
-    /// @param  shift The number of bits to rotate by.
-    /// @return The value after it has been rotated left by shift bits.
-    constexpr static unsigned char rotate_left(unsigned char value, unsigned char shift) {
-        constexpr const unsigned char mask = (8 * sizeof(unsigned char) - 1);
-        shift &= mask;
-        return static_cast<unsigned char>((value << shift) | (value >> ((static_cast<unsigned int>(-static_cast<signed int>(shift))) & mask)));
-    }
+        /// @brief  Rotate an 8 bit value left by a shift amount.
+        /// @param  value The value to rotate.
+        /// @param  shift The number of bits to rotate by.
+        /// @return The value after it has been rotated left by shift bits.
+        constexpr static unsigned char rotate_left(unsigned char value, unsigned char shift) {
+            constexpr const unsigned char mask = (8 * sizeof(unsigned char) - 1);
+            shift &= mask;
+            return static_cast<unsigned char>((value << shift) | (value >> ((static_cast<unsigned int>(-static_cast<signed int>(shift))) & mask)));
+        }
 
-    /// @brief  Encode a character using a compile time generated seed, pseudorandom numbers and some bit rotations.
-    /// @param  character The character to encode.
-    /// @param  index The location of the character in a string, used as extra information for encoding the character.
-    /// @return The encoded character.
-    constexpr unsigned char character_encode(const unsigned char character, unsigned long long int index) {
-        #if (defined(__clang__))
-        #   pragma clang diagnostic push
-        #   pragma clang diagnostic ignored "-Wdate-time"
-        #endif
-        #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
-        #   pragma GCC diagnostic push
-        #   pragma GCC diagnostic ignored "-Wdate-time"
-        #endif
-        constexpr const unsigned int seed = (
-            static_cast<unsigned int>(__TIME__[7] - '0') * 1 +
-            static_cast<unsigned int>(__TIME__[6] - '0') * 10 +
-            static_cast<unsigned int>(__TIME__[4] - '0') * 60 +
-            static_cast<unsigned int>(__TIME__[3] - '0') * 600 +
-            static_cast<unsigned int>(__TIME__[1] - '0') * 3600 +
-            static_cast<unsigned int>(__TIME__[0] - '0') * 36000);
-        #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
-        #   pragma GCC diagnostic pop
-        #endif
-        #if (defined(__clang__))
-        #   pragma clang diagnostic pop
-        #endif
-        constexpr const unsigned int rounds = 10;
-        #ifdef _MSC_VER
-        #   pragma warning(push)
-        #   pragma warning(disable: 4307)
-        #endif
+        /// @brief  Encode a character using a compile time generated seed, pseudorandom numbers and some bit rotations.
+        /// @param  character The character to encode.
+        /// @param  index The location of the character in a string, used as extra information for encoding the character.
+        /// @return The encoded character.
+        constexpr unsigned char character_encode(const unsigned char character, unsigned long long int index) {
+#if (defined(__clang__))
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdate-time"
+#endif
+#if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdate-time"
+#endif
+            constexpr const unsigned int seed = (static_cast<unsigned int>(__TIME__[7] - '0') * 1 + static_cast<unsigned int>(__TIME__[6] - '0') * 10 + static_cast<unsigned int>(__TIME__[4] - '0') * 60 + static_cast<unsigned int>(__TIME__[3] - '0') * 600 + static_cast<unsigned int>(__TIME__[1] - '0') * 3600 + static_cast<unsigned int>(__TIME__[0] - '0') * 36000);
+#if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
+#pragma GCC diagnostic pop
+#endif
+#if (defined(__clang__))
+#pragma clang diagnostic pop
+#endif
+            constexpr const unsigned int rounds = 10;
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4307)
+#endif
             constexpr const unsigned long long int random = random_pcg(seed, rounds);
-        #ifdef _MSC_VER
-        #   pragma warning(pop)
-        #endif
-        constexpr const unsigned char key = static_cast<unsigned char>(random % (0xFF + 1));
-        const unsigned char offset = static_cast<unsigned char>(random_pcg(index, rounds) % (0xFF + 1));
-        return rotate_left(rotate_right(character, 3 + index % 5) ^ key ^ offset, index % 3);
-    }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+            constexpr const unsigned char key = static_cast<unsigned char>(random % (0xFF + 1));
+            const unsigned char offset = static_cast<unsigned char>(random_pcg(index, rounds) % (0xFF + 1));
+            return rotate_left(rotate_right(character, 3 + index % 5) ^ key ^ offset, index % 3);
+        }
 
-    /// @brief  Decode a character using a compile time generated seed, pseudorandom numbers and some bit rotations.
-    /// @param  character The character to decode.
-    /// @param  index The location of the character in a string, used as extra information for decoding the character.
-    /// @return The decoded character.
-    constexpr unsigned char character_decode(const unsigned char character, unsigned long long int index) {
-        #if (defined(__clang__))
-        #   pragma clang diagnostic push
-        #   pragma clang diagnostic ignored "-Wdate-time"
-        #endif
-        #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
-        #   pragma GCC diagnostic push
-        #   pragma GCC diagnostic ignored "-Wdate-time"
-        #endif
-        constexpr const unsigned int seed = (
-            static_cast<unsigned int>(__TIME__[7] - '0') * 1 +
-            static_cast<unsigned int>(__TIME__[6] - '0') * 10 +
-            static_cast<unsigned int>(__TIME__[4] - '0') * 60 +
-            static_cast<unsigned int>(__TIME__[3] - '0') * 600 +
-            static_cast<unsigned int>(__TIME__[1] - '0') * 3600 +
-            static_cast<unsigned int>(__TIME__[0] - '0') * 36000);
-        #if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
-        #   pragma GCC diagnostic pop
-        #endif
-        #if (defined(__clang__))
-        #   pragma clang diagnostic pop
-        #endif
-        constexpr const unsigned int rounds = 10;
-        #ifdef _MSC_VER
-        #   pragma warning(push)
-        #   pragma warning(disable: 4307)
-        #endif
+        /// @brief  Decode a character using a compile time generated seed, pseudorandom numbers and some bit rotations.
+        /// @param  character The character to decode.
+        /// @param  index The location of the character in a string, used as extra information for decoding the character.
+        /// @return The decoded character.
+        constexpr unsigned char character_decode(const unsigned char character, unsigned long long int index) {
+#if (defined(__clang__))
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdate-time"
+#endif
+#if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdate-time"
+#endif
+            constexpr const unsigned int seed = (static_cast<unsigned int>(__TIME__[7] - '0') * 1 + static_cast<unsigned int>(__TIME__[6] - '0') * 10 + static_cast<unsigned int>(__TIME__[4] - '0') * 60 + static_cast<unsigned int>(__TIME__[3] - '0') * 600 + static_cast<unsigned int>(__TIME__[1] - '0') * 3600 + static_cast<unsigned int>(__TIME__[0] - '0') * 36000);
+#if (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
+#pragma GCC diagnostic pop
+#endif
+#if (defined(__clang__))
+#pragma clang diagnostic pop
+#endif
+            constexpr const unsigned int rounds = 10;
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4307)
+#endif
             constexpr const unsigned long long int random = random_pcg(seed, rounds);
-        #ifdef _MSC_VER
-        #   pragma warning(pop)
-        #endif
-        constexpr const unsigned char key = static_cast<unsigned char>(random % (0xFF + 1));
-        const unsigned char offset = static_cast<unsigned char>(random_pcg(index, rounds) % (0xFF + 1));
-        return rotate_left(rotate_right(character, index % 3) ^ (key ^ offset), 3 + index % 5);
-    }
-
-    /// @brief  Encode a string in a string_exploded type by processing each character using character_encode to create a new encoded string_exploded type.
-    /// @tparam characters The characters in the string.
-    /// @param  string A string represented by a string_exploded type.
-    /// @return A string_exploded object representing the encoded string as a unique type.
-    template <unsigned char... characters>
-    constexpr auto string_encode(string_exploded<characters...> string) {
-        static_cast<void>(string);
-        return string_encode(string_exploded<characters...>{}, make_integer_sequence<unsigned long long int, sizeof...(characters)>{});
-    }
-
-    #ifdef _MSC_VER
-    #   pragma warning(push)
-    #   pragma warning(disable: 4307)
-    #endif
-    /// @brief  Encode a string in a string_exploded type by processing each character using character_encode to create a new encoded string_exploded type.
-    /// @tparam characters The characters in the string.
-    /// @tparam indexes The indexes of each character in the string.
-    /// @param  string A string represented by a string_exploded type.
-    /// @param  character_index_sequence An object of a type holding the indexes of each character in the string.
-    /// @return A string_exploded object representing the encoded string as a unique type.
-    template <unsigned char... characters, unsigned long long int... indexes>
-    constexpr auto string_encode(string_exploded<characters...> string, integer_sequence<unsigned long long int, indexes...> character_index_sequence) {
-        static_cast<void>(string);
-        static_cast<void>(character_index_sequence);
-        return string_exploded<character_encode(characters, indexes)...>{};
-    }
-    #ifdef _MSC_VER
-    #   pragma warning(pop)
-    #endif
-
-    /// @brief  Container for encoded strings, has a member function to provide decoding.
-    /// @tparam string_encoded_type An encoded string as a type to ensure encoding happens at compile time.
-    template <typename string_encoded_type>
-    class string_vault {
-    public:
-        /// @brief  Get the length of the string, excluding the null terminator.
-        /// @return The length of the string.
-        static unsigned long long int get_length() {
-            return string_encoded_type::length;
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+            constexpr const unsigned char key = static_cast<unsigned char>(random % (0xFF + 1));
+            const unsigned char offset = static_cast<unsigned char>(random_pcg(index, rounds) % (0xFF + 1));
+            return rotate_left(rotate_right(character, index % 3) ^ (key ^ offset), 3 + index % 5);
         }
 
-        /// @brief  Get the encoded string data.
-        /// @return The encoded string data.
-        static const unsigned char* get_encoded() {
-            return &string_encoded_type::data[0];
+        /// @brief  Encode a string in a string_exploded type by processing each character using character_encode to create a new encoded string_exploded type.
+        /// @tparam characters The characters in the string.
+        /// @param  string A string represented by a string_exploded type.
+        /// @return A string_exploded object representing the encoded string as a unique type.
+        template <unsigned char... characters>
+        constexpr auto string_encode(string_exploded<characters...> string) {
+            static_cast<void>(string);
+            return string_encode(string_exploded<characters...>{}, make_integer_sequence<unsigned long long int, sizeof...(characters)>{});
         }
 
-        /// @brief  Get the decoded string data, the data is decoded on the first call and stored in a static variable.
-        /// @return The decoded string data.
-        static const char* get_decoded() {
-            static const char* string_decoded = [](){
-                static char string_decoded_internal[string_encoded_type::length + 1];
-                for(unsigned long long int index = 0; index < string_encoded_type::length; ++index) {
-                    string_decoded_internal[index] = static_cast<char>(character_decode(string_encoded_type::data[index], index));
-                }
-                string_decoded_internal[string_encoded_type::length] = 0;
-                return string_decoded_internal;
-            }();
-            return string_decoded;
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4307)
+#endif
+        /// @brief  Encode a string in a string_exploded type by processing each character using character_encode to create a new encoded string_exploded type.
+        /// @tparam characters The characters in the string.
+        /// @tparam indexes The indexes of each character in the string.
+        /// @param  string A string represented by a string_exploded type.
+        /// @param  character_index_sequence An object of a type holding the indexes of each character in the string.
+        /// @return A string_exploded object representing the encoded string as a unique type.
+        template <unsigned char... characters, unsigned long long int... indexes>
+        constexpr auto string_encode(string_exploded<characters...> string, integer_sequence<unsigned long long int, indexes...> character_index_sequence) {
+            static_cast<void>(string);
+            static_cast<void>(character_index_sequence);
+            return string_exploded<character_encode(characters, indexes)...>{};
         }
-    };
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
-    // Macro for easy creation of encoded strings.
-    // The string lambda has to be created outside of the decltype() call before c++20.
-    // Once we have a constexpr string index function we can explode it into a varadic template.
-    // Then once we have a string as a varadic template we can do anything easily, in this code we encode the chars.
-    // The encoded chars as a varadic template can then be used to instantiate a string_vault for easy decoding.
-    // All of this is wrapped in a lambda to group and execute the multiple expressions together.
-    #define GTL_STATIC_STRING_ENCRYPTED(string)                                     \
-        [](){                                                                       \
-            auto string_as_lambda =                                                 \
-                [](unsigned long long int index) constexpr {                        \
-                    return string[index];                                           \
-                };                                                                  \
-            using string_exploded =                                                 \
-                decltype(                                                           \
-                    gtl::static_string_encrypted::string_explode(                   \
-                        string_as_lambda                                            \
-                    )                                                               \
-                );                                                                  \
-            using string_encoded =                                                  \
-                decltype(                                                           \
-                    gtl::static_string_encrypted::string_encode(                    \
-                        string_exploded{}                                           \
-                    )                                                               \
-                );                                                                  \
-            return gtl::static_string_encrypted::string_vault<string_encoded>{};    \
-        }()                                                                         \
+        /// @brief  Container for encoded strings, has a member function to provide decoding.
+        /// @tparam string_encoded_type An encoded string as a type to ensure encoding happens at compile time.
+        template <typename string_encoded_type>
+        class string_vault {
+        public:
+            /// @brief  Get the length of the string, excluding the null terminator.
+            /// @return The length of the string.
+            static unsigned long long int get_length() {
+                return string_encoded_type::length;
+            }
 
-    // With C++20 this macro can be shortened as lambdas can be used in non-evaulated contexts.
-    //#define GTL_STATIC_STRING_ENCRYPTED(string)
-    //    gtl::static_string_encrypted::string_vault<
-    //        decltype(
-    //            gtl::static_string_encrypted::string_encode(
-    //                gtl::static_string_encrypted::string_explode(
-    //                    [](unsigned long long int index) constexpr {
-    //                        return string[index];
-    //                    };
-    //                )
-    //            )
-    //        )
-    //    >{}
+            /// @brief  Get the encoded string data.
+            /// @return The encoded string data.
+            static const unsigned char* get_encoded() {
+                return &string_encoded_type::data[0];
+            }
 
-}}
+            /// @brief  Get the decoded string data, the data is decoded on the first call and stored in a static variable.
+            /// @return The decoded string data.
+            static const char* get_decoded() {
+                static const char* string_decoded = []() {
+                    static char string_decoded_internal[string_encoded_type::length + 1];
+                    for (unsigned long long int index = 0; index < string_encoded_type::length; ++index) {
+                        string_decoded_internal[index] = static_cast<char>(character_decode(string_encoded_type::data[index], index));
+                    }
+                    string_decoded_internal[string_encoded_type::length] = 0;
+                    return string_decoded_internal;
+                }();
+                return string_decoded;
+            }
+        };
+
+// Macro for easy creation of encoded strings.
+// The string lambda has to be created outside of the decltype() call before c++20.
+// Once we have a constexpr string index function we can explode it into a varadic template.
+// Then once we have a string as a varadic template we can do anything easily, in this code we encode the chars.
+// The encoded chars as a varadic template can then be used to instantiate a string_vault for easy decoding.
+// All of this is wrapped in a lambda to group and execute the multiple expressions together.
+#define GTL_STATIC_STRING_ENCRYPTED(string)                                  \
+    []() {                                                                   \
+        auto string_as_lambda =                                              \
+            [](unsigned long long int index) constexpr {                     \
+            return string[index];                                            \
+        };                                                                   \
+        using string_exploded =                                              \
+            decltype(gtl::static_string_encrypted::string_explode(           \
+                string_as_lambda));                                          \
+        using string_encoded =                                               \
+            decltype(gtl::static_string_encrypted::string_encode(            \
+                string_exploded{}));                                         \
+        return gtl::static_string_encrypted::string_vault<string_encoded>{}; \
+    }()
+
+        // With C++20 this macro can be shortened as lambdas can be used in non-evaulated contexts.
+        //#define GTL_STATIC_STRING_ENCRYPTED(string)
+        //    gtl::static_string_encrypted::string_vault<
+        //        decltype(
+        //            gtl::static_string_encrypted::string_encode(
+        //                gtl::static_string_encrypted::string_explode(
+        //                    [](unsigned long long int index) constexpr {
+        //                        return string[index];
+        //                    };
+        //                )
+        //            )
+        //        )
+        //    >{}
+
+    }
+}
 
 #endif // GTL_STRING_STATIC_STRING_ENCRYPTED_HPP

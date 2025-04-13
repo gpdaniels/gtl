@@ -24,15 +24,13 @@ namespace gtl {
     template <
         int patch_width = 8,
         int patch_height = 8,
-        typename type
-    >
+        typename type>
     void sub_pixel_patch(
         const type* __restrict const data,
         const int stride,
         const float offset_x,
         const float offset_y,
-        float* __restrict patch
-    ) {
+        float* __restrict patch) {
         // Offset the data pointer by the whole
         const int data_offset_x = static_cast<int>(-offset_x) + (offset_x < 0);
         const int data_offset_y = static_cast<int>(-offset_y) + (offset_y < 0);

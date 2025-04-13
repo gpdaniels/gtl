@@ -21,13 +21,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Macros and helper function to get the runtime used for the build.
 
 #if defined(_MSC_VER)
-    #pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <cstdlib>
 
 #if defined(_MSC_VER)
-    #pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #define GTL_PLATFORM_RUNTIME_LIBSTDCPP 0
@@ -41,57 +41,56 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define GTL_PLATFORM_RUNTIME_UNKNOWN 1
 
 #if (defined(__GLIBCPP__) || defined(__GLIBCXX__))
-    #undef GTL_PLATFORM_RUNTIME_LIBSTDCPP
-    #define GTL_PLATFORM_RUNTIME_LIBSTDCPP 1
+#undef GTL_PLATFORM_RUNTIME_LIBSTDCPP
+#define GTL_PLATFORM_RUNTIME_LIBSTDCPP 1
 #endif
 
 #if (defined(_LIBCPP_VERSION))
-    #undef GTL_PLATFORM_RUNTIME_LIBCPP
-    #define GTL_PLATFORM_RUNTIME_LIBCPP 1
+#undef GTL_PLATFORM_RUNTIME_LIBCPP
+#define GTL_PLATFORM_RUNTIME_LIBCPP 1
 #endif
 
 #if (defined(_MSC_VER) && defined(_MT) && defined(_DLL))
-    #undef GTL_PLATFORM_RUNTIME_MSVC_MT_DLL
-    #define GTL_PLATFORM_RUNTIME_MSVC_MT_DLL 1
+#undef GTL_PLATFORM_RUNTIME_MSVC_MT_DLL
+#define GTL_PLATFORM_RUNTIME_MSVC_MT_DLL 1
 #endif
 
 #if (defined(_MSC_VER) && defined(_MT) && !defined(_DLL))
-    #undef GTL_PLATFORM_RUNTIME_MSVC_MT
-    #define GTL_PLATFORM_RUNTIME_MSVC_MT 1
+#undef GTL_PLATFORM_RUNTIME_MSVC_MT
+#define GTL_PLATFORM_RUNTIME_MSVC_MT 1
 #endif
 
 #if (defined(_MSC_VER) && !defined(_MT) && defined(_DLL))
-    #undef GTL_PLATFORM_RUNTIME_MSVC_ST_DLL
-    #define GTL_PLATFORM_RUNTIME_MSVC_ST_DLL 1
+#undef GTL_PLATFORM_RUNTIME_MSVC_ST_DLL
+#define GTL_PLATFORM_RUNTIME_MSVC_ST_DLL 1
 #endif
 
 #if (defined(_MSC_VER) && !defined(_MT) && !defined(_DLL))
-    #undef GTL_PLATFORM_RUNTIME_MSVC_ST
-    #define GTL_PLATFORM_RUNTIME_MSVC_ST 1
+#undef GTL_PLATFORM_RUNTIME_MSVC_ST
+#define GTL_PLATFORM_RUNTIME_MSVC_ST 1
 #endif
 
 #if (defined(__GLIBC__))
-    #undef GTL_PLATFORM_RUNTIME_GLIBC
-    #define GTL_PLATFORM_RUNTIME_GLIBC 1
+#undef GTL_PLATFORM_RUNTIME_GLIBC
+#define GTL_PLATFORM_RUNTIME_GLIBC 1
 #endif
 
 #if (defined(__INTEL_CXXLIB_ICC))
-    #undef GTL_PLATFORM_RUNTIME_INTEL
-    #define GTL_PLATFORM_RUNTIME_INTEL 1
+#undef GTL_PLATFORM_RUNTIME_INTEL
+#define GTL_PLATFORM_RUNTIME_INTEL 1
 #endif
 
-#if (                                      \
-    (GTL_PLATFORM_RUNTIME_LIBSTDCPP)   ||  \
-    (GTL_PLATFORM_RUNTIME_LIBCPP)      ||  \
-    (GTL_PLATFORM_RUNTIME_MSVC_MT_DLL) ||  \
-    (GTL_PLATFORM_RUNTIME_MSVC_MT)     ||  \
-    (GTL_PLATFORM_RUNTIME_MSVC_ST_DLL) ||  \
-    (GTL_PLATFORM_RUNTIME_MSVC_ST)     ||  \
-    (GTL_PLATFORM_RUNTIME_GLIBC)       ||  \
-    (GTL_PLATFORM_RUNTIME_INTEL)           \
-)
-    #undef GTL_PLATFORM_RUNTIME_UNKNOWN
-    #define GTL_PLATFORM_RUNTIME_UNKNOWN 0
+#if (                                     \
+    (GTL_PLATFORM_RUNTIME_LIBSTDCPP) ||   \
+    (GTL_PLATFORM_RUNTIME_LIBCPP) ||      \
+    (GTL_PLATFORM_RUNTIME_MSVC_MT_DLL) || \
+    (GTL_PLATFORM_RUNTIME_MSVC_MT) ||     \
+    (GTL_PLATFORM_RUNTIME_MSVC_ST_DLL) || \
+    (GTL_PLATFORM_RUNTIME_MSVC_ST) ||     \
+    (GTL_PLATFORM_RUNTIME_GLIBC) ||       \
+    (GTL_PLATFORM_RUNTIME_INTEL))
+#undef GTL_PLATFORM_RUNTIME_UNKNOWN
+#define GTL_PLATFORM_RUNTIME_UNKNOWN 0
 #endif
 
 namespace gtl {
@@ -109,29 +108,30 @@ namespace gtl {
     };
 
     /// @brief Compile time variable holding the detected runtime.
-    constexpr static const runtime_types runtime = []()constexpr->runtime_types{
-        #if (GTL_PLATFORM_RUNTIME_LIBSTDCPP)
-            return runtime_types::libstdcpp;
-        #elif (GTL_PLATFORM_RUNTIME_LIBCPP)
-            return runtime_types::libcpp;
-        #elif (GTL_PLATFORM_RUNTIME_MSVC_MT_DLL)
-            return runtime_types::mscv_mt_dll;
-        #elif (GTL_PLATFORM_RUNTIME_MSVC_MT)
-            return runtime_types::mscv_mt;
-        #elif (GTL_PLATFORM_RUNTIME_MSVC_ST_DLL)
-            return runtime_types::mscv_st_dll;
-        #elif (GTL_PLATFORM_RUNTIME_MSVC_ST)
-            return runtime_types::mscv_st;
-        #elif (GTL_PLATFORM_RUNTIME_GLIBC)
-            return runtime_types::glibc;
-        #elif (GTL_PLATFORM_RUNTIME_INTEL)
-            return runtime_types::intel;
-        #elif (GTL_PLATFORM_RUNTIME_UNKNOWN)
-            return runtime_types::unknown;
-        #else
-            #error "Issue detecting platform runtime."
-        #endif
-    }();
+    constexpr static const runtime_types runtime = []() constexpr->runtime_types {
+#if (GTL_PLATFORM_RUNTIME_LIBSTDCPP)
+        return runtime_types::libstdcpp;
+#elif (GTL_PLATFORM_RUNTIME_LIBCPP)
+        return runtime_types::libcpp;
+#elif (GTL_PLATFORM_RUNTIME_MSVC_MT_DLL)
+        return runtime_types::mscv_mt_dll;
+#elif (GTL_PLATFORM_RUNTIME_MSVC_MT)
+        return runtime_types::mscv_mt;
+#elif (GTL_PLATFORM_RUNTIME_MSVC_ST_DLL)
+        return runtime_types::mscv_st_dll;
+#elif (GTL_PLATFORM_RUNTIME_MSVC_ST)
+        return runtime_types::mscv_st;
+#elif (GTL_PLATFORM_RUNTIME_GLIBC)
+        return runtime_types::glibc;
+#elif (GTL_PLATFORM_RUNTIME_INTEL)
+        return runtime_types::intel;
+#elif (GTL_PLATFORM_RUNTIME_UNKNOWN)
+        return runtime_types::unknown;
+#else
+#error "Issue detecting platform runtime."
+#endif
+    }
+    ();
 }
 
 #endif // GTL_PLATFORM_RUNTIME_HPP

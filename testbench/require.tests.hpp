@@ -31,17 +31,17 @@ namespace testbench {
 
 // Attempt to use a more detailed function macro if possible.
 #if defined(__clang__)
-#   define REQUIRE_FUNCTION __PRETTY_FUNCTION__
+#define REQUIRE_FUNCTION __PRETTY_FUNCTION__
 #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
-#   define REQUIRE_FUNCTION __PRETTY_FUNCTION__
+#define REQUIRE_FUNCTION __PRETTY_FUNCTION__
 #elif defined(_MSC_VER)
-#   define REQUIRE_FUNCTION __FUNCSIG__
+#define REQUIRE_FUNCTION __FUNCSIG__
 #else
-#   define REQUIRE_FUNCTION __func__
+#define REQUIRE_FUNCTION __func__
 #endif
 
 // Macro magic from assert.
-#define REQUIRE_PRIMITIVE_CAT(FIRST_ARGUMENT, ...) FIRST_ARGUMENT ## __VA_ARGS__
+#define REQUIRE_PRIMITIVE_CAT(FIRST_ARGUMENT, ...) FIRST_ARGUMENT##__VA_ARGS__
 #define REQUIRE_PRIMITIVE_TO_STRING(ARGUMENT) #ARGUMENT
 #define REQUIRE_TO_STRING(ARGUMENT) REQUIRE_PRIMITIVE_TO_STRING(ARGUMENT)
 #define REQUIRE_COMPLIMENT(BOOLEAN_TEST) REQUIRE_PRIMITIVE_CAT(REQUIRE_COMPLIMENT_, BOOLEAN_TEST)
@@ -53,7 +53,7 @@ namespace testbench {
 #define REQUIRE_EXPAND(...) __VA_ARGS__
 #define REQUIRE_EMPTY()
 #define REQUIRE_DEFER(ARGUMENT) ARGUMENT REQUIRE_EMPTY()
-#define REQUIRE_CHECK(...) REQUIRE_EXPAND(REQUIRE_ARGUMENT_2(__VA_ARGS__, 0,))
+#define REQUIRE_CHECK(...) REQUIRE_EXPAND(REQUIRE_ARGUMENT_2(__VA_ARGS__, 0, ))
 #define REQUIRE_PROBE(IGNORED) IGNORED, 1,
 #define REQUIRE_NOT(TEST) REQUIRE_CHECK(REQUIRE_EXPAND(REQUIRE_PRIMITIVE_CAT(REQUIRE_NOT_, TEST)))
 #define REQUIRE_NOT_0 REQUIRE_PROBE(~)
@@ -62,45 +62,20 @@ namespace testbench {
 #define REQUIRE_IF_0(THEN, ...) __VA_ARGS__
 #define REQUIRE_IF_1(THEN, ...) THEN
 #define REQUIRE_END_FLAG() 0
-#define REQUIRE_HAS_TWO_ARGUMENTS(...) REQUIRE_BOOLEAN(REQUIRE_EXPAND(REQUIRE_DEFER(REQUIRE_ARGUMENT_1)(REQUIRE_END_FLAG REQUIRE_ARGUMENTS_2_N(__VA_ARGS__,),)()))
+#define REQUIRE_HAS_TWO_ARGUMENTS(...) REQUIRE_BOOLEAN(REQUIRE_EXPAND(REQUIRE_DEFER(REQUIRE_ARGUMENT_1)(REQUIRE_END_FLAG REQUIRE_ARGUMENTS_2_N(__VA_ARGS__, ), )()))
 
 /// @brief  Main require macro.
-#define REQUIRE(...)                                                                                    \
-    REQUIRE_IF(REQUIRE_HAS_TWO_ARGUMENTS(__VA_ARGS__))(                                                 \
-        UNUSED(((++testbench::REQUIRE_COUNT) && (REQUIRE_EXPAND(REQUIRE_ARGUMENT_1(__VA_ARGS__)))) || ( \
-            PRINT("Requirement failure:  #%lld\n", ++testbench::REQUIRE_FAILURE_COUNT),                 \
-            PRINT("  Requirement:        %s\n", REQUIRE_TO_STRING(REQUIRE_ARGUMENT_1(__VA_ARGS__,))),   \
-            PRINT("  File:               %s\n", __FILE__),                                              \
-            PRINT("  Line:               %d\n", __LINE__),                                              \
-            PRINT("  Function:           %s\n", REQUIRE_FUNCTION),                                      \
-            PRINT("  Additional Output:  "),                                                            \
-            PRINT(REQUIRE_EXPAND(REQUIRE_ARGUMENTS_2_N(__VA_ARGS__))),                                  \
-            PRINT("\n"),                                                                                \
-            0)                                                                                          \
-        )                                                                                               \
-    /*REQUIRE_ELSE*/,                                                                                   \
-        UNUSED(((++testbench::REQUIRE_COUNT) && (__VA_ARGS__)) || (                                     \
-            PRINT("Requirement failure:  #%lld\n", ++testbench::REQUIRE_FAILURE_COUNT),                 \
-            PRINT("  Requirement:        %s\n", REQUIRE_TO_STRING(REQUIRE_ARGUMENT_1(__VA_ARGS__,))),   \
-            PRINT("  File:               %s\n", __FILE__),                                              \
-            PRINT("  Line:               %d\n", __LINE__),                                              \
-            PRINT("  Function:           %s\n", REQUIRE_FUNCTION),                                      \
-            0)                                                                                          \
-        )                                                                                               \
-    )
+#define REQUIRE(...)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
+    REQUIRE_IF(REQUIRE_HAS_TWO_ARGUMENTS(__VA_ARGS__))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            \
+    (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             \
+        UNUSED(((++testbench::REQUIRE_COUNT) && (REQUIRE_EXPAND(REQUIRE_ARGUMENT_1(__VA_ARGS__)))) || (PRINT("Requirement failure:  #%lld\n", ++testbench::REQUIRE_FAILURE_COUNT), PRINT("  Requirement:        %s\n", REQUIRE_TO_STRING(REQUIRE_ARGUMENT_1(__VA_ARGS__, ))), PRINT("  File:               %s\n", __FILE__), PRINT("  Line:               %d\n", __LINE__), PRINT("  Function:           %s\n", REQUIRE_FUNCTION), PRINT("  Additional Output:  "), PRINT(REQUIRE_EXPAND(REQUIRE_ARGUMENTS_2_N(__VA_ARGS__))), PRINT("\n"), 0)) /*REQUIRE_ELSE*/, \
+        UNUSED(((++testbench::REQUIRE_COUNT) && (__VA_ARGS__)) || (PRINT("Requirement failure:  #%lld\n", ++testbench::REQUIRE_FAILURE_COUNT), PRINT("  Requirement:        %s\n", REQUIRE_TO_STRING(REQUIRE_ARGUMENT_1(__VA_ARGS__, ))), PRINT("  File:               %s\n", __FILE__), PRINT("  Line:               %d\n", __LINE__), PRINT("  Function:           %s\n", REQUIRE_FUNCTION), 0)))
 
 /// @brief  Silent version of the require macro.
-#define REQUIRE_SILENT(...)                                                                             \
-    REQUIRE_IF(REQUIRE_HAS_TWO_ARGUMENTS(__VA_ARGS__))(                                                 \
-        UNUSED(((++testbench::REQUIRE_COUNT) && (REQUIRE_EXPAND(REQUIRE_ARGUMENT_1(__VA_ARGS__)))) || ( \
-            (++testbench::REQUIRE_FAILURE_COUNT),                                                       \
-            0)                                                                                          \
-        )                                                                                               \
-    /*REQUIRE_ELSE*/,                                                                                   \
-        UNUSED(((++testbench::REQUIRE_COUNT) && (__VA_ARGS__)) || (                                     \
-            (++testbench::REQUIRE_FAILURE_COUNT),                                                       \
-            0)                                                                                          \
-        )                                                                                               \
-    )
+#define REQUIRE_SILENT(...)                                                                                                                                        \
+    REQUIRE_IF(REQUIRE_HAS_TWO_ARGUMENTS(__VA_ARGS__))                                                                                                             \
+    (                                                                                                                                                              \
+        UNUSED(((++testbench::REQUIRE_COUNT) && (REQUIRE_EXPAND(REQUIRE_ARGUMENT_1(__VA_ARGS__)))) || ((++testbench::REQUIRE_FAILURE_COUNT), 0)) /*REQUIRE_ELSE*/, \
+        UNUSED(((++testbench::REQUIRE_COUNT) && (__VA_ARGS__)) || ((++testbench::REQUIRE_FAILURE_COUNT), 0)))
 
 #endif // GTL_REQUIRE_TESTS_HPP

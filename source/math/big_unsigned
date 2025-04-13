@@ -21,14 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Arbitrary sized unsigned integers.
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the big_unsigned is misused.
-#   define GTL_BIG_UNSIGNED_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_BIG_UNSIGNED_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_BIG_UNSIGNED_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_BIG_UNSIGNED_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 #if defined(_MSC_VER)
@@ -90,7 +90,6 @@ namespace gtl {
             : chunks(1, static_cast<chunk_type>(value)) {
             GTL_BIG_UNSIGNED_ASSERT(value >= 0, "Value must be positive.");
         }
-
 
         /// @brief  Conversion constructor from a signed short value.
         /// @param  value The value to store.

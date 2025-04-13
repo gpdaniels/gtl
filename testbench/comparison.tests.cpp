@@ -51,12 +51,12 @@ namespace testbench {
         return *lhs == *rhs;
     }
 
-    // Macro for generating test data structures.
-    #define TEST_IS_VALUE_EQUAL_FUNCTION(TYPE)                  \
-        template <>                                             \
-        bool is_value_equal(const TYPE& lhs, const TYPE& rhs) { \
-            return lhs == rhs;                                  \
-        }                                                       \
+// Macro for generating test data structures.
+#define TEST_IS_VALUE_EQUAL_FUNCTION(TYPE)                  \
+    template <>                                             \
+    bool is_value_equal(const TYPE& lhs, const TYPE& rhs) { \
+        return lhs == rhs;                                  \
+    }
 
     // Boolean.
     TEST_IS_VALUE_EQUAL_FUNCTION(bool)
@@ -81,22 +81,22 @@ namespace testbench {
     TEST_IS_VALUE_EQUAL_FUNCTION(unsigned long long int)
     TEST_IS_VALUE_EQUAL_FUNCTION(signed long long int)
 
-    #if defined(__clang__)
-        #pragma clang diagnostic push
-        #pragma clang diagnostic ignored "-Wfloat-equal"
-    #endif
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
 
     // Floating point.
     TEST_IS_VALUE_EQUAL_FUNCTION(float)
     TEST_IS_VALUE_EQUAL_FUNCTION(double)
     TEST_IS_VALUE_EQUAL_FUNCTION(long double)
 
-    #if defined(__clang__)
-        #pragma clang diagnostic pop
-    #endif
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
     // Pointer type.
     TEST_IS_VALUE_EQUAL_FUNCTION(decltype(nullptr))
 
-    #undef TEST_IS_VALUE_EQUAL_FUNCTION
+#undef TEST_IS_VALUE_EQUAL_FUNCTION
 }

@@ -21,25 +21,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Thread syncronisation barrier.
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the barrier is misused.
-#   define GTL_BARRIER_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_BARRIER_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_BARRIER_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_BARRIER_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <condition_variable>
 #include <mutex>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace gtl {

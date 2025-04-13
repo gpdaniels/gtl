@@ -21,14 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Hidden markov model using the Baum-Welch algorithm for training.
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the hmm is misused.
-#   define GTL_HMM_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_HMM_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_HMM_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_HMM_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 #if defined(_MSC_VER)
@@ -45,12 +45,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace gtl {
     /// @brief  A simple hidden markov model class that uses ???? to learn.
     /// @tparam scalar_type The floating point type used to represent values in the model.
-    template<typename scalar_type>
+    template <typename scalar_type>
     class hmm final {
     private:
         /// @brief  The random_pcg class is a stripped down pcg pseudo-random-number generator.
-        class random_pcg final
-        {
+        class random_pcg final {
         private:
             /// @brief  Current state of the random number generator.
             unsigned long long int state = 0x853C49E6748FEA9Bull;
@@ -110,7 +109,7 @@ namespace gtl {
                 template <typename... dimensions_size_types>
                 constexpr dimensions_nd(dimensions_size_types... sizes)
                     : total_size((static_cast<unsigned long long int>(sizes) * ... * 1))
-                    , dimension_sizes{static_cast<unsigned long long int>(sizes)...} {
+                    , dimension_sizes{ static_cast<unsigned long long int>(sizes)... } {
                     static_assert(dimensions == sizeof...(dimensions_size_types), "Invalid number of array dimension sizes.");
                 }
 
@@ -244,19 +243,23 @@ namespace gtl {
 
         /// @brief  Helper type for a one dimensional dynamic array.
         /// @tparam type The type of an element of the array.
-        template<typename type> using array_1d = dynamic_array_nd<type, 1>;
+        template <typename type>
+        using array_1d = dynamic_array_nd<type, 1>;
 
         /// @brief  Helper type for the dimensions of a one dimensional dynamic array.
         /// @tparam type The type of an element of the array.
-        template<typename type> using dimensions_1d = typename dynamic_array_nd<type, 1>::template dimensions_nd<1>;
+        template <typename type>
+        using dimensions_1d = typename dynamic_array_nd<type, 1>::template dimensions_nd<1>;
 
         /// @brief  Helper type for a two dimensional dynamic array.
         /// @tparam type The type of an element of the array.
-        template<typename type> using array_2d = dynamic_array_nd<type, 2>;
+        template <typename type>
+        using array_2d = dynamic_array_nd<type, 2>;
 
         /// @brief  Helper type for the dimensions of a two dimensional dynamic array.
         /// @tparam type The type of an element of the array.
-        template<typename type> using dimensions_2d = typename dynamic_array_nd<type, 2>::template dimensions_nd<2>;
+        template <typename type>
+        using dimensions_2d = typename dynamic_array_nd<type, 2>::template dimensions_nd<2>;
 
     private:
         /// @brief Number of possible observable symbols in an input sequence.
@@ -289,9 +292,9 @@ namespace gtl {
             this->observable_symbols = observable_symbol_count;
 
             // Allocate the probabilitiy arrays.
-            this->initial_log_probability = array_1d<scalar_type>(dimensions_1d<scalar_type>{this->hidden_states});
-            this->transition_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{this->hidden_states, this->hidden_states});
-            this->emission_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{this->hidden_states, this->observable_symbols});
+            this->initial_log_probability = array_1d<scalar_type>(dimensions_1d<scalar_type>{ this->hidden_states });
+            this->transition_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{ this->hidden_states, this->hidden_states });
+            this->emission_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{ this->hidden_states, this->observable_symbols });
 
             // Minimal random number generator for model variable initialisation.
             random_pcg random_number_generator;
@@ -341,21 +344,19 @@ namespace gtl {
         /// @param  minimum_log_probability_improvement The minimum required improvement of the model per training iteration, otherwise training is considered complete.
         /// @return The number of training iterations completed.
         unsigned long long int train(const std::vector<std::vector<unsigned long long int>>& observation_sequences, const unsigned long long int max_iterations = 1000, const scalar_type minimum_log_probability_improvement = static_cast<scalar_type>(1e-10)) {
-
             scalar_type previous_log_probablility = 0;
 
             // Main training loop.
             unsigned long long int iteration = 0;
             for (; iteration < max_iterations; ++iteration) {
-                array_1d<scalar_type> update_initial_log_probability = array_1d<scalar_type>(dimensions_1d<scalar_type>{this->hidden_states}, scalar_type{});
-                array_2d<scalar_type> update_transition_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{this->hidden_states, this->hidden_states}, scalar_type{});
-                array_2d<scalar_type> update_emission_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{this->hidden_states, this->observable_symbols}, scalar_type{});
+                array_1d<scalar_type> update_initial_log_probability = array_1d<scalar_type>(dimensions_1d<scalar_type>{ this->hidden_states }, scalar_type{});
+                array_2d<scalar_type> update_transition_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{ this->hidden_states, this->hidden_states }, scalar_type{});
+                array_2d<scalar_type> update_emission_log_probability = array_2d<scalar_type>(dimensions_2d<scalar_type>{ this->hidden_states, this->observable_symbols }, scalar_type{});
 
                 scalar_type current_log_probablility = 0;
 
                 // Calculate model probability updates.
                 for (const std::vector<unsigned long long int>& observation_sequence : observation_sequences) {
-
                     array_2d<scalar_type> alpha = this->forward(observation_sequence);
                     array_2d<scalar_type> beta = this->backward(observation_sequence);
 
@@ -364,7 +365,7 @@ namespace gtl {
                     for (unsigned long long int i = 0; i < this->hidden_states; i++) {
                         sequence_log_probability = hmm::log_sum_exp(sequence_log_probability, alpha(i, observation_sequence.size() - 1));
                     }
-                    current_log_probablility = hmm::log_sum_exp(current_log_probablility , sequence_log_probability);
+                    current_log_probablility = hmm::log_sum_exp(current_log_probablility, sequence_log_probability);
 
                     // Calculate update for initial probability.
                     for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
@@ -389,7 +390,7 @@ namespace gtl {
                 }
 
                 // Calculate the probability improvement.
-                scalar_type difference_log_probability = current_log_probablility - previous_log_probablility ;
+                scalar_type difference_log_probability = current_log_probablility - previous_log_probablility;
                 // Except on the first iteration, check the probability with the updates is an improvement.
                 if ((iteration != 0) && (difference_log_probability < 0)) {
                     // Otherwise exit the main training iteration loop.
@@ -433,7 +434,7 @@ namespace gtl {
                     // Otherwise exit the main training iteration loop.
                     break;
                 }
-                previous_log_probablility  = current_log_probablility ;
+                previous_log_probablility = current_log_probablility;
             }
 
             return iteration;
@@ -443,7 +444,6 @@ namespace gtl {
         /// @param  observation_sequence A sequence of observable symbols which are represented as numbers from 0 to one less than the limit as set when creating the model.
         /// @return The probability (in log form) of the provided sequence occurring according to the model.
         scalar_type process(const std::vector<unsigned long long int>& observation_sequence) {
-
             array_2d<scalar_type> alpha = this->forward(observation_sequence);
 
             scalar_type sequence_log_probability = 0;
@@ -458,7 +458,6 @@ namespace gtl {
         /// @param  observation_sequence A sequence of observable symbols which are represented as numbers from 0 to one less than the limit as set when creating the model.
         /// @return The predicted id of the next symbol to be observed.
         unsigned long long int predict(const std::vector<unsigned long long int>& observation_sequence) {
-
             array_2d<scalar_type> alpha = this->forward(observation_sequence);
 
             scalar_type highest_observation_symbol_probablility = 0;
@@ -475,7 +474,6 @@ namespace gtl {
 
             // Then compute the probability for all other symbols.
             for (unsigned long long int i = 1; i < this->observable_symbols; i++) {
-
                 scalar_type observation_probability = 0;
                 for (unsigned long long int j = 0; j < this->hidden_states; j++) {
                     for (unsigned long long int p = 0; p < this->hidden_states; p++) {
@@ -505,7 +503,7 @@ namespace gtl {
             }
             const scalar_type difference = std::abs(log_rhs - log_lhs);
             // Simple lambda to calculate min.
-            constexpr const auto min = [](scalar_type lhs, scalar_type rhs)->scalar_type{
+            constexpr const auto min = [](scalar_type lhs, scalar_type rhs) -> scalar_type {
                 if (lhs < rhs) {
                     return lhs;
                 }
@@ -525,7 +523,7 @@ namespace gtl {
         /// @return An array containing the probabilities of being in each hidden state for each observable symbol in the provided sequence.
         array_2d<scalar_type> forward(const std::vector<unsigned long long int>& observation_sequence) {
             // Initialise all the probabilities with zero.
-            array_2d<scalar_type> alpha = array_2d<scalar_type>({this->hidden_states, observation_sequence.size()}, 0);
+            array_2d<scalar_type> alpha = array_2d<scalar_type>({ this->hidden_states, observation_sequence.size() }, 0);
 
             // Calculate the probability of each hidden state being the initial state, and emitting the first observed symbol.
             for (unsigned long long int i = 0; i < this->hidden_states; ++i) {
@@ -553,7 +551,7 @@ namespace gtl {
         /// @return An array containing the probabilities of being in each hidden state for each observable symbol in the provided sequence.
         array_2d<scalar_type> backward(const std::vector<unsigned long long int>& observation_sequence) {
             // Initialise all the probabilities with zero.
-            array_2d<scalar_type> beta = array_2d<scalar_type>({this->hidden_states, observation_sequence.size()}, 0);
+            array_2d<scalar_type> beta = array_2d<scalar_type>({ this->hidden_states, observation_sequence.size() }, 0);
 
             // Calculate the probability of each hidden state being the final state, and emitting the last observed symbol.
             for (unsigned long long int i = 0; i < this->hidden_states; ++i) {

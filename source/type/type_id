@@ -28,7 +28,8 @@ namespace gtl {
         template <typename type>
         struct identifier_generator final {
             /// @brief  The actual bit of unique type information.
-            constexpr static const auto identifier = [](){};
+            constexpr static const auto identifier = []() {
+            };
         };
 
     public:
@@ -38,7 +39,7 @@ namespace gtl {
     public:
         /// @brief  Constructor, using the provided type argument the constructor sets the internal ID value using the identifier_generator.
         /// @param  unused The unnamed argument allows the constructor template argument to be deduced from the provided argument.  For constructors template parameters have to be automatically deduced.
-        template<typename type>
+        template <typename type>
         constexpr type_id(type unused)
             : identifier(reinterpret_cast<const unsigned long long int>(&identifier_generator<type>::identifier)) {
             static_cast<void>(unused);
@@ -58,37 +59,37 @@ namespace gtl {
     public:
         /// @brief  The less than operator is the only one defined using the identifier value, all other operators are defined using this one.
         /// @param  rhs The right hand side of the comparison.
-        constexpr bool operator < (const type_id& rhs) const {
+        constexpr bool operator<(const type_id& rhs) const {
             return (this->identifier < rhs.identifier);
         }
 
         /// @brief  The greater than operator defined using the less than operator with the sides of the comparison reversed.
         /// @param  rhs The right hand side of the comparison.
-        constexpr bool operator > (const type_id& rhs) const {
+        constexpr bool operator>(const type_id& rhs) const {
             return rhs < *this;
         }
 
         /// @brief  The less than or equal to operator defined using the greater than operator and inverted.
         /// @param  rhs The right hand side of the comparison.
-        constexpr bool operator <=(const type_id& rhs) const {
+        constexpr bool operator<=(const type_id& rhs) const {
             return !(*this > rhs);
         }
 
         /// @brief  The greater than or equal to operator defined using the less than operator and inverted.
         /// @param  rhs The right hand side of the comparison.
-        constexpr bool operator >=(const type_id& rhs) const {
+        constexpr bool operator>=(const type_id& rhs) const {
             return !(*this < rhs);
         }
 
         /// @brief  The inequality operator defined using the less than and greater than operators.
         /// @param  rhs The right hand side of the comparison.
-        constexpr bool operator !=(const type_id& rhs) const {
+        constexpr bool operator!=(const type_id& rhs) const {
             return (*this < rhs) || (*this > rhs);
         }
 
         /// @brief  The equality operator defined using the inequality operator and inverted.
         /// @param  rhs The right hand side of the comparison.
-        constexpr bool operator ==(const type_id& rhs) const {
+        constexpr bool operator==(const type_id& rhs) const {
             return !(*this != rhs);
         }
     };

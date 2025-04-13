@@ -15,16 +15,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
+#include <execution/barrier>
 #include <io/socket>
 
-#include <execution/barrier>
-
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <mutex>
@@ -32,7 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 class local_server {
@@ -43,16 +43,18 @@ private:
     std::mutex mutex_client;
     gtl::socket socket_client;
     unsigned int accepted_connections = 0;
+
 public:
     ~local_server() {
         this->socket_server.close();
         this->thread_server.join();
     }
+
     local_server() {
         // Create connection accepting server on a thread.
         gtl::barrier barrier(2);
-        this->thread_server = std::thread([this, &barrier](){
-            REQUIRE(this->socket_server.open(gtl::socket::tcp_server{gtl::socket::ip_any, gtl::socket::port_any}));
+        this->thread_server = std::thread([this, &barrier]() {
+            REQUIRE(this->socket_server.open(gtl::socket::tcp_server{ gtl::socket::ip_any, gtl::socket::port_any }));
             REQUIRE(this->socket_server.is_open());
             // Get the port number.
             this->socket_server.get_config(this->config_server.address, this->config_server.port);
@@ -78,20 +80,23 @@ public:
         gtl::socket client;
         REQUIRE(client.is_open() == false);
         for (int i = 0; i < 100; ++i) {
-            if (client.open(gtl::socket::tcp_client{gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, this->config_server.port})) {
+            if (client.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, this->config_server.port })) {
                 break;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         REQUIRE(client.is_open() == true);
     }
+
     unsigned short get_port() const {
         return this->config_server.port;
     }
+
     unsigned int get_accepted_connections_count() {
         std::lock_guard<std::mutex> lock(this->mutex_client);
         return (this->accepted_connections - 1);
     }
+
     bool send_to_last_client(const unsigned char* message, unsigned long long int length) {
         std::lock_guard<std::mutex> lock(this->mutex_client);
         static_cast<void>(lock);
@@ -128,31 +133,31 @@ TEST(socket, function, is_open) {
 TEST(socket, function, open) {
     {
         gtl::socket socket;
-        REQUIRE(socket.open(gtl::socket::udp_client{gtl::socket::ip_any, gtl::socket::port_any}) == true);
+        REQUIRE(socket.open(gtl::socket::udp_client{ gtl::socket::ip_any, gtl::socket::port_any }) == true);
     }
     {
         gtl::socket socket;
-        REQUIRE(socket.open(gtl::socket::udp_client{gtl::socket::ip_any, gtl::socket::port_any}) == true);
+        REQUIRE(socket.open(gtl::socket::udp_client{ gtl::socket::ip_any, gtl::socket::port_any }) == true);
     }
 
     {
         gtl::socket socket;
-        REQUIRE(socket.open(gtl::socket::tcp_client{gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, 1234}) == false);
+        REQUIRE(socket.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, 1234 }) == false);
     }
     {
         gtl::socket socket;
-        REQUIRE(socket.open(gtl::socket::tcp_client{gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, 5678}) == false);
+        REQUIRE(socket.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, 5678 }) == false);
     }
 
     local_server server;
 
     {
         gtl::socket socket;
-        REQUIRE(socket.open(gtl::socket::tcp_client{gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, static_cast<unsigned short>(server.get_port() + 1234)}) == false);
+        REQUIRE(socket.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, static_cast<unsigned short>(server.get_port() + 1234) }) == false);
     }
     {
         gtl::socket socket;
-        REQUIRE(socket.open(gtl::socket::tcp_client{gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, server.get_port()}) == true);
+        REQUIRE(socket.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, server.get_port() }) == true);
     }
 }
 
@@ -161,7 +166,7 @@ TEST(socket, function, close) {
     REQUIRE(socket.is_open() == false);
     socket.close();
     REQUIRE(socket.is_open() == false);
-    REQUIRE(socket.open(gtl::socket::udp_client{gtl::socket::ip_any, gtl::socket::port_any}) == true);
+    REQUIRE(socket.open(gtl::socket::udp_client{ gtl::socket::ip_any, gtl::socket::port_any }) == true);
     REQUIRE(socket.is_open() == true);
     socket.close();
     REQUIRE(socket.is_open() == false);
@@ -172,44 +177,44 @@ TEST(socket, function, close) {
 TEST(socket, function, accept) {
     {
         gtl::socket socket;
-        REQUIRE(socket.open(gtl::socket::udp_client{gtl::socket::ip_any, gtl::socket::port_any}) == true);
+        REQUIRE(socket.open(gtl::socket::udp_client{ gtl::socket::ip_any, gtl::socket::port_any }) == true);
         gtl::socket client;
         REQUIRE(socket.accept(client) == false);
     }
 
     {
         gtl::socket socket;
-        REQUIRE(socket.open(gtl::socket::tcp_client{gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, 1234}) == false);
+        REQUIRE(socket.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, 1234 }) == false);
     }
     {
         gtl::socket socket;
-        REQUIRE(socket.open(gtl::socket::tcp_client{gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, 5678}) == false);
+        REQUIRE(socket.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, 5678 }) == false);
     }
 
     local_server server;
 
     {
         gtl::socket socket;
-        REQUIRE(socket.open(gtl::socket::tcp_client{gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, static_cast<unsigned short>(server.get_port() + 1234)}) == false);
+        REQUIRE(socket.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, static_cast<unsigned short>(server.get_port() + 1234) }) == false);
     }
     {
         gtl::socket socket;
-        REQUIRE(socket.open(gtl::socket::tcp_client{gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, server.get_port()}) == true);
+        REQUIRE(socket.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, server.get_port() }) == true);
     }
     {
         gtl::socket socket;
-        REQUIRE(socket.open(gtl::socket::tcp_client{gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, static_cast<unsigned short>(server.get_port() + 1234)}) == false);
+        REQUIRE(socket.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, static_cast<unsigned short>(server.get_port() + 1234) }) == false);
     }
     {
         gtl::socket socket;
-        REQUIRE(socket.open(gtl::socket::tcp_client{gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, server.get_port()}) == true);
+        REQUIRE(socket.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, server.get_port() }) == true);
     }
 }
 
 TEST(socket, function, read_write_tcp) {
     local_server server;
     gtl::socket socket;
-    REQUIRE(socket.open(gtl::socket::tcp_client{gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, server.get_port()}) == true);
+    REQUIRE(socket.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, server.get_port() }) == true);
     while (server.get_accepted_connections_count() != 1) {
         std::this_thread::yield();
     }
@@ -239,9 +244,9 @@ TEST(socket, function, read_write_udp) {
     constexpr static const unsigned short socket2_port = 5678;
 
     gtl::socket socket1;
-    REQUIRE(socket1.open(gtl::socket::udp_client{gtl::socket::ip_loopback, socket1_port}) == true);
+    REQUIRE(socket1.open(gtl::socket::udp_client{ gtl::socket::ip_loopback, socket1_port }) == true);
     gtl::socket socket2;
-    REQUIRE(socket2.open(gtl::socket::udp_client{gtl::socket::ip_loopback, socket2_port}) == true);
+    REQUIRE(socket2.open(gtl::socket::udp_client{ gtl::socket::ip_loopback, socket2_port }) == true);
 
     const char* sent_message1 = "Test message 1";
     unsigned long long int sent_length1 = testbench::string_length(sent_message1);
@@ -274,7 +279,7 @@ TEST(socket, function, read_write_udp) {
     do {
         std::this_thread::yield();
         received_length2 = 128;
-        REQUIRE(socket1.read(received_message2, received_length2,  address2, port2));
+        REQUIRE(socket1.read(received_message2, received_length2, address2, port2));
     } while (received_length2 == 0);
     received_message2[127] = 0;
 
@@ -283,5 +288,3 @@ TEST(socket, function, read_write_udp) {
     REQUIRE(received_length2 == sent_length2, "Mismatching lengths of sent (%llu) and receieved (%llu) data.", sent_length2, received_length2);
     REQUIRE(testbench::is_memory_same(sent_message2, received_message2, sent_length2), "Mismatching sent and receieved data. '%s' != '%s'", sent_message2, received_message2);
 }
-
-

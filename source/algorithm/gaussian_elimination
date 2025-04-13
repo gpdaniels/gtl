@@ -62,7 +62,6 @@ namespace gtl {
         /// @return true if the set of linear simultaneous equations was solved successfully, false otherwise.
         /// @note   A failure to solve can be caused by either a failure to successfully pivot, or a set of unsolvable equations.
         static bool solve(const problem_type& problem, solution_type& solution) {
-
             // Clear solution.
             solution = solution_type{};
 

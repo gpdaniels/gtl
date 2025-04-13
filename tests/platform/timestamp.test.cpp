@@ -15,13 +15,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <platform/timestamp>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <chrono>
@@ -29,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(timestamp, evaluate, differece) {
@@ -52,4 +53,3 @@ TEST(timestamp, evaluate, differece) {
     REQUIRE(timestamp_time >= minimum_time);
     REQUIRE(timestamp_time <= maximum_time);
 }
-

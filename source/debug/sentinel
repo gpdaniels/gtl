@@ -21,14 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: A simple class to help detect stack overflows. [wip]
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the sentinel is misused.
-#   define GTL_SENTINEL_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_SENTINEL_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_SENTINEL_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_SENTINEL_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 namespace gtl {
@@ -44,20 +44,20 @@ namespace gtl {
     public:
         /// @brief  ...
         ~sentinel() {
-            #ifndef NDEBUG
-                for (int i = 0; i < size; ++i) {
-                    GTL_SENTINEL_ASSERT(this->buffer[i] == data, "The stack has been corrupted.");
-                }
-            #endif
+#ifndef NDEBUG
+            for (int i = 0; i < size; ++i) {
+                GTL_SENTINEL_ASSERT(this->buffer[i] == data, "The stack has been corrupted.");
+            }
+#endif
         }
 
         /// @brief  ...
         sentinel() {
-            #ifndef NDEBUG
-                for (int i = 0; i < size; ++i) {
-                    this->buffer[i] = data;
-                }
-            #endif
+#ifndef NDEBUG
+            for (int i = 0; i < size; ++i) {
+                this->buffer[i] = data;
+            }
+#endif
         }
     };
 }

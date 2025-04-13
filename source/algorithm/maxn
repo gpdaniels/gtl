@@ -36,6 +36,7 @@ namespace gtl {
     class abstract_state {
     public:
         constexpr static const unsigned int entities = state_type::entities;
+
     public:
         virtual unsigned int get_entity_id() const = 0;
         virtual std::vector<state_type> get_options() const = 0;
@@ -57,6 +58,7 @@ namespace gtl {
 
         public:
             evaluation_type() = default;
+
             evaluation_type(const state_type& state, int max_score) {
                 this->entity = state.get_entity_id();
                 this->options = state.get_options();
@@ -93,7 +95,6 @@ namespace gtl {
                 unsigned int depth_parent = depth - 1;
                 // If we just moved down.
                 if (heading_down) {
-
                     // Handy variables.
                     evaluation_type& current = stack[depth];
                     evaluation_type& parent = stack[depth_parent];
@@ -123,7 +124,6 @@ namespace gtl {
                 else {
                     // Check if we have no more options left to try.
                     if (stack[depth].current_option_index == stack[depth].options.size() - 1) {
-
                         // If we're back at the top we're done!
                         if (depth == 0) {
                             break;

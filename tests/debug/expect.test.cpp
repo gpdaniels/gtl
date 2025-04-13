@@ -15,24 +15,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <debug/expect>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #ifdef _MSC_VER
-#   pragma warning(push)
-#   pragma warning(disable: 4702)
+#pragma warning(push)
+#pragma warning(disable : 4702)
 #endif
 
 TEST(expect, evaluate, expect) {
@@ -272,5 +273,5 @@ TEST(expect, evaluate, expect) {
 }
 
 #ifdef _MSC_VER
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif

@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
@@ -114,7 +115,6 @@ TEST(parser, element, terminal) {
 }
 
 TEST(parser, element, sequence) {
-
     std::string test_input = R"(Ab02)";
 
     using parser = gtl::generator<char>;
@@ -128,8 +128,7 @@ TEST(parser, element, sequence) {
         parser::terminal_any(),
         parser::empty(),
         parser::terminal_any('0'),
-        parser::terminal_any('1', '2')
-    );
+        parser::terminal_any('1', '2'));
 
     parser::parse_forest_type forest;
     for (char character : test_input) {
@@ -142,7 +141,6 @@ TEST(parser, element, sequence) {
 }
 
 TEST(parser, element, disjunction) {
-
     std::string test_input = R"(Ab02)";
 
     using parser = gtl::generator<char>;
@@ -152,8 +150,7 @@ TEST(parser, element, disjunction) {
         parser::terminal_any('A') + parser::terminal_any('b') + parser::terminal_any('0') + parser::terminal_any('2'),
         parser::terminal_any('b') + parser::terminal_any('A') + parser::terminal_any('0') + parser::terminal_any('2'),
         parser::terminal_any('A') + parser::terminal_any('b') + parser::terminal_any('0') + parser::terminal_any('1'),
-        parser::barrier_any('A') + parser::barrier_any('b') + parser::barrier_any('0') + parser::barrier_any('2')
-    );
+        parser::barrier_any('A') + parser::barrier_any('b') + parser::barrier_any('0') + parser::barrier_any('2'));
 
     parser::parse_forest_type forest;
     for (char character : test_input) {
@@ -231,10 +228,18 @@ TEST(parser, element, emit) {
         parser::emit(parser::terminal_any('0'), '0'),
         parser::emit(parser::terminal_any('1', '2'), '1'),
         parser::terminal_any('3', '4') >> '2',
-        parser::emit(parser::terminal_not('5'), [](){ return '3'; }),
-        parser::terminal_not('6', '7') >> [](){ return '4'; },
-        parser::emit(parser::terminal_not('8', '9'), [](const std::vector<char>& terminals){ return terminals[0]; }),
-        parser::terminal("10") >> [](const std::vector<char>& terminals){ return terminals[0] + terminals[1]; }
+        parser::emit(parser::terminal_not('5'), []() {
+            return '3';
+        }),
+        parser::terminal_not('6', '7') >> []() {
+            return '4';
+        },
+        parser::emit(parser::terminal_not('8', '9'), [](const std::vector<char>& terminals) {
+            return terminals[0];
+        }),
+        parser::terminal("10") >> [](const std::vector<char>& terminals) {
+            return terminals[0] + terminals[1];
+        }
     };
 
     char expected[grammar_count] = {
@@ -284,13 +289,27 @@ TEST(parser, element, capture) {
     using parser = gtl::generator<char>;
 
     parser grammars[grammar_count] = {
-        parser::reemit(parser::terminal_any('0') >> '0', [](const std::vector<char>& tokens){ return tokens[0]; }),
-        parser::reemit(parser::terminal_any('1', '2') >> '1', [](const std::vector<char>& tokens){ return tokens[0]; }),
-        (parser::terminal_any('3', '4') >> '2') ->* [](const std::vector<char>& tokens){ return tokens[0]; },
-        parser::reemit(parser::terminal_not('5') >> '3', [](const std::vector<char>& tokens){ return tokens[0];}),
-        (parser::terminal_not('6', '7') >> '4') ->* [](const std::vector<char>& tokens){ return tokens[0]; },
-        parser::reemit(parser::terminal_not('8', '9') >> '0', [](const std::vector<char>& tokens){ return tokens[0]; }),
-        (parser::terminal("10") >> ('1' + '0')) ->* [](const std::vector<char>& tokens){ return tokens[0]; }
+        parser::reemit(parser::terminal_any('0') >> '0', [](const std::vector<char>& tokens) {
+            return tokens[0];
+        }),
+        parser::reemit(parser::terminal_any('1', '2') >> '1', [](const std::vector<char>& tokens) {
+            return tokens[0];
+        }),
+        (parser::terminal_any('3', '4') >> '2')->*[](const std::vector<char>& tokens) {
+            return tokens[0];
+        },
+        parser::reemit(parser::terminal_not('5') >> '3', [](const std::vector<char>& tokens) {
+            return tokens[0];
+        }),
+        (parser::terminal_not('6', '7') >> '4')->*[](const std::vector<char>& tokens) {
+            return tokens[0];
+        },
+        parser::reemit(parser::terminal_not('8', '9') >> '0', [](const std::vector<char>& tokens) {
+            return tokens[0];
+        }),
+        (parser::terminal("10") >> ('1' + '0'))->*[](const std::vector<char>& tokens) {
+            return tokens[0];
+        }
     };
 
     char expected[grammar_count] = {
@@ -366,24 +385,22 @@ TEST(parser, element, custom) {
     std::vector<char> tracer;
 
     parser grammar =
-        parser(true, false, [&tracer](char input, parser& self, parser::parse_branch_type& branch, parser::parse_forest_type& forest)->void{
-                static_cast<void>(input);
-                static_cast<void>(self);
-                static_cast<void>(branch);
-                static_cast<void>(forest);
-                tracer.push_back(input);
-            }
-        ) +
+        parser(true, false, [&tracer](char input, parser& self, parser::parse_branch_type& branch, parser::parse_forest_type& forest) -> void {
+            static_cast<void>(input);
+            static_cast<void>(self);
+            static_cast<void>(branch);
+            static_cast<void>(forest);
+            tracer.push_back(input);
+        }) +
         parser::terminal_any() + // first test_input char.
         parser::terminal_any() + // second test_input char.
-        parser(true, false, [&tracer](char input, parser& self, parser::parse_branch_type& branch, parser::parse_forest_type& forest)->void{
-                static_cast<void>(input);
-                static_cast<void>(self);
-                static_cast<void>(branch);
-                static_cast<void>(forest);
-                tracer.push_back(input);
-            }
-        ) +
+        parser(true, false, [&tracer](char input, parser& self, parser::parse_branch_type& branch, parser::parse_forest_type& forest) -> void {
+            static_cast<void>(input);
+            static_cast<void>(self);
+            static_cast<void>(branch);
+            static_cast<void>(forest);
+            tracer.push_back(input);
+        }) +
         parser::terminal_any(); // third test_input char.
 
     std::vector<char> expected = {
@@ -437,15 +454,17 @@ TEST(parser, evaluate, csv) {
     using parser = gtl::generator<std::pair<token_type, std::vector<char>>>;
 
     // Note: The parser defined here has been slightly altered from the specification above to avoid the ambiguity of whether ws was inside or outside the field.
-    parser ws       = parser::terminal_any(' ', '\t');
-    parser schar    = parser::terminal_not('"', ',', '\r', '\n');
-    parser qchar    = parser::terminal_not('"') | parser::terminal("\"\"");
-    parser rowfield = ((parser::terminal_any('"') + parser::recurse(qchar | parser::empty()) + parser::terminal_any('"')) | (parser::barrier_not(' ', '\t') + parser::recurse(schar | parser::empty()) + parser::terminal_not('"', ',', '\r', '\n', ' ', '\t')) | parser::empty()) >> [](const std::vector<char>& terminals){return std::pair<token_type, std::vector<char>>{token_type::cell, terminals};};
-    parser field    = parser::recurse(ws | parser::empty()) + rowfield + parser::recurse(ws | parser::empty());
-    parser fields   = (field + parser::recurse((parser::terminal_any(',') + field) | parser::empty())) >> std::pair<token_type, std::vector<char>>{token_type::line, {}};
-    parser record   = fields + (parser::terminal("\r\n") | parser::terminal_any('\n'));
-    parser header   = record;
-    parser csv      = header + record + parser::recurse(record | parser::empty());
+    parser ws = parser::terminal_any(' ', '\t');
+    parser schar = parser::terminal_not('"', ',', '\r', '\n');
+    parser qchar = parser::terminal_not('"') | parser::terminal("\"\"");
+    parser rowfield = ((parser::terminal_any('"') + parser::recurse(qchar | parser::empty()) + parser::terminal_any('"')) | (parser::barrier_not(' ', '\t') + parser::recurse(schar | parser::empty()) + parser::terminal_not('"', ',', '\r', '\n', ' ', '\t')) | parser::empty()) >> [](const std::vector<char>& terminals) {
+        return std::pair<token_type, std::vector<char>>{ token_type::cell, terminals };
+    };
+    parser field = parser::recurse(ws | parser::empty()) + rowfield + parser::recurse(ws | parser::empty());
+    parser fields = (field + parser::recurse((parser::terminal_any(',') + field) | parser::empty())) >> std::pair<token_type, std::vector<char>>{ token_type::line, {} };
+    parser record = fields + (parser::terminal("\r\n") | parser::terminal_any('\n'));
+    parser header = record;
+    parser csv = header + record + parser::recurse(record | parser::empty());
 
     std::string test_input = R"(header cell
 text,000, 123.456   ,"space "" space", "
@@ -463,14 +482,14 @@ line
     REQUIRE(error.empty());
 
     std::vector<std::pair<token_type, std::vector<char>>> expected = {
-        {token_type::cell, {'h', 'e', 'a', 'd', 'e', 'r', ' ', 'c', 'e', 'l', 'l'}},
-        {token_type::line, {}},
-        {token_type::cell, {'t', 'e', 'x', 't'}},
-        {token_type::cell, {'0', '0', '0'}},
-        {token_type::cell, {'1', '2', '3', '.', '4', '5', '6'}},
-        {token_type::cell, {'"', 's', 'p', 'a', 'c', 'e', ' ', '"', '"', ' ', 's', 'p', 'a', 'c', 'e', '"'}},
-        {token_type::cell, {'"', '\n', 'l', 'i', 'n', 'e', '\n', '"'}},
-        {token_type::line, {}},
+        {token_type::cell,                          { 'h', 'e', 'a', 'd', 'e', 'r', ' ', 'c', 'e', 'l', 'l' }},
+        {token_type::line,                                                                                 {}},
+        {token_type::cell,                                                             { 't', 'e', 'x', 't' }},
+        {token_type::cell,                                                                  { '0', '0', '0' }},
+        {token_type::cell,                                              { '1', '2', '3', '.', '4', '5', '6' }},
+        {token_type::cell, { '"', 's', 'p', 'a', 'c', 'e', ' ', '"', '"', ' ', 's', 'p', 'a', 'c', 'e', '"' }},
+        {token_type::cell,                                       { '"', '\n', 'l', 'i', 'n', 'e', '\n', '"' }},
+        {token_type::line,                                                                                 {}},
     };
     REQUIRE(tokens == expected);
 }

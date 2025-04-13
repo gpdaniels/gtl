@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <parser/generator>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <string>
@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vector>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 // https://en.wikipedia.org/wiki/PL/0
@@ -47,26 +47,26 @@ namespace gtl {
     class pl0 final {
     private:
         enum class token_type {
-            constant,           // 2 x token_data   (x = y)         // x must be a string, y must be an integer.
-            variable,           // 2 x token_data   (x)             // x must be a string, second element of data must be a 0 integer.
-            procedure,          // 2 x token_data   (x{y})          // x must be a string.
-            identifier,         // string           (x)             // x must be a string.
-            number,             // int              (x)             // x must be an integer.
-            assignement,        // 2 x token_data   (x := y)        // x must be a string.
-            positive,           // 1 x token_data   (+x)            //
-            negative,           // 1 x token_data   (-x)            //
-            operation,          // string           (x)             // x must be a string.
-            comparison,         // string           (x)             // x must be a string.
-            term_operation,     // N x token_data   (x [+-] ...)    // there can be any number of parameters spaced out by operations.
-            factor_operation,   // N x token_data   (x [*/] ...)    // there can be any number of parameters spaced out by operations.
-            test_odd,           // 1 x token_data   (ODD x)         //
-            test_comparison,    // 3 x token_data   (x [y] z)       // y must be a comparison.
-            call,               // string           (CALL x)        // x must be a string.
-            read,               // string           (?x)            // x must be a string.
-            write,              // string           (!x)            // x must be a string.
-            if_then,            // 2 x token_data   (IF x THEN y)   //
-            while_do,           // 2 x token_data   (WHILE x DO y)  //
-            scope,              // N x token_data   (...)           // there can be any number of statements.
+            constant,         // 2 x token_data   (x = y)         // x must be a string, y must be an integer.
+            variable,         // 2 x token_data   (x)             // x must be a string, second element of data must be a 0 integer.
+            procedure,        // 2 x token_data   (x{y})          // x must be a string.
+            identifier,       // string           (x)             // x must be a string.
+            number,           // int              (x)             // x must be an integer.
+            assignement,      // 2 x token_data   (x := y)        // x must be a string.
+            positive,         // 1 x token_data   (+x)            //
+            negative,         // 1 x token_data   (-x)            //
+            operation,        // string           (x)             // x must be a string.
+            comparison,       // string           (x)             // x must be a string.
+            term_operation,   // N x token_data   (x [+-] ...)    // there can be any number of parameters spaced out by operations.
+            factor_operation, // N x token_data   (x [*/] ...)    // there can be any number of parameters spaced out by operations.
+            test_odd,         // 1 x token_data   (ODD x)         //
+            test_comparison,  // 3 x token_data   (x [y] z)       // y must be a comparison.
+            call,             // string           (CALL x)        // x must be a string.
+            read,             // string           (?x)            // x must be a string.
+            write,            // string           (!x)            // x must be a string.
+            if_then,          // 2 x token_data   (IF x THEN y)   //
+            while_do,         // 2 x token_data   (WHILE x DO y)  //
+            scope,            // N x token_data   (...)           // there can be any number of statements.
         };
 
     public:
@@ -74,6 +74,7 @@ namespace gtl {
         public:
             token_type type;
             std::variant<std::string, int, std::vector<token_data>> data;
+
             bool operator==(const token_data& other) const {
                 if (this->type != other.type) {
                     return false;
@@ -119,13 +120,35 @@ namespace gtl {
             parser letter = parser::terminal_any(
                 //'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
                 //'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-                'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-                'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
-            );
+                'a',
+                'b',
+                'c',
+                'd',
+                'e',
+                'f',
+                'g',
+                'h',
+                'i',
+                'j',
+                'k',
+                'l',
+                'm',
+                'n',
+                'o',
+                'p',
+                'q',
+                'r',
+                's',
+                't',
+                'u',
+                'v',
+                'w',
+                'x',
+                'y',
+                'z');
 
             parser digit = parser::terminal_any(
-                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
-            );
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
 
             parser identifier =
                 parser::sequence(
@@ -134,11 +157,8 @@ namespace gtl {
                         parser::disjunction(
                             parser::empty(),
                             letter,
-                            digit
-                        )
-                    )
-                )
-                >> [](const std::vector<char>& terminals){
+                            digit))) >>
+                [](const std::vector<char>& terminals) {
                     return token_data{
                         token_type::identifier,
                         std::string(terminals.begin(), terminals.end())
@@ -149,19 +169,14 @@ namespace gtl {
                 parser::sequence(
                     parser::disjunction(
                         parser::empty(),
-                        parser::terminal_any('+','-')
-                    ),
+                        parser::terminal_any('+', '-')),
                     parser::sequence(
                         digit,
                         parser::recurse(
                             parser::disjunction(
                                 parser::empty(),
-                                digit
-                            )
-                        )
-                    )
-                )
-                >> [](const std::vector<char>& terminals){
+                                digit)))) >>
+                [](const std::vector<char>& terminals) {
                     return token_data{
                         token_type::number,
                         std::stoi(std::string(terminals.begin(), terminals.end()))
@@ -170,9 +185,8 @@ namespace gtl {
 
             parser plus_minus =
                 parser::terminal_any(
-                    '+', '-'
-                )
-                >> [](const std::vector<char>& terminals){
+                    '+', '-') >>
+                [](const std::vector<char>& terminals) {
                     return token_data{
                         token_type::operation,
                         std::string(terminals.begin(), terminals.end())
@@ -181,9 +195,8 @@ namespace gtl {
 
             parser multiply_divide =
                 parser::terminal_any(
-                    '*', '/'
-                )
-                >> [](const std::vector<char>& terminals){
+                    '*', '/') >>
+                [](const std::vector<char>& terminals) {
                     return token_data{
                         token_type::operation,
                         std::string(terminals.begin(), terminals.end())
@@ -193,16 +206,12 @@ namespace gtl {
             parser comparison =
                 parser::disjunction(
                     parser::terminal_any(
-                        '=', '#', '<', '>'
-                    ),
+                        '=', '#', '<', '>'),
                     parser::terminal(
-                        "<="
-                    ),
+                        "<="),
                     parser::terminal(
-                        ">="
-                    )
-                )
-                >> [](const std::vector<char>& terminals){
+                        ">=")) >>
+                [](const std::vector<char>& terminals) {
                     return token_data{
                         token_type::comparison,
                         std::string(terminals.begin(), terminals.end())
@@ -218,9 +227,7 @@ namespace gtl {
                     parser::sequence(
                         parser::terminal_any('('),
                         parser::reference(expression),
-                        parser::terminal_any(')')
-                    )
-                );
+                        parser::terminal_any(')')));
 
             parser term =
                 parser::sequence(
@@ -230,89 +237,73 @@ namespace gtl {
                             parser::empty(),
                             parser::sequence(
                                 multiply_divide,
-                                factor
-                            )
-                        )
-                    )
-                )
-                ->* [](const std::vector<token_data>& tokens){
-                    return token_data{
-                        token_type::factor_operation,
-                        tokens
-                    };
-                };
+                                factor))))
+                    ->*[](const std::vector<token_data>& tokens) {
+                            return token_data{
+                                token_type::factor_operation,
+                                tokens
+                            };
+                        };
 
             expression =
                 parser::sequence(
                     parser::sequence(
                         parser::disjunction(
                             parser::empty(),
-                            plus_minus
-                        ),
-                        term
-                    )
-                    ->* [](const std::vector<token_data>& tokens){
-                        // No positive or negative sign.
-                        if (tokens.size() == 1) {
-                            return tokens[0];
-                        }
-                        // A positive or negative sign.
-                        else if (tokens.size() == 2) {
-                            if (tokens[0].type == token_type::operation) {
-                                switch (std::get<std::string>(tokens.front().data)[0]) {
-                                    case '+': return token_data{token_type::positive, tokens[1].data};
-                                    case '-': return token_data{token_type::negative, tokens[1].data};
-                                    default: std::fprintf(stderr, "ERROR 1\n"); return token_data{};
-                                }
-                            }
-                        }
-                        std::fprintf(stderr, "ERROR 2\n"); return token_data{};
-                    },
-                    parser::recurse(
-                        parser::disjunction(
-                            parser::empty(),
-                            parser::sequence(
-                                plus_minus,
-                                term
-                            )
-                        )
-                    )
-                )
-                ->* [](const std::vector<token_data>& tokens){
-                    return token_data{
-                        token_type::term_operation,
-                        tokens
-                    };
-                };
+                            plus_minus),
+                        term)
+                            ->*[](const std::vector<token_data>& tokens) {
+                                    // No positive or negative sign.
+                                    if (tokens.size() == 1) {
+                                        return tokens[0];
+                                    }
+                                    // A positive or negative sign.
+                                    else if (tokens.size() == 2) {
+                                        if (tokens[0].type == token_type::operation) {
+                                            switch (std::get<std::string>(tokens.front().data)[0]) {
+                                                case '+':
+                                                    return token_data{ token_type::positive, tokens[1].data };
+                                                case '-':
+                                                    return token_data{ token_type::negative, tokens[1].data };
+                                                default:
+                                                    std::fprintf(stderr, "ERROR 1\n");
+                                                    return token_data{};
+                                            }
+                                        }
+                                    }
+                                    std::fprintf(stderr, "ERROR 2\n");
+                                    return token_data{};
+                                },
+                    parser::recurse(parser::disjunction(parser::empty(), parser::sequence(plus_minus, term))))
+                    ->*[](const std::vector<token_data>& tokens) {
+                            return token_data{
+                                token_type::term_operation,
+                                tokens
+                            };
+                        };
 
             parser condition =
                 parser::disjunction(
                     parser::sequence(
                         parser::terminal(
-                            "ODD"
-                        ),
-                        expression
-                    )
-                    ->* [](const std::vector<token_data>& tokens){
-                        if (tokens.size() != 1) std::fprintf(stderr, "ERROR 3\n");
-                        return token_data{
-                            token_type::test_odd,
-                            tokens
-                        };
-                    },
-                    parser::sequence(
-                        expression,
-                        comparison,
-                        expression
-                    )
-                    ->* [](const std::vector<token_data>& tokens){
-                        if (tokens.size() != 3) std::fprintf(stderr, "ERROR 4\n");
+                            "ODD"),
+                        expression)
+                            ->*[](const std::vector<token_data>& tokens) {
+                                    if (tokens.size() != 1)
+                                        std::fprintf(stderr, "ERROR 3\n");
+                                    return token_data{
+                                        token_type::test_odd,
+                                        tokens
+                                    };
+                                },
+                    parser::sequence(expression, comparison, expression)->*[](const std::vector<token_data>& tokens) {
+                        if (tokens.size() != 3)
+                            std::fprintf(stderr, "ERROR 4\n");
                         return token_data{
                             token_type::test_comparison,
                             tokens
                         };
-                    }
-                );
+                    });
 
             parser statement;
             statement =
@@ -320,111 +311,86 @@ namespace gtl {
                     parser::sequence(
                         identifier,
                         parser::terminal(":="),
-                        expression
-                    )
-                    ->* [](const std::vector<token_data>& tokens){
-                        if (tokens.size() != 2) std::fprintf(stderr, "ERROR 5\n");
-                        return token_data{
-                            token_type::assignement,
-                            tokens
-                        };
-                    },
-                    parser::sequence(
-                        parser::terminal("CALL"),
-                        identifier
-                    ) ->* [](const std::vector<token_data>& tokens){
-                        if (tokens.size() != 1) std::fprintf(stderr, "ERROR 6\n");
+                        expression)
+                            ->*[](const std::vector<token_data>& tokens) {
+                                    if (tokens.size() != 2)
+                                        std::fprintf(stderr, "ERROR 5\n");
+                                    return token_data{
+                                        token_type::assignement,
+                                        tokens
+                                    };
+                                },
+                    parser::sequence(parser::terminal("CALL"), identifier)->*[](const std::vector<token_data>& tokens) {
+                        if (tokens.size() != 1)
+                            std::fprintf(stderr, "ERROR 6\n");
                         return token_data{
                             token_type::call,
                             std::get<std::string>(tokens[0].data)
                         };
                     },
-                    parser::sequence(
-                        parser::terminal_any('?'),
-                        identifier
-                    ) ->* [](const std::vector<token_data>& tokens){
-                        if (tokens.size() != 1) std::fprintf(stderr, "ERROR 7\n");
+                    parser::sequence(parser::terminal_any('?'), identifier)->*[](const std::vector<token_data>& tokens) {
+                        if (tokens.size() != 1)
+                            std::fprintf(stderr, "ERROR 7\n");
                         return token_data{
                             token_type::read,
                             std::get<std::string>(tokens[0].data)
                         };
                     },
-                    parser::sequence(
-                        parser::terminal_any('!'),
-                        identifier
-                    ) ->* [](const std::vector<token_data>& tokens){
-                        if (tokens.size() != 1) std::fprintf(stderr, "ERROR 8\n");
+                    parser::sequence(parser::terminal_any('!'), identifier)->*[](const std::vector<token_data>& tokens) {
+                        if (tokens.size() != 1)
+                            std::fprintf(stderr, "ERROR 8\n");
                         return token_data{
                             token_type::write,
                             std::get<std::string>(tokens[0].data)
                         };
                     },
-                    parser::sequence(parser::terminal("BEGIN"),
-                        parser::reference(statement),
-                        parser::recurse(
-                            parser::disjunction(
-                                parser::empty(),
-                                parser::sequence(
-                                    parser::terminal_any(';'),
-                                    parser::reference(statement)
-                                )
-                            )
-                        ),
-                        parser::terminal("END")
-                    ) ->* [](const std::vector<token_data>& tokens){
+                    parser::sequence(parser::terminal("BEGIN"), parser::reference(statement), parser::recurse(parser::disjunction(parser::empty(), parser::sequence(parser::terminal_any(';'), parser::reference(statement)))), parser::terminal("END"))->*[](const std::vector<token_data>& tokens) {
                         return token_data{
                             token_type::scope,
                             tokens
                         };
                     },
-                    parser::sequence(
-                        parser::terminal("IF"),
-                        condition,
-                        parser::terminal("THEN"),
-                        parser::reference(statement)
-                    ) ->* [](const std::vector<token_data>& tokens){
-                        if (tokens.size() != 2) std::fprintf(stderr, "ERROR 9\n");
+                    parser::sequence(parser::terminal("IF"), condition, parser::terminal("THEN"), parser::reference(statement))->*[](const std::vector<token_data>& tokens) {
+                        if (tokens.size() != 2)
+                            std::fprintf(stderr, "ERROR 9\n");
                         return token_data{
                             token_type::if_then,
                             tokens
                         };
                     },
-                    parser::sequence(
-                        parser::terminal("WHILE"),
-                        condition,
-                        parser::terminal("DO"),
-                        parser::reference(statement)
-                    ) ->* [](const std::vector<token_data>& tokens){
-                        if (tokens.size() != 2) std::fprintf(stderr, "ERROR 10\n");
+                    parser::sequence(parser::terminal("WHILE"), condition, parser::terminal("DO"), parser::reference(statement))->*[](const std::vector<token_data>& tokens) {
+                        if (tokens.size() != 2)
+                            std::fprintf(stderr, "ERROR 10\n");
                         return token_data{
                             token_type::while_do,
                             tokens
                         };
-                    }
-                );
+                    });
 
             parser constant =
                 parser::sequence(
                     identifier,
                     parser::terminal_any('='),
-                    number
-                ) ->* [](const std::vector<token_data>& tokens){
-                    if (tokens.size() != 2) std::fprintf(stderr, "ERROR 11\n");
-                    return token_data{
-                        token_type::constant,
-                        tokens
-                    };
-                };
+                    number)
+                    ->*[](const std::vector<token_data>& tokens) {
+                            if (tokens.size() != 2)
+                                std::fprintf(stderr, "ERROR 11\n");
+                            return token_data{
+                                token_type::constant,
+                                tokens
+                            };
+                        };
 
             parser variable =
                 identifier
-                ->* [](const std::vector<token_data>& tokens){
-                    if (tokens.size() != 1) std::fprintf(stderr, "ERROR 12\n");
-                    return token_data{
-                        token_type::variable,
-                        std::vector<token_data>{ tokens[0], token_data{ token_type::number, 0 } }
-                    };
-                };
+                    ->*[](const std::vector<token_data>& tokens) {
+                            if (tokens.size() != 1)
+                                std::fprintf(stderr, "ERROR 12\n");
+                            return token_data{
+                                token_type::variable,
+                                std::vector<token_data>{tokens[0], token_data{ token_type::number, 0 }}
+                            };
+                        };
 
             parser block;
             block =
@@ -439,13 +405,8 @@ namespace gtl {
                                     parser::empty(),
                                     parser::sequence(
                                         parser::terminal_any(','),
-                                        constant
-                                    )
-                                )
-                            ),
-                            parser::terminal_any(';')
-                        )
-                    ),
+                                        constant))),
+                            parser::terminal_any(';'))),
                     parser::disjunction(
                         parser::empty(),
                         parser::sequence(
@@ -456,13 +417,8 @@ namespace gtl {
                                     parser::empty(),
                                     parser::sequence(
                                         parser::terminal_any(','),
-                                        variable
-                                    )
-                                )
-                            ),
-                            parser::terminal_any(';')
-                        )
-                    ),
+                                        variable))),
+                            parser::terminal_any(';'))),
                     parser::disjunction(
                         parser::empty(),
                         parser::recurse(
@@ -473,18 +429,14 @@ namespace gtl {
                                     identifier,
                                     parser::terminal_any(';'),
                                     parser::reference(block),
-                                    parser::terminal_any(';')
-                                ) ->* [](const std::vector<token_data>& tokens){
-                                    return token_data{
-                                        token_type::procedure,
-                                        tokens
-                                    };
-                                }
-                            )
-                        )
-                    ),
-                    statement
-                );
+                                    parser::terminal_any(';'))
+                                        ->*[](const std::vector<token_data>& tokens) {
+                                                return token_data{
+                                                    token_type::procedure,
+                                                    tokens
+                                                };
+                                            }))),
+                    statement);
 
             parser pl0 = block + parser::terminal_any('.');
 
@@ -493,10 +445,14 @@ namespace gtl {
                 // TODO: Remove this bodge. Currently whitespace is not handled in the grammar.
                 // TODO: This also causes an ambiguity because BEGIN and END leak into the name of the squ and x identifiers.
                 // TODO: To avoid the ambiguity right now control terminals are all uppercase and identifiers are all lowercase.
-                if (character == ' ') continue;
-                if (character == '\t') continue;
-                if (character == '\r') continue;
-                if (character == '\n') continue;
+                if (character == ' ')
+                    continue;
+                if (character == '\t')
+                    continue;
+                if (character == '\r')
+                    continue;
+                if (character == '\n')
+                    continue;
                 pl0.parse(character, forest);
             }
             std::vector<token_data> tokens;
@@ -510,27 +466,33 @@ namespace gtl {
         void interpret(const std::vector<token_data>& tokens) const {
             std::vector<token_data> local_tokens = tokens;
             for (token_data& token : local_tokens) {
-                this->interpret(token, {&local_tokens});
+                this->interpret(token, { &local_tokens });
             }
         }
 
     private:
         int interpret(token_data& token, std::vector<std::vector<token_data>*> scopes) const {
-    //        fprintf(stderr, "DEBUG\n");
-    //        for (std::vector<std::vector<token_data>*>::reverse_iterator scope = scopes.rbegin(); scope != scopes.rend(); ++scope) {
-    //            for (token_data& other : **scope) {
-    //                if ((other.type == token_type::constant) || (other.type == token_type::variable)) {
-    //                    std::vector<token_data>& value = std::get<std::vector<token_data>>(other.data);
-    //                    fprintf(stderr, "  %s = %d\n", std::get<std::string>(value[0].data).c_str(), std::get<int>(value[1].data));
-    //                }
-    //            }
-    //        }
-    //        fprintf(stderr, "\n");
+            //        fprintf(stderr, "DEBUG\n");
+            //        for (std::vector<std::vector<token_data>*>::reverse_iterator scope = scopes.rbegin(); scope != scopes.rend(); ++scope) {
+            //            for (token_data& other : **scope) {
+            //                if ((other.type == token_type::constant) || (other.type == token_type::variable)) {
+            //                    std::vector<token_data>& value = std::get<std::vector<token_data>>(other.data);
+            //                    fprintf(stderr, "  %s = %d\n", std::get<std::string>(value[0].data).c_str(), std::get<int>(value[1].data));
+            //                }
+            //            }
+            //        }
+            //        fprintf(stderr, "\n");
 
             switch (token.type) {
-                case token_type::constant: { break; }
-                case token_type::variable: { break; }
-                case token_type::procedure: { break; }
+                case token_type::constant: {
+                    break;
+                }
+                case token_type::variable: {
+                    break;
+                }
+                case token_type::procedure: {
+                    break;
+                }
                 case token_type::identifier: {
                     for (std::vector<std::vector<token_data>*>::reverse_iterator scope = scopes.rbegin(); scope != scopes.rend(); ++scope) {
                         for (token_data& other : **scope) {

@@ -21,14 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: An implementation of the sha1 hashing function.
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the sha1 is misused.
-#   define GTL_SHA1_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_SHA1_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_SHA1_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_SHA1_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 namespace gtl {
@@ -51,7 +51,11 @@ namespace gtl {
         /// @brief  Simple type to hold the hash data.
         struct hash_type final {
             unsigned int data[sha1::hash_size / sizeof(unsigned int)] = {
-                0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0
+                0x67452301,
+                0xEFCDAB89,
+                0x98BADCFE,
+                0x10325476,
+                0xC3D2E1F0
             };
         };
 
@@ -227,7 +231,7 @@ namespace gtl {
             output.hash[sha1::hash_size * 2] = 0;
             return output;
         }
-        
+
     public:
         /// @brief  Hash a buffer of data.
         /// @param  data Input data pointer.

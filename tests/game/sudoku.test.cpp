@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/benchmark.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
@@ -22,13 +23,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <game/sudoku>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(sudoku, constructor, empty) {
@@ -136,7 +137,7 @@ TEST(sudoku, evaluate, solve) {
         "3...8.......7....51..............36...2..4....7...........6.13..452...........8.."
     };
 
-    //for (int board_trial = 0; board_trial < board_count; ++board_trial) {
+    // for (int board_trial = 0; board_trial < board_count; ++board_trial) {
     {
         int board_trial = 34;
 
@@ -146,7 +147,8 @@ TEST(sudoku, evaluate, solve) {
                 char value = boards[board_trial][y * 9 + x];
                 if (value == '.') {
                     continue;
-                } else if ((value >= '0') && (value <= '9')) {
+                }
+                else if ((value >= '0') && (value <= '9')) {
                     board.cells[y][x] = value - '0';
                 }
                 else {
@@ -218,7 +220,8 @@ TEST(sudoku, evaluate, invalid) {
                 char value = boards[board_trial][y * 9 + x];
                 if (value == '.') {
                     continue;
-                } else if ((value >= '0') && (value <= '9')) {
+                }
+                else if ((value >= '0') && (value <= '9')) {
                     board.cells[y][x] = value - '0';
                 }
                 else {
@@ -270,7 +273,8 @@ TEST(sudoku, evaluate, benchmark) {
             char value = boards[board_trial][y * 9 + x];
             if (value == '.') {
                 continue;
-            } else if ((value >= '0') && (value <= '9')) {
+            }
+            else if ((value >= '0') && (value <= '9')) {
                 board.cells[y][x] = value - '0';
             }
             else {
@@ -279,11 +283,13 @@ TEST(sudoku, evaluate, benchmark) {
         }
     }
 
-    double runtime = testbench::benchmark([&board](){
+    double runtime = testbench::benchmark([&board]() {
         gtl::sudoku sudoku;
         sudoku.apply_board(board);
         REQUIRE(sudoku.solve());
-    }, 1, 1.0);
+    },
+                                          1,
+                                          1.0);
 
     PRINT("Time to solve a sudoku: %f seconds.\n", runtime);
 }

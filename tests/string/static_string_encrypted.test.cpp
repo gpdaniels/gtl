@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/comparison.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/process.tests.hpp>
@@ -23,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string/static_string_encrypted>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <cstdio>
@@ -32,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vector>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(static_string_encrypted, evaluate, obfusocated) {
@@ -41,7 +42,6 @@ TEST(static_string_encrypted, evaluate, obfusocated) {
 }
 
 TEST(static_string_encrypted, evaluate, executable_search) {
-
     // Load the executable binary into memory.
     const char* executable_path = testbench::get_executable();
     REQUIRE(executable_path != nullptr);

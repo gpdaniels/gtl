@@ -21,14 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: An implementation of the crc hashing function for 8, 16, 32, and 64 bits.
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the crc is misused.
-#   define GTL_CRC_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_CRC_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_CRC_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_CRC_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 namespace gtl {
@@ -37,8 +37,8 @@ namespace gtl {
     template <unsigned long long int crc_size>
     class crc final {
     private:
-        static_assert (crc_size % 8 == 0, "Size of crc hash must be a multiple of eight.");
-        static_assert (crc_size == 8 || crc_size == 16 || crc_size == 32 || crc_size == 64, "Currently only sizes 8, 16, 32, and 64 bits are supported.");
+        static_assert(crc_size % 8 == 0, "Size of crc hash must be a multiple of eight.");
+        static_assert(crc_size == 8 || crc_size == 16 || crc_size == 32 || crc_size == 64, "Currently only sizes 8, 16, 32, and 64 bits are supported.");
 
     public:
         /// @brief  Handy variable for accessing the size in bits.
@@ -64,8 +64,8 @@ namespace gtl {
         template <typename inexplicit_specialisation>
         struct internals<8, inexplicit_specialisation> final {
             using base_type = unsigned char;
-            constexpr static const bool      default_reflect_input    = false;
-            constexpr static const bool      default_reflect_output   = false;
+            constexpr static const bool default_reflect_input = false;
+            constexpr static const bool default_reflect_output = false;
             constexpr static const base_type default_polynomial_value = 0x07;
             constexpr static const base_type default_initial_hash_value = 0x00;
             constexpr static const base_type default_output_xor_value = 0x00;
@@ -75,8 +75,8 @@ namespace gtl {
         template <typename inexplicit_specialisation>
         struct internals<16, inexplicit_specialisation> final {
             using base_type = unsigned short;
-            constexpr static const bool      default_reflect_input    = false;
-            constexpr static const bool      default_reflect_output   = false;
+            constexpr static const bool default_reflect_input = false;
+            constexpr static const bool default_reflect_output = false;
             constexpr static const base_type default_polynomial_value = 0x8005;
             constexpr static const base_type default_initial_hash_value = 0x00;
             constexpr static const base_type default_output_xor_value = 0x00;
@@ -86,8 +86,8 @@ namespace gtl {
         template <typename inexplicit_specialisation>
         struct internals<32, inexplicit_specialisation> final {
             using base_type = unsigned int;
-            constexpr static const bool      default_reflect_input    = true;
-            constexpr static const bool      default_reflect_output   = true;
+            constexpr static const bool default_reflect_input = true;
+            constexpr static const bool default_reflect_output = true;
             constexpr static const base_type default_polynomial_value = 0x04C11DB7;
             constexpr static const base_type default_initial_hash_value = 0xFFFFFFFF;
             constexpr static const base_type default_output_xor_value = 0xFFFFFFFF;
@@ -97,8 +97,8 @@ namespace gtl {
         template <typename inexplicit_specialisation>
         struct internals<64, inexplicit_specialisation> final {
             using base_type = unsigned long long int;
-            constexpr static const bool      default_reflect_input    = false;
-            constexpr static const bool      default_reflect_output   = false;
+            constexpr static const bool default_reflect_input = false;
+            constexpr static const bool default_reflect_output = false;
             constexpr static const base_type default_polynomial_value = 0x42F0E1EBA9EA3693;
             constexpr static const base_type default_initial_hash_value = 0x0000000000000000;
             constexpr static const base_type default_output_xor_value = 0x0000000000000000;
@@ -149,19 +149,18 @@ namespace gtl {
         /// @param initial_hash_value Initial value of the hash state.
         /// @param output_xor_value Value the output will be xor'd with.
         crc(
-            bool reflect_input  = internals<crc::size>::default_reflect_input,
+            bool reflect_input = internals<crc::size>::default_reflect_input,
             bool reflect_output = internals<crc::size>::default_reflect_output,
-            typename internals<crc::size>::base_type polynomial_value   = internals<crc::size>::default_polynomial_value,
+            typename internals<crc::size>::base_type polynomial_value = internals<crc::size>::default_polynomial_value,
             typename internals<crc::size>::base_type initial_hash_value = internals<crc::size>::default_initial_hash_value,
-            typename internals<crc::size>::base_type output_xor_value   = internals<crc::size>::default_output_xor_value
-        )
+            typename internals<crc::size>::base_type output_xor_value = internals<crc::size>::default_output_xor_value)
             : setting_reflect_input(reflect_input)
             , setting_reflect_output(reflect_output)
             , setting_polynomial_value(polynomial_value)
             , setting_initial_hash_value(initial_hash_value)
             , setting_output_xor_value(output_xor_value)
             , block{}
-            , hash{{initial_hash_value}}
+            , hash{ { initial_hash_value } }
             , finalised(false) {
         }
 
@@ -238,7 +237,7 @@ namespace gtl {
         /// @brief  Reset the internal state of the hash.
         constexpr void reset() {
             this->block = {};
-            this->hash = hash_type{{this->setting_initial_hash_value}};
+            this->hash = hash_type{ { this->setting_initial_hash_value } };
             this->finalised = false;
         }
 
@@ -292,7 +291,7 @@ namespace gtl {
             output.hash[crc::hash_size * 2] = 0;
             return output;
         }
-        
+
     public:
         /// @brief  Hash a buffer of data.
         /// @param  data Input data pointer.

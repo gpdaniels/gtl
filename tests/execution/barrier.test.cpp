@@ -15,13 +15,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <testbench/main.tests.hpp>
+
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <execution/barrier>
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <atomic>
@@ -29,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <type_traits>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 TEST(barrier, traits, standard) {
@@ -81,8 +82,7 @@ TEST(barrier, evaluate, set_trigger_count_with_two_threads) {
 
     REQUIRE(result == 0, "Expected result to be set to 0 not '%d' before anything.", result.load());
 
-    std::thread thread([&barrier, &result](){
-
+    std::thread thread([&barrier, &result]() {
         result = 1;
 
         REQUIRE(result == 1, "Expected result to be set to 1 not '%d' before thread sync.", result.load());
@@ -108,8 +108,7 @@ TEST(barrier, evaluate, trigger_with_two_threads) {
 
     REQUIRE(result == 0, "Expected result to be set to 0 not '%d' before anything.", result.load());
 
-    std::thread thread([&barrier, &result](){
-
+    std::thread thread([&barrier, &result]() {
         result = 1;
 
         REQUIRE(result == 1, "Expected result to be set to 1 not '%d' before thread sync.", result.load());
@@ -135,8 +134,7 @@ TEST(barrier, evaluate, sync_with_two_threads) {
 
     REQUIRE(result == 0, "Expected result to be set to 0 not '%d' before anything.", result.load());
 
-    std::thread thread([&barrier, &result](){
-
+    std::thread thread([&barrier, &result]() {
         result = 1;
 
         REQUIRE(result == 1, "Expected result to be set to 1 not '%d' before thread sync.", result.load());

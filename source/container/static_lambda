@@ -21,14 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Lambda function class that uses the stack for storage.
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the static_lambda is misused.
-#   define GTL_STATIC_LAMBDA_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_STATIC_LAMBDA_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_STATIC_LAMBDA_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_STATIC_LAMBDA_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 namespace gtl {
@@ -80,50 +80,50 @@ namespace gtl {
 
     private:
         /// @brief  A template to remove references from types.
-        template<typename type>
+        template <typename type>
         struct remove_reference final {
             using type_unreferenced = type;
         };
 
         /// @brief  A template to remove references from types.
-        template<typename type>
+        template <typename type>
         struct remove_reference<type&> final {
             using type_unreferenced = type;
         };
 
         /// @brief  A template to remove references from types.
-        template<typename type>
+        template <typename type>
         struct remove_reference<type&&> final {
             using type_unreferenced = type;
         };
 
         /// @brief  A template to check if two types are the same.
-        template<typename lhs_type, typename rhs_type>
+        template <typename lhs_type, typename rhs_type>
         struct is_same_type final {
             constexpr static const bool value = false;
         };
 
         /// @brief  A template to check if two types are the same.
-        template<typename type>
+        template <typename type>
         struct is_same_type<type, type> final {
             constexpr static const bool value = true;
         };
 
     private:
         /// @brief  The type used to store and modify the passed in lambda function.
-        using erased_type       = void*;
+        using erased_type = void*;
 
         /// @brief  The type used to store and access the passed in lambda function.
         using erased_type_const = const void*;
 
         /// @brief  The type of the copier function created on construction of the internal lambda.
-        using copier_type       = void (*)(erased_type_const, erased_type);
+        using copier_type = void (*)(erased_type_const, erased_type);
 
         /// @brief  The type of the executer function created on construction of the internal lambda.
-        using executor_type     = return_type (*)(erased_type_const, argument_types...);
+        using executor_type = return_type (*)(erased_type_const, argument_types...);
 
         /// @brief  The type of the destructor function created on construction of the internal lambda.
-        using destructor_type   = void (*)(erased_type);
+        using destructor_type = void (*)(erased_type);
 
     private:
         /// @brief  A stack allocated buffer to store the lambda function.

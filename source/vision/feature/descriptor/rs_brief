@@ -27,41 +27,72 @@ namespace gtl {
         const unsigned char* __restrict const data,
         const int stride,
         const float angle_degrees,
-        gtl::binary_descriptor<32>& descriptor
-    );
+        gtl::binary_descriptor<32>& descriptor);
+
     void rs_brief(
         const unsigned char* __restrict const data,
         const int stride,
         const float angle_degrees,
-        gtl::binary_descriptor<32>& descriptor
-    ) {
+        gtl::binary_descriptor<32>& descriptor) {
         constexpr static const int pattern_size = 256;
         constexpr static const auto round = [](float value) -> int {
             return (value > 0.0f) ? static_cast<int>(value + 0.5f) : static_cast<int>(value - 0.5f);
         };
+
         struct pattern_type final {
             int data[pattern_size][2][2];
         };
-        constexpr static const pattern_type pattern = [](){
+
+        constexpr static const pattern_type pattern = []() {
             pattern_type pattern_builder = {};
             // This is the first 8 values of the standard ORB pattern.
             constexpr const int pattern_sample[8][2][2] = {
-                {{  8, -3}, {  9,  5}}, {{  4,  2}, {  7,-12}}, {{-11,  9}, { -8,  2}}, {{  7,-12}, { 12,-13}},
-                {{  2,-13}, {  2, 12}}, {{  1, -7}, {  1,  6}}, {{ -2,-10}, { -2, -4}}, {{-13,-13}, {-11, -8}}
+                {   { 8, -3 },    { 9, 5 }},
+                {    { 4, 2 },  { 7, -12 }},
+                {  { -11, 9 },   { -8, 2 }},
+                {  { 7, -12 }, { 12, -13 }},
+                {  { 2, -13 },   { 2, 12 }},
+                {   { 1, -7 },    { 1, 6 }},
+                { { -2, -10 },  { -2, -4 }},
+                {{ -13, -13 }, { -11, -8 }}
             };
             // Values of sin and cos at (360.0f / 32.0f) = 11.25 degree intervals.
             constexpr const float angle_table[32][2] = {
-                { 0.0000f,  1.0000f }, { 0.1951f,  0.9808f }, { 0.3827f,  0.9239f }, { 0.5556f,  0.8315f },
-                { 0.7071f,  0.7071f }, { 0.8315f,  0.5556f }, { 0.9239f,  0.3827f }, { 0.9808f,  0.1951f },
-                { 1.0000f, -0.0000f }, { 0.9808f, -0.1951f }, { 0.9239f, -0.3827f }, { 0.8315f, -0.5556f },
-                { 0.7071f, -0.7071f }, { 0.5556f, -0.8315f }, { 0.3827f, -0.9239f }, { 0.1951f, -0.9808f },
-                {-0.0000f, -1.0000f }, {-0.1951f, -0.9808f }, {-0.3827f, -0.9239f }, {-0.5556f, -0.8315f },
-                {-0.7071f, -0.7071f }, {-0.8315f, -0.5556f }, {-0.9239f, -0.3827f }, {-0.9808f, -0.1951f },
-                {-1.0000f,  0.0000f }, {-0.9808f,  0.1951f }, {-0.9239f,  0.3827f }, {-0.8315f,  0.5556f },
-                {-0.7071f,  0.7071f }, {-0.5556f,  0.8315f }, {-0.3827f,  0.9239f }, {-0.1951f,  0.9808f }
+                { 0.0000f,  1.0000f},
+                { 0.1951f,  0.9808f},
+                { 0.3827f,  0.9239f},
+                { 0.5556f,  0.8315f},
+                { 0.7071f,  0.7071f},
+                { 0.8315f,  0.5556f},
+                { 0.9239f,  0.3827f},
+                { 0.9808f,  0.1951f},
+                { 1.0000f, -0.0000f},
+                { 0.9808f, -0.1951f},
+                { 0.9239f, -0.3827f},
+                { 0.8315f, -0.5556f},
+                { 0.7071f, -0.7071f},
+                { 0.5556f, -0.8315f},
+                { 0.3827f, -0.9239f},
+                { 0.1951f, -0.9808f},
+                {-0.0000f, -1.0000f},
+                {-0.1951f, -0.9808f},
+                {-0.3827f, -0.9239f},
+                {-0.5556f, -0.8315f},
+                {-0.7071f, -0.7071f},
+                {-0.8315f, -0.5556f},
+                {-0.9239f, -0.3827f},
+                {-0.9808f, -0.1951f},
+                {-1.0000f,  0.0000f},
+                {-0.9808f,  0.1951f},
+                {-0.9239f,  0.3827f},
+                {-0.8315f,  0.5556f},
+                {-0.7071f,  0.7071f},
+                {-0.5556f,  0.8315f},
+                {-0.3827f,  0.9239f},
+                {-0.1951f,  0.9808f}
             };
             // The computed full pattern is found by rotating the initial pattern.
-            for (int i = 0; i < pattern_size; i+=8) {
+            for (int i = 0; i < pattern_size; i += 8) {
                 const float angle_sin = angle_table[i / 8][0];
                 const float angle_cos = angle_table[i / 8][1];
                 for (int j = 0; j < 8; ++j) {
@@ -109,8 +140,7 @@ namespace gtl {
                 ((pixels_lhs[4] < pixels_rhs[4]) << 4) |
                 ((pixels_lhs[5] < pixels_rhs[5]) << 5) |
                 ((pixels_lhs[6] < pixels_rhs[6]) << 6) |
-                ((pixels_lhs[7] < pixels_rhs[7]) << 7)
-            );
+                ((pixels_lhs[7] < pixels_rhs[7]) << 7));
         }
 
         // Rotate the descriptor by rotating the binary data according to the feature's orientation.

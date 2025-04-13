@@ -82,8 +82,8 @@ namespace gtl {
 
         /// @brief  Constructor forwards arguments to the constructor of the implementation.
         /// @param  arguments The arguments to forward to the constructor of the implementation.
-        template<typename ... argument_types>
-        pimpl(argument_types&& ... arguments) {
+        template <typename... argument_types>
+        pimpl(argument_types&&... arguments) {
             static_assert(sizeof(implementation) == implementation_size, "The implementation must have the same size as the pre-allocated array.");
             new (this->implementation_data, static_cast<pimpl*>(nullptr)) implementation(static_cast<argument_types&&>(arguments)...);
         }

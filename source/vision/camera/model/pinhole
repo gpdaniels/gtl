@@ -21,14 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Pinhole camera model with no distortion. [wip]
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the pinhole is misused.
-#   define GTL_PINHOLE_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_PINHOLE_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_PINHOLE_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_PINHOLE_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 namespace {
@@ -90,8 +90,7 @@ namespace gtl {
             const type* const __restrict point_xyz,
             type* const __restrict point_xy,
             type* const __restrict jacobian_projection = nullptr,
-            type* const __restrict jacobian_parameters = nullptr
-        ) const {
+            type* const __restrict jacobian_parameters = nullptr) const {
             // Cannot project points with no depth, also return false for those behind the camera.
             if (abs(point_xyz[2]) < type(1.0e-12)) {
                 return false;
@@ -115,11 +114,11 @@ namespace gtl {
                 // fx, fy, cx, cy, X, Y, Z = sympy.symbols('fx, fy, cx, cy, X, Y, Z')
                 // sympy.cse(sympy.Matrix([fx*X/Z+cx, fy*Y/Z+cy]).jacobian(sympy.Matrix([X, Y, Z])))
                 const type inverse_z_squared = inverse_z * inverse_z;
-                jacobian_projection[0 * 3 + 0] =  this->focal_lengths[0] * inverse_z;
-                jacobian_projection[0 * 3 + 1] =  type(0.0);
+                jacobian_projection[0 * 3 + 0] = this->focal_lengths[0] * inverse_z;
+                jacobian_projection[0 * 3 + 1] = type(0.0);
                 jacobian_projection[0 * 3 + 2] = -this->focal_lengths[0] * point_xyz[0] * inverse_z_squared;
-                jacobian_projection[1 * 3 + 0] =  type(0.0);
-                jacobian_projection[1 * 3 + 1] =  this->focal_lengths[1] * inverse_z;
+                jacobian_projection[1 * 3 + 0] = type(0.0);
+                jacobian_projection[1 * 3 + 1] = this->focal_lengths[1] * inverse_z;
                 jacobian_projection[1 * 3 + 2] = -this->focal_lengths[1] * point_xyz[1] * inverse_z_squared;
             }
 
@@ -145,8 +144,7 @@ namespace gtl {
         bool unproject(
             const type* const __restrict point_xy,
             type* const __restrict ray_xyz,
-            type* const __restrict jacobian_unprojection = nullptr
-        ) const {
+            type* const __restrict jacobian_unprojection = nullptr) const {
             // Scale and offset.
             const type undistorted_xy[2] = {
                 (point_xy[0] - this->centre_points[0]) / this->focal_lengths[0],

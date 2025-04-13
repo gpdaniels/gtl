@@ -21,18 +21,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Lockless triple buffer interface to three buffers.
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <atomic>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace gtl {
     /// @brief  The triple_buffer class implements a thread-safe single-producer single-consumer triple-buffer.
-    template<typename buffer_type>
+    template <typename buffer_type>
     class triple_buffer final {
     public:
         /// @brief  Make the buffer type publically accessible.
@@ -41,9 +41,9 @@ namespace gtl {
     private:
         /// @brief  Structure that holds the index of the read, swap and write buffers, and a flag that is set on write.
         struct index_type final {
-            unsigned char read : 2;
-            unsigned char swap : 2;
-            unsigned char write : 2;
+            unsigned char read    : 2;
+            unsigned char swap    : 2;
+            unsigned char write   : 2;
             unsigned char updated : 2;
         };
 
@@ -62,7 +62,7 @@ namespace gtl {
 
         /// @brief  Constructor initialises the atomic indexes.
         triple_buffer() {
-            this->indexes.store(index_type{0, 1, 2, 0});
+            this->indexes.store(index_type{ 0, 1, 2, 0 });
         }
 
         /// @brief  Deleted copy constructor.
@@ -86,7 +86,8 @@ namespace gtl {
                 index_type current_indexes = this->indexes.load();
 
                 // Try repeatably to exchange the swap and read indexes and set the updated flag to 0.
-                while (!std::atomic_compare_exchange_weak(&this->indexes, &current_indexes, index_type{ current_indexes.swap, current_indexes.read, current_indexes.write, 0 }));
+                while (!std::atomic_compare_exchange_weak(&this->indexes, &current_indexes, index_type{ current_indexes.swap, current_indexes.read, current_indexes.write, 0 }))
+                    ;
 
                 // Return true to notify that the buffers were swapped.
                 return true;
@@ -113,7 +114,8 @@ namespace gtl {
             index_type current_indexes = this->indexes.load();
 
             // Try repeatably to exchange the write and swap indexes.
-            while (!std::atomic_compare_exchange_weak(&this->indexes, &current_indexes, index_type{ current_indexes.read, current_indexes.write, current_indexes.swap, 1 }));
+            while (!std::atomic_compare_exchange_weak(&this->indexes, &current_indexes, index_type{ current_indexes.read, current_indexes.write, current_indexes.swap, 1 }))
+                ;
         }
     };
 }

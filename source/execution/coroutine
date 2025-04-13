@@ -21,77 +21,78 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Setjump/Longjump implementation of stackful coroutines.
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the coroutine is misused.
-#   define GTL_COROUTINE_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_COROUTINE_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_COROUTINE_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_COROUTINE_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 #if (defined(linux) || defined(__linux) || defined(__linux__)) || defined(__APPLE__)
 
-    #if defined(_FORTIFY_SOURCE)
-        #define GTL_COROUTINE_UNFORTIFY_SOURCE
-        #pragma push_macro("_FORTIFY_SOURCE")
-        #undef _FORTIFY_SOURCE
-    #endif
-        #include <csetjmp>
-    #if defined(GTL_COROUTINE_UNFORTIFY_SOURCE)
-        #undef GTL_COROUTINE_UNFORTIFY_SOURCE
-        #pragma pop_macro("_FORTIFY_SOURCE")
-    #endif
+#if defined(_FORTIFY_SOURCE)
+#define GTL_COROUTINE_UNFORTIFY_SOURCE
+#pragma push_macro("_FORTIFY_SOURCE")
+#undef _FORTIFY_SOURCE
+#endif
+#include <csetjmp>
+#if defined(GTL_COROUTINE_UNFORTIFY_SOURCE)
+#undef GTL_COROUTINE_UNFORTIFY_SOURCE
+#pragma pop_macro("_FORTIFY_SOURCE")
+#endif
 
-    #include <csignal>
-    #include <cstdint>
-    #include <cstdlib>
+#include <csignal>
+#include <cstdint>
+#include <cstdlib>
 
 //  Valgrind.
-#   if !defined(NDEBUG) && __has_include(<valgrind/valgrind.h>)
-        #include <valgrind/valgrind.h>
-        #define GTL_COROUTINE_HAVE_VALGRIND 1
-#   else
-        #define GTL_COROUTINE_HAVE_VALGRIND 0
-#   endif
+#if !defined(NDEBUG) && __has_include(<valgrind/valgrind.h>)
+#include <valgrind/valgrind.h>
+#define GTL_COROUTINE_HAVE_VALGRIND 1
+#else
+#define GTL_COROUTINE_HAVE_VALGRIND 0
+#endif
 
 #endif
 
 #if defined(_WIN32)
 
-#   if defined(_MSC_VER)
-#       pragma warning(push, 0)
-#   endif
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
 
-#   define WIN32_LEAN_AND_MEAN
-#   define VC_EXTRALEAN
-#   define STRICT
+#define WIN32_LEAN_AND_MEAN
+#define VC_EXTRALEAN
+#define STRICT
 
-#   include <windows.h>
+#include <windows.h>
 
-#   if defined(_MSC_VER)
-#       pragma warning(pop)
-#   endif
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
-#   define sig_atomic_t int
+#define sig_atomic_t int
 
 #endif
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <mutex>
 #include <thread>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace gtl {
     // Predeclarations.
     class coroutine;
+
     namespace this_coroutine {
         static coroutine* get_self();
     }
@@ -102,16 +103,16 @@ namespace gtl {
     /// @brief  The coroutine class creates and stores a stack and an execution context to enable non-pre-emptive threading of functions.
     class coroutine final {
     public:
-#       if !defined(_WIN32)
-            /// @brief  The alignement of the stack memory.
-            constexpr static const unsigned long long stack_alignment = 16;
+#if !defined(_WIN32)
+        /// @brief  The alignement of the stack memory.
+        constexpr static const unsigned long long stack_alignment = 16;
 
-            /// @brief  The amount of memory to allocate for the stack of the coroutine.
-            constexpr static const unsigned long long stack_size = 32768; // Would use SIGSTKSZ but that macro calls a non-constexpr function.
+        /// @brief  The amount of memory to allocate for the stack of the coroutine.
+        constexpr static const unsigned long long stack_size = 32768; // Would use SIGSTKSZ but that macro calls a non-constexpr function.
 
-            /// @brief  The id of the signal raised to trigger a signal handler.
-            constexpr static const int trigger_signal_identifier = SIGUSR1;
-#       endif
+        /// @brief  The id of the signal raised to trigger a signal handler.
+        constexpr static const int trigger_signal_identifier = SIGUSR1;
+#endif
 
     private:
         /// @brief  Friend accessor function that is allowed to access the coroutines private state.
@@ -124,10 +125,10 @@ namespace gtl {
         /// @brief  Store a pointer to the currently executing coroutine as a global thread_local variable.
         static inline thread_local coroutine* current = nullptr;
 
-#       if defined(_WIN32)
-            /// @brief  Store the root thread fiber pointer
-            static inline thread_local void* thread_fiber = nullptr;
-#       endif
+#if defined(_WIN32)
+        /// @brief  Store the root thread fiber pointer
+        static inline thread_local void* thread_fiber = nullptr;
+#endif
 
     public:
         /// @brief  An identifier type used to uniquely identify coroutines.
@@ -145,37 +146,37 @@ namespace gtl {
 
             /// @brief  The less than operator is the only one defined using the identifier value, all other operators are defined using this one.
             /// @param  rhs The right hand side of the comparison.
-            constexpr bool operator < (const id& rhs) const {
+            constexpr bool operator<(const id& rhs) const {
                 return (this->value < rhs.value);
             }
 
             /// @brief  The greater than operator defined using the less than operator with the sides of the comparison reversed.
             /// @param  rhs The right hand side of the comparison.
-            constexpr bool operator > (const id& rhs) const {
+            constexpr bool operator>(const id& rhs) const {
                 return rhs < *this;
             }
 
             /// @brief  The less than or equal to operator defined using the greater than operator and inverted.
             /// @param  rhs The right hand side of the comparison.
-            constexpr bool operator <=(const id& rhs) const {
+            constexpr bool operator<=(const id& rhs) const {
                 return !(*this > rhs);
             }
 
             /// @brief  The greater than or equal to operator defined using the less than operator and inverted.
             /// @param  rhs The right hand side of the comparison.
-            constexpr bool operator >=(const id& rhs) const {
+            constexpr bool operator>=(const id& rhs) const {
                 return !(*this < rhs);
             }
 
             /// @brief  The inequality operator defined using the less than and greater than operators.
             /// @param  rhs The right hand side of the comparison.
-            constexpr bool operator !=(const id& rhs) const {
+            constexpr bool operator!=(const id& rhs) const {
                 return (*this < rhs) || (*this > rhs);
             }
 
             /// @brief  The equality operator defined using the inequality operator and inverted.
             /// @param  rhs The right hand side of the comparison.
-            constexpr bool operator ==(const id& rhs) const {
+            constexpr bool operator==(const id& rhs) const {
                 return !(*this != rhs);
             }
         };
@@ -288,19 +289,19 @@ namespace gtl {
         };
 
     private:
-#       if !defined(_WIN32)
-            /// @brief  Jump buffer to used to enter the coroutine.
-            sigjmp_buf coroutine_context;
+#if !defined(_WIN32)
+        /// @brief  Jump buffer to used to enter the coroutine.
+        sigjmp_buf coroutine_context;
 
-            /// @brief  Jump buffer used to exit the coroutine.
-            sigjmp_buf parent_context;
+        /// @brief  Jump buffer used to exit the coroutine.
+        sigjmp_buf parent_context;
 
-            /// @brief  The signal set of the program at coroutine creation saved as a member variable so it can be restored in the coroutine context.
-            sigset_t parent_signal_set;
-#       else
-            /// @brief  Fibre used to exit the coroutine.
-            void* parent_stack;
-#       endif
+        /// @brief  The signal set of the program at coroutine creation saved as a member variable so it can be restored in the coroutine context.
+        sigset_t parent_signal_set;
+#else
+        /// @brief  Fibre used to exit the coroutine.
+        void* parent_stack;
+#endif
 
         /// @brief  Atomic flag that is set by the signal handler and checked by the constructor to ensure creation stages procede in order.
         volatile sig_atomic_t signal_raised;
@@ -308,9 +309,9 @@ namespace gtl {
         /// @brief  Coroutine stack allocated on the heap stack using new.
         void* stack;
 
-#       if GTL_COROUTINE_HAVE_VALGRIND
-            unsigned int valgrind_stack_id;
-#       endif
+#if GTL_COROUTINE_HAVE_VALGRIND
+        unsigned int valgrind_stack_id;
+#endif
 
         /// @brief  Function to call from the coroutine context.
         lambda function;
@@ -322,21 +323,21 @@ namespace gtl {
             if (this->joinable()) {
                 std::terminate();
             }
-#           if !defined(_WIN32)
-                // Cleanup stack.
-                if (this->stack) {
-                    std::free(this->stack);
-                }
-                // If we are testing with valgrind deregister the coroutine stack.
-#               if GTL_COROUTINE_HAVE_VALGRIND
-                    VALGRIND_STACK_DEREGISTER(this->valgrind_stack_id);
-#               endif
-#           else
-                // Cleanup stack.
-                if (this->stack) {
-                    DeleteFiber(this->stack);
-                }
-#           endif
+#if !defined(_WIN32)
+            // Cleanup stack.
+            if (this->stack) {
+                std::free(this->stack);
+            }
+            // If we are testing with valgrind deregister the coroutine stack.
+#if GTL_COROUTINE_HAVE_VALGRIND
+            VALGRIND_STACK_DEREGISTER(this->valgrind_stack_id);
+#endif
+#else
+            // Cleanup stack.
+            if (this->stack) {
+                DeleteFiber(this->stack);
+            }
+#endif
         }
 
         /// @brief  Default constructor does nothing.
@@ -365,16 +366,16 @@ namespace gtl {
             }
 
             // Swap all the member variables with those from other.
-#           if !defined(_WIN32)
-                std::swap(this->coroutine_context,  other.coroutine_context);
-                std::swap(this->parent_context,     other.parent_context);
-                std::swap(this->parent_signal_set,  other.parent_signal_set);
-#           else
-                std::swap(this->parent_stack, other.parent_stack);
-#           endif
-            std::swap(this->signal_raised,  other.signal_raised);
-            std::swap(this->stack,          other.stack);
-            std::swap(this->function,       other.function);
+#if !defined(_WIN32)
+            std::swap(this->coroutine_context, other.coroutine_context);
+            std::swap(this->parent_context, other.parent_context);
+            std::swap(this->parent_signal_set, other.parent_signal_set);
+#else
+            std::swap(this->parent_stack, other.parent_stack);
+#endif
+            std::swap(this->signal_raised, other.signal_raised);
+            std::swap(this->stack, other.stack);
+            std::swap(this->function, other.function);
 
             // Return this, other will be destructed and cleanup after itself.
             return *this;
@@ -385,242 +386,246 @@ namespace gtl {
         /// @param  coroutine_arguments Function arguments to provide to the function at call time.
         template <typename function_type, typename... argument_types>
         coroutine(function_type&& coroutine_function, argument_types&&... coroutine_arguments)
-#           if !defined(_WIN32)
-                : signal_raised(0)
-                , stack(operator new(coroutine::stack_size + (coroutine::stack_alignment - 1))) {
-#           else
-                : stack(nullptr) {
-#           endif
+#if !defined(_WIN32)
+            : signal_raised(0)
+            , stack(operator new(coroutine::stack_size + (coroutine::stack_alignment - 1))) {
+#else
+            : stack(nullptr) {
+#endif
 
-#           if !defined(_WIN32)
-                // If we are testing with valgrind register the coroutine stack.
-#               if GTL_COROUTINE_HAVE_VALGRIND
-                    this->valgrind_stack_id = VALGRIND_STACK_REGISTER(this->stack, static_cast<unsigned char*>(this->stack) + coroutine::stack_size);
-#               endif
+#if !defined(_WIN32)
+            // If we are testing with valgrind register the coroutine stack.
+#if GTL_COROUTINE_HAVE_VALGRIND
+            this->valgrind_stack_id = VALGRIND_STACK_REGISTER(this->stack, static_cast<unsigned char*>(this->stack) + coroutine::stack_size);
+#endif
 
-                // Use a lock guard so the mutex is unlocked automatically when we return from the construtor.
-                std::lock_guard<std::mutex> signal_handler_lock(signal_handler_mutex);
-                // Cast the lock guard to void to prevent unused variable warnings.
-                static_cast<void>(signal_handler_lock);
+            // Use a lock guard so the mutex is unlocked automatically when we return from the construtor.
+            std::lock_guard<std::mutex> signal_handler_lock(signal_handler_mutex);
+            // Cast the lock guard to void to prevent unused variable warnings.
+            static_cast<void>(signal_handler_lock);
 
-                // Step 1:
-                // Preserve the current signal mask and block an arbitrary worker signal.
-                // coroutine::trigger_signal_identifier is used here, but any signal can be used for this (even an already used one).
-                // This worker signal is later temporarily required for the trampoline step.
-                sigset_t coroutine_signal_set = {};
-                if (sigemptyset(&coroutine_signal_set) != 0) {
+            // Step 1:
+            // Preserve the current signal mask and block an arbitrary worker signal.
+            // coroutine::trigger_signal_identifier is used here, but any signal can be used for this (even an already used one).
+            // This worker signal is later temporarily required for the trampoline step.
+            sigset_t coroutine_signal_set = {};
+            if (sigemptyset(&coroutine_signal_set) != 0) {
+                std::terminate();
+            }
+            if (sigaddset(&coroutine_signal_set, coroutine::trigger_signal_identifier) != 0) {
+                std::terminate();
+            }
+
+            sigset_t local_parent_signal_set = {};
+            if (sigprocmask(SIG_BLOCK, &coroutine_signal_set, &local_parent_signal_set) != 0) {
+                std::terminate();
+            }
+
+            // Step 2:
+            // Preserve a possibly existing signal action for the worker signal and configure a trampoline function as the new temporary signal action.
+            // The signal delivery is configured to occur on an alternate signal stack (see next step).
+            struct sigaction coroutine_signal_action = {};
+            coroutine_signal_action.sa_handler = signal_handler_trampoline;
+            coroutine_signal_action.sa_flags = SA_ONSTACK;
+            if (sigemptyset(&coroutine_signal_action.sa_mask) != 0) {
+                std::terminate();
+            }
+
+            struct sigaction parent_signal_action = {};
+            if (sigaction(coroutine::trigger_signal_identifier, &coroutine_signal_action, &parent_signal_action) != 0) {
+                std::terminate();
+            }
+
+            // Step 3:
+            // Preserve a possibly active alternate signal stack and configure the memory chunk starting at this->stack as the new temporary alternate signal stack of length size.
+            stack_t signal_stack = {};
+            signal_stack.ss_sp = reinterpret_cast<void*>((reinterpret_cast<std::uintptr_t>(this->stack) + (coroutine::stack_alignment - 1)) & ~std::uintptr_t(coroutine::stack_alignment - 1));
+            signal_stack.ss_size = coroutine::stack_size;
+            signal_stack.ss_flags = 0;
+            stack_t parent_signal_stack = {};
+            if (sigaltstack(&signal_stack, &parent_signal_stack) != 0) {
+                std::terminate();
+            }
+
+            // Step 4:
+            // Save parameters for the trampoline step in member variables.
+            // Send the current process the worker signal, temporarily unblock it and this way allow it to be delivered on the signal stack.
+            // This transfers execution control to the trampoline function.
+            this->function = [coroutine_function, coroutine_arguments...]() {
+                coroutine_function(coroutine_arguments...);
+            };
+            this->parent_signal_set = local_parent_signal_set;
+            this->signal_raised = 0;
+
+            // Store the currently executing coroutine in previous.
+            coroutine* parent_coroutine = gtl::coroutine::current;
+            // Save the new coroutine in current.
+            gtl::coroutine::current = this;
+
+            // Raise the signal.
+            if (raise(coroutine::trigger_signal_identifier) != 0) {
+                std::terminate();
+            }
+
+            // Valgrind seems to think the creation of alternative context is dodgy.
+            // Therefore the only sensible solution is to disable valgrind error reporting!
+#if GTL_COROUTINE_HAVE_VALGRIND
+            VALGRIND_DISABLE_ERROR_REPORTING;
+#endif
+
+            // Unblock and wait for the signal by suspending the current thread.
+            sigfillset(&coroutine_signal_set);
+            sigdelset(&coroutine_signal_set, coroutine::trigger_signal_identifier);
+            while (!this->signal_raised) {
+                if (sigsuspend(&coroutine_signal_set) != -1) {
                     std::terminate();
                 }
-                if (sigaddset(&coroutine_signal_set, coroutine::trigger_signal_identifier) != 0) {
+            }
+
+            // Step 6:
+            // Restore the preserved alternate signal stack, preserved signal action and preserved signal mask for worker signal.
+            // This way an existing application configuration for the worker signal is restored.
+            if (sigaltstack(nullptr, &signal_stack) != 0) {
+                std::terminate();
+            }
+            signal_stack.ss_flags = SS_DISABLE;
+            if (sigaltstack(&signal_stack, nullptr) != 0) {
+                std::terminate();
+            }
+            if (sigaltstack(nullptr, &signal_stack) != 0) {
+                std::terminate();
+            }
+            if (!(parent_signal_stack.ss_flags & SS_DISABLE)) {
+                if (sigaltstack(&parent_signal_stack, nullptr) != 0) {
                     std::terminate();
                 }
+            }
 
-                sigset_t local_parent_signal_set = {};
-                if (sigprocmask(SIG_BLOCK, &coroutine_signal_set, &local_parent_signal_set) != 0) {
-                    std::terminate();
-                }
+            if (sigaction(coroutine::trigger_signal_identifier, &parent_signal_action, nullptr) != 0) {
+                std::terminate();
+            }
+            if (sigprocmask(SIG_SETMASK, &parent_signal_set, nullptr) != 0) {
+                std::terminate();
+            }
 
-                // Step 2:
-                // Preserve a possibly existing signal action for the worker signal and configure a trampoline function as the new temporary signal action.
-                // The signal delivery is configured to occur on an alternate signal stack (see next step).
-                struct sigaction coroutine_signal_action = {};
-                coroutine_signal_action.sa_handler = signal_handler_trampoline;
-                coroutine_signal_action.sa_flags = SA_ONSTACK;
-                if (sigemptyset(&coroutine_signal_action.sa_mask) != 0) {
-                    std::terminate();
-                }
+            // Step 7:
+            // Save the current machine context of the Create function.
+            // This allows us to return to this point after the next trampoline step.
+            if (sigsetjmp(this->parent_context, 0) == 0) {
+                // Step 8:
+                // Restore the previously saved machine context of the trampoline function to again transfer execution control onto the alternate stack.
+                // This time without(!) signal handler scope.
+                siglongjmp(this->coroutine_context, 1);
+            }
 
-                struct sigaction parent_signal_action = {};
-                if (sigaction(coroutine::trigger_signal_identifier, &coroutine_signal_action, &parent_signal_action) != 0) {
-                    std::terminate();
-                }
+            // Restore the currently running coroutine.
+            gtl::coroutine::current = parent_coroutine;
 
-                // Step 3:
-                // Preserve a possibly active alternate signal stack and configure the memory chunk starting at this->stack as the new temporary alternate signal stack of length size.
-                stack_t signal_stack = {};
-                signal_stack.ss_sp = reinterpret_cast<void*>((reinterpret_cast<std::uintptr_t>(this->stack) + (coroutine::stack_alignment - 1)) & ~std::uintptr_t(coroutine::stack_alignment - 1));
-                signal_stack.ss_size = coroutine::stack_size;
-                signal_stack.ss_flags = 0;
-                stack_t parent_signal_stack = {};
-                if (sigaltstack(&signal_stack, &parent_signal_stack) != 0) {
-                    std::terminate();
-                }
+            // Step 14:
+            // Return to the calling application.
+#else
+            // Save parameters for the coroutine in member variables.
+            this->function = [coroutine_function, coroutine_arguments...]() {
+                coroutine_function(coroutine_arguments...);
+            };
 
-                // Step 4:
-                // Save parameters for the trampoline step in member variables.
-                // Send the current process the worker signal, temporarily unblock it and this way allow it to be delivered on the signal stack.
-                // This transfers execution control to the trampoline function.
-                this->function = [coroutine_function, coroutine_arguments...](){ coroutine_function(coroutine_arguments...); };
-                this->parent_signal_set = local_parent_signal_set;
-                this->signal_raised = 0;
-
-                // Store the currently executing coroutine in previous.
-                coroutine* parent_coroutine = gtl::coroutine::current;
-                // Save the new coroutine in current.
-                gtl::coroutine::current = this;
-
-                // Raise the signal.
-                if (raise(coroutine::trigger_signal_identifier) != 0) {
-                    std::terminate();
-                }
-
-                // Valgrind seems to think the creation of alternative context is dodgy.
-                // Therefore the only sensible solution is to disable valgrind error reporting!
-#               if GTL_COROUTINE_HAVE_VALGRIND
-                    VALGRIND_DISABLE_ERROR_REPORTING;
-#               endif
-
-                // Unblock and wait for the signal by suspending the current thread.
-                sigfillset(&coroutine_signal_set);
-                sigdelset(&coroutine_signal_set, coroutine::trigger_signal_identifier);
-                while(!this->signal_raised) {
-                    if (sigsuspend(&coroutine_signal_set) != -1) {
-                        std::terminate();
-                    }
-                }
-
-                // Step 6:
-                // Restore the preserved alternate signal stack, preserved signal action and preserved signal mask for worker signal.
-                // This way an existing application configuration for the worker signal is restored.
-                if (sigaltstack(nullptr, &signal_stack) != 0) {
-                    std::terminate();
-                }
-                signal_stack.ss_flags = SS_DISABLE;
-                if (sigaltstack(&signal_stack, nullptr) != 0) {
-                    std::terminate();
-                }
-                if (sigaltstack(nullptr, &signal_stack) != 0) {
-                    std::terminate();
-                }
-                if (!(parent_signal_stack.ss_flags & SS_DISABLE)) {
-                    if (sigaltstack(&parent_signal_stack, nullptr) != 0) {
-                        std::terminate();
-                    }
-                }
-
-                if (sigaction(coroutine::trigger_signal_identifier, &parent_signal_action, nullptr) != 0) {
-                    std::terminate();
-                }
-                if (sigprocmask(SIG_SETMASK, &parent_signal_set, nullptr) != 0) {
-                    std::terminate();
-                }
-
-                // Step 7:
-                // Save the current machine context of the Create function.
-                // This allows us to return to this point after the next trampoline step.
-                if (sigsetjmp(this->parent_context, 0) == 0) {
-                    // Step 8:
-                    // Restore the previously saved machine context of the trampoline function to again transfer execution control onto the alternate stack.
-                    // This time without(!) signal handler scope.
-                    siglongjmp(this->coroutine_context, 1);
-                }
-
-                // Restore the currently running coroutine.
-                gtl::coroutine::current = parent_coroutine;
-
-                // Step 14:
-                // Return to the calling application.
-#           else
-                // Save parameters for the coroutine in member variables.
-                this->function = [coroutine_function, coroutine_arguments...](){ coroutine_function(coroutine_arguments...); };
-
-                // Create the fiber based coroutine.
-                this->stack = CreateFiber(0, [](LPVOID) {
+            // Create the fiber based coroutine.
+            this->stack = CreateFiber(
+                0, [](LPVOID) {
                     // The coroutine function call.
                     gtl::coroutine::current->function();
                     // Clear the signal raised flag to indicate the coroutine is finished.
                     gtl::coroutine::current->signal_raised = 0;
                     // Yield to another coroutine or the root.
                     gtl::coroutine::current->yield();
-                }, nullptr);
+                },
+                nullptr);
 
-                // Check to see if the fiber failed to be created.
-                if (this->stack == nullptr) {
-                    return;
-                }
+            // Check to see if the fiber failed to be created.
+            if (this->stack == nullptr) {
+                return;
+            }
 
-                // Set flag to indicate the coroutine is ready.
-                this->signal_raised = 1;
-#           endif
+            // Set flag to indicate the coroutine is ready.
+            this->signal_raised = 1;
+#endif
         }
 
     private:
-#       if !defined(_WIN32)
-            /// @brief  Signal handler, called by the os with a new stack when this class calls raise.
-            /// @param  signal_identifier The identifying code of the raised signal.
-            static void signal_handler_trampoline(int signal_identifier) {
-                // Don't need to validate which signal it is as this routine only handles one.
-                static_cast<void>(signal_identifier);
+#if !defined(_WIN32)
+        /// @brief  Signal handler, called by the os with a new stack when this class calls raise.
+        /// @param  signal_identifier The identifying code of the raised signal.
+        static void signal_handler_trampoline(int signal_identifier) {
+            // Don't need to validate which signal it is as this routine only handles one.
+            static_cast<void>(signal_identifier);
 
-                // Step 5:
-                // After the trampoline function asynchronously entered, save its machine context in the structure.
-                // Then immediately return from it to terminate the signal handler scope.
-                if (sigsetjmp(gtl::coroutine::current->coroutine_context, 0) == 0) {
-                    gtl::coroutine::current->signal_raised = 1;
-                    return;
-                }
-
-                // Step 9:
-                // After reaching the trampoline function again, immediately bootstrap into a clean stack frame by calling a second function.
-                coroutine::bootstrap();
+            // Step 5:
+            // After the trampoline function asynchronously entered, save its machine context in the structure.
+            // Then immediately return from it to terminate the signal handler scope.
+            if (sigsetjmp(gtl::coroutine::current->coroutine_context, 0) == 0) {
+                gtl::coroutine::current->signal_raised = 1;
+                return;
             }
 
-            /// @brief  Container function jumped to and from when joining and yielding from a coroutine.
-            [[noreturn]]
-            static void bootstrap() {
+            // Step 9:
+            // After reaching the trampoline function again, immediately bootstrap into a clean stack frame by calling a second function.
+            coroutine::bootstrap();
+        }
 
-                // Re-enable valgrind error reporting.
-#               if GTL_COROUTINE_HAVE_VALGRIND
-                    VALGRIND_ENABLE_ERROR_REPORTING;
-#               endif
+        /// @brief  Container function jumped to and from when joining and yielding from a coroutine.
+        [[noreturn]] static void bootstrap() {
+            // Re-enable valgrind error reporting.
+#if GTL_COROUTINE_HAVE_VALGRIND
+            VALGRIND_ENABLE_ERROR_REPORTING;
+#endif
 
-                // Beware this function cannot be a member function, because the coroutine could have been moved while we were away.
-                // Moving the coroutine changes the "this" pointer, therefore the code "this->function()" would be invalid.
+            // Beware this function cannot be a member function, because the coroutine could have been moved while we were away.
+            // Moving the coroutine changes the "this" pointer, therefore the code "this->function()" would be invalid.
 
-                // Step 10:
-                // Set the new signal mask to be the same as the original signal mask which was active when the coroutine was created.
-                // This is required because in the first trampoline step we usually had at least the worker signal blocked.
-                if (sigprocmask(SIG_SETMASK, &gtl::coroutine::current->parent_signal_set, nullptr) != 0) {
-                    std::terminate();
-                }
+            // Step 10:
+            // Set the new signal mask to be the same as the original signal mask which was active when the coroutine was created.
+            // This is required because in the first trampoline step we usually had at least the worker signal blocked.
+            if (sigprocmask(SIG_SETMASK, &gtl::coroutine::current->parent_signal_set, nullptr) != 0) {
+                std::terminate();
+            }
 
-                // Step 11:
-                // Load the passed startup information (the function) from the constructor into local (stack based) variables.
-                // This is not required as the coroutine is an raii class.
-                //lambda function = gtl::coroutine::current->function;
+            // Step 11:
+            // Load the passed startup information (the function) from the constructor into local (stack based) variables.
+            // This is not required as the coroutine is an raii class.
+            // lambda function = gtl::coroutine::current->function;
 
-                // Step 12:
-                // Save the current machine context for later restoring by the calling application.
-                if (sigsetjmp(gtl::coroutine::current->coroutine_context, 0) == 0) {
-                    // Step 13:
-                    // Restore the previously saved machine context of the coroutine to transfer execution control back to it.
-                    siglongjmp(gtl::coroutine::current->parent_context, 1);
-                }
-
-                // The coroutine function call.
-                gtl::coroutine::current->function();
-
-                // Clear the signal raised flag to indicate the coroutine is finished.
-                gtl::coroutine::current->signal_raised = 0;
-
-                // Exit by jumping to the creator location.
+            // Step 12:
+            // Save the current machine context for later restoring by the calling application.
+            if (sigsetjmp(gtl::coroutine::current->coroutine_context, 0) == 0) {
+                // Step 13:
+                // Restore the previously saved machine context of the coroutine to transfer execution control back to it.
                 siglongjmp(gtl::coroutine::current->parent_context, 1);
-
-                // Silence warning about function returning.
-                std::abort();
             }
-#       endif
+
+            // The coroutine function call.
+            gtl::coroutine::current->function();
+
+            // Clear the signal raised flag to indicate the coroutine is finished.
+            gtl::coroutine::current->signal_raised = 0;
+
+            // Exit by jumping to the creator location.
+            siglongjmp(gtl::coroutine::current->parent_context, 1);
+
+            // Silence warning about function returning.
+            std::abort();
+        }
+#endif
 
     public:
         /// @brief  Get the unique identifier of the coroutine.
         /// @return The unique identider.
         id get_id() const {
-            return id(reinterpret_cast<unsigned long long int>(this->stack)) ;
+            return id(reinterpret_cast<unsigned long long int>(this->stack));
         }
 
         /// @brief  Checks whether the coroutine is joinable, i.e. unfinished.
         /// @return True if the coroutine is unfinished, false otherwise.
-        bool joinable()  {
+        bool joinable() {
             return this->signal_raised;
         }
 
@@ -631,28 +636,28 @@ namespace gtl {
             coroutine* parent_coroutine = gtl::coroutine::current;
             // Set the now running coroutine.
             gtl::coroutine::current = this;
-#           if !defined(_WIN32)
-                // Switch execution contexts.
-                if (sigsetjmp(gtl::coroutine::current->parent_context, 0) == 0) {
-                    siglongjmp(gtl::coroutine::current->coroutine_context, 1);
-                }
-#           else
-                // If there is no parent coroutine then convert this thread to a fiber.
-                if (!gtl::coroutine::thread_fiber) {
-                    gtl::coroutine::thread_fiber = ConvertThreadToFiber(nullptr);
-                }
-                // Save parent inside the coroutine to enable the yield function.
-                gtl::coroutine::current->parent_stack = (parent_coroutine != nullptr) ? parent_coroutine->stack : gtl::coroutine::thread_fiber;
-                // Switch execution contexts.
-                SwitchToFiber(gtl::coroutine::current->stack);
-                // Reset the parent stack.
-                gtl::coroutine::current->parent_stack = nullptr;
-                // If the current coroutine is null convert back to a thread.
-                if (!parent_coroutine) {
-                    ConvertFiberToThread();
-                    gtl::coroutine::thread_fiber = nullptr;
-                }
-#           endif
+#if !defined(_WIN32)
+            // Switch execution contexts.
+            if (sigsetjmp(gtl::coroutine::current->parent_context, 0) == 0) {
+                siglongjmp(gtl::coroutine::current->coroutine_context, 1);
+            }
+#else
+            // If there is no parent coroutine then convert this thread to a fiber.
+            if (!gtl::coroutine::thread_fiber) {
+                gtl::coroutine::thread_fiber = ConvertThreadToFiber(nullptr);
+            }
+            // Save parent inside the coroutine to enable the yield function.
+            gtl::coroutine::current->parent_stack = (parent_coroutine != nullptr) ? parent_coroutine->stack : gtl::coroutine::thread_fiber;
+            // Switch execution contexts.
+            SwitchToFiber(gtl::coroutine::current->stack);
+            // Reset the parent stack.
+            gtl::coroutine::current->parent_stack = nullptr;
+            // If the current coroutine is null convert back to a thread.
+            if (!parent_coroutine) {
+                ConvertFiberToThread();
+                gtl::coroutine::thread_fiber = nullptr;
+            }
+#endif
             // Upon return reset the currently running coroutine.
             gtl::coroutine::current = parent_coroutine;
         }
@@ -660,13 +665,13 @@ namespace gtl {
         /// @brief  Yield from the coroutine, i.e. force a return to the parent execution context.
         void yield() {
             GTL_COROUTINE_ASSERT(gtl::coroutine::current == this, "This coroutine must be running to yield.");
-#           if !defined(_WIN32)
-                if (sigsetjmp(gtl::coroutine::current->coroutine_context, 0) == 0) {
-                    siglongjmp(gtl::coroutine::current->parent_context, 1);
-                }
-#           else
-                SwitchToFiber(gtl::coroutine::current->parent_stack);
-#           endif
+#if !defined(_WIN32)
+            if (sigsetjmp(gtl::coroutine::current->coroutine_context, 0) == 0) {
+                siglongjmp(gtl::coroutine::current->parent_context, 1);
+            }
+#else
+            SwitchToFiber(gtl::coroutine::current->parent_stack);
+#endif
         }
     };
 }
@@ -697,7 +702,7 @@ namespace gtl {
 
         /// @brief  Sleep a coroutine for an amount of time, provided to match the std::thread api.
         /// @param  duration Length of time to sleep for.
-        template<typename number_of_ticks_type, typename period_type>
+        template <typename number_of_ticks_type, typename period_type>
         [[maybe_unused]] static void sleep_for(const std::chrono::duration<number_of_ticks_type, period_type>& duration) {
             GTL_COROUTINE_ASSERT(get_self() != nullptr, "A coroutine must be running to sleep.");
             std::this_thread::sleep_for(duration);
@@ -705,7 +710,7 @@ namespace gtl {
 
         /// @brief  Sleep a coroutine until a specific time, provided to match the std::thread api.
         /// @param  time_point Time to sleep until.
-        template<typename clock_type, typename duration_type>
+        template <typename clock_type, typename duration_type>
         [[maybe_unused]] static void sleep_until(const std::chrono::time_point<clock_type, duration_type>& time_point) {
             GTL_COROUTINE_ASSERT(get_self() != nullptr, "A coroutine must be running to sleep.");
             std::this_thread::sleep_until(time_point);
@@ -715,7 +720,7 @@ namespace gtl {
 
 // Undo the siglongjmp override.
 #ifdef __GLIBC__
-#   undef siglongjmp
+#undef siglongjmp
 #endif
 
 #undef GTL_COROUTINE_HAVE_VALGRIND

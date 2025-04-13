@@ -21,24 +21,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Summary: Spin lock implemented using an atomic flag.
 
 #ifndef NDEBUG
-#   if defined(_MSC_VER)
-#       define __builtin_trap() __debugbreak()
-#   endif
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
 /// @brief A simple assert macro to break the program if the spin_lock is misused.
-#   define GTL_SPIN_LOCK_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#define GTL_SPIN_LOCK_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
 #else
 /// @brief At release time the assert macro is implemented as a nop.
-#   define GTL_SPIN_LOCK_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#define GTL_SPIN_LOCK_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
 #if defined(_MSC_VER)
-#   pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 
 #include <atomic>
 
 #if defined(_MSC_VER)
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace gtl {
@@ -71,7 +71,8 @@ namespace gtl {
     public:
         /// @brief  Block until the current thread has the lock.
         void lock() {
-            while (!this->try_lock());
+            while (!this->try_lock())
+                ;
         }
 
         /// @brief  Unlock the lock.

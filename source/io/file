@@ -128,8 +128,7 @@ namespace gtl {
             const char* const __restrict path,
             access_type access_mode = access_type::read_only,
             creation_type creation_mode = creation_type::open_only,
-            cursor_type cursor_mode = cursor_type::start_of_file
-        ) {
+            cursor_type cursor_mode = cursor_type::start_of_file) {
             this->open(path, access_mode, creation_mode, cursor_mode);
         }
 
@@ -151,73 +150,92 @@ namespace gtl {
             const char* const __restrict path,
             access_type access_mode = access_type::read_only,
             creation_type creation_mode = creation_type::open_only,
-            cursor_type cursor_mode = cursor_type::start_of_file
-        ) {
+            cursor_type cursor_mode = cursor_type::start_of_file) {
             if (this->is_open()) {
                 return false;
             }
 
-            #if (defined(linux) || defined(__linux) || defined(__linux__))
-                constexpr static const int flag_access_read_only        = 0;            // O_RDONLY;
-                constexpr static const int flag_access_write_only       = 1;            // O_WRONLY;
-                constexpr static const int flag_access_read_and_write   = 2;            // O_RDWR;
+#if (defined(linux) || defined(__linux) || defined(__linux__))
+            constexpr static const int flag_access_read_only = 0;      // O_RDONLY;
+            constexpr static const int flag_access_write_only = 1;     // O_WRONLY;
+            constexpr static const int flag_access_read_and_write = 2; // O_RDWR;
 
-                constexpr static const int flag_creation_open_only      = 0;            // 0;
-                constexpr static const int flag_creation_create_only    = 64 | 128;     // O_CREAT | O_EXCL;
-                constexpr static const int flag_creation_create_or_open = 64;           // O_CREAT;
+            constexpr static const int flag_creation_open_only = 0;          // 0;
+            constexpr static const int flag_creation_create_only = 64 | 128; // O_CREAT | O_EXCL;
+            constexpr static const int flag_creation_create_or_open = 64;    // O_CREAT;
 
-                constexpr static const int flag_cursor_start            = 0;            // 0;
-                constexpr static const int flag_cursor_start_truncate   = 512;          // O_TRUNC;
-                constexpr static const int flag_cursor_end              = 1024;         // O_APPEND;
-                constexpr static const int flag_cursor_end_truncate     = 512 | 1024;   // O_TRUNC | O_APPEND;
-            #endif
+            constexpr static const int flag_cursor_start = 0;                 // 0;
+            constexpr static const int flag_cursor_start_truncate = 512;      // O_TRUNC;
+            constexpr static const int flag_cursor_end = 1024;                // O_APPEND;
+            constexpr static const int flag_cursor_end_truncate = 512 | 1024; // O_TRUNC | O_APPEND;
+#endif
 
-            #if defined(_WIN32)
-                constexpr static const int flag_access_read_only        = 0;            // O_RDONLY;
-                constexpr static const int flag_access_write_only       = 1;            // O_WRONLY;
-                constexpr static const int flag_access_read_and_write   = 2;            // O_RDWR;
+#if defined(_WIN32)
+            constexpr static const int flag_access_read_only = 0;      // O_RDONLY;
+            constexpr static const int flag_access_write_only = 1;     // O_WRONLY;
+            constexpr static const int flag_access_read_and_write = 2; // O_RDWR;
 
-                constexpr static const int flag_creation_open_only      = 0;            // 0;
-                constexpr static const int flag_creation_create_only    = 256 | 1024;   // O_CREAT | O_EXCL;
-                constexpr static const int flag_creation_create_or_open = 256;          // O_CREAT;
+            constexpr static const int flag_creation_open_only = 0;            // 0;
+            constexpr static const int flag_creation_create_only = 256 | 1024; // O_CREAT | O_EXCL;
+            constexpr static const int flag_creation_create_or_open = 256;     // O_CREAT;
 
-                constexpr static const int flag_cursor_start            = 0;            // 0;
-                constexpr static const int flag_cursor_start_truncate   = 512;          // O_TRUNC;
-                constexpr static const int flag_cursor_end              = 8;            // O_APPEND;
-                constexpr static const int flag_cursor_end_truncate     = 512 | 8;      // O_TRUNC | O_APPEND;
-            #endif
+            constexpr static const int flag_cursor_start = 0;              // 0;
+            constexpr static const int flag_cursor_start_truncate = 512;   // O_TRUNC;
+            constexpr static const int flag_cursor_end = 8;                // O_APPEND;
+            constexpr static const int flag_cursor_end_truncate = 512 | 8; // O_TRUNC | O_APPEND;
+#endif
 
-            #if defined(__APPLE__)
-                constexpr static const int flag_access_read_only        = 0;            // O_RDONLY;
-                constexpr static const int flag_access_write_only       = 1;            // O_WRONLY;
-                constexpr static const int flag_access_read_and_write   = 2;            // O_RDWR;
+#if defined(__APPLE__)
+            constexpr static const int flag_access_read_only = 0;      // O_RDONLY;
+            constexpr static const int flag_access_write_only = 1;     // O_WRONLY;
+            constexpr static const int flag_access_read_and_write = 2; // O_RDWR;
 
-                constexpr static const int flag_creation_open_only      = 0;            // 0;
-                constexpr static const int flag_creation_create_only    = 512 | 2048;   // O_CREAT | O_EXCL;
-                constexpr static const int flag_creation_create_or_open = 512;          // O_CREAT;
+            constexpr static const int flag_creation_open_only = 0;            // 0;
+            constexpr static const int flag_creation_create_only = 512 | 2048; // O_CREAT | O_EXCL;
+            constexpr static const int flag_creation_create_or_open = 512;     // O_CREAT;
 
-                constexpr static const int flag_cursor_start            = 0;            // 0;
-                constexpr static const int flag_cursor_start_truncate   = 1024;         // O_TRUNC;
-                constexpr static const int flag_cursor_end              = 8;            // O_APPEND;
-                constexpr static const int flag_cursor_end_truncate     = 1024 | 8;     // O_TRUNC | O_APPEND;
-            #endif
+            constexpr static const int flag_cursor_start = 0;               // 0;
+            constexpr static const int flag_cursor_start_truncate = 1024;   // O_TRUNC;
+            constexpr static const int flag_cursor_end = 8;                 // O_APPEND;
+            constexpr static const int flag_cursor_end_truncate = 1024 | 8; // O_TRUNC | O_APPEND;
+#endif
 
             int mode_flags = 0;
             switch (access_mode) {
-                case access_type::read_only:            mode_flags |= flag_access_read_only;        break;
-                case access_type::write_only:           mode_flags |= flag_access_write_only;       break;
-                case access_type::read_and_write:       mode_flags |= flag_access_read_and_write;   break;
+                case access_type::read_only:
+                    mode_flags |= flag_access_read_only;
+                    break;
+                case access_type::write_only:
+                    mode_flags |= flag_access_write_only;
+                    break;
+                case access_type::read_and_write:
+                    mode_flags |= flag_access_read_and_write;
+                    break;
             }
             switch (creation_mode) {
-                case creation_type::open_only:          mode_flags |= flag_creation_open_only;      break;
-                case creation_type::create_only:        mode_flags |= flag_creation_create_only;    break;
-                case creation_type::create_or_open:     mode_flags |= flag_creation_create_or_open; break;
+                case creation_type::open_only:
+                    mode_flags |= flag_creation_open_only;
+                    break;
+                case creation_type::create_only:
+                    mode_flags |= flag_creation_create_only;
+                    break;
+                case creation_type::create_or_open:
+                    mode_flags |= flag_creation_create_or_open;
+                    break;
             }
             switch (cursor_mode) {
-                case cursor_type::start_of_file:        mode_flags |= flag_cursor_start;            break;
-                case cursor_type::start_of_truncated:   mode_flags |= flag_cursor_start_truncate;   break;
-                case cursor_type::end_of_file:          mode_flags |= flag_cursor_end;              break;
-                case cursor_type::end_of_truncated:     mode_flags |= flag_cursor_end_truncate;     break;
+                case cursor_type::start_of_file:
+                    mode_flags |= flag_cursor_start;
+                    break;
+                case cursor_type::start_of_truncated:
+                    mode_flags |= flag_cursor_start_truncate;
+                    break;
+                case cursor_type::end_of_file:
+                    mode_flags |= flag_cursor_end;
+                    break;
+                case cursor_type::end_of_truncated:
+                    mode_flags |= flag_cursor_end_truncate;
+                    break;
             }
 
             this->handle = ::open(path, mode_flags, 0666);
@@ -334,9 +352,15 @@ namespace gtl {
 
             int direction_flags = 0;
             switch (relative_to) {
-                case position_type::start:      direction_flags = 0; break;
-                case position_type::current:    direction_flags = 1; break;
-                case position_type::end:        direction_flags = 2; break;
+                case position_type::start:
+                    direction_flags = 0;
+                    break;
+                case position_type::current:
+                    direction_flags = 1;
+                    break;
+                case position_type::end:
+                    direction_flags = 2;
+                    break;
             }
 
             ssize_t position_current = ::lseek(this->handle, position, direction_flags);

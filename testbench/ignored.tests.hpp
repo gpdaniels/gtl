@@ -25,6 +25,10 @@ namespace testbench {
 }
 
 /// @brief  A helper macro to prevent compiler warnings about ignored return values.
-#define IGNORED(STATEMENT) do { auto variable = (STATEMENT); UNUSED(variable); } while(0)
+#define IGNORED(STATEMENT)           \
+    do {                             \
+        auto variable = (STATEMENT); \
+        UNUSED(variable);            \
+    } while (0)
 
 #endif // GTL_IGNORED_TESTS_HPP
