@@ -14,10 +14,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <main.tests.hpp>
-#include <benchmark.tests.hpp>
-#include <optimise.tests.hpp>
-#include <require.tests.hpp>
+#include <testbench/main.tests.hpp>
+#include <testbench/benchmark.tests.hpp>
+#include <testbench/optimise.tests.hpp>
+#include <testbench/require.tests.hpp>
 
 #include <parser/pl0>
 

@@ -462,7 +462,7 @@ IF(BUILD_TESTING)
 
         # Include the source and the testbench directory.
         TARGET_INCLUDE_DIRECTORIES(${TEST_TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/source/)
-        TARGET_INCLUDE_DIRECTORIES(${TEST_TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/testbench/)
+        TARGET_INCLUDE_DIRECTORIES(${TEST_TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/)
 
         # Set the folder for the test library equal to its directory.
         GET_FILENAME_COMPONENT(TEST_DIRECTORY ${TEST_FILE_NAME} DIRECTORY)
