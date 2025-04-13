@@ -1,0 +1,43 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        compiler_version: ['default']
+        os: ['windows-latest', 'macOS-latest', 'ubuntu-latest']
+        config: ['Debug', 'Release', 'RelWithDebInfo', 'MinSizeRel']
+    name: Build on ${{ matrix.os }} in ${{ matrix.config }} with ${{ matrix.compiler_version }}
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Install tools.
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update -qq
+          sudo apt-get install -qq valgrind
+          sudo apt-get install -qq python3-pip
+          sudo pip3 install --break-system-packages clang-format==14
+        else
+          echo "Nothing to install for $RUNNER_OS."
+        fi
+    - name: Checkout repository.
+      uses: actions/checkout@v4
+    - name: Build and test in ${{ matrix.config }}.
+      shell: bash
+      run: |
+        CMAKE_GENERATOR_PLATFORM_ARG=""
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          CMAKE_GENERATOR_PLATFORM_ARG="-DCMAKE_GENERATOR_PLATFORM=x64"
+        fi
+        cmake -S. -Bbuild/${{ matrix.config }} -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DBUILD_TESTING=ON -DBUILD_MEMCHECK=ON ${CMAKE_GENERATOR_PLATFORM_ARG}
+        cmake --build build/${{ matrix.config }} --config ${{ matrix.config }} --parallel 4 --target gtl_test
+        rm -rf build/${{ matrix.config }}
