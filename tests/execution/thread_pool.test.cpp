@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma warning(push, 0)
 #endif
 
+#include <chrono>
 #include <type_traits>
 
 #if defined(_MSC_VER)
