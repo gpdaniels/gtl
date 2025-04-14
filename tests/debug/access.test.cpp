@@ -32,23 +32,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 class test_class final {
 private:
-    /*         storage */ /*volatile*/ /*const*/ /*type*/ /*name*/
-    /*            auto */ /*volatile*/ /*const*/ int variable_XaXXi = 1;
-    /*            auto */ volatile /*const*/ int variable_XavXi = 1;
-    /*            auto */ /*volatile*/ const int variable_XaXci = 1;
-    /*            auto */ const volatile int variable_Xavci = 1;
-    static inline /*volatile*/ /*const*/ int variable_XsXXi = 1;
-    static inline volatile /*const*/ int variable_XsvXi = 1;
-    static inline /*volatile*/ const int variable_XsXci = 1;
-    static inline const volatile int variable_Xsvci = 1;
-    mutable /*volatile*/ /*const*/ int variable_XmXXi = 1;
-    mutable volatile /*const*/ int variable_XmvXi = 1;
-    //             mutable    /*volatile*/   const      int   variable_XmXci = 1;
-    //             mutable      volatile     const      int   variable_Xmvci = 1;
-    constexpr static /*volatile*/ /*const*/ int variable_xsXXi = 1;
-    constexpr static volatile /*const*/ int variable_xsvXi = 1;
-    constexpr static /*volatile*/ const int variable_xsXci = 1;
-    constexpr static const volatile int variable_xsvci = 1;
+    /*****************/ int variable_XaXXi = 1;
+    /********/ volatile int variable_XavXi = 1;
+    /***********/ const int variable_XaXci = 1;
+    /**/ const volatile int variable_Xavci = 1;
+
+    static inline /*****************/ int variable_XsXXi = 1;
+    static inline /********/ volatile int variable_XsvXi = 1;
+    static inline /***********/ const int variable_XsXci = 1;
+    static inline /**/ const volatile int variable_Xsvci = 1;
+
+    mutable /*****************/ int variable_XmXXi = 1;
+    mutable /********/ volatile int variable_XmvXi = 1;
+    // mutable /***********/ const int variable_XmXci = 1; // mutable + const is not possible.
+    // mutable /**/ const volatile int variable_Xmvci = 1; // mutable + const is not possible.
+
+    constexpr static inline /*****************/ int variable_xsXXi = 1;
+    // constexpr static inline /********/ volatile int variable_xsvXi = 1; // contexpr + volatile is now broken in GCC >= 13.3.
+    constexpr static inline /***********/ const int variable_xsXci = 1;
+
+    // constexpr static inline /**/ const volatile int variable_xsvci = 1; // contexpr + volatile is now broken in GCC >= 13.3.
 
     void function_aXXX() {
     }
@@ -109,93 +112,136 @@ private:
 
 public:
     int use() {
-        return 0 + this->variable_XaXXi + this->variable_XavXi + this->variable_XaXci + this->variable_Xavci + test_class::variable_XsXXi + test_class::variable_XsvXi + test_class::variable_XsXci + test_class::variable_Xsvci + this->variable_XmXXi + this->variable_XmvXi
-               //           + this->variable_XmXci
-               //           + this->variable_Xmvci
-               + test_class::variable_xsXXi + test_class::variable_xsvXi + test_class::variable_xsXci + test_class::variable_xsvci;
+        return 0
+               // Validate values by adding them all together.
+               + this->variable_XaXXi + this->variable_XavXi + this->variable_XaXci + this->variable_Xavci + test_class::variable_XsXXi + test_class::variable_XsvXi + test_class::variable_XsXci + test_class::variable_Xsvci + this->variable_XmXXi + this->variable_XmvXi
+               // + this->variable_XmXci
+               // + this->variable_Xmvci
+               + test_class::variable_xsXXi
+               // + test_class::variable_xsvXi
+               + test_class::variable_xsXci
+            // + test_class::variable_xsvci
+            ;
     }
 };
 
-GTL_ACCESS_GENERATE(test_class_access, test_class, GTL_ACCESS_TYPE, auto, int, variable_XaXXi, GTL_ACCESS_TYPE, auto, volatile int, variable_XavXi, GTL_ACCESS_TYPE, auto, const int, variable_XaXci, GTL_ACCESS_TYPE, auto, const volatile int, variable_Xavci, GTL_ACCESS_TYPE, static, int, variable_XsXXi, GTL_ACCESS_TYPE, static, volatile int, variable_XsvXi, GTL_ACCESS_TYPE, static, const int, variable_XsXci, GTL_ACCESS_TYPE, static, const volatile int, variable_Xsvci, GTL_ACCESS_TYPE, mutable, int, variable_XmXXi, GTL_ACCESS_TYPE, mutable, volatile int, variable_XmvXi,
-                    //  GTL_ACCESS_TYPE, mutable,          const int, variable_XmXci,
-                    //  GTL_ACCESS_TYPE, mutable, volatile const int, variable_Xmvci,
-                    GTL_ACCESS_TYPE,
-                    static,
-                    const int,
-                    variable_xsXXi,
-                    GTL_ACCESS_TYPE,
-                    static,
-                    const volatile int,
-                    variable_xsvXi,
-                    GTL_ACCESS_TYPE,
-                    static,
-                    const int,
-                    variable_xsXci,
-                    GTL_ACCESS_TYPE,
-                    static,
-                    const volatile int,
-                    variable_xsvci,
-
-                    GTL_ACCESS_FUNC,
-                    auto,
-                    void(void),
-                    function_aXXX,
-                    GTL_ACCESS_FUNC,
-                    auto,
-                    int(int),
-                    function_aXXi,
-                    GTL_ACCESS_FUNC,
-                    auto,
-                    int(volatile int),
-                    function_avXi,
-                    GTL_ACCESS_FUNC,
-                    auto,
-                    int(const int),
-                    function_aXci,
-                    GTL_ACCESS_FUNC,
-                    auto,
-                    int(const volatile int),
-                    function_avci,
-                    GTL_ACCESS_FUNC,
-                    auto,
-                    void(void) const,
-                    function_cXXX,
-                    GTL_ACCESS_FUNC,
-                    auto,
-                    int(int) const,
-                    function_cXXi,
-                    GTL_ACCESS_FUNC,
-                    auto,
-                    int(volatile int) const,
-                    function_cvXi,
-                    GTL_ACCESS_FUNC,
-                    auto,
-                    int(const int) const,
-                    function_cXci,
-                    GTL_ACCESS_FUNC,
-                    auto,
-                    int(const volatile int) const,
-                    function_cvci,
-                    GTL_ACCESS_FUNC,
-                    static,
-                    void(void),
-                    function_sXXX,
-                    GTL_ACCESS_FUNC,
-                    static,
-                    int(int),
-                    function_sXXi,
-                    GTL_ACCESS_FUNC,
-                    static,
-                    int(volatile int),
-                    function_svXi,
-                    GTL_ACCESS_FUNC,
-                    static,
-                    int(const int),
-                    function_sXci,
-                    GTL_ACCESS_FUNC,
-                    static,
-                    int(const volatile int),
-                    function_svci);
+GTL_ACCESS_GENERATE(
+    // Class names
+    test_class_access,
+    test_class,
+    // Access definitions:
+    GTL_ACCESS_TYPE,
+    auto,
+    int,
+    variable_XaXXi,
+    GTL_ACCESS_TYPE,
+    auto,
+    volatile int,
+    variable_XavXi,
+    GTL_ACCESS_TYPE,
+    auto,
+    const int,
+    variable_XaXci,
+    GTL_ACCESS_TYPE,
+    auto,
+    const volatile int,
+    variable_Xavci,
+    GTL_ACCESS_TYPE,
+    static,
+    int,
+    variable_XsXXi,
+    GTL_ACCESS_TYPE,
+    static,
+    volatile int,
+    variable_XsvXi,
+    GTL_ACCESS_TYPE,
+    static,
+    const int,
+    variable_XsXci,
+    GTL_ACCESS_TYPE,
+    static,
+    const volatile int,
+    variable_Xsvci,
+    GTL_ACCESS_TYPE,
+    mutable,
+    int,
+    variable_XmXXi,
+    GTL_ACCESS_TYPE,
+    mutable,
+    volatile int,
+    variable_XmvXi,
+    //  GTL_ACCESS_TYPE, mutable,          const int, variable_XmXci,
+    //  GTL_ACCESS_TYPE, mutable, volatile const int, variable_Xmvci,
+    GTL_ACCESS_TYPE,
+    static,
+    const int,
+    variable_xsXXi,
+    // GTL_ACCESS_TYPE, static, const volatile int, variable_xsvXi,
+    GTL_ACCESS_TYPE,
+    static,
+    const int,
+    variable_xsXci,
+    // GTL_ACCESS_TYPE, static, const volatile int, variable_xsvci,
+    GTL_ACCESS_FUNC,
+    auto,
+    void(void),
+    function_aXXX,
+    GTL_ACCESS_FUNC,
+    auto,
+    int(int),
+    function_aXXi,
+    GTL_ACCESS_FUNC,
+    auto,
+    int(volatile int),
+    function_avXi,
+    GTL_ACCESS_FUNC,
+    auto,
+    int(const int),
+    function_aXci,
+    GTL_ACCESS_FUNC,
+    auto,
+    int(const volatile int),
+    function_avci,
+    GTL_ACCESS_FUNC,
+    auto,
+    void(void) const,
+    function_cXXX,
+    GTL_ACCESS_FUNC,
+    auto,
+    int(int) const,
+    function_cXXi,
+    GTL_ACCESS_FUNC,
+    auto,
+    int(volatile int) const,
+    function_cvXi,
+    GTL_ACCESS_FUNC,
+    auto,
+    int(const int) const,
+    function_cXci,
+    GTL_ACCESS_FUNC,
+    auto,
+    int(const volatile int) const,
+    function_cvci,
+    GTL_ACCESS_FUNC,
+    static,
+    void(void),
+    function_sXXX,
+    GTL_ACCESS_FUNC,
+    static,
+    int(int),
+    function_sXXi,
+    GTL_ACCESS_FUNC,
+    static,
+    int(volatile int),
+    function_svXi,
+    GTL_ACCESS_FUNC,
+    static,
+    int(const int),
+    function_sXci,
+    GTL_ACCESS_FUNC,
+    static,
+    int(const volatile int),
+    function_svci);
 
 TEST(access, traits, standard) {
     REQUIRE(std::is_pod<test_class>::value == false);
@@ -235,12 +281,12 @@ TEST(access, evaluate, access) {
     REQUIRE(access.variable_Xsvci == 1);
     REQUIRE(access.variable_XmXXi == 1);
     REQUIRE(access.variable_XmvXi == 1);
-    //  REQUIRE(access.variable_XmXci == 1);
-    //  REQUIRE(access.variable_Xmvci == 1);
+    // REQUIRE(access.variable_XmXci == 1);
+    // REQUIRE(access.variable_Xmvci == 1);
     REQUIRE(access.variable_xsXXi == 1);
-    REQUIRE(access.variable_xsvXi == 1);
+    // REQUIRE(access.variable_xsvXi == 1);
     REQUIRE(access.variable_xsXci == 1);
-    REQUIRE(access.variable_xsvci == 1);
+    // REQUIRE(access.variable_xsvci == 1);
 
     access.function_aXXX();
     REQUIRE(access.function_aXXi(1) == 1);
