@@ -1,7 +1,7 @@
 BasedOnStyle: none
 AccessModifierOffset: -4
 AlignAfterOpenBracket: AlwaysBreak
-AlignArrayOfStructures: Right
+AlignArrayOfStructures: None
 AlignConsecutiveAssignments: None
 AlignConsecutiveBitFields: Consecutive
 AlignConsecutiveDeclarations: None
@@ -9,7 +9,7 @@ AlignConsecutiveMacros: None
 AlignEscapedNewlines: Right
 AlignOperands: Align
 AlignTrailingComments: true
-AllowAllArgumentsOnNextLine: true
+AllowAllArgumentsOnNextLine: false
 AllowAllConstructorInitializersOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: Never
