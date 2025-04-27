@@ -18,9 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef GTL_VISION_MATCH_MATCH_HPP
 #define GTL_VISION_MATCH_MATCH_HPP
 
-// Summary: [wip]
+// Summary: Simple structure to hold a the information defining a matched pair of features. [wip]
 
-using size_t = decltype(sizeof(0));
+namespace {
+    using size_t = decltype(sizeof(0));
+}
 
 namespace gtl {
     class match final {

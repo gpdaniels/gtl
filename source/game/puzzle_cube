@@ -1022,6 +1022,45 @@ namespace gtl {
                 return true;
             }
 
+            // Search for well formed sides:
+            bool found = false;
+            if (!found) {
+                for (int i = 0; i < 4; ++i) {
+                    if (this->validate_first_layer_cross() && this->validate_first_layer_corners()) {
+                        found = true;
+                        break;
+                    }
+                    this->apply_moves("X", solution);
+                }
+            }
+            if (!found) {
+                for (int i = 0; i < 4; ++i) {
+                    if (this->validate_first_layer_cross() && this->validate_first_layer_corners()) {
+                        found = true;
+                        break;
+                    }
+                    this->apply_moves("Y", solution);
+                }
+            }
+            if (!found) {
+                for (int i = 0; i < 4; ++i) {
+                    if (this->validate_first_layer_cross()) {
+                        found = true;
+                        break;
+                    }
+                    this->apply_moves("X", solution);
+                }
+            }
+            if (!found) {
+                for (int i = 0; i < 4; ++i) {
+                    if (this->validate_first_layer_cross()) {
+                        found = true;
+                        break;
+                    }
+                    this->apply_moves("Y", solution);
+                }
+            }
+
             // Build a cross on the bottom of the cube. A "cross" means solving all four edge pieces of a particular face, in their correct position with respect to the other faces.
             if (!this->solve_first_layer_cross(solution)) {
                 return false;

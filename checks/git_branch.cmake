@@ -42,7 +42,7 @@ EXECUTE_PROCESS(
 # Check for errors running git.
 IF(RETURN_CODE)
     MESSAGE(FATAL_ERROR "Failed to get the git branch.")
-ENDIF(RETURN_CODE)
+ENDIF()
 
 # Check the git branch matches one of the valid patterns.
 IF(NOT "${COMMIT_BRANCH}" MATCHES "^master$|^dev$|^feat/.+$|^fix/.+$|^spike/.+$|^chore/.+$|^HEAD$")

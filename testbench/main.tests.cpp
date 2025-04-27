@@ -28,7 +28,9 @@ int main(int argument_count, char* arguments[]) {
     testbench::disable_output_buffering(testbench::output_stream::output);
     testbench::disable_output_buffering(testbench::output_stream::error);
 
+    bool help = false;
     bool quiet = false;
+    bool list = false;
     const char* filter_file = nullptr;
     const char* filter_group = nullptr;
     const char* filter_name = nullptr;
@@ -38,10 +40,26 @@ int main(int argument_count, char* arguments[]) {
     for (int argument_index = 0; argument_index < argument_count; ++argument_index) {
         const int arguments_remaining = argument_count - argument_index;
 
+        // Extract a help flag from the command line arguments.
+        if (arguments_remaining >= 1) {
+            if (testbench::is_string_same("-?", arguments[argument_index]) || testbench::is_string_same("--help", arguments[argument_index])) {
+                help = true;
+                continue;
+            }
+        }
+
         // Extract a quiet flag from the command line arguments.
         if (arguments_remaining >= 1) {
             if (testbench::is_string_same("-q", arguments[argument_index]) || testbench::is_string_same("--quiet", arguments[argument_index])) {
                 quiet = true;
+                continue;
+            }
+        }
+
+        // Extract a list flag from the command line arguments.
+        if (arguments_remaining >= 1) {
+            if (testbench::is_string_same("-l", arguments[argument_index]) || testbench::is_string_same("--list", arguments[argument_index])) {
+                list = true;
                 continue;
             }
         }
@@ -89,6 +107,49 @@ int main(int argument_count, char* arguments[]) {
                 continue;
             }
         }
+    }
+
+    if (help) {
+        PRINT("Command line options:\n");
+        PRINT("  -? --help    : Print this help message (Overrides all other arguments).\n");
+        PRINT("  -q --quiet   : Reduce logging output.\n");
+        PRINT("  -l --list    : List tests, respects -fgn filter arguments.\n");
+        PRINT("  -f --file    : Filter tests by name.\n");
+        PRINT("  -g --group   : Filter tests by group.\n");
+        PRINT("  -n --name    : Filter tests by name.\n");
+        PRINT("  -x --execute : Execute tests in this process rather than isolated (Enabled if a debugger is detected).\n");
+        return 0;
+    }
+
+    if (list) {
+        PRINT("All tests:\n");
+        const testbench::test_node* last_file = nullptr;
+        const testbench::test_node* last_group = nullptr;
+        const testbench::test_node* last_name = nullptr;
+        for (const testbench::test_node* current_test = testbench::test_node::root; current_test != nullptr; current_test = current_test->next) {
+            if (filter_file && !testbench::is_string_same(filter_file, current_test->file)) {
+                continue;
+            }
+            if (filter_group && !testbench::is_string_same(filter_group, current_test->group)) {
+                continue;
+            }
+            if (filter_name && !testbench::is_string_same(filter_name, current_test->name)) {
+                continue;
+            }
+            if (!last_file || !testbench::is_string_same(last_file->file, current_test->file)) {
+                last_file = current_test;
+                PRINT("  File: %s:\n", current_test->file);
+            }
+            if (!last_group || !testbench::is_string_same(last_group->group, current_test->group)) {
+                last_group = current_test;
+                PRINT("    Group: %s:\n", current_test->group);
+            }
+            if (!last_name || !testbench::is_string_same(last_name->name, current_test->group)) {
+                last_name = current_test;
+                PRINT("      Name: %s:\n", current_test->name);
+            }
+        }
+        return 0;
     }
 
     if (testbench::is_debugger_attached()) {

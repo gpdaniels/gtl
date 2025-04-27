@@ -27,7 +27,9 @@ namespace gtl {
         constexpr static const unsigned long long int size = size_bytes;
 
     public:
-        unsigned char data[size];
+        alignas(size_bytes >= 8 ? 8 : size_bytes >= 4 ? 4
+                                  : size_bytes >= 2   ? 2
+                                                      : 1) unsigned char data[size];
 
         template <typename index_type>
         const unsigned char& operator[](index_type index) const {

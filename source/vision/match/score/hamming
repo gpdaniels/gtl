@@ -20,6 +20,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Summary: Simple hamming matching without the popcount instruction. [wip]
 
+#ifndef __has_builtin
+#define __has_builtin(builtin) 0
+#endif
+
 namespace gtl {
     template <unsigned int bits>
     unsigned int hamming(
@@ -35,17 +39,10 @@ namespace gtl {
         constexpr static const unsigned char Ox33 = 0x33u;
         constexpr static const unsigned char Ox55 = 0x55u;
 
-        const unsigned char* __restrict lhs = data_lhs;
-        const unsigned char* __restrict rhs = data_rhs;
-
-        unsigned int distance = 0;
-
-        unsigned char difference = *lhs ^ *rhs;
+        unsigned char difference = *data_lhs ^ *data_rhs;
         difference = difference - ((difference >> 1u) & Ox55);
         difference = (difference & Ox33) + ((difference >> 2u) & Ox33);
-        distance += static_cast<unsigned char>(((difference + (difference >> 4u)) & Ox0F) * Ox01) >> 0u;
-
-        return distance;
+        return static_cast<unsigned char>(((difference + (difference >> 4u)) & Ox0F) * Ox01) >> 0u;
     }
 
     template <>
@@ -65,23 +62,28 @@ namespace gtl {
             data_internal_lhs[i] = data_lhs[i];
             data_internal_rhs[i] = data_rhs[i];
         }
-        const unsigned short int* __restrict lhs = &internal_lhs;
-        const unsigned short int* __restrict rhs = &internal_rhs;
 
-        unsigned int distance = 0;
-
-        unsigned short int difference = *lhs ^ *rhs;
+        unsigned short int difference = internal_lhs ^ internal_rhs;
         difference = difference - ((difference >> 1u) & Ox55);
         difference = (difference & Ox33) + ((difference >> 2u) & Ox33);
-        distance += static_cast<unsigned short>(((difference + (difference >> 4u)) & Ox0F) * Ox01) >> 8u;
-
-        return distance;
+        return static_cast<unsigned short>(((difference + (difference >> 4u)) & Ox0F) * Ox01) >> 8u;
     }
 
     template <>
     unsigned int hamming<32>(
         const unsigned char* __restrict const data_lhs,
         const unsigned char* __restrict const data_rhs) {
+#if __has_builtin(__builtin_popcount)
+        unsigned int internal_lhs;
+        unsigned int internal_rhs;
+        unsigned char* __restrict const data_internal_lhs = reinterpret_cast<unsigned char*>(&internal_lhs);
+        unsigned char* __restrict const data_internal_rhs = reinterpret_cast<unsigned char*>(&internal_rhs);
+        for (decltype(sizeof(unsigned int)) i = 0; i < sizeof(unsigned int); ++i) {
+            data_internal_lhs[i] = data_lhs[i];
+            data_internal_rhs[i] = data_rhs[i];
+        }
+        return __builtin_popcount(internal_lhs ^ internal_rhs);
+#else
         constexpr static const unsigned int Ox01 = 0x01010101u;
         constexpr static const unsigned int Ox0F = 0x0F0F0F0Fu;
         constexpr static const unsigned int Ox33 = 0x33333333u;
@@ -95,23 +97,29 @@ namespace gtl {
             data_internal_lhs[i] = data_lhs[i];
             data_internal_rhs[i] = data_rhs[i];
         }
-        const unsigned int* __restrict lhs = &internal_lhs;
-        const unsigned int* __restrict rhs = &internal_rhs;
 
-        unsigned int distance = 0;
-
-        unsigned int difference = *lhs ^ *rhs;
+        unsigned int difference = internal_lhs ^ internal_rhs;
         difference = difference - ((difference >> 1u) & Ox55);
         difference = (difference & Ox33) + ((difference >> 2u) & Ox33);
-        distance += static_cast<unsigned int>(((difference + (difference >> 4u)) & Ox0F) * Ox01) >> 24u;
-
-        return distance;
+        return static_cast<unsigned int>(((difference + (difference >> 4u)) & Ox0F) * Ox01) >> 24u;
+#endif
     }
 
     template <>
     unsigned int hamming<64>(
         const unsigned char* __restrict const data_lhs,
         const unsigned char* __restrict const data_rhs) {
+#if __has_builtin(__builtin_popcountll)
+        unsigned long long int internal_lhs;
+        unsigned long long int internal_rhs;
+        unsigned char* __restrict const data_internal_lhs = reinterpret_cast<unsigned char*>(&internal_lhs);
+        unsigned char* __restrict const data_internal_rhs = reinterpret_cast<unsigned char*>(&internal_rhs);
+        for (decltype(sizeof(unsigned long long int)) i = 0; i < sizeof(unsigned long long int); ++i) {
+            data_internal_lhs[i] = data_lhs[i];
+            data_internal_rhs[i] = data_rhs[i];
+        }
+        return __builtin_popcountll(internal_lhs ^ internal_rhs);
+#else
         constexpr static const unsigned long long int Ox01 = 0x0101010101010101ull;
         constexpr static const unsigned long long int Ox0F = 0x0F0F0F0F0F0F0F0Full;
         constexpr static const unsigned long long int Ox33 = 0x3333333333333333ull;
@@ -125,17 +133,12 @@ namespace gtl {
             data_internal_lhs[i] = data_lhs[i];
             data_internal_rhs[i] = data_rhs[i];
         }
-        const unsigned long long int* __restrict lhs = &internal_lhs;
-        const unsigned long long int* __restrict rhs = &internal_rhs;
 
-        unsigned int distance = 0;
-
-        unsigned long long int difference = *lhs ^ *rhs;
+        unsigned long long int difference = internal_lhs ^ internal_rhs;
         difference = difference - ((difference >> 1u) & Ox55);
         difference = (difference & Ox33) + ((difference >> 2u) & Ox33);
-        distance += static_cast<unsigned long long int>(((difference + (difference >> 4u)) & Ox0F) * Ox01) >> 56u;
-
-        return distance;
+        return static_cast<unsigned long long int>(((difference + (difference >> 4u)) & Ox0F) * Ox01) >> 56u;
+#endif
     }
 
     template <>

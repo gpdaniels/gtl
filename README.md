@@ -128,7 +128,7 @@ The current classes are as described below:
 | [vision/match/score](source/vision/match/score) | [zncc](source/vision/match/score/zncc) | Zero\-mean normalised cross correleation between two patches. | :construction: |
 | [vision/match/score](source/vision/match/score) | [zsad](source/vision/match/score/zsad) | Zero\-mean sum of absolute distances between two patches. | :construction: |
 | [vision/match/score](source/vision/match/score) | [zssd](source/vision/match/score/zssd) | Zero\-mean sum of squared distances between two patches. | :construction: |
-| [vision/match](source/vision/match) | [match](source/vision/match/match) |  | :bulb: |
+| [vision/match](source/vision/match) | [match](source/vision/match/match) | Simple structure to hold a the information defining a matched pair of features. | :construction: |
 | [vision](source/vision) | [api](source/vision/api) | An API for a computer vision system that consumes sensor data to perform localisation and mapping. | :construction: |
 
 ## License ##

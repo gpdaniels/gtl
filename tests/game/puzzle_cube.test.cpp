@@ -254,12 +254,14 @@ TEST(puzzle_cube, evaluate, solve_with_solution) {
         scramble_cube(puzzle_cube_1, i + 4000);
         gtl::puzzle_cube puzzle_cube_2 = puzzle_cube_1;
         gtl::puzzle_cube puzzle_cube_3 = puzzle_cube_1;
-        std::string solution;
-        REQUIRE(puzzle_cube_1.solve(&solution));
-        REQUIRE(puzzle_cube_2.apply_moves(solution.c_str()));
+        std::string solution_1;
+        REQUIRE(puzzle_cube_1.solve(&solution_1));
+        REQUIRE(puzzle_cube_2.apply_moves(solution_1.c_str()));
         REQUIRE(puzzle_cube_2.is_solved());
-        gtl::puzzle_cube::optimise(solution);
-        REQUIRE(puzzle_cube_3.apply_moves(solution.c_str()));
+        std::string solution_2 = solution_1;
+        gtl::puzzle_cube::optimise(solution_2);
+        REQUIRE(solution_2.size() <= solution_1.size());
+        REQUIRE(puzzle_cube_3.apply_moves(solution_2.c_str()));
         REQUIRE(puzzle_cube_3.is_solved());
     }
 }

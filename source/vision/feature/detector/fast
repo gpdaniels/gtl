@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vision/feature/feature>
 
 namespace gtl {
-    int fast(
+    int fast_detector(
         const unsigned char* __restrict const data,
         const int width,
         const int height,
@@ -32,7 +32,7 @@ namespace gtl {
         const int feature_point_buffer_size,
         gtl::feature* __restrict feature_point_buffer);
 
-    int fast(
+    int fast_detector(
         const unsigned char* __restrict const data,
         const int width,
         const int height,
@@ -41,7 +41,7 @@ namespace gtl {
         const int feature_point_buffer_size,
         gtl::feature* __restrict feature_point_buffer) {
         constexpr static const int patch_size = 7;
-        constexpr static const int patch_radius = 3;
+        constexpr static const int patch_radius = patch_size / 2;
         constexpr static const int pattern_size = 16;
         constexpr static const int pattern_size_half = pattern_size / 2;
 

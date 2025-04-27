@@ -71,7 +71,7 @@ TEST(fast, function, square) {
     };
 
     gtl::feature features[data_width * data_height];
-    int features_count = gtl::fast(&data[0][0], data_width, data_height, data_width, 10, data_width * data_height, features);
+    int features_count = gtl::fast_detector(&data[0][0], data_width, data_height, data_width, 10, data_width * data_height, features);
 
     REQUIRE(features_count == 24);
 
@@ -80,7 +80,7 @@ TEST(fast, function, square) {
         REQUIRE(features[i].y == features_opencv[i].y);
     }
 
-    int feature_255_count = gtl::fast(&data[0][0], data_width, data_height, data_width, 255, data_width * data_height, features);
+    int feature_255_count = gtl::fast_detector(&data[0][0], data_width, data_height, data_width, 255, data_width * data_height, features);
     REQUIRE(feature_255_count == 0);
 }
 
@@ -96,7 +96,7 @@ TEST(fast, function, chequer) {
     }
 
     gtl::feature features[data_width * data_height];
-    int features_count = gtl::fast(&data[0][0], data_width, data_height, data_width, 10, data_width * data_height, features);
+    int features_count = gtl::fast_detector(&data[0][0], data_width, data_height, data_width, 10, data_width * data_height, features);
 
     REQUIRE(features_count == 0);
 }
@@ -113,7 +113,7 @@ TEST(fast, function, gradient) {
     }
 
     gtl::feature features[data_width * data_height];
-    int features_count = gtl::fast(&data[0][0], data_width, data_height, data_width, 10, data_width * data_height, features);
+    int features_count = gtl::fast_detector(&data[0][0], data_width, data_height, data_width, 10, data_width * data_height, features);
 
     REQUIRE(features_count == 0);
 }
@@ -177,10 +177,10 @@ TEST(fast, function, gradient_with_inverted_square) {
     };
 
     gtl::feature features_10[data_width * data_height];
-    int features_10_count = gtl::fast(&data[0][0], data_width, data_height, data_width, 10, data_width * data_height, features_10);
+    int features_10_count = gtl::fast_detector(&data[0][0], data_width, data_height, data_width, 10, data_width * data_height, features_10);
 
     gtl::feature features_90[data_width * data_height];
-    int features_90_count = gtl::fast(&data[0][0], data_width, data_height, data_width, 90, data_width * data_height, features_90);
+    int features_90_count = gtl::fast_detector(&data[0][0], data_width, data_height, data_width, 90, data_width * data_height, features_90);
 
     REQUIRE(features_10_count == 24);
     REQUIRE(features_90_count == 12);
@@ -2571,7 +2571,7 @@ TEST(fast, function, random) {
     };
 
     gtl::feature features[data_width * data_height];
-    int features_count = gtl::fast(&data[0][0], data_width, data_height, data_width, 10, data_width * data_height, features);
+    int features_count = gtl::fast_detector(&data[0][0], data_width, data_height, data_width, 10, data_width * data_height, features);
 
     REQUIRE(features_count == 2297);
 
