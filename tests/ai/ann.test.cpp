@@ -71,22 +71,14 @@ TEST(ann, evaluate, or_gate) {
     gtl::ann<float> ann = gtl::ann<float>({ 2, 5, 1 });
 
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({
-        {0.0, 0.0 },
-        {0.0   }
-    });
-    data.push_back({
-        {0.0, 1.0 },
-        {1.0   }
-    });
-    data.push_back({
-        {1.0, 0.0 },
-        {1.0   }
-    });
-    data.push_back({
-        {1.0, 1.0 },
-        {1.0   }
-    });
+    data.push_back({ { 0.0, 0.0 },
+                     { 0.0 } });
+    data.push_back({ { 0.0, 1.0 },
+                     { 1.0 } });
+    data.push_back({ { 1.0, 0.0 },
+                     { 1.0 } });
+    data.push_back({ { 1.0, 1.0 },
+                     { 1.0 } });
 
     for (unsigned int iterations = 0; iterations < 4 * 10000; ++iterations) {
         ann.train(data[iterations % 4].first, data[iterations % 4].second);
@@ -110,22 +102,14 @@ TEST(ann, evaluate, and_gate) {
     gtl::ann<float> ann = gtl::ann<float>({ 2, 5, 1 });
 
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({
-        {0.0, 0.0 },
-        {0.0   }
-    });
-    data.push_back({
-        {0.0, 1.0 },
-        {0.0   }
-    });
-    data.push_back({
-        {1.0, 0.0 },
-        {0.0   }
-    });
-    data.push_back({
-        {1.0, 1.0 },
-        {1.0   }
-    });
+    data.push_back({ { 0.0, 0.0 },
+                     { 0.0 } });
+    data.push_back({ { 0.0, 1.0 },
+                     { 0.0 } });
+    data.push_back({ { 1.0, 0.0 },
+                     { 0.0 } });
+    data.push_back({ { 1.0, 1.0 },
+                     { 1.0 } });
 
     for (unsigned int iterations = 0; iterations < 4 * 10000; ++iterations) {
         ann.train(data[iterations % 4].first, data[iterations % 4].second);
@@ -149,22 +133,14 @@ TEST(ann, evaluate, nor_gate) {
     gtl::ann<float> ann = gtl::ann<float>({ 2, 5, 1 });
 
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({
-        {0.0, 0.0 },
-        {1.0   }
-    });
-    data.push_back({
-        {0.0, 1.0 },
-        {0.0   }
-    });
-    data.push_back({
-        {1.0, 0.0 },
-        {0.0   }
-    });
-    data.push_back({
-        {1.0, 1.0 },
-        {0.0   }
-    });
+    data.push_back({ { 0.0, 0.0 },
+                     { 1.0 } });
+    data.push_back({ { 0.0, 1.0 },
+                     { 0.0 } });
+    data.push_back({ { 1.0, 0.0 },
+                     { 0.0 } });
+    data.push_back({ { 1.0, 1.0 },
+                     { 0.0 } });
 
     for (unsigned int iterations = 0; iterations < 4 * 10000; ++iterations) {
         ann.train(data[iterations % 4].first, data[iterations % 4].second);
@@ -188,22 +164,14 @@ TEST(ann, evaluate, nand_gate) {
     gtl::ann<float> ann = gtl::ann<float>({ 2, 5, 1 });
 
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({
-        {0.0, 0.0 },
-        {1.0   }
-    });
-    data.push_back({
-        {0.0, 1.0 },
-        {1.0   }
-    });
-    data.push_back({
-        {1.0, 0.0 },
-        {1.0   }
-    });
-    data.push_back({
-        {1.0, 1.0 },
-        {0.0   }
-    });
+    data.push_back({ { 0.0, 0.0 },
+                     { 1.0 } });
+    data.push_back({ { 0.0, 1.0 },
+                     { 1.0 } });
+    data.push_back({ { 1.0, 0.0 },
+                     { 1.0 } });
+    data.push_back({ { 1.0, 1.0 },
+                     { 0.0 } });
 
     for (unsigned int iterations = 0; iterations < 4 * 10000; ++iterations) {
         ann.train(data[iterations % 4].first, data[iterations % 4].second);
@@ -227,22 +195,14 @@ TEST(ann, evaluate, xor_gate) {
     gtl::ann<float> ann = gtl::ann<float>({ 2, 5, 1 });
 
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({
-        {0.0, 0.0 },
-        {0.0   }
-    });
-    data.push_back({
-        {0.0, 1.0 },
-        {1.0   }
-    });
-    data.push_back({
-        {1.0, 0.0 },
-        {1.0   }
-    });
-    data.push_back({
-        {1.0, 1.0 },
-        {0.0   }
-    });
+    data.push_back({ { 0.0, 0.0 },
+                     { 0.0 } });
+    data.push_back({ { 0.0, 1.0 },
+                     { 1.0 } });
+    data.push_back({ { 1.0, 0.0 },
+                     { 1.0 } });
+    data.push_back({ { 1.0, 1.0 },
+                     { 0.0 } });
 
     for (unsigned int iterations = 0; iterations < 4 * 10000; ++iterations) {
         ann.train(data[iterations % 4].first, data[iterations % 4].second);
@@ -264,22 +224,14 @@ TEST(ann, evaluate, xor_gate) {
 
 TEST(ann, evaluate, learning_rate) {
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({
-        {0.0, 0.0 },
-        {0.0   }
-    });
-    data.push_back({
-        {0.0, 1.0 },
-        {1.0   }
-    });
-    data.push_back({
-        {1.0, 0.0 },
-        {1.0   }
-    });
-    data.push_back({
-        {1.0, 1.0 },
-        {0.0   }
-    });
+    data.push_back({ { 0.0, 0.0 },
+                     { 0.0 } });
+    data.push_back({ { 0.0, 1.0 },
+                     { 1.0 } });
+    data.push_back({ { 1.0, 0.0 },
+                     { 1.0 } });
+    data.push_back({ { 1.0, 1.0 },
+                     { 0.0 } });
 
     auto train_network = [&data](gtl::ann<float>& ann, unsigned int& iterations) -> bool {
         bool learnt = true;
@@ -358,10 +310,20 @@ TEST(ann, evaluate, adder) {
         char target_bits = input_lhs + input_rhs;
 
         std::vector<float> input = {
-            static_cast<float>(input_lhs >> 3 & 1), static_cast<float>(input_lhs >> 2 & 1), static_cast<float>(input_lhs >> 1 & 1), static_cast<float>(input_lhs >> 0 & 1), static_cast<float>(input_rhs >> 3 & 1), static_cast<float>(input_rhs >> 2 & 1), static_cast<float>(input_rhs >> 1 & 1), static_cast<float>(input_rhs >> 0 & 1)
+            static_cast<float>(input_lhs >> 3 & 1),
+            static_cast<float>(input_lhs >> 2 & 1),
+            static_cast<float>(input_lhs >> 1 & 1),
+            static_cast<float>(input_lhs >> 0 & 1),
+            static_cast<float>(input_rhs >> 3 & 1),
+            static_cast<float>(input_rhs >> 2 & 1),
+            static_cast<float>(input_rhs >> 1 & 1),
+            static_cast<float>(input_rhs >> 0 & 1)
         };
         std::vector<float> target = {
-            static_cast<float>(target_bits >> 3 & 1), static_cast<float>(target_bits >> 2 & 1), static_cast<float>(target_bits >> 1 & 1), static_cast<float>(target_bits >> 0 & 1)
+            static_cast<float>(target_bits >> 3 & 1),
+            static_cast<float>(target_bits >> 2 & 1),
+            static_cast<float>(target_bits >> 1 & 1),
+            static_cast<float>(target_bits >> 0 & 1)
         };
 
         ann.train(input, target);
@@ -375,10 +337,20 @@ TEST(ann, evaluate, adder) {
         char target_bits = input_lhs + input_rhs;
 
         std::vector<float> input = {
-            static_cast<float>(input_lhs >> 3 & 1), static_cast<float>(input_lhs >> 2 & 1), static_cast<float>(input_lhs >> 1 & 1), static_cast<float>(input_lhs >> 0 & 1), static_cast<float>(input_rhs >> 3 & 1), static_cast<float>(input_rhs >> 2 & 1), static_cast<float>(input_rhs >> 1 & 1), static_cast<float>(input_rhs >> 0 & 1)
+            static_cast<float>(input_lhs >> 3 & 1),
+            static_cast<float>(input_lhs >> 2 & 1),
+            static_cast<float>(input_lhs >> 1 & 1),
+            static_cast<float>(input_lhs >> 0 & 1),
+            static_cast<float>(input_rhs >> 3 & 1),
+            static_cast<float>(input_rhs >> 2 & 1),
+            static_cast<float>(input_rhs >> 1 & 1),
+            static_cast<float>(input_rhs >> 0 & 1)
         };
         std::vector<float> target = {
-            static_cast<float>(target_bits >> 3 & 1), static_cast<float>(target_bits >> 2 & 1), static_cast<float>(target_bits >> 1 & 1), static_cast<float>(target_bits >> 0 & 1)
+            static_cast<float>(target_bits >> 3 & 1),
+            static_cast<float>(target_bits >> 2 & 1),
+            static_cast<float>(target_bits >> 1 & 1),
+            static_cast<float>(target_bits >> 0 & 1)
         };
 
         std::vector<float> output;

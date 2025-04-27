@@ -36,11 +36,11 @@ TEST(sub_pixel_patch, function, square_00) {
     constexpr static const unsigned int data_width = 5;
     constexpr static const unsigned int data_height = 5;
     constexpr static const unsigned char data[data_height][data_width] = {
-        {0,   0,   0, 0, 0},
-        {0, 254, 254, 0, 0},
-        {0, 254, 254, 0, 0},
-        {0,   0,   0, 0, 0},
-        {0,   0,   0, 0, 0}
+        { 0, 0, 0, 0, 0 },
+        { 0, 254, 254, 0, 0 },
+        { 0, 254, 254, 0, 0 },
+        { 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0 }
     };
 
     constexpr static const unsigned int start_x = 1;
@@ -49,9 +49,9 @@ TEST(sub_pixel_patch, function, square_00) {
     constexpr static const unsigned int patch_width = 3;
     constexpr static const unsigned int patch_height = 3;
     constexpr static const float patch_expected[patch_height][patch_width] = {
-        {254, 254, 0},
-        {254, 254, 0},
-        {  0,   0, 0}
+        { 254, 254, 0 },
+        { 254, 254, 0 },
+        { 0, 0, 0 }
     };
 
     float patch[patch_height][patch_width] = {};
@@ -72,11 +72,11 @@ TEST(sub_pixel_patch, function, square_55) {
     constexpr static const unsigned int data_width = 5;
     constexpr static const unsigned int data_height = 5;
     constexpr static const unsigned char data[data_height][data_width] = {
-        {0,   0,   0, 0, 0},
-        {0, 254, 254, 0, 0},
-        {0, 254, 254, 0, 0},
-        {0,   0,   0, 0, 0},
-        {0,   0,   0, 0, 0}
+        { 0, 0, 0, 0, 0 },
+        { 0, 254, 254, 0, 0 },
+        { 0, 254, 254, 0, 0 },
+        { 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0 }
     };
 
     constexpr static const unsigned int start_x = 1;
@@ -85,9 +85,9 @@ TEST(sub_pixel_patch, function, square_55) {
     constexpr static const unsigned int patch_width = 3;
     constexpr static const unsigned int patch_height = 3;
     constexpr static const float patch_expected[patch_height][patch_width] = {
-        {254.0, 127.0, 0.0},
-        {127.0,  63.5, 0.0},
-        {  0.0,   0.0, 0.0}
+        { 254.0, 127.0, 0.0 },
+        { 127.0, 63.5, 0.0 },
+        { 0.0, 0.0, 0.0 }
     };
 
     float patch[patch_height][patch_width] = {};
@@ -108,11 +108,11 @@ TEST(sub_pixel_patch, function, square_11) {
     constexpr static const unsigned int data_width = 5;
     constexpr static const unsigned int data_height = 5;
     constexpr static const unsigned char data[data_height][data_width] = {
-        {0,   0,   0, 0, 0},
-        {0, 254, 254, 0, 0},
-        {0, 254, 254, 0, 0},
-        {0,   0,   0, 0, 0},
-        {0,   0,   0, 0, 0}
+        { 0, 0, 0, 0, 0 },
+        { 0, 254, 254, 0, 0 },
+        { 0, 254, 254, 0, 0 },
+        { 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0 }
     };
 
     constexpr static const unsigned int start_x = 1;
@@ -121,9 +121,9 @@ TEST(sub_pixel_patch, function, square_11) {
     constexpr static const unsigned int patch_width = 3;
     constexpr static const unsigned int patch_height = 3;
     constexpr static const float patch_expected[patch_height][patch_width] = {
-        {0,   0,   0},
-        {0, 254, 254},
-        {0, 254, 254}
+        { 0, 0, 0 },
+        { 0, 254, 254 },
+        { 0, 254, 254 }
     };
 
     float patch[patch_height][patch_width] = {};

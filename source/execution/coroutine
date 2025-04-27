@@ -531,7 +531,8 @@ namespace gtl {
 
             // Create the fiber based coroutine.
             this->stack = CreateFiber(
-                0, [](LPVOID) {
+                0,
+                [](LPVOID) {
                     // The coroutine function call.
                     gtl::coroutine::current->function();
                     // Clear the signal raised flag to indicate the coroutine is finished.

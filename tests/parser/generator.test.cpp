@@ -404,7 +404,8 @@ TEST(parser, element, custom) {
         parser::terminal_any(); // third test_input char.
 
     std::vector<char> expected = {
-        'a', 'c'
+        'a',
+        'c'
     };
 
     parser::parse_forest_type forest;
@@ -482,14 +483,14 @@ line
     REQUIRE(error.empty());
 
     std::vector<std::pair<token_type, std::vector<char>>> expected = {
-        {token_type::cell,                          { 'h', 'e', 'a', 'd', 'e', 'r', ' ', 'c', 'e', 'l', 'l' }},
-        {token_type::line,                                                                                 {}},
-        {token_type::cell,                                                             { 't', 'e', 'x', 't' }},
-        {token_type::cell,                                                                  { '0', '0', '0' }},
-        {token_type::cell,                                              { '1', '2', '3', '.', '4', '5', '6' }},
-        {token_type::cell, { '"', 's', 'p', 'a', 'c', 'e', ' ', '"', '"', ' ', 's', 'p', 'a', 'c', 'e', '"' }},
-        {token_type::cell,                                       { '"', '\n', 'l', 'i', 'n', 'e', '\n', '"' }},
-        {token_type::line,                                                                                 {}},
+        { token_type::cell, { 'h', 'e', 'a', 'd', 'e', 'r', ' ', 'c', 'e', 'l', 'l' } },
+        { token_type::line, {} },
+        { token_type::cell, { 't', 'e', 'x', 't' } },
+        { token_type::cell, { '0', '0', '0' } },
+        { token_type::cell, { '1', '2', '3', '.', '4', '5', '6' } },
+        { token_type::cell, { '"', 's', 'p', 'a', 'c', 'e', ' ', '"', '"', ' ', 's', 'p', 'a', 'c', 'e', '"' } },
+        { token_type::cell, { '"', '\n', 'l', 'i', 'n', 'e', '\n', '"' } },
+        { token_type::line, {} },
     };
     REQUIRE(tokens == expected);
 }

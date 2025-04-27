@@ -167,9 +167,9 @@ namespace gtl {
         constexpr static block_type transform_block(const key_type& key, const nonce_type& nonce) {
             block_type state = {
                 chacha::initialisation_constant,
-                {  chacha::pack_bytes_32(&key.data[0]),   chacha::pack_bytes_32(&key.data[4]),   chacha::pack_bytes_32(&key.data[8]),   chacha::pack_bytes_32(&key.data[12])},
-                { chacha::pack_bytes_32(&key.data[16]),  chacha::pack_bytes_32(&key.data[20]),  chacha::pack_bytes_32(&key.data[24]),   chacha::pack_bytes_32(&key.data[28])},
-                {chacha::pack_bytes_32(&nonce.data[0]), chacha::pack_bytes_32(&nonce.data[4]), chacha::pack_bytes_32(&nonce.data[8]), chacha::pack_bytes_32(&nonce.data[12])},
+                { chacha::pack_bytes_32(&key.data[0]), chacha::pack_bytes_32(&key.data[4]), chacha::pack_bytes_32(&key.data[8]), chacha::pack_bytes_32(&key.data[12]) },
+                { chacha::pack_bytes_32(&key.data[16]), chacha::pack_bytes_32(&key.data[20]), chacha::pack_bytes_32(&key.data[24]), chacha::pack_bytes_32(&key.data[28]) },
+                { chacha::pack_bytes_32(&nonce.data[0]), chacha::pack_bytes_32(&nonce.data[4]), chacha::pack_bytes_32(&nonce.data[8]), chacha::pack_bytes_32(&nonce.data[12]) },
             };
             block_type result = state;
             for (int i = 0; i < (chacha::number_of_rounds / 2); ++i) {

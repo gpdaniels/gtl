@@ -97,12 +97,12 @@ namespace gtl {
 
         // Definition of a cube, six faces each with nine cells.
         colour_type cubie[6][3][3] = {
-            {   { colour_type::green, colour_type::green, colour_type::green },    { colour_type::green, colour_type::green, colour_type::green },    { colour_type::green, colour_type::green, colour_type::green }},
-            {         { colour_type::red, colour_type::red, colour_type::red },          { colour_type::red, colour_type::red, colour_type::red },          { colour_type::red, colour_type::red, colour_type::red }},
-            {      { colour_type::blue, colour_type::blue, colour_type::blue },       { colour_type::blue, colour_type::blue, colour_type::blue },       { colour_type::blue, colour_type::blue, colour_type::blue }},
-            {{ colour_type::orange, colour_type::orange, colour_type::orange }, { colour_type::orange, colour_type::orange, colour_type::orange }, { colour_type::orange, colour_type::orange, colour_type::orange }},
-            {   { colour_type::white, colour_type::white, colour_type::white },    { colour_type::white, colour_type::white, colour_type::white },    { colour_type::white, colour_type::white, colour_type::white }},
-            {{ colour_type::yellow, colour_type::yellow, colour_type::yellow }, { colour_type::yellow, colour_type::yellow, colour_type::yellow }, { colour_type::yellow, colour_type::yellow, colour_type::yellow }}
+            { { colour_type::green, colour_type::green, colour_type::green }, { colour_type::green, colour_type::green, colour_type::green }, { colour_type::green, colour_type::green, colour_type::green } },
+            { { colour_type::red, colour_type::red, colour_type::red }, { colour_type::red, colour_type::red, colour_type::red }, { colour_type::red, colour_type::red, colour_type::red } },
+            { { colour_type::blue, colour_type::blue, colour_type::blue }, { colour_type::blue, colour_type::blue, colour_type::blue }, { colour_type::blue, colour_type::blue, colour_type::blue } },
+            { { colour_type::orange, colour_type::orange, colour_type::orange }, { colour_type::orange, colour_type::orange, colour_type::orange }, { colour_type::orange, colour_type::orange, colour_type::orange } },
+            { { colour_type::white, colour_type::white, colour_type::white }, { colour_type::white, colour_type::white, colour_type::white }, { colour_type::white, colour_type::white, colour_type::white } },
+            { { colour_type::yellow, colour_type::yellow, colour_type::yellow }, { colour_type::yellow, colour_type::yellow, colour_type::yellow }, { colour_type::yellow, colour_type::yellow, colour_type::yellow } }
         };
 
     public:
@@ -137,22 +137,22 @@ namespace gtl {
         bool is_valid() const {
             // This is a 2d bool array containing the color combinations possible in a corner.
             bool edges[6][6] = {
-                {0, 1, 0, 1, 1, 1},
-                {1, 0, 1, 0, 1, 1},
-                {0, 1, 0, 1, 1, 1},
-                {1, 0, 1, 0, 1, 1},
-                {1, 1, 1, 1, 0, 0},
-                {1, 1, 1, 1, 0, 0}
+                { 0, 1, 0, 1, 1, 1 },
+                { 1, 0, 1, 0, 1, 1 },
+                { 0, 1, 0, 1, 1, 1 },
+                { 1, 0, 1, 0, 1, 1 },
+                { 1, 1, 1, 1, 0, 0 },
+                { 1, 1, 1, 1, 0, 0 }
             };
 
             // 3D array containing the possibible clockwise corner combinations.
             bool corners[6][6][6] = {
-                {{ 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 1 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 1, 0 }, { 0, 1, 0, 0, 0, 0 }, { 0, 0, 0, 1, 0, 0 }},
-                {{ 0, 0, 0, 0, 1, 0 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 1 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0 }},
-                {{ 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 1, 0 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 1 }, { 0, 0, 0, 1, 0, 0 }, { 0, 1, 0, 0, 0, 0 }},
-                {{ 0, 0, 0, 0, 0, 1 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 1, 0 }, { 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0 }},
-                {{ 0, 0, 0, 1, 0, 0 }, { 1, 0, 0, 0, 0, 0 }, { 0, 1, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0 }},
-                {{ 0, 1, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0 }, { 0, 0, 0, 1, 0, 0 }, { 1, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0 }}
+                { { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 1 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 1, 0 }, { 0, 1, 0, 0, 0, 0 }, { 0, 0, 0, 1, 0, 0 } },
+                { { 0, 0, 0, 0, 1, 0 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 1 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0 } },
+                { { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 1, 0 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 1 }, { 0, 0, 0, 1, 0, 0 }, { 0, 1, 0, 0, 0, 0 } },
+                { { 0, 0, 0, 0, 0, 1 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 1, 0 }, { 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0 } },
+                { { 0, 0, 0, 1, 0, 0 }, { 1, 0, 0, 0, 0, 0 }, { 0, 1, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0 } },
+                { { 0, 1, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0, 0 }, { 0, 0, 0, 1, 0, 0 }, { 1, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0 } }
             };
 
             int up1[4] = { 7, 5, 1, 3 };

@@ -50,10 +50,10 @@ TEST(harris_score, function, gradient_with_inverted_square) {
 
     constexpr static const unsigned int features_count = 4;
     gtl::feature features[features_count] = {
-        {95, 19, 67668.1641f, 0.0f},
-        {35, 47, 18971.5957f, 0.0f},
-        {95, 47, 5728.00928f, 0.0f},
-        {35, 19,        0.0f, 0.0f}
+        { 95, 19, 67668.1641f, 0.0f },
+        { 35, 47, 18971.5957f, 0.0f },
+        { 95, 47, 5728.00928f, 0.0f },
+        { 35, 19, 0.0f, 0.0f }
     };
 
     for (unsigned int i = 0; i < features_count; ++i) {

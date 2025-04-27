@@ -45,7 +45,30 @@ namespace gtl {
 
         // The pattern loops from 0 to F and back to 7 so that every pixel can be compared against one 8 ahead of it.
         const int pattern_offset[24] = {
-            patch_radius * stride + 0, patch_radius * stride + 1, +2 * stride + 2, patch_radius + stride + 0, patch_radius, patch_radius - stride + 0, -2 * stride + 2, -patch_radius * stride + 1, -patch_radius * stride + 0, -patch_radius * stride - 1, -2 * stride - 2, -patch_radius - stride + 0, -patch_radius, -patch_radius + stride + 0, +2 * stride - 2, patch_radius * stride - 1, patch_radius * stride + 0, patch_radius * stride + 1, +2 * stride + 2, patch_radius + stride + 0, patch_radius, patch_radius - stride + 0, -2 * stride + 2, -patch_radius * stride + 1
+            patch_radius * stride + 0,
+            patch_radius * stride + 1,
+            +2 * stride + 2,
+            patch_radius + stride + 0,
+            patch_radius,
+            patch_radius - stride + 0,
+            -2 * stride + 2,
+            -patch_radius * stride + 1,
+            -patch_radius * stride + 0,
+            -patch_radius * stride - 1,
+            -2 * stride - 2,
+            -patch_radius - stride + 0,
+            -patch_radius,
+            -patch_radius + stride + 0,
+            +2 * stride - 2,
+            patch_radius * stride - 1,
+            patch_radius * stride + 0,
+            patch_radius * stride + 1,
+            +2 * stride + 2,
+            patch_radius + stride + 0,
+            patch_radius,
+            patch_radius - stride + 0,
+            -2 * stride + 2,
+            -patch_radius * stride + 1
         };
 
         // Compute the differences between each pattern pixel and the center pixel.

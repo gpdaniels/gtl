@@ -148,7 +148,16 @@ namespace gtl {
                 'z');
 
             parser digit = parser::terminal_any(
-                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+                '0',
+                '1',
+                '2',
+                '3',
+                '4',
+                '5',
+                '6',
+                '7',
+                '8',
+                '9');
 
             parser identifier =
                 parser::sequence(
@@ -185,7 +194,8 @@ namespace gtl {
 
             parser plus_minus =
                 parser::terminal_any(
-                    '+', '-') >>
+                    '+',
+                    '-') >>
                 [](const std::vector<char>& terminals) {
                     return token_data{
                         token_type::operation,
@@ -195,7 +205,8 @@ namespace gtl {
 
             parser multiply_divide =
                 parser::terminal_any(
-                    '*', '/') >>
+                    '*',
+                    '/') >>
                 [](const std::vector<char>& terminals) {
                     return token_data{
                         token_type::operation,
@@ -206,7 +217,10 @@ namespace gtl {
             parser comparison =
                 parser::disjunction(
                     parser::terminal_any(
-                        '=', '#', '<', '>'),
+                        '=',
+                        '#',
+                        '<',
+                        '>'),
                     parser::terminal(
                         "<="),
                     parser::terminal(
@@ -388,7 +402,7 @@ namespace gtl {
                                 std::fprintf(stderr, "ERROR 12\n");
                             return token_data{
                                 token_type::variable,
-                                std::vector<token_data>{tokens[0], token_data{ token_type::number, 0 }}
+                                std::vector<token_data>{ tokens[0], token_data{ token_type::number, 0 } }
                             };
                         };
 

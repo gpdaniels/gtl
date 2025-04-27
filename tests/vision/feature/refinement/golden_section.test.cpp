@@ -41,27 +41,27 @@ TEST(golden_section, function, search_2d) {
     constexpr static const unsigned int data_width = 8;
     constexpr static const unsigned int data_height = 8;
     constexpr static const unsigned char data_lhs[data_height][data_width] = {
-        {0,   0,   0, 0, 0, 0, 0, 0},
-        {0, 254, 127, 0, 0, 0, 0, 0},
-        {0, 127,  64, 0, 0, 0, 0, 0},
-        {0,   0,   0, 0, 0, 0, 0, 0},
-        {0,   0,   0, 0, 0, 0, 0, 0},
-        {0,   0,   0, 0, 0, 0, 0, 0},
-        {0,   0,   0, 0, 0, 0, 0, 0},
-        {0,   0,   0, 0, 0, 0, 0, 0}
+        { 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 254, 127, 0, 0, 0, 0, 0 },
+        { 0, 127, 64, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0 }
     };
     constexpr static const unsigned int start_lhs_x = 1;
     constexpr static const unsigned int start_lhs_y = 1;
 
     constexpr static const unsigned char data_rhs[data_height][data_width] = {
-        {0, 0,   0,   0, 0, 0, 0, 0},
-        {0, 0,   0,   0, 0, 0, 0, 0},
-        {0, 0, 254, 254, 0, 0, 0, 0},
-        {0, 0, 254, 254, 0, 0, 0, 0},
-        {0, 0,   0,   0, 0, 0, 0, 0},
-        {0, 0,   0,   0, 0, 0, 0, 0},
-        {0, 0,   0,   0, 0, 0, 0, 0},
-        {0, 0,   0,   0, 0, 0, 0, 0}
+        { 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 254, 254, 0, 0, 0, 0 },
+        { 0, 0, 254, 254, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0 }
     };
 
     constexpr static const unsigned int start_rhs_x = 2;

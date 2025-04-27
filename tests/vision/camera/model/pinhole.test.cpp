@@ -71,8 +71,8 @@ TEST(pinhole, function, project) {
         const float world_point[3] = { 0, 0, 1 };
         const float image_point_expected[2] = { 0.5f, 0.5f };
         const float jacobian_projection_expected[2][3] = {
-            {1, 0, 0},
-            {0, 1, 0}
+            { 1, 0, 0 },
+            { 0, 1, 0 }
         };
         float image_point[2]{};
         float jacobian_projection[2 * 3]{};
@@ -90,8 +90,8 @@ TEST(pinhole, function, project) {
         const float world_point[3] = { 0, 0, 1 };
         const float image_point_expected[2] = { 0.5f, 0.5f };
         const float jacobian_parameter_expected[2][pinhole.parameter_count] = {
-            {0, 0, 1, 0},
-            {0, 0, 0, 1}
+            { 0, 0, 1, 0 },
+            { 0, 0, 0, 1 }
         };
         float image_point[2]{};
         float jacobian_parameter[2 * pinhole.parameter_count]{};
@@ -109,12 +109,12 @@ TEST(pinhole, function, project) {
         const float world_point[3] = { -1, 1, 2 };
         const float image_point_expected[2] = { 0.0f, 1.0f };
         const float jacobian_projection_expected[2][3] = {
-            {0.5,   0,  0.25},
-            {  0, 0.5, -0.25}
+            { 0.5, 0, 0.25 },
+            { 0, 0.5, -0.25 }
         };
         const float jacobian_parameter_expected[2][pinhole.parameter_count] = {
-            {-0.5f,    0, 1, 0},
-            {    0, 0.5f, 0, 1}
+            { -0.5f, 0, 1, 0 },
+            { 0, 0.5f, 0, 1 }
         };
         float image_point[2]{};
         float jacobian_projection[2 * 3]{};
@@ -149,9 +149,9 @@ TEST(pinhole, function, unproject) {
         const float image_point[2] = { 0.5, 0.5 };
         const float world_ray_expected[3] = { 0, 0, 1 };
         float jacobian_unprojection_expected[3][2] = {
-            {1, 0},
-            {0, 1},
-            {0, 0}
+            { 1, 0 },
+            { 0, 1 },
+            { 0, 0 }
         };
         float world_ray[3]{};
         float jacobian_unprojection[3 * 2]{};

@@ -153,8 +153,8 @@ namespace gtl {
                 constexpr const int alternate_count = 2;
                 constexpr const int length_expected = 6;
                 constexpr const char expected[alternate_count][length_expected] = {
-                    {'u', 's', 't', 'a', 'r',   0},
-                    {'u', 's', 't', 'a', 'r', ' '}
+                    { 'u', 's', 't', 'a', 'r', 0 },
+                    { 'u', 's', 't', 'a', 'r', ' ' }
                 };
                 for (int alternate_index = 0; alternate_index < alternate_count; ++alternate_index) {
                     const char* __restrict string_expected = &expected[alternate_index][0];
@@ -177,8 +177,8 @@ namespace gtl {
                 constexpr const int alternate_count = 2;
                 constexpr const int length_expected = 2;
                 constexpr const char expected[alternate_count][length_expected] = {
-                    {'0', '0'},
-                    {' ',   0}
+                    { '0', '0' },
+                    { ' ', 0 }
                 };
                 for (int alternate_index = 0; alternate_index < alternate_count; ++alternate_index) {
                     const char* __restrict string_expected = &expected[alternate_index][0];

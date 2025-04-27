@@ -124,22 +124,46 @@ TEST(crc, evaluate, hash_as_integer) {
     UNUSED(data);
 
     constexpr static const unsigned char result_crc8[data_count] = {
-        0x00, 0x20, 0x5F, 0x07, 0xBD, 0x26, 0x74
+        0x00,
+        0x20,
+        0x5F,
+        0x07,
+        0xBD,
+        0x26,
+        0x74
     };
     UNUSED(result_crc8);
 
     constexpr static const unsigned short result_crc16[data_count] = {
-        0x0000, 0x8145, 0xCADB, 0x5986, 0x5D25, 0xC53B, 0x6066
+        0x0000,
+        0x8145,
+        0xCADB,
+        0x5986,
+        0x5D25,
+        0xC53B,
+        0x6066
     };
     UNUSED(result_crc16);
 
     constexpr static const unsigned int result_crc32[data_count] = {
-        0x00000000, 0xE8B7BE43, 0x352441C2, 0x20159D7F, 0x4C2750BD, 0x1FC2E6D2, 0x7CA94A72
+        0x00000000,
+        0xE8B7BE43,
+        0x352441C2,
+        0x20159D7F,
+        0x4C2750BD,
+        0x1FC2E6D2,
+        0x7CA94A72
     };
     UNUSED(result_crc32);
 
     constexpr static const unsigned long long int result_crc64[data_count] = {
-        0x0000000000000000, 0x548F120162451C62, 0x66501A349A0E0855, 0xC04D61278997BA5E, 0x97A2566B552FCC4E, 0x5CA18585B92C58B9, 0xBE4C46263774953C
+        0x0000000000000000,
+        0x548F120162451C62,
+        0x66501A349A0E0855,
+        0xC04D61278997BA5E,
+        0x97A2566B552FCC4E,
+        0x5CA18585B92C58B9,
+        0xBE4C46263774953C
     };
     UNUSED(result_crc64);
 
@@ -222,38 +246,38 @@ TEST(crc, evaluate, hash_as_string) {
     UNUSED(data);
 
     constexpr static const char* result[hash_count][data_count] = {
-        {              // 8
-              "00",
-         "20",
-         "5F",
-         "07",
-         "BD",
-         "26",
-         "74"              },
-        {            // 16
-            "0000",
-         "8145",
-         "CADB",
-         "5986",
-         "5D25",
-         "C53B",
-         "6066"            },
-        {        // 32
-        "00000000",
-         "E8B7BE43",
-         "352441C2",
-         "20159D7F",
-         "4C2750BD",
-         "1FC2E6D2",
-         "7CA94A72"        },
-        {// 64
-"0000000000000000",
-         "548F120162451C62",
-         "66501A349A0E0855",
-         "C04D61278997BA5E",
-         "97A2566B552FCC4E",
-         "5CA18585B92C58B9",
-         "BE4C46263774953C"}
+        { // 8
+          "00",
+          "20",
+          "5F",
+          "07",
+          "BD",
+          "26",
+          "74" },
+        { // 16
+          "0000",
+          "8145",
+          "CADB",
+          "5986",
+          "5D25",
+          "C53B",
+          "6066" },
+        { // 32
+          "00000000",
+          "E8B7BE43",
+          "352441C2",
+          "20159D7F",
+          "4C2750BD",
+          "1FC2E6D2",
+          "7CA94A72" },
+        { // 64
+          "0000000000000000",
+          "548F120162451C62",
+          "66501A349A0E0855",
+          "C04D61278997BA5E",
+          "97A2566B552FCC4E",
+          "5CA18585B92C58B9",
+          "BE4C46263774953C" }
     };
     UNUSED(result);
 
@@ -305,22 +329,46 @@ TEST(crc, evaluate, partial_insert) {
     UNUSED(data2);
 
     constexpr static const unsigned char result_crc8[data_count] = {
-        0x00, 0x20, 0x5F, 0x07, 0xBD, 0x26, 0x74
+        0x00,
+        0x20,
+        0x5F,
+        0x07,
+        0xBD,
+        0x26,
+        0x74
     };
     UNUSED(result_crc8);
 
     constexpr static const unsigned short result_crc16[data_count] = {
-        0x0000, 0x8145, 0xCADB, 0x5986, 0x5D25, 0xC53B, 0x6066
+        0x0000,
+        0x8145,
+        0xCADB,
+        0x5986,
+        0x5D25,
+        0xC53B,
+        0x6066
     };
     UNUSED(result_crc16);
 
     constexpr static const unsigned int result_crc32[data_count] = {
-        0x00000000, 0xE8B7BE43, 0x352441C2, 0x20159D7F, 0x4C2750BD, 0x1FC2E6D2, 0x7CA94A72
+        0x00000000,
+        0xE8B7BE43,
+        0x352441C2,
+        0x20159D7F,
+        0x4C2750BD,
+        0x1FC2E6D2,
+        0x7CA94A72
     };
     UNUSED(result_crc32);
 
     constexpr static const unsigned long long int result_crc64[data_count] = {
-        0x0000000000000000, 0x548F120162451C62, 0x66501A349A0E0855, 0xC04D61278997BA5E, 0x97A2566B552FCC4E, 0x5CA18585B92C58B9, 0xBE4C46263774953C
+        0x0000000000000000,
+        0x548F120162451C62,
+        0x66501A349A0E0855,
+        0xC04D61278997BA5E,
+        0x97A2566B552FCC4E,
+        0x5CA18585B92C58B9,
+        0xBE4C46263774953C
     };
     UNUSED(result_crc64);
 

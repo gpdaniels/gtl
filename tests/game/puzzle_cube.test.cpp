@@ -29,12 +29,12 @@ void print_cube(const gtl::puzzle_cube& cube) {
     struct {
         int r, g, b;
     } colour_type[6] = {
-        {  0, 255,   0}, // gtl::puzzle_cube::cell_colour::green  == 0;
-        {255,   0,   0}, // gtl::puzzle_cube::cell_colour::red    == 1;
-        {  0,   0, 255}, // gtl::puzzle_cube::cell_colour::blue   == 2;
-        {255, 128,   0}, // gtl::puzzle_cube::cell_colour::orange == 3;
-        {255, 255, 255}, // gtl::puzzle_cube::cell_colour::white  == 4;
-        {255, 255,   0}  // gtl::puzzle_cube::cell_colour::yellow == 5;
+        { 0, 255, 0 },     // gtl::puzzle_cube::cell_colour::green  == 0;
+        { 255, 0, 0 },     // gtl::puzzle_cube::cell_colour::red    == 1;
+        { 0, 0, 255 },     // gtl::puzzle_cube::cell_colour::blue   == 2;
+        { 255, 128, 0 },   // gtl::puzzle_cube::cell_colour::orange == 3;
+        { 255, 255, 255 }, // gtl::puzzle_cube::cell_colour::white  == 4;
+        { 255, 255, 0 }    // gtl::puzzle_cube::cell_colour::yellow == 5;
     };
 
     for (int row = 0; row < 9; ++row) {

@@ -48,21 +48,32 @@ TEST(orb_angle, function, gradient_with_inverted_square) {
 
     constexpr static const unsigned int features_count = 12;
     constexpr static const unsigned int features[features_count][2] = {
-        {93, 17},
-        {94, 17},
-        {95, 17},
-        {94, 18},
-        {95, 18},
-        {95, 19},
-        {95, 45},
-        {94, 46},
-        {95, 46},
-        {93, 47},
-        {94, 47},
-        {95, 47}
+        { 93, 17 },
+        { 94, 17 },
+        { 95, 17 },
+        { 94, 18 },
+        { 95, 18 },
+        { 95, 19 },
+        { 95, 45 },
+        { 94, 46 },
+        { 95, 46 },
+        { 93, 47 },
+        { 94, 47 },
+        { 95, 47 }
     };
     constexpr static const float angles_radians[features_count] = {
-        -0.640070f, -0.576437f, -0.514927f, -0.543202f, -0.483588f, -0.448683f, 0.698690f, 0.785398f, 0.743421f, 0.872107f, 0.827376f, 0.785398f
+        -0.640070f,
+        -0.576437f,
+        -0.514927f,
+        -0.543202f,
+        -0.483588f,
+        -0.448683f,
+        0.698690f,
+        0.785398f,
+        0.743421f,
+        0.872107f,
+        0.827376f,
+        0.785398f
     };
 
     for (unsigned int i = 0; i < features_count; ++i) {

@@ -116,7 +116,8 @@ TEST(virtual_machine, evaluate, simple) {
 
 TEST(virtual_machine, evaluate, complex_copy) {
     unsigned char program[] = {
-        0x01, 0xBB
+        0x01,
+        0xBB
     };
 
     gtl::virtual_machine virtual_machine(program, sizeof(program));
@@ -134,7 +135,9 @@ TEST(virtual_machine, evaluate, complex_copy) {
 
 TEST(virtual_machine, evaluate, complex_add) {
     unsigned char program[] = {
-        0x01, 34, 12
+        0x01,
+        34,
+        12
     };
 
     gtl::virtual_machine virtual_machine(program, sizeof(program));
@@ -152,7 +155,9 @@ TEST(virtual_machine, evaluate, complex_add) {
 
 TEST(virtual_machine, evaluate, complex_sub) {
     unsigned char program[] = {
-        0x01, 34, 12
+        0x01,
+        34,
+        12
     };
 
     gtl::virtual_machine virtual_machine(program, sizeof(program));
@@ -170,7 +175,15 @@ TEST(virtual_machine, evaluate, complex_sub) {
 
 TEST(virtual_machine, evaluate, complex_push_and_pop) {
     unsigned char program[] = {
-        0x01, 0xBB, 0x02, 0x01, 0x45, 0x01, 0x96, 0x02, 0x02
+        0x01,
+        0xBB,
+        0x02,
+        0x01,
+        0x45,
+        0x01,
+        0x96,
+        0x02,
+        0x02
     };
 
     gtl::virtual_machine virtual_machine(program, sizeof(program));
@@ -308,7 +321,51 @@ TEST(virtual_machine, evaluate, complex_calls_and_returns) {
 
 TEST(virtual_machine, evaluate, complex_syscall) {
     unsigned char program[] = {
-        0x01, 1, 'h', 0x01, 1, 'e', 0x01, 1, 'l', 0x01, 1, 'l', 0x01, 1, 'o', 0x01, 1, ' ', 0x01, 1, 'v', 0x01, 1, 'm', 0x01, 1, ' ', 0x01, 1, 'w', 0x01, 1, 'o', 0x01, 1, 'r', 0x01, 1, 'l', 0x01, 1, 'd', 0x01, 1, '\n'
+        0x01,
+        1,
+        'h',
+        0x01,
+        1,
+        'e',
+        0x01,
+        1,
+        'l',
+        0x01,
+        1,
+        'l',
+        0x01,
+        1,
+        'o',
+        0x01,
+        1,
+        ' ',
+        0x01,
+        1,
+        'v',
+        0x01,
+        1,
+        'm',
+        0x01,
+        1,
+        ' ',
+        0x01,
+        1,
+        'w',
+        0x01,
+        1,
+        'o',
+        0x01,
+        1,
+        'r',
+        0x01,
+        1,
+        'l',
+        0x01,
+        1,
+        'd',
+        0x01,
+        1,
+        '\n'
     };
 
     gtl::virtual_machine virtual_machine(program, sizeof(program));
