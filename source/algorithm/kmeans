@@ -18,7 +18,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef GTL_ALGORITHM_KMEANS_HPP
 #define GTL_ALGORITHM_KMEANS_HPP
 
-// Summary: Implementation of the KMeans clustering algorithm. [wip]
+// Summary: Implementation of the KMeans clustering algorithm.
+
+#ifndef NDEBUG
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
+/// @brief A simple assert macro to break the program if the kmeans is misused.
+#define GTL_KMEANS_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#define GTL_KMEANS_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
 
 #if defined(_MSC_VER)
 #pragma warning(push, 0)
@@ -31,22 +42,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 namespace gtl {
+    /// @brief  The kmeans class implements the K-means clustering algorithm for partitioning data into k clusters.
+    /// @tparam data_type The type of data points to be clustered.
+    /// @tparam distance_type The type used for distance calculations.
     template <typename data_type, typename distance_type>
     class kmeans final {
     private:
+        /// @brief  Type alias for the distance function that calculates distance between two data points.
         using distance_function_type = distance_type(const data_type&, const data_type&);
 
     public:
+        /// @brief  Performs K-means clustering on the provided data.
+        /// @param  data The vector of data points to be clustered.
+        /// @param  cluster_count The number of clusters to create.
+        /// @param  max_iterations The maximum number of iterations to perform.
+        /// @param  min_delta The minimum change in centroid positions to continue iterating.
+        /// @param  distance_function The function used to calculate distance between data points.
+        /// @return A vector containing the cluster assignment for each data point.
         static std::vector<std::size_t> compute(
             const std::vector<data_type>& data,
             std::size_t cluster_count,
             int max_iterations,
             distance_type min_delta,
             distance_function_type distance_function) {
-            std::vector<data_type> cluster_centroids(cluster_count);
-            std::vector<std::size_t> cluster_data(data.size());
+            GTL_KMEANS_ASSERT(cluster_count < data.size(), "KMeans requires more data points than the number of clusters.");
 
-            // TODO: ASSERT there is enough data.
+            // Vector to store the centroids of each cluster.
+            std::vector<data_type> cluster_centroids(cluster_count);
+
+            // Vector to store the cluster assignment for each data point.
+            std::vector<std::size_t> cluster_data(data.size());
 
             // Initialise cluster centroids using data (could be done using random points).
             for (std::size_t i = 0; i < cluster_count; ++i) {
@@ -60,6 +85,7 @@ namespace gtl {
                     // Assume first cluster.
                     cluster_data[i] = 0;
                     distance_type cluster_distance = distance_function(data[i], cluster_centroids[cluster_data[i]]);
+
                     // Search remaining clusters for closer centroids.
                     for (std::size_t j = 1; j < cluster_count; ++j) {
                         distance_type distance = distance_function(data[i], cluster_centroids[j]);
@@ -69,6 +95,7 @@ namespace gtl {
                         }
                     }
                 }
+
                 // Recalculate cluster centroids.
                 std::vector<data_type> centroid_data_sum(cluster_count);
                 std::vector<int> centroid_data_count(cluster_count);
@@ -76,6 +103,7 @@ namespace gtl {
                     centroid_data_sum[cluster_data[i]] = centroid_data_sum[cluster_data[i]] + data[i];
                     ++centroid_data_count[cluster_data[i]];
                 }
+
                 // TODO: If data count is zero, should I move the centroid?
                 distance_type delta = 0;
                 for (std::size_t i = 0; i < cluster_count; ++i) {
@@ -83,6 +111,7 @@ namespace gtl {
                     delta += distance_function(cluster_centroids[i], centroid);
                     cluster_centroids[i] = centroid;
                 }
+
                 if (delta < min_delta) {
                     break;
                 }
@@ -92,5 +121,7 @@ namespace gtl {
         }
     };
 }
+
+#undef GTL_KMEANS_ASSERT
 
 #endif // GTL_ALGORITHM_KMEANS_HPP

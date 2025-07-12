@@ -45,7 +45,7 @@ TEST(kmeans, evaluate, data) {
         }
     };
 
-    std::vector<xy> data = {
+    const std::vector<xy> data = {
         { -10.0f + 0.5f, -10.0f + 0.5f },
         { -10.0f + 0.5f, -10.0f + 0.0f },
         { -10.0f + 0.5f, -10.0f - 0.5f },
@@ -67,9 +67,7 @@ TEST(kmeans, evaluate, data) {
         { +10.0f - 0.5f, +10.0f - 0.5f }
     };
 
-    std::vector<std::size_t> clusters;
-
-    clusters = gtl::kmeans<xy, float>::compute(data, 2, 100, 0.001f, [](const xy& lhs, const xy& rhs) {
+    const std::vector<std::size_t> clusters = gtl::kmeans<xy, float>::compute(data, 2, 100, 0.001f, [](const xy& lhs, const xy& rhs) {
         return std::sqrt((lhs.x - rhs.x) * (lhs.x - rhs.x) + ((lhs.y - rhs.y) * (lhs.y - rhs.y)));
     });
 
@@ -91,5 +89,5 @@ TEST(kmeans, evaluate, data) {
     REQUIRE(clusters[14] == clusters[15]);
     REQUIRE(clusters[15] == clusters[16]);
     REQUIRE(clusters[16] == clusters[17]);
-    REQUIRE(clusters[17] == clusters[10]);
+    REQUIRE(clusters[17] == clusters[9]);
 }

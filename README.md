@@ -16,7 +16,7 @@ The current classes are as described below:
 | [algorithm](source/algorithm) | [astar](source/algorithm/astar) | Implementation of the astar algorithm used to solve pathfinding problems. | :heavy_check_mark: |
 | [algorithm](source/algorithm) | [dijkstra](source/algorithm/dijkstra) | Implementation of Dijkstra's algorithm used to solve pathfinding problems. | :heavy_check_mark: |
 | [algorithm](source/algorithm) | [gaussian_elimination](source/algorithm/gaussian_elimination) | Linear simultaneous equation solver. | :heavy_check_mark: |
-| [algorithm](source/algorithm) | [kmeans](source/algorithm/kmeans) | Implementation of the KMeans clustering algorithm. | :construction: |
+| [algorithm](source/algorithm) | [kmeans](source/algorithm/kmeans) | Implementation of the KMeans clustering algorithm. | :heavy_check_mark: |
 | [algorithm](source/algorithm) | [maxn](source/algorithm/maxn) | The MaxN search algorithm to find the best possible moves for an N player game with known information. | :construction: |
 | [algorithm](source/algorithm) | [quicksort](source/algorithm/quicksort) | Recursive quicksort algorithm, both full and partial versions. | :heavy_check_mark: |
 | [algorithm](source/algorithm) | [satisfiability](source/algorithm/satisfiability) | A simple SAT solver. | :construction: |
