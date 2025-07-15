@@ -72,11 +72,11 @@ TEST(md5, function, get_hash) {
     md5.get_hash();
 }
 
-TEST(md5, function, hash_buffer) {
-    gtl::md5::hash_buffer("", 0);
-    gtl::md5::hash_buffer("123456781234567812345678123456781234567812345678123456781234567", 63);
-    gtl::md5::hash_buffer("1234567812345678123456781234567812345678123456781234567812345678", 64);
-    gtl::md5::hash_buffer("12345678123456781234567812345678123456781234567812345678123456781", 65);
+TEST(md5, function, hash) {
+    gtl::md5::hash("", 0);
+    gtl::md5::hash("123456781234567812345678123456781234567812345678123456781234567", 63);
+    gtl::md5::hash("1234567812345678123456781234567812345678123456781234567812345678", 64);
+    gtl::md5::hash("12345678123456781234567812345678123456781234567812345678123456781", 65);
 }
 
 TEST(md5, evaluate, hash_as_integer) {
@@ -92,14 +92,14 @@ TEST(md5, evaluate, hash_as_integer) {
         "12345678901234567890123456789012345678901234567890123456789012345678901234567890"
     };
 
-    constexpr static unsigned int result[data_count][gtl::md5::hash_size / sizeof(unsigned int)] = {
-        { 0xD41D8CD9, 0x8F00B204, 0xE9800998, 0xECF8427E },
-        { 0x0CC175B9, 0xC0F1B6A8, 0x31C399E2, 0x69772661 },
-        { 0x90015098, 0x3CD24FB0, 0xD6963F7D, 0x28E17F72 },
-        { 0xF96B697D, 0x7CB7938D, 0x525A2F31, 0xAAF161D0 },
-        { 0xC3FCD3D7, 0x6192E400, 0x7DFB496C, 0xCA67E13B },
-        { 0xD174AB98, 0xD277D9F5, 0xA5611C2C, 0x9F419D9F },
-        { 0x57EDF4A2, 0x2BE3C955, 0xAC49DA2E, 0x2107B67A }
+    constexpr static unsigned char result[data_count][gtl::md5::hash_size] = {
+        { 0xD4, 0x1D, 0x8C, 0xD9, 0x8F, 0x00, 0xB2, 0x04, 0xE9, 0x80, 0x09, 0x98, 0xEC, 0xF8, 0x42, 0x7E },
+        { 0x0C, 0xC1, 0x75, 0xB9, 0xC0, 0xF1, 0xB6, 0xA8, 0x31, 0xC3, 0x99, 0xE2, 0x69, 0x77, 0x26, 0x61 },
+        { 0x90, 0x01, 0x50, 0x98, 0x3C, 0xD2, 0x4F, 0xB0, 0xD6, 0x96, 0x3F, 0x7D, 0x28, 0xE1, 0x7F, 0x72 },
+        { 0xF9, 0x6B, 0x69, 0x7D, 0x7C, 0xB7, 0x93, 0x8D, 0x52, 0x5A, 0x2F, 0x31, 0xAA, 0xF1, 0x61, 0xD0 },
+        { 0xC3, 0xFC, 0xD3, 0xD7, 0x61, 0x92, 0xE4, 0x00, 0x7D, 0xFB, 0x49, 0x6C, 0xCA, 0x67, 0xE1, 0x3B },
+        { 0xD1, 0x74, 0xAB, 0x98, 0xD2, 0x77, 0xD9, 0xF5, 0xA5, 0x61, 0x1C, 0x2C, 0x9F, 0x41, 0x9D, 0x9F },
+        { 0x57, 0xED, 0xF4, 0xA2, 0x2B, 0xE3, 0xC9, 0x55, 0xAC, 0x49, 0xDA, 0x2E, 0x21, 0x07, 0xB6, 0x7A }
     };
 
     gtl::md5 md5;
@@ -110,9 +110,13 @@ TEST(md5, evaluate, hash_as_integer) {
 
         gtl::md5::hash_type hash = md5.get_hash();
 
-        char hash_string[32 + 4 + 32 + 1] = {};
-        snprintf(hash_string, 32 + 4 + 32 + 1, "%08X%08X%08X%08X == %08X%08X%08X%08X", hash.data[0], hash.data[1], hash.data[2], hash.data[3], result[i][0], result[i][1], result[i][2], result[i][3]);
-        PRINT("%s\n", hash_string);
+        char hash_string[(2 * gtl::md5::hash_size) + 1] = {};
+        char result_string[(2 * gtl::md5::hash_size) + 1] = {};
+        for (size_t index = 0; index < gtl::md5::hash_size; ++index) {
+            snprintf(hash_string + (index * 2), 3, "%02X", hash.data[index]);
+            snprintf(result_string + (index * 2), 3, "%02X", result[i][index]);
+        }
+        PRINT("%s == %s\n", hash_string, result_string);
 
         REQUIRE(testbench::is_memory_same(hash.data, result[i], gtl::md5::hash_size) == true);
     }
@@ -177,14 +181,14 @@ TEST(md5, evaluate, partial_insert) {
         "12345678901234567890"
     };
 
-    constexpr static unsigned int result[data_count][gtl::md5::hash_size / sizeof(unsigned int)] = {
-        { 0xD41D8CD9, 0x8F00B204, 0xE9800998, 0xECF8427E },
-        { 0x0CC175B9, 0xC0F1B6A8, 0x31C399E2, 0x69772661 },
-        { 0x90015098, 0x3CD24FB0, 0xD6963F7D, 0x28E17F72 },
-        { 0xF96B697D, 0x7CB7938D, 0x525A2F31, 0xAAF161D0 },
-        { 0xC3FCD3D7, 0x6192E400, 0x7DFB496C, 0xCA67E13B },
-        { 0xD174AB98, 0xD277D9F5, 0xA5611C2C, 0x9F419D9F },
-        { 0x57EDF4A2, 0x2BE3C955, 0xAC49DA2E, 0x2107B67A }
+    constexpr static unsigned char result[data_count][gtl::md5::hash_size] = {
+        { 0xD4, 0x1D, 0x8C, 0xD9, 0x8F, 0x00, 0xB2, 0x04, 0xE9, 0x80, 0x09, 0x98, 0xEC, 0xF8, 0x42, 0x7E },
+        { 0x0C, 0xC1, 0x75, 0xB9, 0xC0, 0xF1, 0xB6, 0xA8, 0x31, 0xC3, 0x99, 0xE2, 0x69, 0x77, 0x26, 0x61 },
+        { 0x90, 0x01, 0x50, 0x98, 0x3C, 0xD2, 0x4F, 0xB0, 0xD6, 0x96, 0x3F, 0x7D, 0x28, 0xE1, 0x7F, 0x72 },
+        { 0xF9, 0x6B, 0x69, 0x7D, 0x7C, 0xB7, 0x93, 0x8D, 0x52, 0x5A, 0x2F, 0x31, 0xAA, 0xF1, 0x61, 0xD0 },
+        { 0xC3, 0xFC, 0xD3, 0xD7, 0x61, 0x92, 0xE4, 0x00, 0x7D, 0xFB, 0x49, 0x6C, 0xCA, 0x67, 0xE1, 0x3B },
+        { 0xD1, 0x74, 0xAB, 0x98, 0xD2, 0x77, 0xD9, 0xF5, 0xA5, 0x61, 0x1C, 0x2C, 0x9F, 0x41, 0x9D, 0x9F },
+        { 0x57, 0xED, 0xF4, 0xA2, 0x2B, 0xE3, 0xC9, 0x55, 0xAC, 0x49, 0xDA, 0x2E, 0x21, 0x07, 0xB6, 0x7A }
     };
 
     gtl::md5 md5;
@@ -196,9 +200,13 @@ TEST(md5, evaluate, partial_insert) {
 
         gtl::md5::hash_type hash = md5.get_hash();
 
-        char hash_string[32 + 4 + 32 + 1] = {};
-        snprintf(hash_string, 32 + 4 + 32 + 1, "%08X%08X%08X%08X == %08X%08X%08X%08X", hash.data[0], hash.data[1], hash.data[2], hash.data[3], result[i][0], result[i][1], result[i][2], result[i][3]);
-        PRINT("%s\n", hash_string);
+        char hash_string[(2 * gtl::md5::hash_size) + 1] = {};
+        char result_string[(2 * gtl::md5::hash_size) + 1] = {};
+        for (size_t index = 0; index < gtl::md5::hash_size; ++index) {
+            snprintf(hash_string + (index * 2), 3, "%02X", hash.data[index]);
+            snprintf(result_string + (index * 2), 3, "%02X", result[i][index]);
+        }
+        PRINT("%s == %s\n", hash_string, result_string);
 
         REQUIRE(testbench::is_memory_same(hash.data, result[i], gtl::md5::hash_size) == true);
     }

@@ -32,7 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 namespace gtl {
-    /// @brief  The sha1 class computes and SHA1 hash of a sequence of data.
+    /// @brief  The sha1 class computes and SHA0 hash of a sequence of data.
     class sha1 final {
     public:
         /// @brief  Handy variable for accessing the size in bits.
@@ -50,12 +50,27 @@ namespace gtl {
     public:
         /// @brief  Simple type to hold the hash data.
         struct hash_type final {
-            unsigned int data[sha1::hash_size / sizeof(unsigned int)] = {
-                0x67452301,
-                0xEFCDAB89,
-                0x98BADCFE,
-                0x10325476,
-                0xC3D2E1F0
+            unsigned char data[sha1::hash_size] = {
+                0x67,
+                0x45,
+                0x23,
+                0x01,
+                0xEF,
+                0xCD,
+                0xAB,
+                0x89,
+                0x98,
+                0xBA,
+                0xDC,
+                0xFE,
+                0x10,
+                0x32,
+                0x54,
+                0x76,
+                0xC3,
+                0xD2,
+                0xE1,
+                0xF0
             };
         };
 
@@ -63,7 +78,7 @@ namespace gtl {
         /// @brief  Internal type used to construct blocks of data for processing.
         struct block_type final {
             unsigned long long int length_bytes = 0;
-            unsigned int data[sha1::block_size / sizeof(unsigned int)] = {};
+            unsigned char data[sha1::block_size] = {};
         };
 
     private:
@@ -71,15 +86,32 @@ namespace gtl {
         unsigned long long int hashed_length = 0;
 
         /// @brief  The current block of data being filled.
-        block_type block = {};
+        block_type current_block = {};
 
         /// @brief  The current hash.
-        hash_type hash = {};
+        hash_type current_hash = {};
 
         /// @brief  Flag showing whether the hash has been finalised.
         bool finalised = false;
 
     private:
+        /// @brief  Packs four bytes into an unsigned int.
+        /// @param  bytes The bytes to convert.
+        /// @return The bytes packed into an unsigned int.
+        constexpr static unsigned int pack_big_endian(const unsigned char bytes[4]) {
+            return (static_cast<unsigned int>(bytes[0]) << 24) | (static_cast<unsigned int>(bytes[1]) << 16) | (static_cast<unsigned int>(bytes[2]) << 8) | (static_cast<unsigned int>(bytes[3]) << 0);
+        }
+
+        /// @brief  Unpacks four bytes from an unsigned int.
+        /// @param  value The value to unpack.
+        /// @param  bytes The bytes to receive the unpacked data.
+        constexpr static void unpack_big_endian(unsigned int value, unsigned char bytes[4]) {
+            bytes[0] = static_cast<unsigned char>((value >> 24) & 0xFF);
+            bytes[1] = static_cast<unsigned char>((value >> 16) & 0xFF);
+            bytes[2] = static_cast<unsigned char>((value >> 8) & 0xFF);
+            bytes[3] = static_cast<unsigned char>((value >> 0) & 0xFF);
+        }
+
         /// @brief  Rotate a 32 bit value left by a shift amount.
         /// @param  value The value to rotate.
         /// @param  shift The number of bits to rotate by.
@@ -91,18 +123,18 @@ namespace gtl {
         }
 
     private:
-        /// @brief  Perform the hashing algorithm on a block of data.
+        /// @brief  Perform the hashing algorithm on a current_block of data.
         constexpr void hash_block() {
-            unsigned int A = this->hash.data[0];
-            unsigned int B = this->hash.data[1];
-            unsigned int C = this->hash.data[2];
-            unsigned int D = this->hash.data[3];
-            unsigned int E = this->hash.data[4];
+            unsigned int A = pack_big_endian(&this->current_hash.data[0 * 4]);
+            unsigned int B = pack_big_endian(&this->current_hash.data[1 * 4]);
+            unsigned int C = pack_big_endian(&this->current_hash.data[2 * 4]);
+            unsigned int D = pack_big_endian(&this->current_hash.data[3 * 4]);
+            unsigned int E = pack_big_endian(&this->current_hash.data[4 * 4]);
 
             // Fill the start of the working block from the current block.
             unsigned int working_block[80] = {};
             for (unsigned int index = 0; index < sha1::block_size / sizeof(unsigned int); ++index) {
-                working_block[index] = this->block.data[index];
+                working_block[index] = pack_big_endian(&this->current_block.data[index * 4]);
             }
 
             // Mix to fill the remainder of the working block.
@@ -141,19 +173,19 @@ namespace gtl {
                 A = next_A;
             }
 
-            this->hash.data[0] += A;
-            this->hash.data[1] += B;
-            this->hash.data[2] += C;
-            this->hash.data[3] += D;
-            this->hash.data[4] += E;
+            unpack_big_endian(pack_big_endian(&this->current_hash.data[0 * 4]) + A, &this->current_hash.data[0 * 4]);
+            unpack_big_endian(pack_big_endian(&this->current_hash.data[1 * 4]) + B, &this->current_hash.data[1 * 4]);
+            unpack_big_endian(pack_big_endian(&this->current_hash.data[2 * 4]) + C, &this->current_hash.data[2 * 4]);
+            unpack_big_endian(pack_big_endian(&this->current_hash.data[3 * 4]) + D, &this->current_hash.data[3 * 4]);
+            unpack_big_endian(pack_big_endian(&this->current_hash.data[4 * 4]) + E, &this->current_hash.data[4 * 4]);
         }
 
     public:
-        /// @brief  Reset the internal state of the hash.
+        /// @brief  Reset the internal state of the current_hash.
         constexpr void reset() {
             this->hashed_length = 0;
-            this->block = {};
-            this->hash = {};
+            this->current_block = {};
+            this->current_hash = {};
             this->finalised = false;
         }
 
@@ -162,6 +194,7 @@ namespace gtl {
         /// @param  length Valid length of the input data pointer.
         constexpr void consume(const char* data, unsigned long long int length) {
             GTL_SHA1_ASSERT(this->finalised == false, "Finalise must not be called before consume().");
+            GTL_SHA1_ASSERT(this->hashed_length <= this->hashed_length + length, "Total hashed data must be less than 2^64 bytes.");
 
             // Count how much data has been consumed.
             this->hashed_length += length;
@@ -169,14 +202,12 @@ namespace gtl {
             // Block construction and processing.
             while (length--) {
                 // Append data to the current block.
-                this->block.data[this->block.length_bytes / sizeof(unsigned int)] |= static_cast<unsigned int>(static_cast<unsigned char>(*data++)) << (((sizeof(unsigned int) - 1) - (this->block.length_bytes % sizeof(unsigned int))) * 8);
-
-                ++this->block.length_bytes;
+                this->current_block.data[this->current_block.length_bytes++] = static_cast<unsigned char>(*data++);
 
                 // If full, hash.
-                if (this->block.length_bytes == sha1::block_size) {
+                if (this->current_block.length_bytes == sha1::block_size) {
                     this->hash_block();
-                    this->block = {};
+                    this->current_block = {};
                 }
             }
         }
@@ -186,19 +217,18 @@ namespace gtl {
             GTL_SHA1_ASSERT(this->finalised == false, "Finalise must not be called before finalise().");
 
             // Pad the data with a single 0x80 on the end.
-            this->block.data[this->block.length_bytes / sizeof(unsigned int)] |= static_cast<unsigned int>(static_cast<unsigned char>(0x80)) << (((sizeof(unsigned int) - 1) - (this->block.length_bytes % sizeof(unsigned int))) * 8);
-            ++this->block.length_bytes;
+            this->current_block.data[this->current_block.length_bytes++] = static_cast<unsigned char>(0x80);
 
             // Check if there is enough space in the final chunk for the data length.
-            if (this->block.length_bytes > (sha1::block_size - sizeof(unsigned long long int))) {
+            if (this->current_block.length_bytes > (sha1::block_size - sizeof(unsigned long long int))) {
                 this->hash_block();
-                this->block = {};
+                this->current_block = {};
             }
 
             // Add the data length to the chunk.
             const unsigned long long int hashed_length_bits = this->hashed_length * 8;
-            this->block.data[14] = (hashed_length_bits & 0xFFFFFFFF00000000ull) >> 32u;
-            this->block.data[15] = (hashed_length_bits & 0x00000000FFFFFFFFull) >> 0u;
+            unpack_big_endian((hashed_length_bits >> 32) & 0xFFFFFFFF, &this->current_block.data[sha1::block_size - 8]);
+            unpack_big_endian((hashed_length_bits >> 0) & 0xFFFFFFFF, &this->current_block.data[sha1::block_size - 4]);
 
             // Hash the block.
             this->hash_block();
@@ -206,11 +236,11 @@ namespace gtl {
             this->finalised = true;
         }
 
-        /// @brief  Calculate the final hash from the state and return it.
-        /// @return The resultant hash.
+        /// @brief  Calculate the final current_hash from the state and return it.
+        /// @return The resultant current_hash.
         constexpr const hash_type& get_hash() const {
             GTL_SHA1_ASSERT(this->finalised == true, "Finalise must be called before get_hash().");
-            return this->hash;
+            return this->current_hash;
         }
 
     public:
@@ -226,7 +256,7 @@ namespace gtl {
             hash_string_type output;
             constexpr const char* hex_characters = "0123456789ABCDEF";
             for (unsigned int index = 0u; index < (sha1::hash_size * 2); ++index) {
-                output.hash[index] = hex_characters[(hash.data[index / (sizeof(unsigned int) * 2)] >> ((((sizeof(unsigned int) * 2) - 1) - (index % (sizeof(unsigned int) * 2))) * 4)) & 0xF];
+                output.hash[index] = hex_characters[(hash.data[index / 2] >> ((1 - (index % 2)) * 4)) & 0xF];
             }
             output.hash[sha1::hash_size * 2] = 0;
             return output;
@@ -236,7 +266,7 @@ namespace gtl {
         /// @brief  Hash a buffer of data.
         /// @param  data Input data pointer.
         /// @param  length Valid length of the input data pointer.
-        static hash_type hash_buffer(const char* data, const unsigned long long int length) {
+        static hash_type hash(const char* data, const unsigned long long int length) {
             sha1 hash_function;
             hash_function.reset();
             hash_function.consume(data, length);

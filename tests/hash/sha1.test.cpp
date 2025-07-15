@@ -72,11 +72,11 @@ TEST(sha1, function, get_hash) {
     sha1.get_hash();
 }
 
-TEST(sha1, function, hash_buffer) {
-    gtl::sha1::hash_buffer("", 0);
-    gtl::sha1::hash_buffer("123456781234567812345678123456781234567812345678123456781234567", 63);
-    gtl::sha1::hash_buffer("1234567812345678123456781234567812345678123456781234567812345678", 64);
-    gtl::sha1::hash_buffer("12345678123456781234567812345678123456781234567812345678123456781", 65);
+TEST(sha1, function, hash) {
+    gtl::sha1::hash("", 0);
+    gtl::sha1::hash("123456781234567812345678123456781234567812345678123456781234567", 63);
+    gtl::sha1::hash("1234567812345678123456781234567812345678123456781234567812345678", 64);
+    gtl::sha1::hash("12345678123456781234567812345678123456781234567812345678123456781", 65);
 }
 
 TEST(sha1, evaluate, hash_as_integer) {
@@ -92,14 +92,14 @@ TEST(sha1, evaluate, hash_as_integer) {
         "12345678901234567890123456789012345678901234567890123456789012345678901234567890"
     };
 
-    constexpr static unsigned int result[data_count][gtl::sha1::hash_size / sizeof(unsigned int)] = {
-        { 0xDA39A3EE, 0x5E6B4B0D, 0x3255BFEF, 0x95601890, 0xAFD80709 },
-        { 0x86F7E437, 0xFAA5A7FC, 0xE15D1DDC, 0xB9EAEAEA, 0x377667B8 },
-        { 0xA9993E36, 0x4706816A, 0xBA3E2571, 0x7850C26C, 0x9CD0D89D },
-        { 0xC12252CE, 0xDA8BE899, 0x4D5FA029, 0x0A47231C, 0x1D16AAE3 },
-        { 0x32D10C7B, 0x8CF96570, 0xCA04CE37, 0xF2A19D84, 0x240D3A89 },
-        { 0x761C457B, 0xF73B14D2, 0x7E9E9265, 0xC46F4B4D, 0xDA11F940 },
-        { 0x50ABF570, 0x6A150990, 0xA08B2C5E, 0xA40FA0E5, 0x85554732 }
+    constexpr static unsigned char result[data_count][gtl::sha1::hash_size] = {
+        { 0xDA, 0x39, 0xA3, 0xEE, 0x5E, 0x6B, 0x4B, 0x0D, 0x32, 0x55, 0xBF, 0xEF, 0x95, 0x60, 0x18, 0x90, 0xAF, 0xD8, 0x07, 0x09 },
+        { 0x86, 0xF7, 0xE4, 0x37, 0xFA, 0xA5, 0xA7, 0xFC, 0xE1, 0x5D, 0x1D, 0xDC, 0xB9, 0xEA, 0xEA, 0xEA, 0x37, 0x76, 0x67, 0xB8 },
+        { 0xA9, 0x99, 0x3E, 0x36, 0x47, 0x06, 0x81, 0x6A, 0xBA, 0x3E, 0x25, 0x71, 0x78, 0x50, 0xC2, 0x6C, 0x9C, 0xD0, 0xD8, 0x9D },
+        { 0xC1, 0x22, 0x52, 0xCE, 0xDA, 0x8B, 0xE8, 0x99, 0x4D, 0x5F, 0xA0, 0x29, 0x0A, 0x47, 0x23, 0x1C, 0x1D, 0x16, 0xAA, 0xE3 },
+        { 0x32, 0xD1, 0x0C, 0x7B, 0x8C, 0xF9, 0x65, 0x70, 0xCA, 0x04, 0xCE, 0x37, 0xF2, 0xA1, 0x9D, 0x84, 0x24, 0x0D, 0x3A, 0x89 },
+        { 0x76, 0x1C, 0x45, 0x7B, 0xF7, 0x3B, 0x14, 0xD2, 0x7E, 0x9E, 0x92, 0x65, 0xC4, 0x6F, 0x4B, 0x4D, 0xDA, 0x11, 0xF9, 0x40 },
+        { 0x50, 0xAB, 0xF5, 0x70, 0x6A, 0x15, 0x09, 0x90, 0xA0, 0x8B, 0x2C, 0x5E, 0xA4, 0x0F, 0xA0, 0xE5, 0x85, 0x55, 0x47, 0x32 }
     };
 
     gtl::sha1 sha1;
@@ -110,9 +110,13 @@ TEST(sha1, evaluate, hash_as_integer) {
         sha1.finalise();
         gtl::sha1::hash_type hash = sha1.get_hash();
 
-        char hash_string[40 + 4 + 40 + 1] = {};
-        snprintf(hash_string, 40 + 4 + 40 + 1, "%08X%08X%08X%08X%08X == %08X%08X%08X%08X%08X", hash.data[0], hash.data[1], hash.data[2], hash.data[3], hash.data[4], result[i][0], result[i][1], result[i][2], result[i][3], result[i][4]);
-        PRINT("%s\n", hash_string);
+        char hash_string[(2 * gtl::sha1::hash_size) + 1] = {};
+        char result_string[(2 * gtl::sha1::hash_size) + 1] = {};
+        for (size_t index = 0; index < gtl::sha1::hash_size; ++index) {
+            snprintf(hash_string + (index * 2), 3, "%02X", hash.data[index]);
+            snprintf(result_string + (index * 2), 3, "%02X", result[i][index]);
+        }
+        PRINT("%s == %s\n", hash_string, result_string);
 
         REQUIRE(testbench::is_memory_same(hash.data, result[i], gtl::sha1::hash_size) == true);
     }
@@ -176,14 +180,14 @@ TEST(sha1, evaluate, partial_insert) {
         "12345678901234567890"
     };
 
-    constexpr static unsigned int result[data_count][gtl::sha1::hash_size / sizeof(unsigned int)] = {
-        { 0xDA39A3EE, 0x5E6B4B0D, 0x3255BFEF, 0x95601890, 0xAFD80709 },
-        { 0x86F7E437, 0xFAA5A7FC, 0xE15D1DDC, 0xB9EAEAEA, 0x377667B8 },
-        { 0xA9993E36, 0x4706816A, 0xBA3E2571, 0x7850C26C, 0x9CD0D89D },
-        { 0xC12252CE, 0xDA8BE899, 0x4D5FA029, 0x0A47231C, 0x1D16AAE3 },
-        { 0x32D10C7B, 0x8CF96570, 0xCA04CE37, 0xF2A19D84, 0x240D3A89 },
-        { 0x761C457B, 0xF73B14D2, 0x7E9E9265, 0xC46F4B4D, 0xDA11F940 },
-        { 0x50ABF570, 0x6A150990, 0xA08B2C5E, 0xA40FA0E5, 0x85554732 }
+    constexpr static unsigned char result[data_count][gtl::sha1::hash_size] = {
+        { 0xDA, 0x39, 0xA3, 0xEE, 0x5E, 0x6B, 0x4B, 0x0D, 0x32, 0x55, 0xBF, 0xEF, 0x95, 0x60, 0x18, 0x90, 0xAF, 0xD8, 0x07, 0x09 },
+        { 0x86, 0xF7, 0xE4, 0x37, 0xFA, 0xA5, 0xA7, 0xFC, 0xE1, 0x5D, 0x1D, 0xDC, 0xB9, 0xEA, 0xEA, 0xEA, 0x37, 0x76, 0x67, 0xB8 },
+        { 0xA9, 0x99, 0x3E, 0x36, 0x47, 0x06, 0x81, 0x6A, 0xBA, 0x3E, 0x25, 0x71, 0x78, 0x50, 0xC2, 0x6C, 0x9C, 0xD0, 0xD8, 0x9D },
+        { 0xC1, 0x22, 0x52, 0xCE, 0xDA, 0x8B, 0xE8, 0x99, 0x4D, 0x5F, 0xA0, 0x29, 0x0A, 0x47, 0x23, 0x1C, 0x1D, 0x16, 0xAA, 0xE3 },
+        { 0x32, 0xD1, 0x0C, 0x7B, 0x8C, 0xF9, 0x65, 0x70, 0xCA, 0x04, 0xCE, 0x37, 0xF2, 0xA1, 0x9D, 0x84, 0x24, 0x0D, 0x3A, 0x89 },
+        { 0x76, 0x1C, 0x45, 0x7B, 0xF7, 0x3B, 0x14, 0xD2, 0x7E, 0x9E, 0x92, 0x65, 0xC4, 0x6F, 0x4B, 0x4D, 0xDA, 0x11, 0xF9, 0x40 },
+        { 0x50, 0xAB, 0xF5, 0x70, 0x6A, 0x15, 0x09, 0x90, 0xA0, 0x8B, 0x2C, 0x5E, 0xA4, 0x0F, 0xA0, 0xE5, 0x85, 0x55, 0x47, 0x32 }
     };
 
     gtl::sha1 sha1;
@@ -195,7 +199,47 @@ TEST(sha1, evaluate, partial_insert) {
         gtl::sha1::hash_type hash = sha1.get_hash();
 
         char hash_string[40 + 4 + 40 + 1] = {};
-        snprintf(hash_string, 40 + 4 + 40 + 1, "%08X%08X%08X%08X%08X == %08X%08X%08X%08X%08X", hash.data[0], hash.data[1], hash.data[2], hash.data[3], hash.data[4], result[i][0], result[i][1], result[i][2], result[i][3], result[i][4]);
+        snprintf(
+            hash_string,
+            40 + 4 + 40 + 1,
+            "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X == %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+            hash.data[0],
+            hash.data[1],
+            hash.data[2],
+            hash.data[3],
+            hash.data[4],
+            hash.data[5],
+            hash.data[6],
+            hash.data[7],
+            hash.data[8],
+            hash.data[9],
+            hash.data[10],
+            hash.data[11],
+            hash.data[12],
+            hash.data[13],
+            hash.data[14],
+            hash.data[15],
+            hash.data[16],
+            hash.data[17],
+            result[i][0],
+            result[i][1],
+            result[i][2],
+            result[i][3],
+            result[i][4],
+            result[i][5],
+            result[i][6],
+            result[i][7],
+            result[i][8],
+            result[i][9],
+            result[i][10],
+            result[i][11],
+            result[i][12],
+            result[i][13],
+            result[i][14],
+            result[i][15],
+            result[i][16],
+            result[i][17]
+        );
         PRINT("%s\n", hash_string);
 
         REQUIRE(testbench::is_memory_same(hash.data, result[i], gtl::sha1::hash_size) == true);

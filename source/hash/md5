@@ -50,11 +50,23 @@ namespace gtl {
     public:
         /// @brief  Simple type to hold the hash data.
         struct hash_type final {
-            unsigned int data[md5::hash_size / sizeof(unsigned int)] = {
-                0x67452301,
-                0xEFCDAB89,
-                0x98BADCFE,
-                0x10325476
+            unsigned char data[md5::hash_size] = {
+                0x01,
+                0x23,
+                0x45,
+                0x67,
+                0x89,
+                0xAB,
+                0xCD,
+                0xEF,
+                0xFE,
+                0xDC,
+                0xBA,
+                0x98,
+                0x76,
+                0x54,
+                0x32,
+                0x10
             };
         };
 
@@ -62,96 +74,84 @@ namespace gtl {
         /// @brief  Internal type used to construct blocks of data for processing.
         struct block_type final {
             unsigned long long int length_bytes = 0;
-            unsigned int data[md5::block_size / sizeof(unsigned int)] = {};
+            unsigned char data[md5::block_size] = {};
         };
 
     private:
         /// @brief  The binary integer part of the sines of integers are use as constants.
-        /// This can be computed using:
+        /// This can be computed using something like:
         /// for (int i = 0; i < 64; ++i) {
-        ///     constants[i] := floor(232 x abs(sin(i + 1)))
+        ///     constants[i] = floor(232 x abs(sin(i + 1)))
         /// }
-        constexpr static const unsigned int constants[md5::processing_rounds] = {
-            0xD76AA478,
-            0xE8C7B756,
-            0x242070DB,
-            0xC1BDCEEE,
-            0xF57C0FAF,
-            0x4787C62A,
-            0xA8304613,
-            0xFD469501,
-            0x698098D8,
-            0x8B44F7AF,
-            0xFFFF5BB1,
-            0x895CD7BE,
-            0x6B901122,
-            0xFD987193,
-            0xA679438E,
-            0x49B40821,
-            0xF61E2562,
-            0xC040B340,
-            0x265E5A51,
-            0xE9B6C7AA,
-            0xD62F105D,
-            0x02441453,
-            0xD8A1E681,
-            0xE7D3FBC8,
-            0x21E1CDE6,
-            0xC33707D6,
-            0xF4D50D87,
-            0x455A14ED,
-            0xA9E3E905,
-            0xFCEFA3F8,
-            0x676F02D9,
-            0x8D2A4C8A,
-            0xFFFA3942,
-            0x8771F681,
-            0x6D9D6122,
-            0xFDE5380C,
-            0xA4BEEA44,
-            0x4BDECFA9,
-            0xF6BB4B60,
-            0xBEBFBC70,
-            0x289B7EC6,
-            0xEAA127FA,
-            0xD4EF3085,
-            0x04881D05,
-            0xD9D4D039,
-            0xE6DB99E5,
-            0x1FA27CF8,
-            0xC4AC5665,
-            0xF4292244,
-            0x432AFF97,
-            0xAB9423A7,
-            0xFC93A039,
-            0x655B59C3,
-            0x8F0CCC92,
-            0xFFEFF47D,
-            0x85845DD1,
-            0x6FA87E4F,
-            0xFE2CE6E0,
-            0xA3014314,
-            0x4E0811A1,
-            0xF7537E82,
-            0xBD3AF235,
-            0x2AD7D2BB,
-            0xEB86D391
+        constexpr static const unsigned char constants[md5::processing_rounds][4] = {
+            { 0x78, 0xA4, 0x6A, 0xD7 },
+            { 0x56, 0xB7, 0xC7, 0xE8 },
+            { 0xDB, 0x70, 0x20, 0x24 },
+            { 0xEE, 0xCE, 0xBD, 0xC1 },
+            { 0xAF, 0x0F, 0x7C, 0xF5 },
+            { 0x2A, 0xC6, 0x87, 0x47 },
+            { 0x13, 0x46, 0x30, 0xA8 },
+            { 0x01, 0x95, 0x46, 0xFD },
+            { 0xD8, 0x98, 0x80, 0x69 },
+            { 0xAF, 0xF7, 0x44, 0x8B },
+            { 0xB1, 0x5B, 0xFF, 0xFF },
+            { 0xBE, 0xD7, 0x5C, 0x89 },
+            { 0x22, 0x11, 0x90, 0x6B },
+            { 0x93, 0x71, 0x98, 0xFD },
+            { 0x8E, 0x43, 0x79, 0xA6 },
+            { 0x21, 0x08, 0xB4, 0x49 },
+            { 0x62, 0x25, 0x1E, 0xF6 },
+            { 0x40, 0xB3, 0x40, 0xC0 },
+            { 0x51, 0x5A, 0x5E, 0x26 },
+            { 0xAA, 0xC7, 0xB6, 0xE9 },
+            { 0x5D, 0x10, 0x2F, 0xD6 },
+            { 0x53, 0x14, 0x44, 0x02 },
+            { 0x81, 0xE6, 0xA1, 0xD8 },
+            { 0xC8, 0xFB, 0xD3, 0xE7 },
+            { 0xE6, 0xCD, 0xE1, 0x21 },
+            { 0xD6, 0x07, 0x37, 0xC3 },
+            { 0x87, 0x0D, 0xD5, 0xF4 },
+            { 0xED, 0x14, 0x5A, 0x45 },
+            { 0x05, 0xE9, 0xE3, 0xA9 },
+            { 0xF8, 0xA3, 0xEF, 0xFC },
+            { 0xD9, 0x02, 0x6F, 0x67 },
+            { 0x8A, 0x4C, 0x2A, 0x8D },
+            { 0x42, 0x39, 0xFA, 0xFF },
+            { 0x81, 0xF6, 0x71, 0x87 },
+            { 0x22, 0x61, 0x9D, 0x6D },
+            { 0x0C, 0x38, 0xE5, 0xFD },
+            { 0x44, 0xEA, 0xBE, 0xA4 },
+            { 0xA9, 0xCF, 0xDE, 0x4B },
+            { 0x60, 0x4B, 0xBB, 0xF6 },
+            { 0x70, 0xBC, 0xBF, 0xBE },
+            { 0xC6, 0x7E, 0x9B, 0x28 },
+            { 0xFA, 0x27, 0xA1, 0xEA },
+            { 0x85, 0x30, 0xEF, 0xD4 },
+            { 0x05, 0x1D, 0x88, 0x04 },
+            { 0x39, 0xD0, 0xD4, 0xD9 },
+            { 0xE5, 0x99, 0xDB, 0xE6 },
+            { 0xF8, 0x7C, 0xA2, 0x1F },
+            { 0x65, 0x56, 0xAC, 0xC4 },
+            { 0x44, 0x22, 0x29, 0xF4 },
+            { 0x97, 0xFF, 0x2A, 0x43 },
+            { 0xA7, 0x23, 0x94, 0xAB },
+            { 0x39, 0xA0, 0x93, 0xFC },
+            { 0xC3, 0x59, 0x5B, 0x65 },
+            { 0x92, 0xCC, 0x0C, 0x8F },
+            { 0x7D, 0xF4, 0xEF, 0xFF },
+            { 0xD1, 0x5D, 0x84, 0x85 },
+            { 0x4F, 0x7E, 0xA8, 0x6F },
+            { 0xE0, 0xE6, 0x2C, 0xFE },
+            { 0x14, 0x43, 0x01, 0xA3 },
+            { 0xA1, 0x11, 0x08, 0x4E },
+            { 0x82, 0x7E, 0x53, 0xF7 },
+            { 0x35, 0xF2, 0x3A, 0xBD },
+            { 0xBB, 0xD2, 0xD7, 0x2A },
+            { 0x91, 0xD3, 0x86, 0xEB }
         };
 
         /// @brief  The per round shift amounts for the MD5 algorithm.
-        constexpr static const unsigned int per_round_shift_amount[md5::processing_rounds] = {
-            7,
-            12,
-            17,
-            22,
-            7,
-            12,
-            17,
-            22,
-            7,
-            12,
-            17,
-            22,
+        constexpr static const unsigned int per_round_shift_amount[md5::processing_rounds / 4] = {
             7,
             12,
             17,
@@ -160,46 +160,10 @@ namespace gtl {
             9,
             14,
             20,
-            5,
-            9,
-            14,
-            20,
-            5,
-            9,
-            14,
-            20,
-            5,
-            9,
-            14,
-            20,
             4,
             11,
             16,
             23,
-            4,
-            11,
-            16,
-            23,
-            4,
-            11,
-            16,
-            23,
-            4,
-            11,
-            16,
-            23,
-            6,
-            10,
-            15,
-            21,
-            6,
-            10,
-            15,
-            21,
-            6,
-            10,
-            15,
-            21,
             6,
             10,
             15,
@@ -211,15 +175,32 @@ namespace gtl {
         unsigned long long int hashed_length = 0;
 
         /// @brief  The current block of data being filled.
-        block_type block = {};
+        block_type current_block = {};
 
         /// @brief  The current hash.
-        hash_type hash = {};
+        hash_type current_hash = {};
 
         /// @brief  Flag showing whether the hash has been finalised.
         bool finalised = false;
 
     private:
+        /// @brief  Packs four bytes into an unsigned int.
+        /// @param  bytes The bytes to convert.
+        /// @return The bytes packed into an unsigned int.
+        constexpr static unsigned int pack_little_endian(const unsigned char bytes[4]) {
+            return (static_cast<unsigned int>(bytes[0]) << 0) | (static_cast<unsigned int>(bytes[1]) << 8) | (static_cast<unsigned int>(bytes[2]) << 16) | (static_cast<unsigned int>(bytes[3]) << 24);
+        }
+
+        /// @brief  Unpacks four bytes from an unsigned int.
+        /// @param  value The value to unpack.
+        /// @param  bytes The bytes to receive the unpacked data.
+        constexpr static void unpack_little_endian(unsigned int value, unsigned char bytes[4]) {
+            bytes[0] = static_cast<unsigned char>((value >> 0) & 0xFF);
+            bytes[1] = static_cast<unsigned char>((value >> 8) & 0xFF);
+            bytes[2] = static_cast<unsigned char>((value >> 16) & 0xFF);
+            bytes[3] = static_cast<unsigned char>((value >> 24) & 0xFF);
+        }
+
         /// @brief  Rotate a 32 bit value left by a shift amount.
         /// @param  value The value to rotate.
         /// @param  shift The number of bits to rotate by.
@@ -231,12 +212,12 @@ namespace gtl {
         }
 
     private:
-        /// @brief  Perform the hashing algorithm on a block of data.
+        /// @brief  Perform the hashing algorithm on a current_block of data.
         constexpr void hash_block() {
-            unsigned int A = this->hash.data[0];
-            unsigned int B = this->hash.data[1];
-            unsigned int C = this->hash.data[2];
-            unsigned int D = this->hash.data[3];
+            unsigned int A = pack_little_endian(&this->current_hash.data[0 * 4]);
+            unsigned int B = pack_little_endian(&this->current_hash.data[1 * 4]);
+            unsigned int C = pack_little_endian(&this->current_hash.data[2 * 4]);
+            unsigned int D = pack_little_endian(&this->current_hash.data[3 * 4]);
 
             // Do the hash iterations.
             for (unsigned int iteration = 0; iteration < md5::processing_rounds; ++iteration) {
@@ -260,25 +241,29 @@ namespace gtl {
                     G = (7 * iteration) & 0xF;
                 }
 
+                const unsigned int constant = pack_little_endian(&md5::constants[iteration][0]);
+                const unsigned int shift = md5::per_round_shift_amount[((iteration / 16) * 4) + (iteration % 4)];
+                const unsigned int block_data = pack_little_endian(&this->current_block.data[G * 4]);
+
                 unsigned int next_A = D;
                 D = C;
                 C = B;
-                B += rotate_left(A + F + md5::constants[iteration] + this->block.data[G], md5::per_round_shift_amount[iteration]);
+                B += rotate_left(A + F + constant + block_data, shift);
                 A = next_A;
             }
 
-            this->hash.data[0] += A;
-            this->hash.data[1] += B;
-            this->hash.data[2] += C;
-            this->hash.data[3] += D;
+            unpack_little_endian(pack_little_endian(&this->current_hash.data[0 * 4]) + A, &this->current_hash.data[0 * 4]);
+            unpack_little_endian(pack_little_endian(&this->current_hash.data[1 * 4]) + B, &this->current_hash.data[1 * 4]);
+            unpack_little_endian(pack_little_endian(&this->current_hash.data[2 * 4]) + C, &this->current_hash.data[2 * 4]);
+            unpack_little_endian(pack_little_endian(&this->current_hash.data[3 * 4]) + D, &this->current_hash.data[3 * 4]);
         }
 
     public:
-        /// @brief  Reset the internal state of the hash.
+        /// @brief  Reset the internal state of the current_hash.
         constexpr void reset() {
             this->hashed_length = 0;
-            this->block = {};
-            this->hash = {};
+            this->current_block = {};
+            this->current_hash = {};
             this->finalised = false;
         }
 
@@ -287,6 +272,7 @@ namespace gtl {
         /// @param  length Valid length of the input data pointer.
         constexpr void consume(const char* data, unsigned long long int length) {
             GTL_MD5_ASSERT(this->finalised == false, "Finalise must not be called before consume().");
+            GTL_MD5_ASSERT(this->hashed_length <= this->hashed_length + length, "Total hashed data must be less than 2^64 bytes.");
 
             // Count how much data has been consumed.
             this->hashed_length += length;
@@ -294,13 +280,12 @@ namespace gtl {
             // Block construction and processing.
             while (length--) {
                 // Append data to the current block.
-                this->block.data[this->block.length_bytes / sizeof(unsigned int)] |= static_cast<unsigned int>(static_cast<unsigned char>(*data++)) << ((this->block.length_bytes % sizeof(unsigned int)) * 8);
-                ++this->block.length_bytes;
+                this->current_block.data[this->current_block.length_bytes++] = static_cast<unsigned char>(*data++);
 
                 // If full, hash.
-                if (this->block.length_bytes == md5::block_size) {
+                if (this->current_block.length_bytes == md5::block_size) {
                     this->hash_block();
-                    this->block = {};
+                    this->current_block = {};
                 }
             }
         }
@@ -310,36 +295,31 @@ namespace gtl {
             GTL_MD5_ASSERT(this->finalised == false, "Finalise must not be called before finalise().");
 
             // Pad the data with a single 0x80 on the end.
-            this->block.data[this->block.length_bytes / sizeof(unsigned int)] |= static_cast<unsigned int>(static_cast<unsigned char>(0x80)) << ((this->block.length_bytes % sizeof(unsigned int)) * 8);
-            ++this->block.length_bytes;
+            this->current_block.data[this->current_block.length_bytes++] = 0x80;
 
             // Check if there is enough space in the final chunk for the data length.
-            if (this->block.length_bytes > (md5::block_size - sizeof(unsigned long long int))) {
+            if (this->current_block.length_bytes > (md5::block_size - sizeof(unsigned long long int))) {
                 this->hash_block();
-                this->block = {};
+                this->current_block = {};
             }
 
             // Add the data length to the chunk (Must be little endian).
             const unsigned long long int hashed_length_bits = this->hashed_length * 8;
-            this->block.data[14] = (hashed_length_bits & 0x00000000FFFFFFFFull) >> 0u;
-            this->block.data[15] = (hashed_length_bits & 0xFFFFFFFF00000000ull) >> 32u;
+            unpack_little_endian((hashed_length_bits >> 0) & 0xFFFFFFFF, &this->current_block.data[md5::block_size - 8]);
+            unpack_little_endian((hashed_length_bits >> 32) & 0xFFFFFFFF, &this->current_block.data[md5::block_size - 4]);
 
             // Hash the block.
             this->hash_block();
 
-            // Process the hash to fix it's endianness.
-            for (unsigned int index = 0; index < (md5::hash_size / sizeof(unsigned int)); ++index) {
-                this->hash.data[index] = (this->hash.data[index] >> 24) | ((this->hash.data[index] >> 8) & 0x0000FF00) | ((this->hash.data[index] << 8) & 0x00FF0000) | (this->hash.data[index] << 24);
-            }
-
+            // Done.
             this->finalised = true;
         }
 
-        /// @brief  Calculate the final hash from the state and return it.
-        /// @return The resultant hash.
+        /// @brief  Calculate the final current_hash from the state and return it.
+        /// @return The resultant current_hash.
         constexpr const hash_type& get_hash() const {
             GTL_MD5_ASSERT(this->finalised == true, "Finalise must be called before get_hash().");
-            return this->hash;
+            return this->current_hash;
         }
 
     public:
@@ -354,8 +334,8 @@ namespace gtl {
         constexpr static hash_string_type hash_to_string(const hash_type& hash) {
             hash_string_type output;
             constexpr const char* hex_characters = "0123456789ABCDEF";
-            for (unsigned int index = 0u; index < (md5::hash_size * 2); ++index) {
-                output.hash[index] = hex_characters[(hash.data[index / (sizeof(unsigned int) * 2)] >> ((((sizeof(unsigned int) * 2) - 1) - (index % (sizeof(unsigned int) * 2))) * 4)) & 0xF];
+            for (unsigned int index = 0; index < (md5::hash_size * 2); ++index) {
+                output.hash[index] = hex_characters[(hash.data[index / 2] >> ((1 - (index % 2)) * 4)) & 0xF];
             }
             output.hash[md5::hash_size * 2] = 0;
             return output;
@@ -365,7 +345,7 @@ namespace gtl {
         /// @brief  Hash a buffer of data.
         /// @param  data Input data pointer.
         /// @param  length Valid length of the input data pointer.
-        static hash_type hash_buffer(const char* data, const unsigned long long int length) {
+        static hash_type hash(const char* data, const unsigned long long int length) {
             md5 hash_function;
             hash_function.reset();
             hash_function.consume(data, length);

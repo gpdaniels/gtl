@@ -51,147 +51,161 @@ namespace gtl {
         constexpr static const unsigned int state_size = (5 * 5 * 64) / 8;
 
         /// @brief  Size of each processed block of data in bytes.
-        constexpr static const unsigned long long int block_size = sha3::state_size - (2 * sha3::size) / 8;
+        constexpr static const unsigned long long int block_size = sha3::state_size - (2 * sha3::hash_size);
 
         /// @brief  Number of rounds used to process each block of data.
         constexpr static const unsigned long long int processing_rounds = 24;
 
-    private:
-        /// @brief  Internal sha3 traits class for the different sizes.
-        /// @tparam size The size of the sha3 hash.
-        /// @tparam inexplicit_specialisation Dummy template param so spectialisation is partial and can be done inside the sha3 class.
-        template <unsigned long long int size, typename inexplicit_specialisation = void>
-        struct internals;
-
-        /// @brief  Internal sha3 traits class sha3-224.
-        template <typename inexplicit_specialisation>
-        struct internals<224, inexplicit_specialisation> final {
-            using base_type = unsigned int;
-        };
-
-        /// @brief  Internal sha3 traits class sha3-256.
-        template <typename inexplicit_specialisation>
-        struct internals<256, inexplicit_specialisation> final {
-            using base_type = unsigned int;
-        };
-
-        /// @brief  Internal sha3 traits class sha3-384.
-        template <typename inexplicit_specialisation>
-        struct internals<384, inexplicit_specialisation> final {
-            using base_type = unsigned long long int;
-        };
-
-        /// @brief  Internal sha3 traits class sha3-512.
-        template <typename inexplicit_specialisation>
-        struct internals<512, inexplicit_specialisation> final {
-            using base_type = unsigned long long int;
-        };
-
     public:
         struct hash_type final {
-            typename internals<sha3::size>::base_type data[sha3::hash_size / sizeof(typename internals<sha3::size>::base_type)] = {};
+            unsigned char data[sha3::hash_size] = {};
         };
 
     private:
         /// @brief  Internal type used to construct blocks of data for processing.
         struct block_type final {
             unsigned long long int length_bytes = 0;
-            unsigned long long int data[sha3::block_size] = {};
+            unsigned char data[sha3::block_size] = {};
         };
 
         struct state_type final {
-            unsigned long long int data[sha3::state_size / sizeof(unsigned long long int)] = {};
+            unsigned char data[sha3::state_size] = {};
         };
 
     private:
-        constexpr static const unsigned long long int round_constants[sha3::processing_rounds] = {
-            0x0000000000000001ull,
-            0x0000000000008082ull,
-            0x800000000000808Aull,
-            0x8000000080008000ull,
-            0x000000000000808Bull,
-            0x0000000080000001ull,
-            0x8000000080008081ull,
-            0x8000000000008009ull,
-            0x000000000000008Aull,
-            0x0000000000000088ull,
-            0x0000000080008009ull,
-            0x000000008000000Aull,
-            0x000000008000808Bull,
-            0x800000000000008Bull,
-            0x8000000000008089ull,
-            0x8000000000008003ull,
-            0x8000000000008002ull,
-            0x8000000000000080ull,
-            0x000000000000800Aull,
-            0x800000008000000Aull,
-            0x8000000080008081ull,
-            0x8000000000008080ull,
-            0x0000000080000001ull,
-            0x8000000080008008ull
+        constexpr static const unsigned char round_constants[sha3::processing_rounds][8] = {
+            { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+            { 0x82, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+            { 0x8a, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80 },
+            { 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x80 },
+            { 0x8b, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+            { 0x01, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00 },
+            { 0x81, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x80 },
+            { 0x09, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80 },
+            { 0x8a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+            { 0x88, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+            { 0x09, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00 },
+            { 0x0a, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00 },
+            { 0x8b, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00 },
+            { 0x8b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80 },
+            { 0x89, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80 },
+            { 0x03, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80 },
+            { 0x02, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80 },
+            { 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80 },
+            { 0x0a, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+            { 0x0a, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x80 },
+            { 0x81, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x80 },
+            { 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80 },
+            { 0x01, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00 },
+            { 0x08, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x80 }
         };
 
     private:
         /// @brief  The current block of data being filled.
-        block_type block = {};
+        block_type current_block = {};
 
         /// @brief  The current state.
-        state_type state = {};
+        state_type current_state = {};
 
         /// @brief  The current hash.
-        hash_type hash = {};
+        hash_type current_hash = {};
 
         /// @brief  Flag showing whether the hash has been finalised.
         bool finalised = false;
 
     private:
-        /// @brief  Rotate a 64 bit value left by a shift amount.
-        /// @param  value The value to rotate.
+        /// @brief  Rotate a 64-bit lane (8 bytes) left by a shift amount.
+        /// @param  bytes The 8-byte array to rotate.
         /// @param  shift The number of bits to rotate by.
-        /// @return The value after it has been rotated left by shift bits.
-        constexpr static unsigned long long int rotate_left(unsigned long long int value, unsigned long long int shift) {
-            constexpr const unsigned long long int mask = (8 * sizeof(unsigned long long int) - 1);
-            shift &= mask;
-            return (value << shift) | (value >> ((static_cast<unsigned long long int>(-static_cast<signed long long int>(shift))) & mask));
+        constexpr static void rotate_left(unsigned char bytes[8], unsigned long long int shift) {
+            shift %= 64;
+            if (shift == 0) {
+                return;
+            }
+
+            // Create a temporary copy.
+            unsigned char temp[8] = {};
+            for (unsigned int i = 0; i < 8; ++i) {
+                temp[i] = bytes[i];
+            }
+
+            // Perform bit rotation across bytes.
+            const unsigned long long int byte_shift = shift / 8;
+            const unsigned long long int bit_shift = shift % 8;
+
+            for (unsigned int i = 0; i < 8; ++i) {
+                if (bit_shift == 0) {
+                    bytes[i] = temp[(i - byte_shift + 8) % 8];
+                }
+                else {
+                    const unsigned char low_bits = temp[(i - byte_shift + 8) % 8] << bit_shift;
+                    const unsigned char high_bits = temp[(i - byte_shift - 1 + 8) % 8] >> (8 - bit_shift);
+                    bytes[i] = low_bits | high_bits;
+                }
+            }
         }
 
         /// @brief  Perform the hashing algorithm on a block of data.
         constexpr void hash_block() {
             // Mix input data into the state.
-            for (unsigned int i = 0; i < sha3::block_size / sizeof(unsigned long long int); ++i) {
-                this->state.data[i] ^= this->block.data[i];
+            for (unsigned int i = 0; i < sha3::block_size; ++i) {
+                this->current_state.data[i] ^= this->current_block.data[i];
             }
 
             // Re-compute state.
             for (unsigned int round = 0; round < sha3::processing_rounds; ++round) {
                 // Theta (Compute and apply parity).
-                const unsigned long long int coefficients[5] = {
-                    this->state.data[0] ^ this->state.data[0 + 5] ^ this->state.data[0 + 10] ^ this->state.data[0 + 15] ^ this->state.data[0 + 20],
-                    this->state.data[1] ^ this->state.data[1 + 5] ^ this->state.data[1 + 10] ^ this->state.data[1 + 15] ^ this->state.data[1 + 20],
-                    this->state.data[2] ^ this->state.data[2 + 5] ^ this->state.data[2 + 10] ^ this->state.data[2 + 15] ^ this->state.data[2 + 20],
-                    this->state.data[3] ^ this->state.data[3 + 5] ^ this->state.data[3 + 10] ^ this->state.data[3 + 15] ^ this->state.data[3 + 20],
-                    this->state.data[4] ^ this->state.data[4 + 5] ^ this->state.data[4 + 10] ^ this->state.data[4 + 15] ^ this->state.data[4 + 20]
-                };
-                for (unsigned int i = 0; i < 5; ++i) {
-                    const unsigned long long int parity = coefficients[(i + 4) % 5] ^ rotate_left(coefficients[(i + 1) % 5], 1);
-                    for (unsigned int j = 0; j < 5; ++j) {
-                        this->state.data[i + (5 * j)] ^= parity;
+                unsigned char coefficients[5][8] = {};
+
+                // Compute parity columns.
+                for (unsigned int x = 0; x < 5; ++x) {
+                    for (unsigned int i = 0; i < 8; ++i) {
+                        coefficients[x][i] = 0;
+                    }
+                    for (unsigned int y = 0; y < 5; ++y) {
+                        const unsigned int offset = (x + 5 * y) * 8;
+                        for (unsigned int i = 0; i < 8; ++i) {
+                            coefficients[x][i] ^= this->current_state.data[offset + i];
+                        }
+                    }
+                }
+
+                // Apply theta transformation.
+                for (unsigned int x = 0; x < 5; ++x) {
+                    unsigned char parity[8] = {};
+                    unsigned char rotated[8] = {};
+
+                    // Copy coefficients[(x + 1) % 5] and rotate.
+                    for (unsigned int i = 0; i < 8; ++i) {
+                        rotated[i] = coefficients[(x + 1) % 5][i];
+                    }
+                    rotate_left(rotated, 1);
+
+                    // XOR with coefficients[(x + 4) % 5] to get parity.
+                    for (unsigned int i = 0; i < 8; ++i) {
+                        parity[i] = coefficients[(x + 4) % 5][i] ^ rotated[i];
+                    }
+
+                    // Apply parity to all lanes in this column.
+                    for (unsigned int y = 0; y < 5; ++y) {
+                        const unsigned int offset = (x + 5 * y) * 8;
+                        for (unsigned int i = 0; i < 8; ++i) {
+                            this->current_state.data[offset + i] ^= parity[i];
+                        }
                     }
                 }
 
                 // Rho (Bitwise rotation).
-                unsigned int index_2d[2] = {};
-                index_2d[0] = 0;
-                index_2d[1] = 1;
+                unsigned int index_2d[2] = { 0, 1 };
                 for (unsigned int i = 0; i < 24; ++i) {
                     // Calculate triangular number to rotate by.
-                    const unsigned long long int triangular_number = (((i + 1) * (i + 2)) / 2) % (sizeof(unsigned long long int) * 8);
+                    const unsigned long long int triangular_number = (((i + 1) * (i + 2)) / 2) % 64;
 
-                    // Calculate index of data to rotate.
-                    const unsigned int index = 5 * index_2d[0] + index_2d[1];
+                    // Calculate offset of data to rotate.
+                    const unsigned int offset = (index_2d[1] + 5 * index_2d[0]) * 8;
 
-                    // Rotate data.
-                    this->state.data[index] = rotate_left(this->state.data[index], triangular_number);
+                    // Rotate the lane in place.
+                    rotate_left(&this->current_state.data[offset], triangular_number);
 
                     // Update index.
                     unsigned int index_temp = 3 * index_2d[0] + 2 * index_2d[1];
@@ -202,51 +216,72 @@ namespace gtl {
                 // Pi (Permute).
                 index_2d[0] = 0;
                 index_2d[1] = 1;
-                unsigned long long int stored_data = this->state.data[5 * index_2d[0] + index_2d[1]];
+                unsigned int offset = (index_2d[1] + 5 * index_2d[0]) * 8;
+                unsigned char stored_data[8] = {};
+                for (unsigned int i = 0; i < 8; ++i) {
+                    stored_data[i] = this->current_state.data[offset + i];
+                }
+
                 for (unsigned int i = 0; i < 24; ++i) {
                     // Update index.
                     unsigned int index_temp = 3 * index_2d[0] + 2 * index_2d[1];
                     index_2d[1] = index_2d[0] % 5;
                     index_2d[0] = index_temp % 5;
 
-                    // Calculate index of data to replace.
-                    const unsigned int index = 5 * index_2d[0] + index_2d[1];
+                    // Calculate offset of data to replace.
+                    offset = (index_2d[1] + 5 * index_2d[0]) * 8;
 
                     // Store current data temporarily.
-                    const unsigned long long int temp = this->state.data[index];
+                    unsigned char temp[8] = {};
+                    for (unsigned int j = 0; j < 8; ++j) {
+                        temp[j] = this->current_state.data[offset + j];
+                    }
 
                     // Replace data with stored data from last iteration.
-                    this->state.data[index] = stored_data;
+                    for (unsigned int j = 0; j < 8; ++j) {
+                        this->current_state.data[offset + j] = stored_data[j];
+                    }
 
-                    // Store current data out side of loop for next iteration
-                    stored_data = temp;
-                }
-
-                // Chi (Bitwise combine).
-                for (unsigned int i = 0; i < 25; i += 5) {
-                    unsigned long long int temp5[5] = {
-                        this->state.data[i + 0],
-                        this->state.data[i + 1],
-                        this->state.data[i + 2],
-                        this->state.data[i + 3],
-                        this->state.data[i + 4]
-                    };
-                    for (unsigned int j = 0; j < 5; ++j) {
-                        this->state.data[i + j] ^= (~temp5[(j + 1) % 5]) & temp5[(j + 2) % 5];
+                    // Store current data outside of loop for next iteration.
+                    for (unsigned int j = 0; j < 8; ++j) {
+                        stored_data[j] = temp[j];
                     }
                 }
 
-                // Iota (Xor).
-                this->state.data[0] ^= sha3::round_constants[round];
+                // Chi (Bitwise combine).
+                for (unsigned int y = 0; y < 5; ++y) {
+                    unsigned char coefficients[5][8] = {};
+
+                    // Read all lanes in this row.
+                    for (unsigned int x = 0; x < 5; ++x) {
+                        const unsigned int offset = (x + 5 * y) * 8;
+                        for (unsigned int i = 0; i < 8; ++i) {
+                            coefficients[x][i] = this->current_state.data[offset + i];
+                        }
+                    }
+
+                    // Apply chi transformation: result = a ^ ((~b) & c)
+                    for (unsigned int x = 0; x < 5; ++x) {
+                        const unsigned int offset = (x + 5 * y) * 8;
+                        for (unsigned int i = 0; i < 8; ++i) {
+                            this->current_state.data[offset + i] = coefficients[x][i] ^ ((~coefficients[(x + 1) % 5][i]) & coefficients[(x + 2) % 5][i]);
+                        }
+                    }
+                }
+
+                // Iota (Xor with round constant).
+                for (unsigned int i = 0; i < 8; ++i) {
+                    this->current_state.data[i] ^= sha3::round_constants[round][i];
+                }
             }
         }
 
     public:
         /// @brief  Reset the internal state of the hash.
         constexpr void reset() {
-            this->block = {};
-            this->state = {};
-            this->hash = {};
+            this->current_block = {};
+            this->current_state = {};
+            this->current_hash = {};
             this->finalised = false;
         }
 
@@ -259,13 +294,12 @@ namespace gtl {
             // Block construction and processing.
             while (length--) {
                 // Append data to the current block.
-                this->block.data[this->block.length_bytes / sizeof(unsigned long long int)] |= static_cast<unsigned long long int>(static_cast<unsigned char>(*data++)) << ((this->block.length_bytes % sizeof(unsigned long long int)) * 8);
-                ++this->block.length_bytes;
+                this->current_block.data[this->current_block.length_bytes++] |= static_cast<unsigned char>(*data++);
 
                 // If full, hash.
-                if (this->block.length_bytes == sha3::block_size) {
+                if (this->current_block.length_bytes == sha3::block_size) {
                     this->hash_block();
-                    this->block = {};
+                    this->current_block = {};
                 }
             }
         }
@@ -275,44 +309,17 @@ namespace gtl {
             GTL_SHA3_ASSERT(this->finalised == false, "Finalise must not be called before finalise().");
 
             // Pad as is required by the sha3 specification.
-            this->block.data[this->block.length_bytes / sizeof(unsigned long long int)] |= static_cast<unsigned long long int>(static_cast<unsigned char>(0x02 | (1 << 2))) << ((this->block.length_bytes % sizeof(unsigned long long int)) * 8);
-            ++this->block.length_bytes;
+            this->current_block.data[this->current_block.length_bytes++] = static_cast<unsigned char>(0x02 | (1 << 2));
 
             // Pad the data with another single bit at the end.
-            this->block.data[(sha3::block_size / sizeof(unsigned long long int)) - 1] |= 0x8000000000000000ull;
+            this->current_block.data[sha3::block_size - 1] |= 0x80;
 
             // Hash the block.
             this->hash_block();
 
             // Consume state into hash.
-            if constexpr ((sha3::size == 224) || (sha3::size == 256)) {
-                for (unsigned int i = 0; i < sha3::hash_size / sizeof(unsigned long long int); ++i) {
-                    this->hash.data[i * 2 + 0] = (this->state.data[i] & 0x00000000FFFFFFFFull) >> 0;
-                    this->hash.data[i * 2 + 1] = (this->state.data[i] & 0xFFFFFFFF00000000ull) >> 32;
-                }
-                if constexpr (sha3::size == 224) {
-                    this->hash.data[(sha3::hash_size / sizeof(unsigned long long int)) * 2] = static_cast<unsigned int>(this->state.data[sha3::hash_size / sizeof(unsigned long long int)] & 0xFFFFFFFF00000000ull >> 32);
-                }
-            }
-            else if constexpr ((sha3::size == 384) || (sha3::size == 512)) {
-                for (unsigned int i = 0; i < sha3::hash_size / sizeof(unsigned long long int); ++i) {
-                    this->hash.data[i] = this->state.data[i];
-                }
-            }
-
-            // Process the hash to fix it's endianness.
-            if constexpr ((sha3::size == 224) || (sha3::size == 256)) {
-                for (unsigned int index = 0; index < (sha3::hash_size / sizeof(unsigned int)); ++index) {
-                    this->hash.data[index] = (this->hash.data[index] & 0x0000FFFF) << 16 | (this->hash.data[index] & 0xFFFF0000) >> 16;
-                    this->hash.data[index] = (this->hash.data[index] & 0x00FF00FF) << 8 | (this->hash.data[index] & 0xFF00FF00) >> 8;
-                }
-            }
-            else if constexpr ((sha3::size == 384) || (sha3::size == 512)) {
-                for (unsigned int index = 0; index < (sha3::hash_size / sizeof(unsigned long long int)); ++index) {
-                    this->hash.data[index] = (this->hash.data[index] & 0x00000000FFFFFFFFull) << 32 | (this->hash.data[index] & 0xFFFFFFFF00000000ull) >> 32;
-                    this->hash.data[index] = (this->hash.data[index] & 0x0000FFFF0000FFFFull) << 16 | (this->hash.data[index] & 0xFFFF0000FFFF0000ull) >> 16;
-                    this->hash.data[index] = (this->hash.data[index] & 0x00FF00FF00FF00FFull) << 8 | (this->hash.data[index] & 0xFF00FF00FF00FF00ull) >> 8;
-                }
+            for (unsigned int i = 0; i < sha3::hash_size; ++i) {
+                this->current_hash.data[i] = this->current_state.data[i];
             }
 
             this->finalised = true;
@@ -322,7 +329,7 @@ namespace gtl {
         /// @return The resultant hash.
         constexpr const hash_type& get_hash() const {
             GTL_SHA3_ASSERT(this->finalised == true, "Finalise must be called before get_hash().");
-            return this->hash;
+            return this->current_hash;
         }
 
     public:
@@ -338,7 +345,7 @@ namespace gtl {
             hash_string_type output;
             constexpr const char* hex_characters = "0123456789ABCDEF";
             for (unsigned int index = 0u; index < (sha3::hash_size * 2); ++index) {
-                output.hash[index] = hex_characters[(hash.data[index / (sizeof(typename internals<sha3::size>::base_type) * 2)] >> ((((sizeof(typename internals<sha3::size>::base_type) * 2) - 1) - (index % (sizeof(typename internals<sha3::size>::base_type) * 2))) * 4)) & 0xF];
+                output.hash[index] = hex_characters[(hash.data[index / 2] >> ((1 - (index % 2)) * 4)) & 0xF];
             }
             output.hash[sha3::hash_size * 2] = 0;
             return output;
@@ -348,7 +355,7 @@ namespace gtl {
         /// @brief  Hash a buffer of data.
         /// @param  data Input data pointer.
         /// @param  length Valid length of the input data pointer.
-        static hash_type hash_buffer(const char* data, const unsigned long long int length) {
+        static hash_type hash(const char* data, const unsigned long long int length) {
             sha3 hash_function;
             hash_function.reset();
             hash_function.consume(data, length);
@@ -356,6 +363,11 @@ namespace gtl {
             return hash_function.get_hash();
         }
     };
+
+    using sha3_224 = sha3<224>;
+    using sha3_256 = sha3<256>;
+    using sha3_384 = sha3<384>;
+    using sha3_512 = sha3<512>;
 }
 
 #undef GTL_SHA3_ASSERT
