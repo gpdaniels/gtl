@@ -121,20 +121,20 @@ TEST(static_array_nd, function, dimensions) {
         [](auto test_type) -> void {
             using type = typename decltype(test_type)::type;
             gtl::static_array_nd<type> static_array_nd_0d;
-            REQUIRE(static_array_nd_0d.dimensions() == 0, "static_array_nd_0d.dimensions() = %lld, expected %lld", static_array_nd_0d.dimensions(), 0ull);
+            REQUIRE(static_array_nd_0d.dimensions() == 0, "static_array_nd_0d.dimensions() = %llu, expected %llu", static_array_nd_0d.dimensions(), 0ull);
             testbench::test_template<testbench::value_collection<0, 1, 10>>(
                 [](auto value_1) -> void {
                     using type_value1 = decltype(value_1);
                     constexpr static const unsigned long long value1 = type_value1::value;
                     gtl::static_array_nd<type, value1> static_array_nd_1d;
-                    REQUIRE(static_array_nd_1d.dimensions() == 1, "static_array_nd_1d.dimensions() = %lld, expected %lld", static_array_nd_1d.dimensions(), 1ull);
+                    REQUIRE(static_array_nd_1d.dimensions() == 1, "static_array_nd_1d.dimensions() = %llu, expected %llu", static_array_nd_1d.dimensions(), 1ull);
                     testbench::test_template<testbench::value_collection<0, 1, 10>>(
                         [](auto value_2) -> void {
                             using type_value2 = decltype(value_2);
                             constexpr static const unsigned long long value1 = type_value1::value;
                             constexpr static const unsigned long long value2 = type_value2::value;
                             gtl::static_array_nd<type, value1, value2> static_array_nd_2d;
-                            REQUIRE(static_array_nd_2d.dimensions() == 2, "static_array_nd_2d.dimensions() = %lld, expected %lld", static_array_nd_2d.dimensions(), 2ull);
+                            REQUIRE(static_array_nd_2d.dimensions() == 2, "static_array_nd_2d.dimensions() = %llu, expected %llu", static_array_nd_2d.dimensions(), 2ull);
                             testbench::test_template<testbench::value_collection<0, 1, 10>>(
                                 [](auto value_3) -> void {
                                     using type_value3 = decltype(value_3);
@@ -142,7 +142,7 @@ TEST(static_array_nd, function, dimensions) {
                                     constexpr static const unsigned long long value2 = type_value2::value;
                                     constexpr static const unsigned long long value3 = type_value3::value;
                                     gtl::static_array_nd<type, value1, value2, value3> static_array_nd_3d;
-                                    REQUIRE(static_array_nd_3d.dimensions() == 3, "static_array_nd_3d.dimensions() = %lld, expected %lld", static_array_nd_3d.dimensions(), 3ull);
+                                    REQUIRE(static_array_nd_3d.dimensions() == 3, "static_array_nd_3d.dimensions() = %llu, expected %llu", static_array_nd_3d.dimensions(), 3ull);
                                 }
                             );
                         }

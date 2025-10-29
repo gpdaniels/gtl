@@ -22,7 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <vision/match/match>
 
-using size_t = decltype(sizeof(0));
+namespace {
+    using size_t = decltype(sizeof(0));
+}
 
 namespace gtl {
     class bruteforce final {

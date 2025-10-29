@@ -225,7 +225,7 @@ int main(int argument_count, char* arguments[]) {
                 ++TEST_FAILURE_COUNT;
             }
             if (!quiet) {
-                PRINT("REQUIRES: [TOTAL: %lld] [PASSED: %lld] [FAILED: %lld].\n", testbench::REQUIRE_COUNT, testbench::REQUIRE_COUNT - testbench::REQUIRE_FAILURE_COUNT, testbench::REQUIRE_FAILURE_COUNT);
+                PRINT("REQUIRES: [TOTAL: %llu] [PASSED: %llu] [FAILED: %llu].\n", testbench::REQUIRE_COUNT, testbench::REQUIRE_COUNT - testbench::REQUIRE_FAILURE_COUNT, testbench::REQUIRE_FAILURE_COUNT);
             }
         }
         if (!quiet) {
@@ -234,7 +234,7 @@ int main(int argument_count, char* arguments[]) {
     }
 
     if (!quiet) {
-        PRINT("Finishing '%lld' tests. Detected '%lld' failures.\n", TEST_COUNT, TEST_FAILURE_COUNT);
+        PRINT("Finishing '%llu' tests. Detected '%llu' failures.\n", TEST_COUNT, TEST_FAILURE_COUNT);
     }
 
     return (TEST_FAILURE_COUNT != 0);

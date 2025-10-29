@@ -195,7 +195,7 @@ TEST(static_ring_buffer, evaluation, threads_x2) {
 
     for (unsigned int i = 0; i < test_size; ++i) {
         REQUIRE(have_pushed[i]);
-        REQUIRE(have_popped[i] == i, "Expected '%d' but got '%d'.", i, have_popped[i]);
+        REQUIRE(have_popped[i] == i, "Expected '%u' but got '%u'.", i, have_popped[i]);
     }
 }
 
@@ -258,7 +258,7 @@ TEST(static_ring_buffer, evaluation, threads_x4) {
     }
 
     for (unsigned int i = 0; i < test_size1 + test_size2; ++i) {
-        REQUIRE(have_pushed[i], "Value '%d' was not pushed.", i);
-        REQUIRE(have_popped[i], "Value '%d' was not popped.", i);
+        REQUIRE(have_pushed[i], "Value '%u' was not pushed.", i);
+        REQUIRE(have_popped[i], "Value '%u' was not popped.", i);
     }
 }

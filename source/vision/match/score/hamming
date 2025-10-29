@@ -86,7 +86,7 @@ namespace gtl {
             data_internal_lhs[i] = data_lhs[i];
             data_internal_rhs[i] = data_rhs[i];
         }
-        return __builtin_popcount(internal_lhs ^ internal_rhs);
+        return static_cast<unsigned int>(__builtin_popcount(internal_lhs ^ internal_rhs));
 #else
         constexpr static const unsigned int Ox01 = 0x01010101u;
         constexpr static const unsigned int Ox0F = 0x0F0F0F0Fu;
@@ -123,7 +123,7 @@ namespace gtl {
             data_internal_lhs[i] = data_lhs[i];
             data_internal_rhs[i] = data_rhs[i];
         }
-        return __builtin_popcountll(internal_lhs ^ internal_rhs);
+        return static_cast<unsigned int>(__builtin_popcountll(internal_lhs ^ internal_rhs));
 #else
         constexpr static const unsigned long long int Ox01 = 0x0101010101010101ull;
         constexpr static const unsigned long long int Ox0F = 0x0F0F0F0F0F0F0F0Full;

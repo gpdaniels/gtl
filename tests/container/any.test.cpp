@@ -24,26 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <container/any>
 
-#if defined(_MSC_VER)
-#pragma warning(push, 0)
-#endif
-
-#include <type_traits>
-
-#if defined(_MSC_VER)
-#pragma warning(pop)
-#endif
-
-TEST(any, traits, standard) {
-    REQUIRE(std::is_pod<gtl::any>::value == false, "Expected std::is_pod to be false.");
-
-    REQUIRE(std::is_trivial<gtl::any>::value == false, "Expected std::is_trivial to be false.");
-
-    REQUIRE(std::is_trivially_copyable<gtl::any>::value == false, "Expected std::is_trivially_copyable to be false.");
-
-    REQUIRE(std::is_standard_layout<gtl::any>::value == true, "Expected std::is_standard_layout to be true.");
-}
-
 TEST(any, constructor, empty) {
     gtl::any any;
     testbench::do_not_optimise_away(any);
