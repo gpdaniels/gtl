@@ -82,7 +82,8 @@ TEST(golden_section, function, search_2d) {
         &data_rhs[start_rhs_y][start_rhs_x],
         data_width,
         offset_rhs_x,
-        offset_rhs_y);
+        offset_rhs_y
+    );
 
     // The rhs should shift by +0.5 in both x and y.
     // As patch at rhs[2.5][2.5] is equal to the lhs[1][1]
@@ -96,7 +97,8 @@ TEST(golden_section, function, search_2d) {
         &data_rhs[start_rhs_y][start_rhs_x],
         data_width,
         offset_rhs_x,
-        offset_rhs_y);
+        offset_rhs_y
+    );
 
     // The rhs should shift by +0.5 in both x and y.
     // As patch at rhs[2.5][2.5] is equal to the lhs[1][1]
@@ -110,7 +112,8 @@ TEST(golden_section, function, search_2d) {
         &data_rhs[start_rhs_y][start_rhs_x],
         data_width,
         offset_rhs_x,
-        offset_rhs_y);
+        offset_rhs_y
+    );
 
     // The rhs should shift by +0.5 in both x and y.
     // As patch at rhs[2.5][2.5] is equal to the lhs[1][1]

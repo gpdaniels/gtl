@@ -32,7 +32,8 @@ namespace gtl {
     template <
         typename template_sampler_type,
         typename template_estimator_type,
-        typename template_evaluator_type>
+        typename template_evaluator_type
+    >
     class consensus final {
     private:
         static_assert(template_sampler_type::sample_size == template_estimator_type::required_sample_size, "Sampler sample size must match estimator sample size.");
@@ -75,7 +76,8 @@ namespace gtl {
             const float inlier_ratio,
             const float probability_failure,
             const size_t iterations_minimum,
-            const size_t iterations_maximum)
+            const size_t iterations_maximum
+        )
             : consensus_sampler(sampler)
             , consensus_estimator(estimator)
             , consensus_evaluator(evaluator)
@@ -109,7 +111,8 @@ namespace gtl {
             const float inlier_ratio,
             const float probability_failure,
             const size_t iterations_minimum,
-            const size_t iterations_maximum) {
+            const size_t iterations_maximum
+        ) {
             if (inlier_ratio <= 0) {
                 return iterations_maximum;
             }
@@ -157,7 +160,8 @@ namespace gtl {
             float* const __restrict residuals,
             size_t* const __restrict inliers,
             size_t& inliers_size,
-            model_type& best_model) {
+            model_type& best_model
+        ) {
             best_model = {};
             bool solution_found = false;
             float best_cost = 0;
@@ -183,7 +187,8 @@ namespace gtl {
                             static_cast<float>(inliers_size) / static_cast<float>(data_size),
                             this->criteria_probability_failure,
                             this->criteria_iterations_minimum,
-                            this->criteria_iterations_maximum);
+                            this->criteria_iterations_maximum
+                        );
                     }
                 }
             }

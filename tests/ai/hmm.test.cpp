@@ -163,13 +163,9 @@ TEST(hmm, evaluate, multiple_models) {
     gtl::hmm<float> hmm_zeros = gtl::hmm<float>(2, 1);
     gtl::hmm<float> hmm_ones = gtl::hmm<float>(2, 1);
 
-    hmm_zeros.train({ { 0 },
-                      { 0, 0 },
-                      { 0, 0, 0 } });
+    hmm_zeros.train({ { 0 }, { 0, 0 }, { 0, 0, 0 } });
 
-    hmm_ones.train({ { 1 },
-                     { 1, 1 },
-                     { 1, 1, 1 } });
+    hmm_ones.train({ { 1 }, { 1, 1 }, { 1, 1, 1 } });
 
     std::vector<unsigned long long int> test_zeros = { 0, 0, 0, 0 };
     REQUIRE(hmm_zeros.process(test_zeros) > hmm_ones.process(test_zeros));

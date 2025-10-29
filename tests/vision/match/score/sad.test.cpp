@@ -124,7 +124,8 @@ void test(const unsigned char lhs[data_height][data_width], const unsigned char 
         value1,
         value2,
         static_cast<double>(gtl::sad<value1, value2>(&lhs[0][0], data_width, &rhs[0][0], data_width)),
-        static_cast<double>(results[value2 - 1][value1 - 1]));
+        static_cast<double>(results[value2 - 1][value1 - 1])
+    );
 }
 
 void test_set(const unsigned char lhs[data_height][data_width], const unsigned char rhs[data_height][data_width], const float results[data_height][data_width]);
@@ -147,9 +148,11 @@ void test_set(const unsigned char lhs[data_height][data_width], const unsigned c
                     using type_value2 = decltype(value_2);
                     constexpr static const unsigned long long value2 = type_value2::value;
                     test<value1, value2>(lhs, rhs, results);
-                });
+                }
+            );
 #endif
-        });
+        }
+    );
 }
 
 TEST(sad, function, empty_and_full) {

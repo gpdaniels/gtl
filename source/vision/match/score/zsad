@@ -25,12 +25,14 @@ namespace gtl {
         int patch_width = 8,
         int patch_height = 8,
         typename type_lhs = unsigned char,
-        typename type_rhs = unsigned char>
+        typename type_rhs = unsigned char
+    >
     float zsad(
         const type_lhs* __restrict data_lhs,
         const int stride_lhs,
         const type_rhs* __restrict data_rhs,
-        const int stride_rhs) {
+        const int stride_rhs
+    ) {
         constexpr static const auto abs = [](float value) -> float {
             if ((value + 0.0f) < 0) {
                 return -value;

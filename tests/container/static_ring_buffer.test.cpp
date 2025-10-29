@@ -56,7 +56,8 @@ TEST(static_ring_buffer, traits, standard) {
 #endif
 
             REQUIRE((std::is_standard_layout<gtl::static_ring_buffer<type, value>>::value == true), "Expected std::is_standard_layout to be true.");
-        });
+        }
+    );
 }
 
 TEST(static_ring_buffer, constructor, empty) {
@@ -67,7 +68,8 @@ TEST(static_ring_buffer, constructor, empty) {
             constexpr static const unsigned long long value = type_value::value;
             gtl::static_ring_buffer<type, value> static_ring_buffer;
             testbench::do_not_optimise_away(static_ring_buffer);
-        });
+        }
+    );
 }
 
 TEST(static_ring_buffer, function, empty_push_pop) {
@@ -95,7 +97,8 @@ TEST(static_ring_buffer, function, empty_push_pop) {
                 REQUIRE(static_ring_buffer_nd2.try_pop(output_value));
                 REQUIRE(static_ring_buffer_nd2.empty());
             }
-        });
+        }
+    );
 }
 
 TEST(static_ring_buffer, function, full_push_pop) {
@@ -123,7 +126,8 @@ TEST(static_ring_buffer, function, full_push_pop) {
                 REQUIRE(static_ring_buffer_nd2.try_pop(output_value));
                 REQUIRE(!static_ring_buffer_nd2.full());
             }
-        });
+        }
+    );
 }
 
 TEST(static_ring_buffer, function, size_push_pop) {
@@ -151,7 +155,8 @@ TEST(static_ring_buffer, function, size_push_pop) {
                 REQUIRE(static_ring_buffer_nd2.try_pop(output_value));
                 REQUIRE(static_ring_buffer_nd2.size() == 0);
             }
-        });
+        }
+    );
 }
 
 TEST(static_ring_buffer, evaluation, threads_x2) {

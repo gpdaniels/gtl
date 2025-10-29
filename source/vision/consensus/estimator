@@ -29,7 +29,8 @@ namespace gtl {
         typename template_data_type,
         size_t template_required_sample_size,
         typename template_model_type,
-        size_t template_potential_models_size>
+        size_t template_potential_models_size
+    >
     class estimator {
     public:
         using data_type = template_data_type;
@@ -49,13 +50,15 @@ namespace gtl {
         virtual size_t generate_models(
             const data_type* const __restrict data,
             size_t data_size,
-            model_type* const __restrict models) = 0;
+            model_type* const __restrict models
+        ) = 0;
 
         virtual void compute_residuals(
             const data_type* const __restrict data,
             size_t data_size,
             const model_type& model,
-            float* const __restrict residuals) = 0;
+            float* const __restrict residuals
+        ) = 0;
     };
 }
 

@@ -241,7 +241,8 @@ GTL_ACCESS_GENERATE(
     GTL_ACCESS_FUNC,
     static,
     int(const volatile int),
-    function_svci);
+    function_svci
+);
 
 TEST(access, traits, standard) {
     REQUIRE(std::is_pod<test_class>::value == false);

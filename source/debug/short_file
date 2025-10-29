@@ -181,19 +181,21 @@ namespace gtl {
     []() {                                               \
         auto string_as_lambda =                          \
             [](unsigned long long int index) constexpr { \
-            return __FILE__[index];                      \
-        };                                               \
+                return __FILE__[index];                  \
+            };                                           \
         using string_exploded =                          \
             decltype(gtl::short_file::string_explode(    \
-                string_as_lambda));                      \
+                string_as_lambda                         \
+            ));                                          \
         using string_trimmed =                           \
             decltype(gtl::short_file::string_basename(   \
-                string_exploded{}));                     \
+                string_exploded{}                        \
+            ));                                          \
         return string_trimmed::data;                     \
     }()
 
         // With C++20 this macro can be shortened as lambdas can be used in non-evaulated contexts.
-        //#define GTL_SHORT_FILE
+        // #define GTL_SHORT_FILE
         //    decltype(gtl::short_file::string_basename(
         //        gtl::short_file::string_explode(
         //            [](unsigned long long int index) constexpr {

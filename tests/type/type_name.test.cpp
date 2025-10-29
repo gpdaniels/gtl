@@ -39,25 +39,29 @@ TEST(type_name, traits, standard) {
         [](auto test_type) -> void {
             using type = typename decltype(test_type)::type;
             REQUIRE(std::is_pod<gtl::type_name<type>>::value == true, "Expected std::is_pod to be true.");
-        });
+        }
+    );
 
     testbench::test_template<testbench::test_types>(
         [](auto test_type) -> void {
             using type = typename decltype(test_type)::type;
             REQUIRE(std::is_trivial<gtl::type_name<type>>::value == true, "Expected std::is_trivial to be true.");
-        });
+        }
+    );
 
     testbench::test_template<testbench::test_types>(
         [](auto test_type) -> void {
             using type = typename decltype(test_type)::type;
             REQUIRE(std::is_trivially_copyable<gtl::type_name<type>>::value == true, "Expected std::is_trivially_copyable to be true.");
-        });
+        }
+    );
 
     testbench::test_template<testbench::test_types>(
         [](auto test_type) -> void {
             using type = typename decltype(test_type)::type;
             REQUIRE(std::is_standard_layout<gtl::type_name<type>>::value == true, "Expected std::is_standard_layout to be true.");
-        });
+        }
+    );
 }
 
 TEST(type_name, constructor, empty) {
@@ -66,7 +70,8 @@ TEST(type_name, constructor, empty) {
             using type = typename decltype(test_type)::type;
             gtl::type_name<type> type_name;
             testbench::do_not_optimise_away(type_name);
-        });
+        }
+    );
 }
 
 TEST(type_name, function, name) {
@@ -75,5 +80,6 @@ TEST(type_name, function, name) {
             using type = typename decltype(test_type)::type;
             gtl::type_name<type> type_name;
             REQUIRE(testbench::is_string_same(type_name.name(), testbench::test_data<type>::name) == true, "gtl::type_name<type>::name() = '%s', expected '%s'", type_name.name(), testbench::test_data<type>::name);
-        });
+        }
+    );
 }

@@ -48,8 +48,10 @@ TEST(static_variant, traits, standard) {
                     REQUIRE((std::is_trivial<gtl::static_variant<type1, type2>>::value == false), "Expected std::is_trivial to be false.");
                     REQUIRE((std::is_trivially_copyable<gtl::static_variant<type1, type2>>::value == false), "Expected std::is_trivially_copyable to be false.");
                     REQUIRE((std::is_standard_layout<gtl::static_variant<type1, type2>>::value == true), "Expected std::is_standard_layout to be true.");
-                });
-        });
+                }
+            );
+        }
+    );
 }
 
 TEST(static_variant, constructor, empty) {
@@ -63,8 +65,10 @@ TEST(static_variant, constructor, empty) {
                     using type2 = typename decltype(test_type_2)::type;
                     gtl::static_variant<type1, type2> variant2;
                     testbench::do_not_optimise_away(variant2);
-                });
-        });
+                }
+            );
+        }
+    );
 }
 
 TEST(static_variant, constructor, value) {

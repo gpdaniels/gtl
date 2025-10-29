@@ -102,7 +102,8 @@ namespace gtl {
             __cpuidex(
                 reinterpret_cast<int*>(&leaf_data[cpuid_registers::index::eax]),
                 leaf_id,
-                0u);
+                0u
+            );
 #elif defined(__GNUC__)
             __cpuid_count(
                 leaf_id,
@@ -110,7 +111,8 @@ namespace gtl {
                 leaf_data[cpuid_registers::index::eax],
                 leaf_data[cpuid_registers::index::ebx],
                 leaf_data[cpuid_registers::index::ecx],
-                leaf_data[cpuid_registers::index::edx]);
+                leaf_data[cpuid_registers::index::edx]
+            );
 #endif
 #else
             static_cast<void>(leaf_id);

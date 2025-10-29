@@ -268,7 +268,8 @@ namespace gtl {
                 if (
                     corners[+cubie[i][0][2]][+cubie[+face_type::up][up2[i] / 3][up2[i] % 3]][+cubie[(i + 1) % 4][0][0]] &&
                     corners[+cubie[+face_type::up][up2[i] / 3][up2[i] % 3]][+cubie[(i + 1) % 4][0][0]][+cubie[i][0][2]] &&
-                    corners[+cubie[(i + 1) % 4][0][0]][+cubie[i][0][2]][+cubie[+face_type::up][up2[i] / 3][up2[i] % 3]]) {
+                    corners[+cubie[(i + 1) % 4][0][0]][+cubie[i][0][2]][+cubie[+face_type::up][up2[i] / 3][up2[i] % 3]]
+                ) {
                     corners[+cubie[i][0][2]][+cubie[+face_type::up][up2[i] / 3][up2[i] % 3]][+cubie[(i + 1) % 4][0][0]] = 0;
                     corners[+cubie[+face_type::up][up2[i] / 3][up2[i] % 3]][+cubie[(i + 1) % 4][0][0]][+cubie[i][0][2]] = 0;
                     corners[+cubie[(i + 1) % 4][0][0]][+cubie[i][0][2]][+cubie[+face_type::up][up2[i] / 3][up2[i] % 3]] = 0;
@@ -284,7 +285,8 @@ namespace gtl {
                 if (
                     corners[+cubie[i][2][2]][+cubie[(i + 1) % 4][2][0]][+cubie[+face_type::down][down2[i] / 3][down2[i] % 3]] &&
                     corners[+cubie[(i + 1) % 4][2][0]][+cubie[+face_type::down][down2[i] / 3][down2[i] % 3]][+cubie[i][2][2]] &&
-                    corners[+cubie[+face_type::down][down2[i] / 3][down2[i] % 3]][+cubie[i][2][2]][+cubie[(i + 1) % 4][2][0]]) {
+                    corners[+cubie[+face_type::down][down2[i] / 3][down2[i] % 3]][+cubie[i][2][2]][+cubie[(i + 1) % 4][2][0]]
+                ) {
                     corners[+cubie[i][2][2]][+cubie[(i + 1) % 4][2][0]][+cubie[+face_type::down][down2[i] / 3][down2[i] % 3]] = 0;
                     corners[+cubie[(i + 1) % 4][2][0]][+cubie[+face_type::down][down2[i] / 3][down2[i] % 3]][+cubie[i][2][2]] = 0;
                     corners[+cubie[+face_type::down][down2[i] / 3][down2[i] % 3]][+cubie[i][2][2]][+cubie[(i + 1) % 4][2][0]] = 0;
@@ -702,7 +704,8 @@ namespace gtl {
                 if (
                     (this->cubie[+face_type::down][0][0] == this->cubie[+face_type::down][1][1]) &&
                     (this->cubie[+face_type::left][2][2] == this->cubie[+face_type::left][1][1]) &&
-                    (this->cubie[+face_type::front][2][0] == this->cubie[+face_type::front][1][1])) {
+                    (this->cubie[+face_type::front][2][0] == this->cubie[+face_type::front][1][1])
+                ) {
                     continue;
                 }
 
@@ -711,21 +714,24 @@ namespace gtl {
                     if (
                         (this->cubie[+face_type::up][2][0] == this->cubie[+face_type::down][1][1]) &&
                         (this->cubie[+face_type::left][0][2] == this->cubie[+face_type::front][1][1]) &&
-                        (this->cubie[+face_type::front][0][0] == this->cubie[+face_type::left][1][1])) {
+                        (this->cubie[+face_type::front][0][0] == this->cubie[+face_type::left][1][1])
+                    ) {
                         this->apply_moves("LLLULFUUFFF", solution);
                         break;
                     }
                     else if (
                         (this->cubie[+face_type::left][0][2] == this->cubie[+face_type::down][1][1]) &&
                         (this->cubie[+face_type::up][2][0] == this->cubie[+face_type::left][1][1]) &&
-                        (this->cubie[+face_type::front][0][0] == this->cubie[+face_type::front][1][1])) {
+                        (this->cubie[+face_type::front][0][0] == this->cubie[+face_type::front][1][1])
+                    ) {
                         this->apply_moves("LLLUUUL", solution);
                         break;
                     }
                     else if (
                         (this->cubie[+face_type::front][0][0] == this->cubie[+face_type::down][1][1]) &&
                         (this->cubie[+face_type::up][2][0] == this->cubie[+face_type::front][1][1]) &&
-                        (this->cubie[+face_type::left][0][2] == this->cubie[+face_type::left][1][1])) {
+                        (this->cubie[+face_type::left][0][2] == this->cubie[+face_type::left][1][1])
+                    ) {
                         this->apply_moves("FUFFF", solution);
                         break;
                     }
@@ -736,7 +742,8 @@ namespace gtl {
                 if (
                     (this->cubie[+face_type::down][0][0] == this->cubie[+face_type::down][1][1]) &&
                     (this->cubie[+face_type::left][2][2] == this->cubie[+face_type::left][1][1]) &&
-                    (this->cubie[+face_type::front][2][0] == this->cubie[+face_type::front][1][1])) {
+                    (this->cubie[+face_type::front][2][0] == this->cubie[+face_type::front][1][1])
+                ) {
                     continue;
                 }
 
@@ -744,14 +751,16 @@ namespace gtl {
                 if (
                     (this->cubie[+face_type::left][2][2] == this->cubie[+face_type::down][1][1]) &&
                     (this->cubie[+face_type::down][0][0] == this->cubie[+face_type::front][1][1]) &&
-                    (this->cubie[+face_type::front][2][0] == this->cubie[+face_type::left][1][1])) {
+                    (this->cubie[+face_type::front][2][0] == this->cubie[+face_type::left][1][1])
+                ) {
                     this->apply_moves("LLLULFUFFFLLLULFUFFF", solution);
                     continue;
                 }
                 else if (
                     (this->cubie[+face_type::front][2][0] == this->cubie[+face_type::down][1][1]) &&
                     (this->cubie[+face_type::left][2][2] == this->cubie[+face_type::front][1][1]) &&
-                    (this->cubie[+face_type::down][0][0] == this->cubie[+face_type::left][1][1])) {
+                    (this->cubie[+face_type::down][0][0] == this->cubie[+face_type::left][1][1])
+                ) {
                     this->apply_moves("LLLULFUFFF", solution);
                 }
                 else {
@@ -784,7 +793,8 @@ namespace gtl {
                     (this->cubie[+face_type::front][1][0] == this->cubie[+face_type::front][1][1]) &&
                     (this->cubie[+face_type::left][1][2] == this->cubie[+face_type::left][1][1]) &&
                     (this->cubie[+face_type::front][1][2] == this->cubie[+face_type::front][1][1]) &&
-                    (this->cubie[+face_type::right][1][0] == this->cubie[+face_type::right][1][1])) {
+                    (this->cubie[+face_type::right][1][0] == this->cubie[+face_type::right][1][1])
+                ) {
                     continue;
                 }
 
@@ -808,14 +818,16 @@ namespace gtl {
                     (this->cubie[+face_type::front][1][0] == this->cubie[+face_type::front][1][1]) &&
                     (this->cubie[+face_type::left][1][2] == this->cubie[+face_type::left][1][1]) &&
                     (this->cubie[+face_type::front][1][2] == this->cubie[+face_type::front][1][1]) &&
-                    (this->cubie[+face_type::right][1][0] == this->cubie[+face_type::right][1][1])) {
+                    (this->cubie[+face_type::right][1][0] == this->cubie[+face_type::right][1][1])
+                ) {
                     continue;
                 }
 
                 // Otherwise just apply the left or right algorithm.
                 if (
                     (this->cubie[+face_type::front][1][0] == this->cubie[+face_type::front][1][1]) &&
-                    (this->cubie[+face_type::left][1][2] == this->cubie[+face_type::left][1][1])) {
+                    (this->cubie[+face_type::left][1][2] == this->cubie[+face_type::left][1][1])
+                ) {
                     this->apply_moves("URUUURRRUUUFFFUF", solution);
                 }
                 else {
@@ -847,7 +859,8 @@ namespace gtl {
                 (this->cubie[+face_type::up][0][1] != this->cubie[+face_type::up][1][1]) &&
                 (this->cubie[+face_type::up][1][0] != this->cubie[+face_type::up][1][1]) &&
                 (this->cubie[+face_type::up][1][2] != this->cubie[+face_type::up][1][1]) &&
-                (this->cubie[+face_type::up][2][1] != this->cubie[+face_type::up][1][1])) {
+                (this->cubie[+face_type::up][2][1] != this->cubie[+face_type::up][1][1])
+            ) {
                 // Found a "dot".
                 applications_required = 3;
             }
@@ -860,7 +873,8 @@ namespace gtl {
                         (this->cubie[+face_type::up][0][1] == this->cubie[+face_type::up][1][1]) &&
                         (this->cubie[+face_type::up][1][0] == this->cubie[+face_type::up][1][1]) &&
                         (this->cubie[+face_type::up][1][2] != this->cubie[+face_type::up][1][1]) &&
-                        (this->cubie[+face_type::up][2][1] != this->cubie[+face_type::up][1][1])) {
+                        (this->cubie[+face_type::up][2][1] != this->cubie[+face_type::up][1][1])
+                    ) {
                         // Found an "L".
                         applications_required = 2;
                         break;
@@ -877,7 +891,8 @@ namespace gtl {
                         (this->cubie[+face_type::up][0][1] != this->cubie[+face_type::up][1][1]) &&
                         (this->cubie[+face_type::up][1][0] == this->cubie[+face_type::up][1][1]) &&
                         (this->cubie[+face_type::up][1][2] == this->cubie[+face_type::up][1][1]) &&
-                        (this->cubie[+face_type::up][2][1] != this->cubie[+face_type::up][1][1])) {
+                        (this->cubie[+face_type::up][2][1] != this->cubie[+face_type::up][1][1])
+                    ) {
                         // Found a "line".
                         applications_required = 1;
                         break;
@@ -941,13 +956,15 @@ namespace gtl {
                     (
                         (this->cubie[+face_type::front][0][2] == this->cubie[+face_type::front][1][1]) &&
                         (this->cubie[+face_type::right][0][0] == this->cubie[+face_type::right][1][1]) &&
-                        (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::up][1][1])) ||
+                        (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::up][1][1])
+                    ) ||
                     ((this->cubie[+face_type::front][0][2] == this->cubie[+face_type::up][1][1]) &&
                      (this->cubie[+face_type::right][0][0] == this->cubie[+face_type::front][1][1]) &&
                      (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::right][1][1])) ||
                     ((this->cubie[+face_type::front][0][2] == this->cubie[+face_type::right][1][1]) &&
                      (this->cubie[+face_type::right][0][0] == this->cubie[+face_type::up][1][1]) &&
-                     (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::front][1][1]))) {
+                     (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::front][1][1]))
+                ) {
                     none_correct = false;
                     break;
                 }
@@ -964,13 +981,15 @@ namespace gtl {
                         (
                             (this->cubie[+face_type::front][0][2] == this->cubie[+face_type::front][1][1]) &&
                             (this->cubie[+face_type::right][0][0] == this->cubie[+face_type::right][1][1]) &&
-                            (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::up][1][1])) ||
+                            (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::up][1][1])
+                        ) ||
                         ((this->cubie[+face_type::front][0][2] == this->cubie[+face_type::up][1][1]) &&
                          (this->cubie[+face_type::right][0][0] == this->cubie[+face_type::front][1][1]) &&
                          (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::right][1][1])) ||
                         ((this->cubie[+face_type::front][0][2] == this->cubie[+face_type::right][1][1]) &&
                          (this->cubie[+face_type::right][0][0] == this->cubie[+face_type::up][1][1]) &&
-                         (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::front][1][1]))) {
+                         (this->cubie[+face_type::up][2][2] == this->cubie[+face_type::front][1][1]))
+                    ) {
                         break;
                     }
                     this->apply_moves("Y", solution);

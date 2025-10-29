@@ -26,13 +26,15 @@ namespace gtl {
         const int stride,
         const float offset_x,
         const float offset_y,
-        float* __restrict patch);
+        float* __restrict patch
+    );
 
     using score_function_type = float (*)(
         const unsigned char* __restrict data_lhs,
         const int stride_lhs,
         const float* __restrict data_rhs,
-        const int stride_rhs);
+        const int stride_rhs
+    );
 
     template <
         int patch_width = 8,
@@ -40,14 +42,16 @@ namespace gtl {
         sub_pixel_function_type sub_pixel_function,
         score_function_type score_function,
         int iterations_x = 10,
-        int iterations_y = 10>
+        int iterations_y = 10
+    >
     float exhaustive_2d(
         const unsigned char* __restrict data_lhs,
         const int stride_lhs,
         const unsigned char* __restrict data_rhs,
         const int stride_rhs,
         float& offset_rhs_x,
-        float& offset_rhs_y) {
+        float& offset_rhs_y
+    ) {
         float best_score = 1e35f;
         offset_rhs_x = 0.0f;
         offset_rhs_y = 0.0f;

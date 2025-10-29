@@ -88,7 +88,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     (GTL_PLATFORM_RUNTIME_MSVC_ST_DLL) || \
     (GTL_PLATFORM_RUNTIME_MSVC_ST) ||     \
     (GTL_PLATFORM_RUNTIME_GLIBC) ||       \
-    (GTL_PLATFORM_RUNTIME_INTEL))
+    (GTL_PLATFORM_RUNTIME_INTEL)          \
+)
 #undef GTL_PLATFORM_RUNTIME_UNKNOWN
 #define GTL_PLATFORM_RUNTIME_UNKNOWN 0
 #endif
@@ -108,7 +109,7 @@ namespace gtl {
     };
 
     /// @brief Compile time variable holding the detected runtime.
-    constexpr static const runtime_types runtime = []() constexpr->runtime_types {
+    constexpr static const runtime_types runtime = []() constexpr -> runtime_types {
 #if (GTL_PLATFORM_RUNTIME_LIBSTDCPP)
         return runtime_types::libstdcpp;
 #elif (GTL_PLATFORM_RUNTIME_LIBCPP)
@@ -130,8 +131,7 @@ namespace gtl {
 #else
 #error "Issue detecting platform runtime."
 #endif
-    }
-    ();
+    }();
 }
 
 #endif // GTL_PLATFORM_RUNTIME_HPP

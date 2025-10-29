@@ -69,10 +69,14 @@ TEST(array_nd, traits, standard) {
                                     REQUIRE((std::is_trivial<gtl::array_nd<type, value1, value2, value3>>::value == false), "Expected std::is_trivial to be false.");
                                     REQUIRE((std::is_trivially_copyable<gtl::array_nd<type, value1, value2, value3>>::value == ((value1 != 0) && (value2 != 0) && (value3 != 0))), "Expected std::is_trivially_copyable to be %d.", ((value1 == 0) && (value2 == 0) && (value3 == 0)));
                                     REQUIRE((std::is_standard_layout<gtl::array_nd<type, value1, value2, value3>>::value == true), "Expected std::is_standard_layout to be true.");
-                                });
-                        });
-                });
-        });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(array_nd, constructor, static) {
@@ -102,10 +106,14 @@ TEST(array_nd, constructor, static) {
                                     constexpr static const unsigned long long value3 = type_value3::value;
                                     gtl::array_nd<type, value1, value2, value3> array_nd_3d;
                                     testbench::do_not_optimise_away(array_nd_3d);
-                                });
-                        });
-                });
-        });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(array_nd, constructor, dynamic) {
@@ -135,10 +143,14 @@ TEST(array_nd, constructor, dynamic) {
                                     constexpr static const unsigned long long value3 = type_value3::value;
                                     gtl::array_nd<type, 0, 0, 0> array_nd_3d(value1, value2, value3);
                                     testbench::do_not_optimise_away(array_nd_3d);
-                                });
-                        });
-                });
-        });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(array_nd, function, dimensions) {
@@ -168,10 +180,14 @@ TEST(array_nd, function, dimensions) {
                                     constexpr static const unsigned long long value3 = type_value3::value;
                                     gtl::array_nd<type, value1, value2, value3> array_nd_3d;
                                     REQUIRE(array_nd_3d.dimensions() == 3, "array_nd_3d.dimensions() = %lld, expected %lld", array_nd_3d.dimensions(), 3ull);
-                                });
-                        });
-                });
-        });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(array_nd, function, size) {
@@ -207,10 +223,14 @@ TEST(array_nd, function, size) {
                                     REQUIRE(array_nd_3d.size(0) == value1);
                                     REQUIRE(array_nd_3d.size(1) == value2);
                                     REQUIRE(array_nd_3d.size(2) == value3);
-                                });
-                        });
-                });
-        });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(array_nd, operator, parenthesis) {
@@ -257,7 +277,10 @@ TEST(array_nd, operator, parenthesis) {
                                     }
                                 }
                             }
-                        });
-                });
-        });
+                        }
+                    );
+                }
+            );
+        }
+    );
 }

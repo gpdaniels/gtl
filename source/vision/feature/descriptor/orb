@@ -37,13 +37,15 @@ namespace gtl {
         const unsigned char* __restrict const data,
         const int stride,
         const float angle_degrees,
-        gtl::binary_descriptor<32>& descriptor);
+        gtl::binary_descriptor<32>& descriptor
+    );
 
     void orb(
         const unsigned char* __restrict const data,
         const int stride,
         const float angle_degrees,
-        gtl::binary_descriptor<32>& descriptor) {
+        gtl::binary_descriptor<32>& descriptor
+    ) {
         constexpr static const int pattern_size = 256;
         constexpr static const auto round = [](float value) -> int {
             return (value > 0.0f) ? static_cast<int>(value + 0.5f) : static_cast<int>(value - 0.5f);
@@ -347,7 +349,8 @@ namespace gtl {
                 ((pixels_lhs[4] < pixels_rhs[4]) << 4) |
                 ((pixels_lhs[5] < pixels_rhs[5]) << 5) |
                 ((pixels_lhs[6] < pixels_rhs[6]) << 6) |
-                ((pixels_lhs[7] < pixels_rhs[7]) << 7));
+                ((pixels_lhs[7] < pixels_rhs[7]) << 7)
+            );
         }
     }
 }

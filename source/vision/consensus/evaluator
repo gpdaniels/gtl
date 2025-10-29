@@ -39,7 +39,8 @@ namespace gtl {
             const float* const __restrict residuals,
             const size_t residuals_size,
             size_t* const __restrict inliers,
-            size_t& inliers_size) = 0;
+            size_t& inliers_size
+        ) = 0;
     };
 }
 

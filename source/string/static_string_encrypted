@@ -108,7 +108,7 @@ namespace gtl {
         /// @param  rounds Number of rounds of generation to perform before returning a value.
         /// @return A generated random number.
         constexpr unsigned long long int random_pcg(unsigned long long int seed, unsigned long long int rounds) {
-            constexpr auto generate = [](unsigned long long int& state, unsigned long long int& increment) constexpr->unsigned long long int {
+            constexpr auto generate = [](unsigned long long int& state, unsigned long long int& increment) constexpr -> unsigned long long int {
                 // Save current state.
                 unsigned long long int state_previous = state;
                 // Advance internal state.
@@ -289,19 +289,21 @@ namespace gtl {
     []() {                                                                   \
         auto string_as_lambda =                                              \
             [](unsigned long long int index) constexpr {                     \
-            return string[index];                                            \
-        };                                                                   \
+                return string[index];                                        \
+            };                                                               \
         using string_exploded =                                              \
             decltype(gtl::static_string_encrypted::string_explode(           \
-                string_as_lambda));                                          \
+                string_as_lambda                                             \
+            ));                                                              \
         using string_encoded =                                               \
             decltype(gtl::static_string_encrypted::string_encode(            \
-                string_exploded{}));                                         \
+                string_exploded{}                                            \
+            ));                                                              \
         return gtl::static_string_encrypted::string_vault<string_encoded>{}; \
     }()
 
         // With C++20 this macro can be shortened as lambdas can be used in non-evaulated contexts.
-        //#define GTL_STATIC_STRING_ENCRYPTED(string)
+        // #define GTL_STATIC_STRING_ENCRYPTED(string)
         //    gtl::static_string_encrypted::string_vault<
         //        decltype(
         //            gtl::static_string_encrypted::string_encode(

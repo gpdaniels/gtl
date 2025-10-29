@@ -128,7 +128,8 @@ TEST(parser, element, sequence) {
         parser::terminal_any(),
         parser::empty(),
         parser::terminal_any('0'),
-        parser::terminal_any('1', '2'));
+        parser::terminal_any('1', '2')
+    );
 
     parser::parse_forest_type forest;
     for (char character : test_input) {
@@ -150,7 +151,8 @@ TEST(parser, element, disjunction) {
         parser::terminal_any('A') + parser::terminal_any('b') + parser::terminal_any('0') + parser::terminal_any('2'),
         parser::terminal_any('b') + parser::terminal_any('A') + parser::terminal_any('0') + parser::terminal_any('2'),
         parser::terminal_any('A') + parser::terminal_any('b') + parser::terminal_any('0') + parser::terminal_any('1'),
-        parser::barrier_any('A') + parser::barrier_any('b') + parser::barrier_any('0') + parser::barrier_any('2'));
+        parser::barrier_any('A') + parser::barrier_any('b') + parser::barrier_any('0') + parser::barrier_any('2')
+    );
 
     parser::parse_forest_type forest;
     for (char character : test_input) {

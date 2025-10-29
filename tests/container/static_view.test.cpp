@@ -69,10 +69,14 @@ TEST(static_view, traits, standard) {
                                     REQUIRE((std::is_trivial<gtl::static_view<type, value1, value2, value3>>::value == false), "Expected std::is_trivial to be false.");
                                     REQUIRE((std::is_trivially_copyable<gtl::static_view<type, value1, value2, value3>>::value == true), "Expected std::is_trivially_copyable to be true.");
                                     REQUIRE((std::is_standard_layout<gtl::static_view<type, value1, value2, value3>>::value == true), "Expected std::is_standard_layout to be true.");
-                                });
-                        });
-                });
-        });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(static_view, constructor, empty) {
@@ -102,10 +106,14 @@ TEST(static_view, constructor, empty) {
                                     constexpr static const unsigned long long value3 = type_value3::value;
                                     gtl::static_view<type, value1, value2, value3> static_view_3d(nullptr);
                                     testbench::do_not_optimise_away(static_view_3d);
-                                });
-                        });
-                });
-        });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(static_view, function, dimensions) {
@@ -135,10 +143,14 @@ TEST(static_view, function, dimensions) {
                                     constexpr static const unsigned long long value3 = type_value3::value;
                                     gtl::static_view<type, value1, value2, value3> static_view_3d(nullptr);
                                     REQUIRE(static_view_3d.dimensions() == 3, "static_view_3d.dimensions() = %d, expected %d", static_view_3d.dimensions(), 3);
-                                });
-                        });
-                });
-        });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(static_view, function, size) {
@@ -174,10 +186,14 @@ TEST(static_view, function, size) {
                                     REQUIRE(static_view_3d.size(0) == value1);
                                     REQUIRE(static_view_3d.size(1) == value2);
                                     REQUIRE(static_view_3d.size(2) == value3);
-                                });
-                        });
-                });
-        });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(static_view, operator, subscript) {
@@ -227,9 +243,12 @@ TEST(static_view, operator, subscript) {
                                     }
                                 }
                             }
-                        });
-                });
-        });
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(static_view, operator, parenthesis) {
@@ -279,7 +298,10 @@ TEST(static_view, operator, parenthesis) {
                                     }
                                 }
                             }
-                        });
-                });
-        });
+                        }
+                    );
+                }
+            );
+        }
+    );
 }

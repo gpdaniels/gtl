@@ -214,7 +214,8 @@ namespace testbench {
         float,
         double,
         long double,
-        decltype(nullptr)>;
+        decltype(nullptr)
+    >;
 }
 
 #endif // GTL_TEMPLATE_TESTS_HPP

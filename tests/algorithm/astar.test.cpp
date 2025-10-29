@@ -150,7 +150,8 @@ TEST(astar, evaluate, solve) {
             const int dy = (current.y - target.y);
             return std::sqrt(static_cast<float>((dx * dx) + (dy * dy)));
         },
-        path);
+        path
+    );
 
     maze.print(start, end, path);
 }
@@ -399,7 +400,8 @@ TEST(astar, evaluate, solve_big) {
             static_cast<void>(target);
             return static_cast<float>(maze.grid[current.y][current.x]);
         },
-        path);
+        path
+    );
 
     // maze.print(start, end, path);
 

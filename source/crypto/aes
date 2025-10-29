@@ -461,7 +461,8 @@ namespace gtl {
                         (aes::mode == aes_mode::ecb) ||
                         (aes::mode == aes_mode::ofb) ||
                         (aes::mode == aes_mode::ctr),
-                    "No valid mode selected for aes process.");
+                    "No valid mode selected for aes process."
+                );
             }
             return result;
         }
@@ -515,7 +516,8 @@ namespace gtl {
                         (aes::mode == aes_mode::ecb) ||
                         (aes::mode == aes_mode::ofb) ||
                         (aes::mode == aes_mode::ctr),
-                    "No valid mode selected for aes process.");
+                    "No valid mode selected for aes process."
+                );
             }
             return result;
         }

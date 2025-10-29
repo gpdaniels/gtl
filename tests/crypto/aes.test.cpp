@@ -50,7 +50,8 @@ using aes_modes = testbench::enum_collection<
     gtl::aes_mode::cbc,
     gtl::aes_mode::cfb,
     gtl::aes_mode::ofb,
-    gtl::aes_mode::ctr>;
+    gtl::aes_mode::ctr
+>;
 
 TEST(aes, traits, standard) {
     testbench::test_template<aes_types, aes_modes>(
@@ -65,7 +66,8 @@ TEST(aes, traits, standard) {
             REQUIRE((std::is_trivially_copyable<gtl::aes<value, mode>>::value == true));
 
             REQUIRE((std::is_standard_layout<gtl::aes<value, mode>>::value == true));
-        });
+        }
+    );
 }
 
 TEST(aes, constructor, empty) {
@@ -76,7 +78,8 @@ TEST(aes, constructor, empty) {
 
             gtl::aes<value, mode> aes;
             testbench::do_not_optimise_away(aes);
-        });
+        }
+    );
 }
 
 TEST(aes, evaluate, key_length_128) {
@@ -135,7 +138,8 @@ TEST(aes, encrypt_decrypt, one_block) {
             aes.decrypt(output, length, key, input);
 
             REQUIRE(testbench::is_memory_same(plain, input, length), "%s != %s\n", hex_2_string(plain, length).c_str(), hex_2_string(input, length).c_str());
-        });
+        }
+    );
 }
 
 TEST(aes, encrypt_decrypt, one_block_padded) {
@@ -155,7 +159,8 @@ TEST(aes, encrypt_decrypt, one_block_padded) {
             aes.decrypt(output, length, key, input);
 
             REQUIRE(testbench::is_memory_same(plain, input, length), "%s != %s\n", hex_2_string(plain, length).c_str(), hex_2_string(input, length).c_str());
-        });
+        }
+    );
 }
 
 TEST(aes, encrypt_decrypt, two_blocks) {
@@ -175,7 +180,8 @@ TEST(aes, encrypt_decrypt, two_blocks) {
             aes.decrypt(output, length, key, input);
 
             REQUIRE(testbench::is_memory_same(plain, input, length), "%s != %s\n", hex_2_string(plain, length).c_str(), hex_2_string(input, length).c_str());
-        });
+        }
+    );
 }
 
 TEST(aes, encrypt_decrypt, two_blocks_padded) {
@@ -195,7 +201,8 @@ TEST(aes, encrypt_decrypt, two_blocks_padded) {
             aes.decrypt(output, length, key, input);
 
             REQUIRE(testbench::is_memory_same(plain, input, length), "%s != %s\n", hex_2_string(plain, length).c_str(), hex_2_string(input, length).c_str());
-        });
+        }
+    );
 }
 
 TEST(aes, verify_encrypt, ecb) {

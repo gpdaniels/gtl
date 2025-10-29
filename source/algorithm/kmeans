@@ -64,7 +64,8 @@ namespace gtl {
             std::size_t cluster_count,
             int max_iterations,
             distance_type min_delta,
-            distance_function_type distance_function) {
+            distance_function_type distance_function
+        ) {
             GTL_KMEANS_ASSERT(cluster_count < data.size(), "KMeans requires more data points than the number of clusters.");
 
             // Vector to store the centroids of each cluster.

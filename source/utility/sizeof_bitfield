@@ -24,7 +24,7 @@ namespace gtl {
     namespace sizeof_bitset {
 #if defined(__clang__)
 #define GTL_SIZEOF_BITFIELD(structure, member)                                  \
-    []() constexpr->unsigned int {                                              \
+    []() constexpr -> unsigned int {                                            \
         structure empty{};                                                      \
         empty.member = static_cast<decltype(structure{}.member)>(0);            \
         _Pragma("clang diagnostic push");                                       \
@@ -35,66 +35,66 @@ namespace gtl {
         unsigned int size = 0;                                                  \
         while (empty.member != full.member) {                                   \
             empty.member = static_cast<decltype(structure{}.member)>(           \
-                (static_cast<unsigned long long int>(empty.member) << 1) | 1);  \
+                (static_cast<unsigned long long int>(empty.member) << 1) | 1    \
+            );                                                                  \
             ++size;                                                             \
         }                                                                       \
         return size;                                                            \
-    }                                                                           \
-    ()
+    }()
 #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
-#define GTL_SIZEOF_BITFIELD(structure, member)                                 \
-    []() constexpr->unsigned int {                                             \
-        structure empty{};                                                     \
-        empty.member = static_cast<decltype(structure{}.member)>(0);           \
-        _Pragma("GCC diagnostic push");                                        \
-        _Pragma("GCC diagnostic ignored \"-Woverflow\"");                      \
-        structure full{};                                                      \
-        full.member = static_cast<decltype(structure{}.member)>(~0);           \
-        _Pragma("GCC diagnostic pop");                                         \
-        unsigned int size = 0;                                                 \
-        while (empty.member != full.member) {                                  \
-            empty.member = static_cast<decltype(structure{}.member)>(          \
-                (static_cast<unsigned long long int>(empty.member) << 1) | 1); \
-            ++size;                                                            \
-        }                                                                      \
-        return size;                                                           \
-    }                                                                          \
-    ()
+#define GTL_SIZEOF_BITFIELD(structure, member)                               \
+    []() constexpr -> unsigned int {                                         \
+        structure empty{};                                                   \
+        empty.member = static_cast<decltype(structure{}.member)>(0);         \
+        _Pragma("GCC diagnostic push");                                      \
+        _Pragma("GCC diagnostic ignored \"-Woverflow\"");                    \
+        structure full{};                                                    \
+        full.member = static_cast<decltype(structure{}.member)>(~0);         \
+        _Pragma("GCC diagnostic pop");                                       \
+        unsigned int size = 0;                                               \
+        while (empty.member != full.member) {                                \
+            empty.member = static_cast<decltype(structure{}.member)>(        \
+                (static_cast<unsigned long long int>(empty.member) << 1) | 1 \
+            );                                                               \
+            ++size;                                                          \
+        }                                                                    \
+        return size;                                                         \
+    }()
 #elif defined(_MSC_VER)
-#define GTL_SIZEOF_BITFIELD(structure, member)                                 \
-    []() constexpr->unsigned int {                                             \
-        structure empty{};                                                     \
-        empty.member = static_cast<decltype(structure{}.member)>(0);           \
-        _Pragma("warning(push)");                                              \
-        _Pragma("warning(disable:4463)");                                      \
-        structure full{};                                                      \
-        full.member = static_cast<decltype(structure{}.member)>(~0);           \
-        _Pragma("warning(pop)");                                               \
-        unsigned int size = 0;                                                 \
-        while (empty.member != full.member) {                                  \
-            empty.member = static_cast<decltype(structure{}.member)>(          \
-                (static_cast<unsigned long long int>(empty.member) << 1) | 1); \
-            ++size;                                                            \
-        }                                                                      \
-        return size;                                                           \
-    }                                                                          \
-    ()
+#define GTL_SIZEOF_BITFIELD(structure, member)                               \
+    []() constexpr -> unsigned int {                                         \
+        structure empty{};                                                   \
+        empty.member = static_cast<decltype(structure{}.member)>(0);         \
+        _Pragma("warning(push)");                                            \
+        _Pragma("warning(disable:4463)");                                    \
+        structure full{};                                                    \
+        full.member = static_cast<decltype(structure{}.member)>(~0);         \
+        _Pragma("warning(pop)");                                             \
+        unsigned int size = 0;                                               \
+        while (empty.member != full.member) {                                \
+            empty.member = static_cast<decltype(structure{}.member)>(        \
+                (static_cast<unsigned long long int>(empty.member) << 1) | 1 \
+            );                                                               \
+            ++size;                                                          \
+        }                                                                    \
+        return size;                                                         \
+    }()
 #else
-#define GTL_SIZEOF_BITFIELD(structure, member)                                 \
-    []() constexpr->unsigned int {                                             \
-        structure empty{};                                                     \
-        empty.member = static_cast<decltype(structure{}.member)>(0);           \
-        structure full{};                                                      \
-        full.member = static_cast<decltype(structure{}.member)>(~0);           \
-        unsigned int size = 0;                                                 \
-        while (empty.member != full.member) {                                  \
-            empty.member = static_cast<decltype(structure{}.member)>(          \
-                (static_cast<unsigned long long int>(empty.member) << 1) | 1); \
-            ++size;                                                            \
-        }                                                                      \
-        return size;                                                           \
-    }                                                                          \
-    ()
+#define GTL_SIZEOF_BITFIELD(structure, member)                               \
+    []() constexpr -> unsigned int {                                         \
+        structure empty{};                                                   \
+        empty.member = static_cast<decltype(structure{}.member)>(0);         \
+        structure full{};                                                    \
+        full.member = static_cast<decltype(structure{}.member)>(~0);         \
+        unsigned int size = 0;                                               \
+        while (empty.member != full.member) {                                \
+            empty.member = static_cast<decltype(structure{}.member)>(        \
+                (static_cast<unsigned long long int>(empty.member) << 1) | 1 \
+            );                                                               \
+            ++size;                                                          \
+        }                                                                    \
+        return size;                                                         \
+    }()
 #endif
     }
 }

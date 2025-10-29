@@ -64,7 +64,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     (GTL_PLATFORM_COMPILER_GCC) ||         \
     (GTL_PLATFORM_COMPILER_MINGW) ||       \
     (GTL_PLATFORM_COMPILER_MSVC) ||        \
-    (GTL_PLATFORM_COMPILER_INTEL))
+    (GTL_PLATFORM_COMPILER_INTEL)          \
+)
 #undef GTL_PLATFORM_COMPILER_UNKNOWN
 #define GTL_PLATFORM_COMPILER_UNKNOWN 0
 #endif
@@ -82,7 +83,7 @@ namespace gtl {
     };
 
     /// @brief Compile time variable holding the detected compiler.
-    constexpr static const compiler_types compiler = []() constexpr->compiler_types {
+    constexpr static const compiler_types compiler = []() constexpr -> compiler_types {
 #if (GTL_PLATFORM_COMPILER_APPLE_CLANG)
         return compiler_types::apple_clang;
 #elif (GTL_PLATFORM_COMPILER_CLANG)
@@ -100,8 +101,7 @@ namespace gtl {
 #else
 #error "Issue detecting platform compiler."
 #endif
-    }
-    ();
+    }();
 }
 
 #endif // GTL_PLATFORM_COMPILER_HPP

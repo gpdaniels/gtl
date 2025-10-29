@@ -30,7 +30,8 @@ namespace gtl {
         const int stride,
         const int threshold,
         const int feature_point_buffer_size,
-        gtl::feature* __restrict feature_point_buffer);
+        gtl::feature* __restrict feature_point_buffer
+    );
 
     int fast_detector(
         const unsigned char* __restrict const data,
@@ -39,7 +40,8 @@ namespace gtl {
         const int stride,
         const int threshold,
         const int feature_point_buffer_size,
-        gtl::feature* __restrict feature_point_buffer) {
+        gtl::feature* __restrict feature_point_buffer
+    ) {
         constexpr static const int patch_size = 7;
         constexpr static const int patch_radius = patch_size / 2;
         constexpr static const int pattern_size = 16;

@@ -37,13 +37,15 @@ namespace gtl {
         const int* __restrict const data_integral,
         const int stride,
         const float angle_degrees,
-        gtl::binary_descriptor<32>& descriptor);
+        gtl::binary_descriptor<32>& descriptor
+    );
 
     void beblid(
         const int* __restrict const data_integral,
         const int stride,
         const float angle_degrees,
-        gtl::binary_descriptor<32>& descriptor) {
+        gtl::binary_descriptor<32>& descriptor
+    ) {
         constexpr static const int pattern_size = 256;
         constexpr static const auto round = [](float value) -> int {
             return static_cast<int>(value + 0.5f);
@@ -361,13 +363,15 @@ namespace gtl {
         const int* __restrict const data_integral,
         const int stride,
         const float angle_degrees,
-        gtl::binary_descriptor<64>& descriptor);
+        gtl::binary_descriptor<64>& descriptor
+    );
 
     void beblid(
         const int* __restrict const data_integral,
         const int stride,
         const float angle_degrees,
-        gtl::binary_descriptor<64>& descriptor) {
+        gtl::binary_descriptor<64>& descriptor
+    ) {
         constexpr static const int pattern_size = 512;
 
         // Struct to contain the parameters of an Average Box Weak-Learner, a collection of these make up the pattern.

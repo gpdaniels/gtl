@@ -136,7 +136,8 @@ TEST(dijkstra, evaluate, solve) {
         [&maze](const xy& current) -> std::vector<xy> {
             return maze.get_moves(current);
         },
-        path);
+        path
+    );
 
     maze.print(start, end, path);
 }

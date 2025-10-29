@@ -80,7 +80,8 @@ namespace gtl {
             const coordinate_type& end,
             const search_type& search,
             const heuristic_type& heuristic,
-            std::vector<coordinate_type>& path) {
+            std::vector<coordinate_type>& path
+        ) {
             // Clear outputs.
             path.clear();
 

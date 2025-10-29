@@ -529,7 +529,8 @@ namespace gtl {
                 phi = (keys.private_key.primes[0] - 1) * (keys.private_key.primes[1] - 1);
             } while (
                 (keys.private_key.primes[0] == keys.private_key.primes[1]) ||
-                (rsa::greatest_common_denominator(phi, exponent) != 1));
+                (rsa::greatest_common_denominator(phi, exponent) != 1)
+            );
             keys.private_key.private_exponent = rsa::modular_inverse(keys.public_key.public_exponent, phi);
             keys.private_key.exponents[0] = keys.private_key.private_exponent % (keys.private_key.primes[0] - 1);
             keys.private_key.exponents[1] = keys.private_key.private_exponent % (keys.private_key.primes[1] - 1);
@@ -550,7 +551,8 @@ namespace gtl {
             rsa::modular_exponentiation(
                 gtl::big_unsigned(data, length),
                 gtl::big_unsigned(exponent, length),
-                gtl::big_unsigned(modulus, length))
+                gtl::big_unsigned(modulus, length)
+            )
                 .to_bytes(output, length);
         }
 
@@ -564,7 +566,8 @@ namespace gtl {
             rsa::modular_exponentiation(
                 gtl::big_unsigned(data, length),
                 public_key.public_exponent,
-                public_key.public_modulus)
+                public_key.public_modulus
+            )
                 .to_bytes(output, length);
         }
 
@@ -577,7 +580,8 @@ namespace gtl {
             rsa::modular_exponentiation(
                 gtl::big_unsigned(data, length),
                 private_key.private_exponent,
-                private_key.public_modulus)
+                private_key.public_modulus
+            )
                 .to_bytes(output, length);
         }
     };

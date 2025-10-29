@@ -44,7 +44,8 @@ namespace gtl {
     public:
         static unsigned int solve(
             const std::array<unsigned int, code_length>& code,
-            const std::function<void(unsigned int turn, const std::array<unsigned int, code_length>& guess, unsigned int correct, unsigned int close)>& callback = {}) {
+            const std::function<void(unsigned int turn, const std::array<unsigned int, code_length>& guess, unsigned int correct, unsigned int close)>& callback = {}
+        ) {
             return solve([code](const std::array<unsigned int, code_length>& guess) -> std::pair<unsigned int, unsigned int> {
                 return mastermind::evaluate(guess, code);
             },
@@ -53,7 +54,8 @@ namespace gtl {
 
         static unsigned int solve(
             const std::function<std::pair<unsigned int, unsigned int>(const std::array<unsigned int, code_length>& guess)>& evaluate,
-            const std::function<void(unsigned int turn, const std::array<unsigned int, code_length>& guess, unsigned int correct, unsigned int close)>& callback = {}) {
+            const std::function<void(unsigned int turn, const std::array<unsigned int, code_length>& guess, unsigned int correct, unsigned int close)>& callback = {}
+        ) {
             // Generate all possible codes.
             std::vector<std::array<unsigned int, code_length>> unguessed_codes;
             unguessed_codes.push_back(std::array<unsigned int, code_length>());
@@ -105,8 +107,10 @@ namespace gtl {
                             }
                             auto [possible_correct, possible_close] = mastermind::evaluate(guess, possible_code);
                             return ((score_correct != possible_correct) || (score_close != possible_close));
-                        }),
-                    possible_codes.end());
+                        }
+                    ),
+                    possible_codes.end()
+                );
                 // If there is only one possible code left, select that.
                 if (possible_codes.size() == 1) {
                     guess = possible_codes.back();

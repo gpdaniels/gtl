@@ -40,20 +40,23 @@ using access_types = testbench::enum_collection<
     gtl::file::access_type,
     gtl::file::access_type::read_only,
     gtl::file::access_type::write_only,
-    gtl::file::access_type::read_and_write>;
+    gtl::file::access_type::read_and_write
+>;
 
 using creation_types = testbench::enum_collection<
     gtl::file::creation_type,
     gtl::file::creation_type::open_only,
     gtl::file::creation_type::create_only,
-    gtl::file::creation_type::create_or_open>;
+    gtl::file::creation_type::create_or_open
+>;
 
 using cursor_types = testbench::enum_collection<
     gtl::file::cursor_type,
     gtl::file::cursor_type::start_of_file,
     gtl::file::cursor_type::start_of_truncated,
     gtl::file::cursor_type::end_of_file,
-    gtl::file::cursor_type::end_of_truncated>;
+    gtl::file::cursor_type::end_of_truncated
+>;
 
 TEST(file, traits, standard) {
     REQUIRE((std::is_pod<gtl::file>::value == false));
@@ -83,7 +86,8 @@ TEST(file, constructor, parameterised) {
             constexpr static const gtl::file::creation_type creation = decltype(test_creation)::value;
             constexpr static const gtl::file::cursor_type cursor = decltype(test_cursor)::value;
             gtl::file file(temp_filename.c_str(), access, creation, cursor);
-        });
+        }
+    );
 
     IGNORED(std::remove(temp_filename.c_str()));
 }
@@ -159,7 +163,8 @@ TEST(file, function, open) {
             constexpr static const gtl::file::cursor_type cursor = decltype(test_cursor)::value;
             gtl::file file;
             file.open(temp_filename.c_str(), access, creation, cursor);
-        });
+        }
+    );
 
     {
         gtl::file file;

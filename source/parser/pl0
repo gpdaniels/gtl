@@ -145,7 +145,8 @@ namespace gtl {
                 'w',
                 'x',
                 'y',
-                'z');
+                'z'
+            );
 
             parser digit = parser::terminal_any(
                 '0',
@@ -157,7 +158,8 @@ namespace gtl {
                 '6',
                 '7',
                 '8',
-                '9');
+                '9'
+            );
 
             parser identifier =
                 parser::sequence(
@@ -166,7 +168,10 @@ namespace gtl {
                         parser::disjunction(
                             parser::empty(),
                             letter,
-                            digit))) >>
+                            digit
+                        )
+                    )
+                ) >>
                 [](const std::vector<char>& terminals) {
                     return token_data{
                         token_type::identifier,
@@ -178,13 +183,18 @@ namespace gtl {
                 parser::sequence(
                     parser::disjunction(
                         parser::empty(),
-                        parser::terminal_any('+', '-')),
+                        parser::terminal_any('+', '-')
+                    ),
                     parser::sequence(
                         digit,
                         parser::recurse(
                             parser::disjunction(
                                 parser::empty(),
-                                digit)))) >>
+                                digit
+                            )
+                        )
+                    )
+                ) >>
                 [](const std::vector<char>& terminals) {
                     return token_data{
                         token_type::number,
@@ -195,7 +205,8 @@ namespace gtl {
             parser plus_minus =
                 parser::terminal_any(
                     '+',
-                    '-') >>
+                    '-'
+                ) >>
                 [](const std::vector<char>& terminals) {
                     return token_data{
                         token_type::operation,
@@ -206,7 +217,8 @@ namespace gtl {
             parser multiply_divide =
                 parser::terminal_any(
                     '*',
-                    '/') >>
+                    '/'
+                ) >>
                 [](const std::vector<char>& terminals) {
                     return token_data{
                         token_type::operation,
@@ -220,11 +232,15 @@ namespace gtl {
                         '=',
                         '#',
                         '<',
-                        '>'),
+                        '>'
+                    ),
                     parser::terminal(
-                        "<="),
+                        "<="
+                    ),
                     parser::terminal(
-                        ">=")) >>
+                        ">="
+                    )
+                ) >>
                 [](const std::vector<char>& terminals) {
                     return token_data{
                         token_type::comparison,
@@ -241,7 +257,9 @@ namespace gtl {
                     parser::sequence(
                         parser::terminal_any('('),
                         parser::reference(expression),
-                        parser::terminal_any(')')));
+                        parser::terminal_any(')')
+                    )
+                );
 
             parser term =
                 parser::sequence(
@@ -251,7 +269,11 @@ namespace gtl {
                             parser::empty(),
                             parser::sequence(
                                 multiply_divide,
-                                factor))))
+                                factor
+                            )
+                        )
+                    )
+                )
                     ->*[](const std::vector<token_data>& tokens) {
                             return token_data{
                                 token_type::factor_operation,
@@ -264,8 +286,10 @@ namespace gtl {
                     parser::sequence(
                         parser::disjunction(
                             parser::empty(),
-                            plus_minus),
-                        term)
+                            plus_minus
+                        ),
+                        term
+                    )
                             ->*[](const std::vector<token_data>& tokens) {
                                     // No positive or negative sign.
                                     if (tokens.size() == 1) {
@@ -288,7 +312,8 @@ namespace gtl {
                                     std::fprintf(stderr, "ERROR 2\n");
                                     return token_data{};
                                 },
-                    parser::recurse(parser::disjunction(parser::empty(), parser::sequence(plus_minus, term))))
+                    parser::recurse(parser::disjunction(parser::empty(), parser::sequence(plus_minus, term)))
+                )
                     ->*[](const std::vector<token_data>& tokens) {
                             return token_data{
                                 token_type::term_operation,
@@ -300,8 +325,10 @@ namespace gtl {
                 parser::disjunction(
                     parser::sequence(
                         parser::terminal(
-                            "ODD"),
-                        expression)
+                            "ODD"
+                        ),
+                        expression
+                    )
                             ->*[](const std::vector<token_data>& tokens) {
                                     if (tokens.size() != 1)
                                         std::fprintf(stderr, "ERROR 3\n");
@@ -317,7 +344,8 @@ namespace gtl {
                             token_type::test_comparison,
                             tokens
                         };
-                    });
+                    }
+                );
 
             parser statement;
             statement =
@@ -325,7 +353,8 @@ namespace gtl {
                     parser::sequence(
                         identifier,
                         parser::terminal(":="),
-                        expression)
+                        expression
+                    )
                             ->*[](const std::vector<token_data>& tokens) {
                                     if (tokens.size() != 2)
                                         std::fprintf(stderr, "ERROR 5\n");
@@ -379,13 +408,15 @@ namespace gtl {
                             token_type::while_do,
                             tokens
                         };
-                    });
+                    }
+                );
 
             parser constant =
                 parser::sequence(
                     identifier,
                     parser::terminal_any('='),
-                    number)
+                    number
+                )
                     ->*[](const std::vector<token_data>& tokens) {
                             if (tokens.size() != 2)
                                 std::fprintf(stderr, "ERROR 11\n");
@@ -419,8 +450,13 @@ namespace gtl {
                                     parser::empty(),
                                     parser::sequence(
                                         parser::terminal_any(','),
-                                        constant))),
-                            parser::terminal_any(';'))),
+                                        constant
+                                    )
+                                )
+                            ),
+                            parser::terminal_any(';')
+                        )
+                    ),
                     parser::disjunction(
                         parser::empty(),
                         parser::sequence(
@@ -431,8 +467,13 @@ namespace gtl {
                                     parser::empty(),
                                     parser::sequence(
                                         parser::terminal_any(','),
-                                        variable))),
-                            parser::terminal_any(';'))),
+                                        variable
+                                    )
+                                )
+                            ),
+                            parser::terminal_any(';')
+                        )
+                    ),
                     parser::disjunction(
                         parser::empty(),
                         parser::recurse(
@@ -443,14 +484,19 @@ namespace gtl {
                                     identifier,
                                     parser::terminal_any(';'),
                                     parser::reference(block),
-                                    parser::terminal_any(';'))
+                                    parser::terminal_any(';')
+                                )
                                         ->*[](const std::vector<token_data>& tokens) {
                                                 return token_data{
                                                     token_type::procedure,
                                                     tokens
                                                 };
-                                            }))),
-                    statement);
+                                            }
+                            )
+                        )
+                    ),
+                    statement
+                );
 
             parser pl0 = block + parser::terminal_any('.');
 

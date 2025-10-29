@@ -23,11 +23,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace gtl {
     float fast_score(
         const unsigned char* __restrict const data,
-        const int stride);
+        const int stride
+    );
 
     float fast_score(
         const unsigned char* __restrict const data,
-        const int stride) {
+        const int stride
+    ) {
         constexpr static const int patch_size = 7;
         constexpr static const int patch_radius = patch_size / 2;
         constexpr static const int pattern_size = 16;

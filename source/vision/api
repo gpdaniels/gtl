@@ -77,7 +77,8 @@ GTL_API_VISIBILITY
 inline const char*
     GTL_API_CALL
     gtl_vision_return_enum_to_string(
-        gtl_vision_return_enum return_enum) {
+        gtl_vision_return_enum return_enum
+    ) {
     switch (return_enum) {
         case gtl_vision_return_success:
             return "success";
@@ -103,20 +104,23 @@ GTL_API_VISIBILITY
 gtl_vision_return_enum
     GTL_API_CALL
     gtl_vision_create(
-        gtl_vision_system** system);
+        gtl_vision_system** system
+    );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
     GTL_API_CALL
     gtl_vision_destroy(
-        gtl_vision_system** system);
+        gtl_vision_system** system
+    );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
     GTL_API_CALL
     gtl_vision_get_timestamp(
         gtl_vision_system* system,
-        long long int* timestamp);
+        long long int* timestamp
+    );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
@@ -124,7 +128,8 @@ gtl_vision_return_enum
     gtl_vision_get_configuration(
         gtl_vision_system* system,
         char* configuration,
-        int* length);
+        int* length
+    );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
@@ -132,7 +137,8 @@ gtl_vision_return_enum
     gtl_vision_set_configuration(
         gtl_vision_system* system,
         const char* configuration,
-        int length);
+        int length
+    );
 
 typedef enum gtl_vision_sensor_emum {
     gtl_vision_sensor_empty = 0x00000000,
@@ -151,7 +157,8 @@ GTL_API_VISIBILITY
 inline const char*
     GTL_API_CALL
     gtl_vision_sensor_emum_to_string(
-        gtl_vision_sensor_emum sensor_emum) {
+        gtl_vision_sensor_emum sensor_emum
+    ) {
     switch (sensor_emum) {
         case gtl_vision_sensor_empty:
             return "empty";
@@ -189,7 +196,8 @@ gtl_vision_return_enum
     gtl_vision_set_sensor_rig(
         gtl_vision_system* system,
         const gtl_vision_sensor_rig_struct* rig,
-        int length);
+        int length
+    );
 
 typedef struct gtl_vision_sensor_data_struct {
     long long int timestamp;
@@ -205,7 +213,8 @@ gtl_vision_return_enum
     gtl_vision_set_sensor_data(
         gtl_vision_system* system,
         const gtl_vision_sensor_data_struct* data,
-        int length);
+        int length
+    );
 
 typedef struct gtl_vision_pose_struct {
     long long int timestamp;
@@ -219,7 +228,8 @@ gtl_vision_return_enum
     GTL_API_CALL
     gtl_vision_get_pose(
         gtl_vision_system* system,
-        gtl_vision_pose_struct* pose);
+        gtl_vision_pose_struct* pose
+    );
 
 GTL_API_VISIBILITY
 gtl_vision_return_enum
@@ -227,7 +237,8 @@ gtl_vision_return_enum
     gtl_vision_get_pose_at_timestamp(
         gtl_vision_system* system,
         gtl_vision_pose_struct* pose,
-        long long int timestamp);
+        long long int timestamp
+    );
 
 typedef struct gtl_vision_point_struct {
     float x, y, z;
@@ -254,7 +265,8 @@ gtl_vision_return_enum
         float x,
         float y,
         float z,
-        gtl_vision_map_chunk_struct* chunk);
+        gtl_vision_map_chunk_struct* chunk
+    );
 
 #undef GTL_API_VISIBILITY
 #undef GTL_API_CALL

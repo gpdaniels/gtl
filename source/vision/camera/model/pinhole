@@ -90,7 +90,8 @@ namespace gtl {
             const type* const __restrict point_xyz,
             type* const __restrict point_xy,
             type* const __restrict jacobian_projection = nullptr,
-            type* const __restrict jacobian_parameters = nullptr) const {
+            type* const __restrict jacobian_parameters = nullptr
+        ) const {
             // Cannot project points with no depth, also return false for those behind the camera.
             if (abs(point_xyz[2]) < type(1.0e-12)) {
                 return false;
@@ -144,7 +145,8 @@ namespace gtl {
         bool unproject(
             const type* const __restrict point_xy,
             type* const __restrict ray_xyz,
-            type* const __restrict jacobian_unprojection = nullptr) const {
+            type* const __restrict jacobian_unprojection = nullptr
+        ) const {
             // Scale and offset.
             const type undistorted_xy[2] = {
                 (point_xy[0] - this->centre_points[0]) / this->focal_lengths[0],

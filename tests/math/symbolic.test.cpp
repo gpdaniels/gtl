@@ -880,11 +880,13 @@ TEST(symbolic, simplify, remove_zeros_divide) {
 ///////////////////////////////////////////////////////////////////////////////
 
 template <
-    typename equation_type>
+    typename equation_type
+>
 inline double numerical_derivative(
     equation_type equation,
     double value,
-    double delta = 1e-8) {
+    double delta = 1e-8
+) {
     const double measurment_origin = equation.template solve<double>(value - 0.5 * delta, 0);
     const double measurment_offset = equation.template solve<double>(value + 0.5 * delta, 0);
     return (measurment_offset - measurment_origin) / delta;

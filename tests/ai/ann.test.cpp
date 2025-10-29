@@ -71,14 +71,10 @@ TEST(ann, evaluate, or_gate) {
     gtl::ann<float> ann = gtl::ann<float>({ 2, 5, 1 });
 
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({ { 0.0, 0.0 },
-                     { 0.0 } });
-    data.push_back({ { 0.0, 1.0 },
-                     { 1.0 } });
-    data.push_back({ { 1.0, 0.0 },
-                     { 1.0 } });
-    data.push_back({ { 1.0, 1.0 },
-                     { 1.0 } });
+    data.push_back({ { 0.0, 0.0 }, { 0.0 } });
+    data.push_back({ { 0.0, 1.0 }, { 1.0 } });
+    data.push_back({ { 1.0, 0.0 }, { 1.0 } });
+    data.push_back({ { 1.0, 1.0 }, { 1.0 } });
 
     for (unsigned int iterations = 0; iterations < 4 * 10000; ++iterations) {
         ann.train(data[iterations % 4].first, data[iterations % 4].second);
@@ -102,14 +98,10 @@ TEST(ann, evaluate, and_gate) {
     gtl::ann<float> ann = gtl::ann<float>({ 2, 5, 1 });
 
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({ { 0.0, 0.0 },
-                     { 0.0 } });
-    data.push_back({ { 0.0, 1.0 },
-                     { 0.0 } });
-    data.push_back({ { 1.0, 0.0 },
-                     { 0.0 } });
-    data.push_back({ { 1.0, 1.0 },
-                     { 1.0 } });
+    data.push_back({ { 0.0, 0.0 }, { 0.0 } });
+    data.push_back({ { 0.0, 1.0 }, { 0.0 } });
+    data.push_back({ { 1.0, 0.0 }, { 0.0 } });
+    data.push_back({ { 1.0, 1.0 }, { 1.0 } });
 
     for (unsigned int iterations = 0; iterations < 4 * 10000; ++iterations) {
         ann.train(data[iterations % 4].first, data[iterations % 4].second);
@@ -133,14 +125,10 @@ TEST(ann, evaluate, nor_gate) {
     gtl::ann<float> ann = gtl::ann<float>({ 2, 5, 1 });
 
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({ { 0.0, 0.0 },
-                     { 1.0 } });
-    data.push_back({ { 0.0, 1.0 },
-                     { 0.0 } });
-    data.push_back({ { 1.0, 0.0 },
-                     { 0.0 } });
-    data.push_back({ { 1.0, 1.0 },
-                     { 0.0 } });
+    data.push_back({ { 0.0, 0.0 }, { 1.0 } });
+    data.push_back({ { 0.0, 1.0 }, { 0.0 } });
+    data.push_back({ { 1.0, 0.0 }, { 0.0 } });
+    data.push_back({ { 1.0, 1.0 }, { 0.0 } });
 
     for (unsigned int iterations = 0; iterations < 4 * 10000; ++iterations) {
         ann.train(data[iterations % 4].first, data[iterations % 4].second);
@@ -164,14 +152,10 @@ TEST(ann, evaluate, nand_gate) {
     gtl::ann<float> ann = gtl::ann<float>({ 2, 5, 1 });
 
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({ { 0.0, 0.0 },
-                     { 1.0 } });
-    data.push_back({ { 0.0, 1.0 },
-                     { 1.0 } });
-    data.push_back({ { 1.0, 0.0 },
-                     { 1.0 } });
-    data.push_back({ { 1.0, 1.0 },
-                     { 0.0 } });
+    data.push_back({ { 0.0, 0.0 }, { 1.0 } });
+    data.push_back({ { 0.0, 1.0 }, { 1.0 } });
+    data.push_back({ { 1.0, 0.0 }, { 1.0 } });
+    data.push_back({ { 1.0, 1.0 }, { 0.0 } });
 
     for (unsigned int iterations = 0; iterations < 4 * 10000; ++iterations) {
         ann.train(data[iterations % 4].first, data[iterations % 4].second);
@@ -195,14 +179,10 @@ TEST(ann, evaluate, xor_gate) {
     gtl::ann<float> ann = gtl::ann<float>({ 2, 5, 1 });
 
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({ { 0.0, 0.0 },
-                     { 0.0 } });
-    data.push_back({ { 0.0, 1.0 },
-                     { 1.0 } });
-    data.push_back({ { 1.0, 0.0 },
-                     { 1.0 } });
-    data.push_back({ { 1.0, 1.0 },
-                     { 0.0 } });
+    data.push_back({ { 0.0, 0.0 }, { 0.0 } });
+    data.push_back({ { 0.0, 1.0 }, { 1.0 } });
+    data.push_back({ { 1.0, 0.0 }, { 1.0 } });
+    data.push_back({ { 1.0, 1.0 }, { 0.0 } });
 
     for (unsigned int iterations = 0; iterations < 4 * 10000; ++iterations) {
         ann.train(data[iterations % 4].first, data[iterations % 4].second);
@@ -224,14 +204,10 @@ TEST(ann, evaluate, xor_gate) {
 
 TEST(ann, evaluate, learning_rate) {
     std::vector<std::pair<std::vector<float>, std::vector<float>>> data;
-    data.push_back({ { 0.0, 0.0 },
-                     { 0.0 } });
-    data.push_back({ { 0.0, 1.0 },
-                     { 1.0 } });
-    data.push_back({ { 1.0, 0.0 },
-                     { 1.0 } });
-    data.push_back({ { 1.0, 1.0 },
-                     { 0.0 } });
+    data.push_back({ { 0.0, 0.0 }, { 0.0 } });
+    data.push_back({ { 0.0, 1.0 }, { 1.0 } });
+    data.push_back({ { 1.0, 0.0 }, { 1.0 } });
+    data.push_back({ { 1.0, 1.0 }, { 0.0 } });
 
     auto train_network = [&data](gtl::ann<float>& ann, unsigned int& iterations) -> bool {
         bool learnt = true;

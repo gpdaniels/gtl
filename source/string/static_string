@@ -431,14 +431,15 @@ namespace gtl {
     []() {                                               \
         auto string_as_lambda =                          \
             [](unsigned long long int index) constexpr { \
-            return string[index];                        \
-        };                                               \
+                return string[index];                    \
+            };                                           \
         return decltype(gtl::static_string<>::explode(   \
-            string_as_lambda)){};                        \
+            string_as_lambda                             \
+        )){};                                            \
     }()
 
     // With C++20 this macro can be shortened as lambdas can be used in non-evaulated contexts.
-    //#define GTL_STATIC_STRING(string)
+    // #define GTL_STATIC_STRING(string)
     //    decltype(
     //        gtl::static_string::string_explode(
     //            [](unsigned long long int index) constexpr {

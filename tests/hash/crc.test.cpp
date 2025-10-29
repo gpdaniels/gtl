@@ -55,7 +55,8 @@ TEST(crc, traits, standard) {
 #endif
 
             REQUIRE((std::is_standard_layout<gtl::crc<value>>::value == true));
-        });
+        }
+    );
 }
 
 TEST(crc, function, reset) {
@@ -64,7 +65,8 @@ TEST(crc, function, reset) {
             constexpr static const unsigned long long int value = decltype(test_value)::value;
             gtl::crc<value> crc;
             crc.reset();
-        });
+        }
+    );
 }
 
 TEST(crc, function, consume) {
@@ -76,7 +78,8 @@ TEST(crc, function, consume) {
             crc.consume("123456781234567812345678123456781234567812345678123456781234567", 63);
             crc.consume("1234567812345678123456781234567812345678123456781234567812345678", 64);
             crc.consume("12345678123456781234567812345678123456781234567812345678123456781", 65);
-        });
+        }
+    );
 }
 
 TEST(crc, function, finalise) {
@@ -85,7 +88,8 @@ TEST(crc, function, finalise) {
             constexpr static const unsigned long long int value = decltype(test_value)::value;
             gtl::crc<value> crc;
             crc.finalise();
-        });
+        }
+    );
 }
 
 TEST(crc, function, get_hash) {
@@ -95,7 +99,8 @@ TEST(crc, function, get_hash) {
             gtl::crc<value> crc;
             crc.finalise();
             crc.get_hash();
-        });
+        }
+    );
 }
 
 TEST(crc, function, hash_buffer) {
@@ -106,7 +111,8 @@ TEST(crc, function, hash_buffer) {
             gtl::crc<value>::hash_buffer("123456781234567812345678123456781234567812345678123456781234567", 63);
             gtl::crc<value>::hash_buffer("1234567812345678123456781234567812345678123456781234567812345678", 64);
             gtl::crc<value>::hash_buffer("12345678123456781234567812345678123456781234567812345678123456781", 65);
-        });
+        }
+    );
 }
 
 TEST(crc, evaluate, hash_as_integer) {
@@ -186,7 +192,8 @@ TEST(crc, evaluate, hash_as_integer) {
                         2 + 4 + 2 + 1,
                         "%02X == %02X",
                         hash.data[0],
-                        result_crc8[i]);
+                        result_crc8[i]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, &result_crc8[i], gtl::crc<value>::hash_size) == true);
                 }
@@ -198,7 +205,8 @@ TEST(crc, evaluate, hash_as_integer) {
                         4 + 4 + 4 + 1,
                         "%04X == %04X",
                         hash.data[0],
-                        result_crc16[i]);
+                        result_crc16[i]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, &result_crc16[i], gtl::crc<value>::hash_size) == true);
                 }
@@ -210,7 +218,8 @@ TEST(crc, evaluate, hash_as_integer) {
                         8 + 4 + 8 + 1,
                         "%08X == %08X",
                         hash.data[0],
-                        result_crc32[i]);
+                        result_crc32[i]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, &result_crc32[i], gtl::crc<value>::hash_size) == true);
                 }
@@ -222,12 +231,14 @@ TEST(crc, evaluate, hash_as_integer) {
                         16 + 4 + 16 + 1,
                         "%016llX == %016llX",
                         hash.data[0],
-                        result_crc64[i]);
+                        result_crc64[i]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, &result_crc64[i], gtl::crc<value>::hash_size) == true);
                 }
             }
-        });
+        }
+    );
 }
 
 TEST(crc, evaluate, hash_as_string) {
@@ -300,7 +311,8 @@ TEST(crc, evaluate, hash_as_string) {
                 PRINT("%s == %s\n", gtl::crc<value>::hash_to_string(hash).hash, result[result_index][i]);
                 REQUIRE(testbench::is_string_same(gtl::crc<value>::hash_to_string(hash).hash, result[result_index][i]) == true);
             }
-        });
+        }
+    );
 }
 
 TEST(crc, evaluate, partial_insert) {
@@ -392,7 +404,8 @@ TEST(crc, evaluate, partial_insert) {
                         2 + 4 + 2 + 1,
                         "%02X == %02X",
                         hash.data[0],
-                        result_crc8[i]);
+                        result_crc8[i]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, &result_crc8[i], gtl::crc<value>::hash_size) == true);
                 }
@@ -404,7 +417,8 @@ TEST(crc, evaluate, partial_insert) {
                         4 + 4 + 4 + 1,
                         "%04X == %04X",
                         hash.data[0],
-                        result_crc16[i]);
+                        result_crc16[i]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, &result_crc16[i], gtl::crc<value>::hash_size) == true);
                 }
@@ -416,7 +430,8 @@ TEST(crc, evaluate, partial_insert) {
                         8 + 4 + 8 + 1,
                         "%08X == %08X",
                         hash.data[0],
-                        result_crc32[i]);
+                        result_crc32[i]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, &result_crc32[i], gtl::crc<value>::hash_size) == true);
                 }
@@ -428,10 +443,12 @@ TEST(crc, evaluate, partial_insert) {
                         16 + 4 + 16 + 1,
                         "%016llX == %016llX",
                         hash.data[0],
-                        result_crc64[i]);
+                        result_crc64[i]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, &result_crc64[i], gtl::crc<value>::hash_size) == true);
                 }
             }
-        });
+        }
+    );
 }

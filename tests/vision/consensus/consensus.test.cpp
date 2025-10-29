@@ -125,7 +125,8 @@ TEST(consensus, evaluate, line) {
         inlier_ratio,
         probability_failure,
         iterations_minimum,
-        iterations_maximum);
+        iterations_maximum
+    );
 
     float residuals[data_size];
     std::size_t inliers[data_size];

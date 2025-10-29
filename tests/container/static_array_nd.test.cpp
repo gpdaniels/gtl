@@ -69,10 +69,14 @@ TEST(static_array_nd, traits, standard) {
                                     REQUIRE((std::is_trivial<gtl::static_array_nd<type, value1, value2, value3>>::value == true), "Expected std::is_trivial to be true.");
                                     REQUIRE((std::is_trivially_copyable<gtl::static_array_nd<type, value1, value2, value3>>::value == true), "Expected std::is_trivially_copyable to be true.");
                                     REQUIRE((std::is_standard_layout<gtl::static_array_nd<type, value1, value2, value3>>::value == true), "Expected std::is_standard_layout to be true.");
-                                });
-                        });
-                });
-        });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(static_array_nd, constructor, empty) {
@@ -102,10 +106,14 @@ TEST(static_array_nd, constructor, empty) {
                                     constexpr static const unsigned long long value3 = type_value3::value;
                                     gtl::static_array_nd<type, value1, value2, value3> static_array_nd_3d;
                                     testbench::do_not_optimise_away(static_array_nd_3d);
-                                });
-                        });
-                });
-        });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(static_array_nd, function, dimensions) {
@@ -135,10 +143,14 @@ TEST(static_array_nd, function, dimensions) {
                                     constexpr static const unsigned long long value3 = type_value3::value;
                                     gtl::static_array_nd<type, value1, value2, value3> static_array_nd_3d;
                                     REQUIRE(static_array_nd_3d.dimensions() == 3, "static_array_nd_3d.dimensions() = %lld, expected %lld", static_array_nd_3d.dimensions(), 3ull);
-                                });
-                        });
-                });
-        });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(static_array_nd, function, size) {
@@ -174,10 +186,14 @@ TEST(static_array_nd, function, size) {
                                     REQUIRE(static_array_nd_3d.size(0) == value1);
                                     REQUIRE(static_array_nd_3d.size(1) == value2);
                                     REQUIRE(static_array_nd_3d.size(2) == value3);
-                                });
-                        });
-                });
-        });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(static_array_nd, constructor, list_initialiser) {
@@ -209,9 +225,12 @@ TEST(static_array_nd, constructor, list_initialiser) {
                                 gtl::static_array_nd<type, value1, value2, value3> static_array_nd_3d = { { { { { { value } } } } } };
                                 testbench::do_not_optimise_away(static_array_nd_3d);
                             }
-                        });
-                });
-        });
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(static_array_nd, operator, subscript) {
@@ -258,9 +277,12 @@ TEST(static_array_nd, operator, subscript) {
                                     }
                                 }
                             }
-                        });
-                });
-        });
+                        }
+                    );
+                }
+            );
+        }
+    );
 }
 
 TEST(static_array_nd, operator, parenthesis) {
@@ -307,7 +329,10 @@ TEST(static_array_nd, operator, parenthesis) {
                                     }
                                 }
                             }
-                        });
-                });
-        });
+                        }
+                    );
+                }
+            );
+        }
+    );
 }

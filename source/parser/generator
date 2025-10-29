@@ -204,7 +204,8 @@ namespace gtl {
         constexpr generator(
             bool generator_requires_input,
             bool generator_recurses,
-            parse_function_type generator_function)
+            parse_function_type generator_function
+        )
             : id(generator::id_generator++)
             , requires_input(generator_requires_input)
             , recurses(generator_recurses)
@@ -529,7 +530,8 @@ namespace gtl {
                     static_cast<void>(forest);
                     // Call the function and store the returned token.
                     branch.captured_tokens.back().push_back(token_status_function(branch));
-                }));
+                })
+            );
         }
 
         /// Emit, emit a token dependent on captured terminals with a reqirement.
@@ -567,7 +569,8 @@ namespace gtl {
                     branch.captured_tokens.back().push_back(token_status_function(branch.captured_terminals.back(), branch));
                     // Remove the collected captured_terminals from the stack.
                     branch.captured_terminals.pop_back();
-                }));
+                })
+            );
         }
 
         /// Reemit, emit a token dependent on captured tokens with a reqirement.
@@ -605,7 +608,8 @@ namespace gtl {
                     branch.captured_tokens[branch.captured_tokens.size() - 2].push_back(token_status_function(branch.captured_tokens.back(), branch));
                     // Remove the collected captured_tokens from the stack.
                     branch.captured_tokens.pop_back();
-                }));
+                })
+            );
         }
 
         /// @brief  Reference generator, to call a reference to an already defined generator.

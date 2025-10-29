@@ -48,7 +48,8 @@ TEST(ring_buffer, traits, standard) {
             REQUIRE((std::is_trivially_copyable<gtl::ring_buffer<type>>::value == false), "Expected std::is_trivially_copyable to be false.");
 
             REQUIRE((std::is_standard_layout<gtl::ring_buffer<type>>::value == true), "Expected std::is_standard_layout to be true.");
-        });
+        }
+    );
 }
 
 TEST(ring_buffer, constructor, empty) {
@@ -59,7 +60,8 @@ TEST(ring_buffer, constructor, empty) {
             constexpr static const unsigned long long value = type_value::value;
             gtl::ring_buffer<type> ring_buffer(value);
             testbench::do_not_optimise_away(ring_buffer);
-        });
+        }
+    );
 }
 
 TEST(ring_buffer, function, empty_push_pop) {
@@ -87,7 +89,8 @@ TEST(ring_buffer, function, empty_push_pop) {
                 REQUIRE(ring_buffer_nd2.try_pop(output_value));
                 REQUIRE(ring_buffer_nd2.empty());
             }
-        });
+        }
+    );
 }
 
 TEST(ring_buffer, function, full_push_pop) {
@@ -115,7 +118,8 @@ TEST(ring_buffer, function, full_push_pop) {
                 REQUIRE(ring_buffer_nd2.try_pop(output_value));
                 REQUIRE(!ring_buffer_nd2.full());
             }
-        });
+        }
+    );
 }
 
 TEST(ring_buffer, function, size_push_pop) {
@@ -143,7 +147,8 @@ TEST(ring_buffer, function, size_push_pop) {
                 REQUIRE(ring_buffer_nd2.try_pop(output_value));
                 REQUIRE(ring_buffer_nd2.size() == 0);
             }
-        });
+        }
+    );
 }
 
 TEST(ring_buffer, evaluation, threads_x2) {

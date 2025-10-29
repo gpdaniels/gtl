@@ -57,7 +57,8 @@ TEST(type_id, constructor, type) {
             using type = typename decltype(test_type)::type;
             gtl::type_id type_id(type{});
             testbench::do_not_optimise_away(type_id);
-        });
+        }
+    );
 }
 
 TEST(type_id, function, id) {
@@ -67,7 +68,8 @@ TEST(type_id, function, id) {
             gtl::type_id type_id(type{});
             unsigned long long int id = type_id.id();
             testbench::do_not_optimise_away(id);
-        });
+        }
+    );
 }
 
 TEST(type_id, operator, unsigned_long_long_int) {
@@ -77,7 +79,8 @@ TEST(type_id, operator, unsigned_long_long_int) {
             gtl::type_id type_id(type{});
             unsigned long long int id = type_id;
             testbench::do_not_optimise_away(id);
-        });
+        }
+    );
 }
 
 TEST(type_id, operator, equality) {
@@ -92,9 +95,11 @@ TEST(type_id, operator, equality) {
                         REQUIRE(match_found == false);
                         match_found = true;
                     }
-                });
+                }
+            );
             REQUIRE(match_found == true);
-        });
+        }
+    );
 }
 
 TEST(type_id, operator, inequality) {
@@ -109,7 +114,9 @@ TEST(type_id, operator, inequality) {
                         REQUIRE(match_found == false);
                         match_found = true;
                     }
-                });
+                }
+            );
             REQUIRE(match_found == true);
-        });
+        }
+    );
 }

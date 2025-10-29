@@ -53,7 +53,8 @@ TEST(triple_buffer, traits, standard) {
 #endif
 
             REQUIRE(std::is_standard_layout<gtl::triple_buffer<type>>::value == true, "Expected std::is_standard_layout to be true.");
-        });
+        }
+    );
 }
 
 TEST(triple_buffer, constructor, empty) {
@@ -64,7 +65,8 @@ TEST(triple_buffer, constructor, empty) {
             gtl::triple_buffer<type> triple_buffer;
 
             testbench::do_not_optimise_away(triple_buffer);
-        });
+        }
+    );
 }
 
 TEST(triple_buffer, function, update_read) {
@@ -77,7 +79,8 @@ TEST(triple_buffer, function, update_read) {
             REQUIRE(triple_buffer.update_read() == false);
             REQUIRE(triple_buffer.update_read() == false);
             REQUIRE(triple_buffer.update_read() == false);
-        });
+        }
+    );
 }
 
 TEST(triple_buffer, function, get_read) {
@@ -90,7 +93,8 @@ TEST(triple_buffer, function, get_read) {
             type* read_buffer = &triple_buffer.get_read();
             REQUIRE(&(triple_buffer.get_read()) == read_buffer);
             REQUIRE(&(triple_buffer.get_read()) == read_buffer);
-        });
+        }
+    );
 }
 
 TEST(triple_buffer, function, get_write) {
@@ -103,7 +107,8 @@ TEST(triple_buffer, function, get_write) {
             type* write_buffer = &triple_buffer.get_write();
             REQUIRE(&(triple_buffer.get_write()) == write_buffer);
             REQUIRE(&(triple_buffer.get_write()) == write_buffer);
-        });
+        }
+    );
 }
 
 TEST(triple_buffer, function, update_write) {
@@ -116,7 +121,8 @@ TEST(triple_buffer, function, update_write) {
             triple_buffer.update_write();
             triple_buffer.update_write();
             triple_buffer.update_write();
-        });
+        }
+    );
 }
 
 TEST(triple_buffer, evaluation, buffer_progression) {
@@ -161,7 +167,8 @@ TEST(triple_buffer, evaluation, buffer_progression) {
             read_buffer = &triple_buffer.get_read();
             REQUIRE(&(triple_buffer.get_read()) == read_buffer);
             REQUIRE(&(triple_buffer.get_read()) == read_buffer);
-        });
+        }
+    );
 }
 
 TEST(triple_buffer, evaluation, buffer_values) {
@@ -205,7 +212,8 @@ TEST(triple_buffer, evaluation, buffer_values) {
                 REQUIRE(triple_buffer.update_read() == true);
                 REQUIRE(testbench::is_value_equal(triple_buffer.get_read(), testbench::test_data<type>::data[1]));
             }
-        });
+        }
+    );
 }
 
 #include <mutex>

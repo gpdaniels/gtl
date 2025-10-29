@@ -40,7 +40,8 @@ namespace gtl {
         const int max_height,
         const int min_features,
         const int max_features,
-        gtl::feature* __restrict features_distributed);
+        gtl::feature* __restrict features_distributed
+    );
 
     int square_covering(
         const gtl::feature* __restrict const features_detected_sorted,
@@ -49,7 +50,8 @@ namespace gtl {
         const int max_height,
         const int min_features,
         const int max_features,
-        gtl::feature* __restrict features_distributed) {
+        gtl::feature* __restrict features_distributed
+    ) {
         constexpr static const int square_covering_radius = 2;
 
         // When we want more features than there are, just return all.

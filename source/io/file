@@ -128,7 +128,8 @@ namespace gtl {
             const char* const __restrict path,
             access_type access_mode = access_type::read_only,
             creation_type creation_mode = creation_type::open_only,
-            cursor_type cursor_mode = cursor_type::start_of_file) {
+            cursor_type cursor_mode = cursor_type::start_of_file
+        ) {
             this->open(path, access_mode, creation_mode, cursor_mode);
         }
 
@@ -150,7 +151,8 @@ namespace gtl {
             const char* const __restrict path,
             access_type access_mode = access_type::read_only,
             creation_type creation_mode = creation_type::open_only,
-            cursor_type cursor_mode = cursor_type::start_of_file) {
+            cursor_type cursor_mode = cursor_type::start_of_file
+        ) {
             if (this->is_open()) {
                 return false;
             }

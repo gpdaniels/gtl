@@ -59,7 +59,8 @@ TEST(chacha, traits, standard) {
             REQUIRE((std::is_trivially_copyable<gtl::chacha<mode, value>>::value == true));
 
             REQUIRE((std::is_standard_layout<gtl::chacha<mode, value>>::value == true));
-        });
+        }
+    );
 }
 
 TEST(chacha, constructor, empty) {
@@ -70,7 +71,8 @@ TEST(chacha, constructor, empty) {
 
             gtl::chacha<mode, value> chacha;
             testbench::do_not_optimise_away(chacha);
-        });
+        }
+    );
 }
 
 TEST(chacha, encrypt_decrypt, one_block) {
@@ -188,7 +190,8 @@ TEST(chacha, encrypt_decrypt, one_block) {
             chacha.decrypt(output, length, key, input);
 
             REQUIRE(testbench::is_memory_same(plain, input, length), "%s != %s\n", hex_2_string(plain, length).c_str(), hex_2_string(input, length).c_str());
-        });
+        }
+    );
 }
 
 TEST(chacha, encrypt_decrypt, one_block_padded) {
@@ -307,7 +310,8 @@ TEST(chacha, encrypt_decrypt, one_block_padded) {
             chacha.decrypt(output, length, key, input);
 
             REQUIRE(testbench::is_memory_same(plain, input, length), "%s != %s\n", hex_2_string(plain, length).c_str(), hex_2_string(input, length).c_str());
-        });
+        }
+    );
 }
 
 TEST(chacha, encrypt_decrypt, two_blocks) {
@@ -490,7 +494,8 @@ TEST(chacha, encrypt_decrypt, two_blocks) {
             chacha.decrypt(output, length, key, input);
 
             REQUIRE(testbench::is_memory_same(plain, input, length), "%s != %s\n", hex_2_string(plain, length).c_str(), hex_2_string(input, length).c_str());
-        });
+        }
+    );
 }
 
 TEST(chacha, encrypt_decrypt, two_blocks_padded) {
@@ -673,7 +678,8 @@ TEST(chacha, encrypt_decrypt, two_blocks_padded) {
             chacha.decrypt(output, length, key, input);
 
             REQUIRE(testbench::is_memory_same(plain, input, length), "%s != %s\n", hex_2_string(plain, length).c_str(), hex_2_string(input, length).c_str());
-        });
+        }
+    );
 }
 
 TEST(chacha, evaluate, verify_ctr_32_rounds_20) {

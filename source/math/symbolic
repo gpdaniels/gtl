@@ -40,7 +40,8 @@ namespace gtl {
         ///////////////////////////////////////////////////////////////////////////
 
         template <
-            unsigned long long int parameter_index>
+            unsigned long long int parameter_index
+        >
         class parameter final {
         public:
             constexpr inline parameter() = default;
@@ -49,10 +50,12 @@ namespace gtl {
             template <
                 typename scalar_type,
                 typename value_type,
-                typename... value_types>
+                typename... value_types
+            >
             constexpr static inline scalar_type solve(
                 value_type value,
-                value_types... values) {
+                value_types... values
+            ) {
                 if constexpr (parameter_index != 0) {
                     static_cast<void>(value);
                     return parameter<parameter_index - 1>::template solve<scalar_type>(values...);
@@ -70,7 +73,8 @@ namespace gtl {
         };
 
         template <
-            unsigned long long int variable_index>
+            unsigned long long int variable_index
+        >
         class variable final {
         public:
             constexpr inline variable() = default;
@@ -79,10 +83,12 @@ namespace gtl {
             template <
                 typename scalar_type,
                 typename value_type,
-                typename... value_types>
+                typename... value_types
+            >
             constexpr static inline scalar_type solve(
                 value_type value,
-                value_types... values) {
+                value_types... values
+            ) {
                 if constexpr (variable_index != 0) {
                     static_cast<void>(value);
                     return parameter<variable_index - 1>::template solve<scalar_type>(values...);
@@ -100,7 +106,8 @@ namespace gtl {
         };
 
         template <
-            typename constant_type>
+            typename constant_type
+        >
         class constant final {
         public:
             using type = constant_type;
@@ -111,9 +118,11 @@ namespace gtl {
         public:
             template <
                 typename scalar_type,
-                typename... value_types>
+                typename... value_types
+            >
             constexpr static inline scalar_type solve(
-                value_types... values) {
+                value_types... values
+            ) {
                 (static_cast<void>(values), ...);
                 return static_cast<scalar_type>(constant_type::value);
             }
@@ -130,58 +139,74 @@ namespace gtl {
 
         namespace missing_operations {
             template <
-                typename argument_type>
+                typename argument_type
+            >
             constexpr inline auto plus(
-                argument_type value) {
+                argument_type value
+            ) {
                 return +value;
             }
 
             template <
-                typename argument_type>
+                typename argument_type
+            >
             constexpr inline auto minus(
-                argument_type value) {
+                argument_type value
+            ) {
                 return -value;
             }
 
             template <
-                typename... argument_types>
+                typename... argument_types
+            >
             constexpr inline auto add(
-                argument_types... values) {
+                argument_types... values
+            ) {
                 return (values + ...);
             }
 
             template <
-                typename... argument_types>
+                typename... argument_types
+            >
             constexpr inline auto subtract(
-                argument_types... values) {
+                argument_types... values
+            ) {
                 return (values - ...);
             }
 
             template <
-                typename... argument_types>
+                typename... argument_types
+            >
             constexpr inline auto multiply(
-                argument_types... values) {
+                argument_types... values
+            ) {
                 return (values * ...);
             }
 
             template <
-                typename... argument_types>
+                typename... argument_types
+            >
             constexpr inline auto divide(
-                argument_types... values) {
+                argument_types... values
+            ) {
                 return (values / ...);
             }
 
             template <
-                typename argument_type>
+                typename argument_type
+            >
             constexpr int sign(
-                argument_type value) {
+                argument_type value
+            ) {
                 return (argument_type(0) < value) - (value < argument_type(0));
             }
 
             template <
-                typename argument_type>
+                typename argument_type
+            >
             constexpr argument_type abs(
-                argument_type value) {
+                argument_type value
+            ) {
                 // if (value == argument_type(0)) {
                 //     return argument_type(0);
                 // }
@@ -197,9 +222,11 @@ namespace gtl {
 
             // TODO: This does not work for large or small numbers.
             template <
-                typename argument_type>
+                typename argument_type
+            >
             constexpr argument_type ceil(
-                argument_type value) {
+                argument_type value
+            ) {
                 // Casting to fixed point truncates the value, which is ceil(value) for negative values.
                 // Have to add 1 for positive values unless value is already ceiled.
                 return static_cast<long long int>(value) + (value == static_cast<argument_type>(static_cast<long long int>(value))) * (value > 0);
@@ -207,19 +234,23 @@ namespace gtl {
 
             // TODO: This does not work for large or small numbers.
             template <
-                typename argument_type>
+                typename argument_type
+            >
             constexpr argument_type floor(
-                argument_type value) {
+                argument_type value
+            ) {
                 // Casting to fixed point truncates the value, which is floor(value) for positive values.
                 // Have to substract 1 for negative values unless value is already floored.
                 return static_cast<long long int>(value) - (value == static_cast<argument_type>(static_cast<long long int>(value))) * (value < 0);
             }
 
             template <
-                typename argument_type>
+                typename argument_type
+            >
             constexpr argument_type min(
                 argument_type lhs_value,
-                argument_type rhs_value) {
+                argument_type rhs_value
+            ) {
                 if (lhs_value < rhs_value) {
                     return lhs_value;
                 }
@@ -227,10 +258,12 @@ namespace gtl {
             }
 
             template <
-                typename argument_type>
+                typename argument_type
+            >
             constexpr argument_type max(
                 argument_type lhs_value,
-                argument_type rhs_value) {
+                argument_type rhs_value
+            ) {
                 if (lhs_value < rhs_value) {
                     return rhs_value;
                 }
@@ -243,7 +276,8 @@ namespace gtl {
         ///////////////////////////////////////////////////////////////////////////
 
         template <
-            int constant_value>
+            int constant_value
+        >
         class integer final {
         public:
             constexpr inline integer() = default;
@@ -253,27 +287,33 @@ namespace gtl {
         };
 
         template <
-            int constant_value>
+            int constant_value
+        >
         inline constexpr auto operator+(
-            const integer<constant_value> value) {
+            const integer<constant_value> value
+        ) {
             static_cast<void>(value);
             return integer<constant_value>{};
         }
 
         template <
-            int constant_value>
+            int constant_value
+        >
         inline constexpr auto operator-(
-            const integer<constant_value> value) {
+            const integer<constant_value> value
+        ) {
             static_cast<void>(value);
             return integer<-constant_value>{};
         }
 
         template <
             int constant_value,
-            int other_value>
+            int other_value
+        >
         inline constexpr auto operator+(
             const integer<constant_value> lhs,
-            const integer<other_value> rhs) {
+            const integer<other_value> rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return integer<constant_value + other_value>{};
@@ -281,10 +321,12 @@ namespace gtl {
 
         template <
             int constant_value,
-            int other_value>
+            int other_value
+        >
         inline constexpr auto operator-(
             const integer<constant_value> lhs,
-            const integer<other_value> rhs) {
+            const integer<other_value> rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return integer<constant_value - other_value>{};
@@ -292,10 +334,12 @@ namespace gtl {
 
         template <
             int constant_value,
-            int other_value>
+            int other_value
+        >
         inline constexpr auto operator*(
             const integer<constant_value> lhs,
-            const integer<other_value> rhs) {
+            const integer<other_value> rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return integer<constant_value * other_value>{};
@@ -303,37 +347,45 @@ namespace gtl {
 
         template <
             int constant_value,
-            int other_value>
+            int other_value
+        >
         inline constexpr auto operator/(
             const integer<constant_value> lhs,
-            const integer<other_value> rhs) {
+            const integer<other_value> rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return integer<constant_value / other_value>{};
         }
 
         template <
-            int constant_value>
+            int constant_value
+        >
         auto sign(
-            const integer<constant_value> value) {
+            const integer<constant_value> value
+        ) {
             static_cast<void>(value);
             return integer<missing_operations::sign(constant_value)>{};
         }
 
         template <
-            int constant_value>
+            int constant_value
+        >
         auto abs(
-            const integer<constant_value> value) {
+            const integer<constant_value> value
+        ) {
             static_cast<void>(value);
             return integer<missing_operations::abs(constant_value)>{};
         }
 
         template <
             int constant_value,
-            int other_value>
+            int other_value
+        >
         auto min(
             const integer<constant_value> lhs,
-            const integer<other_value> rhs) {
+            const integer<other_value> rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return integer<missing_operations::min(constant_value, other_value)>{};
@@ -341,10 +393,12 @@ namespace gtl {
 
         template <
             int constant_value,
-            int other_value>
+            int other_value
+        >
         auto max(
             const integer<constant_value> lhs,
-            const integer<other_value> rhs) {
+            const integer<other_value> rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return integer<missing_operations::max(constant_value, other_value)>{};
@@ -361,7 +415,8 @@ namespace gtl {
         template <
             signed long long int whole,
             unsigned long long int decimal,
-            unsigned long long int exponent>
+            unsigned long long int exponent
+        >
         class real final {
         public:
             constexpr static float pow10(int e) {
@@ -381,7 +436,8 @@ namespace gtl {
         template <
             bool sign,
             unsigned int mantissa,
-            unsigned int exponent>
+            unsigned int exponent
+        >
         class real_float final {
         public:
 #if 0
@@ -415,14 +471,16 @@ namespace gtl {
 
         template <
             typename lhs_type,
-            typename rhs_type>
+            typename rhs_type
+        >
         class is_same_type_test final {
         public:
             constexpr static const bool value = false;
         };
 
         template <
-            typename type>
+            typename type
+        >
         class is_same_type_test<type, type> final {
         public:
             constexpr static const bool value = true;
@@ -430,84 +488,97 @@ namespace gtl {
 
         template <
             typename lhs_type,
-            typename rhs_type>
+            typename rhs_type
+        >
         constexpr static const bool is_same_type = is_same_type_test<lhs_type, rhs_type>::value;
 
         ///////////////////////////////////////////////////////////////////////////
 
         template <
-            typename type>
+            typename type
+        >
         class is_parameter_type_test final {
         public:
             constexpr static const bool value = false;
         };
 
         template <
-            unsigned long long int parameter_index>
+            unsigned long long int parameter_index
+        >
         class is_parameter_type_test<parameter<parameter_index>> final {
         public:
             constexpr static const bool value = true;
         };
 
         template <
-            typename type>
+            typename type
+        >
         constexpr static const bool is_parameter_type = is_parameter_type_test<type>::value;
 
         ///////////////////////////////////////////////////////////////////////////
 
         template <
-            typename type>
+            typename type
+        >
         class is_variable_type_test final {
         public:
             constexpr static const bool value = false;
         };
 
         template <
-            unsigned long long int variable_index>
+            unsigned long long int variable_index
+        >
         class is_variable_type_test<variable<variable_index>> final {
         public:
             constexpr static const bool value = true;
         };
 
         template <
-            typename type>
+            typename type
+        >
         constexpr static const bool is_variable_type = is_variable_type_test<type>::value;
 
         ///////////////////////////////////////////////////////////////////////////
 
         template <
-            typename type>
+            typename type
+        >
         class is_constant_type_test final {
         public:
             constexpr static const bool value = false;
         };
 
         template <
-            typename constant_type>
+            typename constant_type
+        >
         class is_constant_type_test<constant<constant_type>> final {
         public:
             constexpr static const bool value = true;
         };
 
         template <
-            typename type>
+            typename type
+        >
         constexpr static const bool is_constant_type = is_constant_type_test<type>::value;
 
         ///////////////////////////////////////////////////////////////////////////
 
         template <
-            typename type>
+            typename type
+        >
         constexpr static const bool is_input_type = is_parameter_type<type> || is_variable_type<type> || is_constant_type<type>;
 
         ///////////////////////////////////////////////////////////////////////////
 
         template <
             typename operation_handler,
-            typename... argument_types>
+            typename... argument_types
+        >
         class operation;
 
         template <
-            typename type>
+            typename type
+        >
         class is_operation_type_test final {
         public:
             constexpr static const bool value = false;
@@ -515,14 +586,16 @@ namespace gtl {
 
         template <
             typename operation_type,
-            typename... argument_types>
+            typename... argument_types
+        >
         class is_operation_type_test<operation<operation_type, argument_types...>> final {
         public:
             constexpr static const bool value = true;
         };
 
         template <
-            typename operation_type>
+            typename operation_type
+        >
         class is_operation_type_test<operation<operation_type>> final {
         public:
             constexpr static const bool value = false;
@@ -531,13 +604,15 @@ namespace gtl {
         ///////////////////////////////////////////////////////////////////////////
 
         template <
-            typename type>
+            typename type
+        >
         constexpr static const bool is_operation_type = is_operation_type_test<type>::value;
 
         ///////////////////////////////////////////////////////////////////////////
 
         template <
-            typename type>
+            typename type
+        >
         constexpr static const bool is_symbolic_type = is_input_type<type> || is_operation_type<type>;
 
         ///////////////////////////////////////////////////////////////////////////
@@ -546,7 +621,8 @@ namespace gtl {
 
         template <
             typename operation_handler,
-            typename... argument_types>
+            typename... argument_types
+        >
         class operation final {
         private:
             static_assert((is_symbolic_type<argument_types> && ...), "All arguments must be symbolic types.");
@@ -557,9 +633,11 @@ namespace gtl {
         public:
             template <
                 typename scalar_type,
-                typename... value_types>
+                typename... value_types
+            >
             constexpr static inline scalar_type solve(
-                value_types... values) {
+                value_types... values
+            ) {
                 return operation_handler::template apply<scalar_type>(argument_types::template solve<scalar_type>(values...)...);
             }
 
@@ -580,7 +658,8 @@ namespace gtl {
 
 #define GTL_DEFINE_OPERATION_HANDLER(                     \
     OPERATION,                                            \
-    FUNCTION)                                             \
+    FUNCTION                                              \
+)                                                         \
     class OPERATION##_handler final {                     \
     public:                                               \
         constexpr inline OPERATION##_handler() = default; \
@@ -588,9 +667,11 @@ namespace gtl {
     public:                                               \
         template <                                        \
             typename scalar_type,                         \
-            typename... value_types>                      \
+            typename... value_types                       \
+        >                                                 \
         constexpr static inline scalar_type apply(        \
-            const value_types... values) {                \
+            const value_types... values                   \
+        ) {                                               \
             return static_cast<scalar_type>(FUNCTION);    \
         }                                                 \
                                                           \
@@ -601,10 +682,12 @@ namespace gtl {
     };                                                    \
                                                           \
     template <                                            \
-        typename... argument_types>                       \
+        typename... argument_types                        \
+    >                                                     \
     using OPERATION##_op = operation<                     \
         OPERATION##_handler,                              \
-        argument_types...>;
+        argument_types...                                 \
+    >;
 
         GTL_DEFINE_OPERATION_HANDLER(plus, missing_operations::plus(values...))
         GTL_DEFINE_OPERATION_HANDLER(minus, missing_operations::minus(values...))
@@ -615,36 +698,46 @@ namespace gtl {
 
 #define GTL_DEFINE_OPERATION_UNARY_OPERATOR( \
     OPERATION,                               \
-    SYMBOL)                                  \
+    SYMBOL                                   \
+)                                            \
     template <                               \
         typename argument_type,              \
-        typename... argument_types>          \
+        typename... argument_types           \
+    >                                        \
     constexpr inline OPERATION##_op<         \
-        argument_type>                       \
+        argument_type                        \
+    >                                        \
     operator SYMBOL(                         \
-        argument_type argument) {            \
+        argument_type argument               \
+    ) {                                      \
         static_cast<void>(argument);         \
         return OPERATION##_op<               \
-            argument_type>{};                \
+            argument_type                    \
+        >{};                                 \
     }
 
 #define GTL_DEFINE_OPERATION_NARY_OPERATOR(  \
     OPERATION,                               \
-    SYMBOL)                                  \
+    SYMBOL                                   \
+)                                            \
     template <                               \
         typename argument_type,              \
-        typename... argument_types>          \
+        typename... argument_types           \
+    >                                        \
     constexpr inline OPERATION##_op<         \
         argument_type,                       \
-        argument_types...>                   \
+        argument_types...                    \
+    >                                        \
     operator SYMBOL(                         \
         argument_type argument,              \
-        argument_types... arguments) {       \
+        argument_types... arguments          \
+    ) {                                      \
         static_cast<void>(argument);         \
         (static_cast<void>(arguments), ...); \
         return OPERATION##_op<               \
             argument_type,                   \
-            argument_types...>{};            \
+            argument_types...                \
+        >{};                                 \
     }
 
         GTL_DEFINE_OPERATION_UNARY_OPERATOR(plus, +)
@@ -656,17 +749,21 @@ namespace gtl {
         GTL_DEFINE_OPERATION_NARY_OPERATOR(divide, /)
 
 #define GTL_DEFINE_OPERATION_OVERLOAD(              \
-    OPERATION)                                      \
+    OPERATION                                       \
+)                                                   \
     template <                                      \
-        typename... argument_types>                 \
+        typename... argument_types                  \
+    >                                               \
     constexpr inline operation<                     \
         OPERATION##_handler,                        \
-        argument_types...>                          \
+        argument_types...                           \
+    >                                               \
     OPERATION(const argument_types&... arguments) { \
         (static_cast<void>(arguments), ...);        \
         return operation<                           \
             OPERATION##_handler,                    \
-            argument_types...>{};                   \
+            argument_types...                       \
+        >{};                                        \
     }
 
         GTL_DEFINE_OPERATION_HANDLER(sign, missing_operations::sign(values...))
@@ -743,35 +840,43 @@ namespace gtl {
         ///////////////////////////////////////////////////////////////////////////
 
         template <
-            unsigned long long int parameter_index>
+            unsigned long long int parameter_index
+        >
         constexpr auto simplify_expression(
-            parameter<parameter_index> value) {
+            parameter<parameter_index> value
+        ) {
             return value;
         }
 
         template <
-            unsigned long long int variable_index>
+            unsigned long long int variable_index
+        >
         constexpr auto simplify_expression(
-            variable<variable_index> value) {
+            variable<variable_index> value
+        ) {
             return value;
         }
 
         template <
-            typename constant_type>
+            typename constant_type
+        >
         constexpr auto simplify_expression(
-            constant<constant_type> value) {
+            constant<constant_type> value
+        ) {
             return value;
         }
 
         ///////////////////////////////////////////////////////////////////////////
 
         template <
-            typename... argument_types>
+            typename... argument_types
+        >
         class argument_pack;
 
         template <
             typename argument_type,
-            typename... argument_types>
+            typename... argument_types
+        >
         class argument_pack<argument_type, argument_types...> final {
         private:
             static_assert(is_symbolic_type<argument_type> && (is_symbolic_type<argument_types> && ...), "All arguments of an argument pack must be symbolic types.");
@@ -799,7 +904,8 @@ namespace gtl {
         };
 
         template <
-            typename... argument_types>
+            typename... argument_types
+        >
         using argument_first = typename argument_pack<argument_types...>::first;
 
         ///////////////////////////////////////////////////////////////////////////
@@ -829,7 +935,8 @@ namespace gtl {
             : function_types... {
         public:
             constexpr inline function_collection(
-                function_types... functions)
+                function_types... functions
+            )
                 : function_types{ functions }... {
             }
 
@@ -840,18 +947,21 @@ namespace gtl {
         // Template argument deduction guide.
         template <typename... function_types>
         function_collection(
-            function_types... functions) -> function_collection<function_types...>;
+            function_types... functions
+        ) -> function_collection<function_types...>;
 
         ///////////////////////////////////////////////////////////////////////////
 
         template <
             typename... argument_types_lhs,
             typename... argument_types_rhs,
-            typename... argument_pack_types>
+            typename... argument_pack_types
+        >
         constexpr auto merge_argument_packs(
             argument_pack<argument_types_lhs...> pack_lhs,
             argument_pack<argument_types_rhs...> pack_rhs,
-            argument_pack_types... packs) {
+            argument_pack_types... packs
+        ) {
             static_assert((is_symbolic_type<argument_types_lhs> && ...), "All arguments must be symbolic types.");
             static_assert((is_symbolic_type<argument_types_rhs> && ...), "All arguments must be symbolic types.");
             static_cast<void>(pack_lhs);
@@ -861,9 +971,11 @@ namespace gtl {
         }
 
         template <
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr auto merge_argument_packs(
-            argument_pack<argument_types...> pack) {
+            argument_pack<argument_types...> pack
+        ) {
             static_assert((is_symbolic_type<argument_types> && ...), "All arguments must be symbolic types.");
             static_cast<void>(pack);
             return argument_pack<argument_types...>{};
@@ -877,36 +989,46 @@ namespace gtl {
 
         template <
             typename... argument_types,
-            typename... function_types>
+            typename... function_types
+        >
         constexpr auto simplify_argument(
-            function_types... functions) {
+            function_types... functions
+        ) {
             static_assert((is_symbolic_type<argument_types> && ...), "All arguments must be symbolic types.");
             return merge_argument_packs(
                 function_collection{ functions... }(
-                    argument_types{})...);
+                    argument_types{}
+                )...
+            );
         }
 
         template <
             typename... argument_types,
-            typename... function_types>
+            typename... function_types
+        >
         constexpr auto simplify_argument_pair(
-            function_types... functions) {
+            function_types... functions
+        ) {
             static_assert((is_symbolic_type<argument_types> && ...), "All arguments must be symbolic types.");
             return merge_argument_packs(
                 function_collection{ functions... }(
                     typename argument_pack<argument_types...>::first{},
-                    typename argument_pack<argument_types...>::remaining::first{}),
-                typename argument_pack<argument_types...>::remaining::remaining{});
+                    typename argument_pack<argument_types...>::remaining::first{}
+                ),
+                typename argument_pack<argument_types...>::remaining::remaining{}
+            );
         }
 
         ///////////////////////////////////////////////////////////////////////////
 
         template <
             typename operation_type,
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr inline auto operation_from_argument_pack(
             operation_type op,
-            argument_pack<argument_types...> pack) {
+            argument_pack<argument_types...> pack
+        ) {
             static_assert((is_symbolic_type<argument_types> && ...), "All arguments must be symbolic types.");
             static_cast<void>(op);
             static_cast<void>(pack);
@@ -916,9 +1038,11 @@ namespace gtl {
         ///////////////////////////////////////////////////////////////////////////
 
         template <
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto simplify_expression(
-            plus_op<argument_type> op) {
+            plus_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             if constexpr (is_same_type<argument_type, zero>) {
@@ -933,9 +1057,11 @@ namespace gtl {
         }
 
         template <
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto simplify_expression(
-            minus_op<argument_type> op) {
+            minus_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             if constexpr (is_same_type<argument_type, zero>) {
@@ -950,9 +1076,11 @@ namespace gtl {
         }
 
         template <
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr auto simplify_expression(
-            add_op<argument_types...> op) {
+            add_op<argument_types...> op
+        ) {
             static_assert((is_symbolic_type<argument_types> && ...), "All arguments must be symbolic types.");
             static_cast<void>(op);
             if constexpr (sizeof...(argument_types) == 0) {
@@ -973,7 +1101,8 @@ namespace gtl {
                                 },
                                 [](auto argument) {
                                     return argument_pack<decltype(simplify_expression(argument))>{};
-                                });
+                                }
+                            );
                         },
                         []() {
                             return simplify_argument_pair<argument_types...>(
@@ -987,15 +1116,20 @@ namespace gtl {
                                     else {
                                         return argument_pack<decltype(simplify_expression(lhs)), decltype(simplify_expression(rhs))>{};
                                     }
-                                });
-                        }));
+                                }
+                            );
+                        }
+                    )
+                );
             }
         }
 
         template <
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr auto simplify_expression(
-            subtract_op<argument_types...> op) {
+            subtract_op<argument_types...> op
+        ) {
             static_assert((is_symbolic_type<argument_types> && ...), "All arguments must be symbolic types.");
             static_cast<void>(op);
             if constexpr (sizeof...(argument_types) == 0) {
@@ -1012,7 +1146,8 @@ namespace gtl {
                             return simplify_argument<argument_types...>(
                                 [](auto argument) {
                                     return argument_pack<decltype(simplify_expression(argument))>{};
-                                });
+                                }
+                            );
                         },
                         []() {
                             return simplify_argument_pair<argument_types...>(
@@ -1029,15 +1164,20 @@ namespace gtl {
                                     else {
                                         return argument_pack<decltype(simplify_expression(lhs)), decltype(simplify_expression(rhs))>{};
                                     }
-                                });
-                        }));
+                                }
+                            );
+                        }
+                    )
+                );
             }
         }
 
         template <
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr auto simplify_expression(
-            multiply_op<argument_types...> op) {
+            multiply_op<argument_types...> op
+        ) {
             static_assert((is_symbolic_type<argument_types> && ...), "All arguments must be symbolic types.");
             static_cast<void>(op);
             if constexpr (sizeof...(argument_types) == 0) {
@@ -1058,7 +1198,8 @@ namespace gtl {
                                 },
                                 [](auto argument) {
                                     return argument_pack<decltype(simplify_expression(argument))>{};
-                                });
+                                }
+                            );
                         },
                         []() {
                             return simplify_argument_pair<argument_types...>(
@@ -1075,15 +1216,20 @@ namespace gtl {
                                     else {
                                         return argument_pack<decltype(simplify_expression(lhs)), decltype(simplify_expression(rhs))>{};
                                     }
-                                });
-                        }));
+                                }
+                            );
+                        }
+                    )
+                );
             }
         }
 
         template <
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr auto simplify_expression(
-            divide_op<argument_types...> op) {
+            divide_op<argument_types...> op
+        ) {
             static_assert((is_symbolic_type<argument_types> && ...), "All arguments must be symbolic types.");
             static_cast<void>(op);
             if constexpr (sizeof...(argument_types) == 0) {
@@ -1100,7 +1246,8 @@ namespace gtl {
                             return simplify_argument<argument_types...>(
                                 [](auto argument) {
                                     return argument_pack<decltype(simplify_expression(argument))>{};
-                                });
+                                }
+                            );
                         },
                         []() {
                             return simplify_argument_pair<argument_types...>(
@@ -1118,8 +1265,11 @@ namespace gtl {
                                     else {
                                         return argument_pack<decltype(simplify_expression(lhs)), decltype(simplify_expression(rhs))>{};
                                     }
-                                });
-                        }));
+                                }
+                            );
+                        }
+                    )
+                );
             }
         }
 
@@ -1127,9 +1277,11 @@ namespace gtl {
 
 #define GTL_DEFINE_DEFAULT_UNARY_SIMPLIFIER(OPERATION)                                                                  \
     template <                                                                                                          \
-        typename argument_type>                                                                                         \
+        typename argument_type                                                                                          \
+    >                                                                                                                   \
     constexpr auto simplify_expression(                                                                                 \
-        OPERATION##_op<argument_type> op) {                                                                             \
+        OPERATION##_op<argument_type> op                                                                                \
+    ) {                                                                                                                 \
         static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");                        \
         static_cast<void>(op);                                                                                          \
         if constexpr (is_constant_type<argument_type>) {                                                                \
@@ -1166,9 +1318,11 @@ namespace gtl {
         // TODO: Need constexpr version: GTL_DEFINE_DEFAULT_UNARY_SIMPLIFIER(cbrt)
 
         template <
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr auto simplify_expression(
-            min_op<argument_types...> op) {
+            min_op<argument_types...> op
+        ) {
             static_assert((is_symbolic_type<argument_types> && ...), "All arguments must be symbolic types.");
             static_cast<void>(op);
             static_assert(sizeof...(argument_types) > 0);
@@ -1183,7 +1337,8 @@ namespace gtl {
                             return simplify_argument<argument_types...>(
                                 [](auto argument) {
                                     return argument_pack<decltype(simplify_expression(argument))>{};
-                                });
+                                }
+                            );
                         },
                         []() {
                             return simplify_argument_pair<argument_types...>(
@@ -1197,15 +1352,20 @@ namespace gtl {
                                     else {
                                         return argument_pack<decltype(simplify_expression(lhs)), decltype(simplify_expression(rhs))>{};
                                     }
-                                });
-                        }));
+                                }
+                            );
+                        }
+                    )
+                );
             }
         }
 
         template <
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr auto simplify_expression(
-            max_op<argument_types...> op) {
+            max_op<argument_types...> op
+        ) {
             static_assert((is_symbolic_type<argument_types> && ...), "All arguments must be symbolic types.");
             static_cast<void>(op);
             static_assert(sizeof...(argument_types) > 0);
@@ -1220,7 +1380,8 @@ namespace gtl {
                             return simplify_argument<argument_types...>(
                                 [](auto argument) {
                                     return argument_pack<decltype(simplify_expression(argument))>{};
-                                });
+                                }
+                            );
                         },
                         []() {
                             return simplify_argument_pair<argument_types...>(
@@ -1234,16 +1395,21 @@ namespace gtl {
                                     else {
                                         return argument_pack<decltype(simplify_expression(lhs)), decltype(simplify_expression(rhs))>{};
                                     }
-                                });
-                        }));
+                                }
+                            );
+                        }
+                    )
+                );
             }
         }
 
         template <
             typename lhs_type,
-            typename rhs_type>
+            typename rhs_type
+        >
         constexpr auto simplify_expression(
-            hypot_op<lhs_type, rhs_type> op) {
+            hypot_op<lhs_type, rhs_type> op
+        ) {
             static_assert((is_symbolic_type<lhs_type> && is_symbolic_type<rhs_type>), "All arguments must be symbolic types.");
             static_cast<void>(op);
             return operation_from_argument_pack(
@@ -1253,7 +1419,8 @@ namespace gtl {
                         return simplify_argument<lhs_type, rhs_type>(
                             [](auto argument) {
                                 return argument_pack<decltype(simplify_expression(argument))>{};
-                            });
+                            }
+                        );
                     } /*TODO CONSTANT hypot(),
                      [](){
                          return simplify_argument_pair<lhs_type, rhs_type>(
@@ -1267,14 +1434,17 @@ namespace gtl {
                              }
                          );
                      }*/
-                    ));
+                )
+            );
         }
 
         template <
             typename lhs_type,
-            typename rhs_type>
+            typename rhs_type
+        >
         constexpr auto simplify_expression(
-            atan2_op<lhs_type, rhs_type> op) {
+            atan2_op<lhs_type, rhs_type> op
+        ) {
             static_assert((is_symbolic_type<lhs_type> && is_symbolic_type<rhs_type>), "All arguments must be symbolic types.");
             static_cast<void>(op);
             return operation_from_argument_pack(
@@ -1284,7 +1454,8 @@ namespace gtl {
                         return simplify_argument<lhs_type, rhs_type>(
                             [](auto argument) {
                                 return argument_pack<decltype(simplify_expression(argument))>{};
-                            });
+                            }
+                        );
                     } /*TODO CONSTANT atan2(),
                      [](){
                          return simplify_argument_pair<lhs_type, rhs_type>(
@@ -1298,14 +1469,17 @@ namespace gtl {
                              }
                          );
                      }*/
-                    ));
+                )
+            );
         }
 
         template <
             typename lhs_type,
-            typename rhs_type>
+            typename rhs_type
+        >
         constexpr auto simplify_expression(
-            pow_op<lhs_type, rhs_type> op) {
+            pow_op<lhs_type, rhs_type> op
+        ) {
             static_assert((is_symbolic_type<lhs_type> && is_symbolic_type<rhs_type>), "All arguments must be symbolic types.");
             static_cast<void>(op);
             static_assert(((is_same_type<lhs_type, zero> != true) || is_same_type<rhs_type, zero> != true), "Zero to power zero is undefined.");
@@ -1334,8 +1508,11 @@ namespace gtl {
                             return simplify_argument<lhs_type, rhs_type>(
                                 [](auto argument) {
                                     return argument_pack<pow_op<decltype(simplify_expression(argument)), rhs_type>>{};
-                                });
-                        }));
+                                }
+                            );
+                        }
+                    )
+                );
             }
             else {
                 return pow_op<decltype(simplify_expression(lhs_type{})), decltype(simplify_expression(rhs_type{}))>{};
@@ -1347,9 +1524,11 @@ namespace gtl {
         // Catch all simplifier.
         template <
             typename operation_type,
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr auto simplify_expression(
-            operation<operation_type, argument_types...> op) {
+            operation<operation_type, argument_types...> op
+        ) {
             static_assert((is_symbolic_type<argument_types> && ...), "All arguments must be symbolic types.");
             static_cast<void>(op);
             return operation<operation_type, decltype(simplify_expression(argument_types{}))...>{};
@@ -1358,9 +1537,11 @@ namespace gtl {
         ///////////////////////////////////////////////////////////////////////////
 
         template <
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto simplify_fully(
-            argument_type argument) {
+            argument_type argument
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(argument);
             auto simplified = simplify_expression(argument_type{});
@@ -1373,9 +1554,11 @@ namespace gtl {
         }
 
         template <
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto simplify_fully_with_history(
-            argument_pack<argument_type> pack) {
+            argument_pack<argument_type> pack
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(pack);
             auto simplified = simplify_expression(argument_type{});
@@ -1389,9 +1572,11 @@ namespace gtl {
         }
 
         template <
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto simplify_fully_with_history(
-            argument_type argument) {
+            argument_type argument
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(argument);
             return simplify_fully_with_history(argument_pack<argument_type>{});
@@ -1403,9 +1588,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            unsigned long long int parameter_index>
+            unsigned long long int parameter_index
+        >
         constexpr auto derive_expression(
-            parameter<parameter_index>) {
+            parameter<parameter_index>
+        ) {
             if constexpr (parameter_index == derivative_index) {
                 return one{};
             }
@@ -1416,17 +1603,21 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            unsigned long long int variable_index>
+            unsigned long long int variable_index
+        >
         constexpr auto derive_expression(
-            variable<variable_index>) {
+            variable<variable_index>
+        ) {
             return zero{};
         }
 
         template <
             unsigned long long int derivative_index,
-            typename constant_type>
+            typename constant_type
+        >
         constexpr auto derive_expression(
-            constant<constant_type>) {
+            constant<constant_type>
+        ) {
             return zero{};
         }
 
@@ -1434,9 +1625,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            plus_op<argument_type> op) {
+            plus_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             return derive_expression<derivative_index>(argument_type{});
@@ -1444,9 +1637,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            minus_op<argument_type> op) {
+            minus_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             return minus_op<decltype(derive_expression<derivative_index>(argument_type{}))>{};
@@ -1454,9 +1649,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr auto derive_expression(
-            add_op<argument_types...> op) {
+            add_op<argument_types...> op
+        ) {
             static_assert((is_symbolic_type<argument_types> && ...), "All arguments must be symbolic types.");
             static_cast<void>(op);
             return add_op<decltype(derive_expression<derivative_index>(argument_types{}))...>{};
@@ -1464,9 +1661,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr auto derive_expression(
-            subtract_op<argument_types...> op) {
+            subtract_op<argument_types...> op
+        ) {
             static_assert((is_symbolic_type<argument_types> && ...), "All arguments must be symbolic types.");
             static_cast<void>(op);
             return subtract_op<decltype(derive_expression<derivative_index>(argument_types{}))...>{};
@@ -1475,9 +1674,11 @@ namespace gtl {
         template <
             unsigned long long int derivative_index,
             typename argument_type,
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr auto derive_expression(
-            multiply_op<argument_type, argument_types...> op) {
+            multiply_op<argument_type, argument_types...> op
+        ) {
             static_assert(is_symbolic_type<argument_type> && (is_symbolic_type<argument_types> && ...), "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_lhs_times_rhs = multiply_op<decltype(derive_expression<derivative_index>(argument_type{})), multiply_op<argument_types...>>;
@@ -1488,9 +1689,11 @@ namespace gtl {
         template <
             unsigned long long int derivative_index,
             typename lhs_type,
-            typename rhs_type>
+            typename rhs_type
+        >
         constexpr auto derive_expression(
-            divide_op<lhs_type, rhs_type> op) {
+            divide_op<lhs_type, rhs_type> op
+        ) {
             static_assert(is_symbolic_type<lhs_type> && is_symbolic_type<rhs_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_lhs = decltype(derive_expression<derivative_index>(lhs_type{}));
@@ -1506,9 +1709,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            sign_op<argument_type> op) {
+            sign_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             // Sign has a derivative of zero when the number is not zero, otherwise it is indeterminate.
             // Ceres says this operation will result in a zero derivative which provides no information to the solver.
@@ -1518,9 +1723,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            abs_op<argument_type> op) {
+            abs_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1529,9 +1736,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            ceil_op<argument_type> op) {
+            ceil_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             // Ceil has a derivative of zero when the number is not an integer, otherwise it is indeterminate.
             // Ceres says this operation will result in a zero derivative which provides no information to the solver.
@@ -1541,9 +1750,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            floor_op<argument_type> op) {
+            floor_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             // Floor has a derivative of zero when the number is not an integer, otherwise it is indeterminate.
             // Ceres says this operation will result in a zero derivative which provides no information to the solver.
@@ -1555,9 +1766,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            exp_op<argument_type> op) {
+            exp_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1566,9 +1779,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            log_op<argument_type> op) {
+            log_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1577,9 +1792,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            exp2_op<argument_type> op) {
+            exp2_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1588,9 +1805,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            log2_op<argument_type> op) {
+            log2_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1601,9 +1820,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            sin_op<argument_type> op) {
+            sin_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1612,9 +1833,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            asin_op<argument_type> op) {
+            asin_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1623,9 +1846,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            cos_op<argument_type> op) {
+            cos_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1634,9 +1859,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            acos_op<argument_type> op) {
+            acos_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1645,9 +1872,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            tan_op<argument_type> op) {
+            tan_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1656,9 +1885,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            atan_op<argument_type> op) {
+            atan_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1669,9 +1900,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            sinh_op<argument_type> op) {
+            sinh_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1680,9 +1913,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            asinh_op<argument_type> op) {
+            asinh_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1691,9 +1926,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            cosh_op<argument_type> op) {
+            cosh_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1702,9 +1939,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            acosh_op<argument_type> op) {
+            acosh_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1713,9 +1952,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            tanh_op<argument_type> op) {
+            tanh_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1724,9 +1965,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            atanh_op<argument_type> op) {
+            atanh_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1737,9 +1980,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            sqrt_op<argument_type> op) {
+            sqrt_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1748,9 +1993,11 @@ namespace gtl {
 
         template <
             unsigned long long int derivative_index,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_expression(
-            cbrt_op<argument_type> op) {
+            cbrt_op<argument_type> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_arg = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1762,9 +2009,11 @@ namespace gtl {
         template <
             unsigned long long int derivative_index,
             typename lhs_type,
-            typename rhs_type>
+            typename rhs_type
+        >
         constexpr auto derive_expression(
-            min_op<lhs_type, rhs_type> op) {
+            min_op<lhs_type, rhs_type> op
+        ) {
             static_assert(is_symbolic_type<lhs_type> && is_symbolic_type<rhs_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_lhs = decltype(derive_expression<derivative_index>(lhs_type{}));
@@ -1775,9 +2024,11 @@ namespace gtl {
         template <
             unsigned long long int derivative_index,
             typename lhs_type,
-            typename rhs_type>
+            typename rhs_type
+        >
         constexpr auto derive_expression(
-            max_op<lhs_type, rhs_type> op) {
+            max_op<lhs_type, rhs_type> op
+        ) {
             static_assert(is_symbolic_type<lhs_type> && is_symbolic_type<rhs_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_lhs = decltype(derive_expression<derivative_index>(lhs_type{}));
@@ -1790,9 +2041,11 @@ namespace gtl {
         template <
             unsigned long long int derivative_index,
             typename lhs_type,
-            typename rhs_type>
+            typename rhs_type
+        >
         constexpr auto derive_expression(
-            hypot_op<lhs_type, rhs_type> op) {
+            hypot_op<lhs_type, rhs_type> op
+        ) {
             static_assert(is_symbolic_type<lhs_type> && is_symbolic_type<rhs_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_lhs = decltype(derive_expression<derivative_index>(lhs_type{}));
@@ -1803,9 +2056,11 @@ namespace gtl {
         template <
             unsigned long long int derivative_index,
             typename lhs_type,
-            typename rhs_type>
+            typename rhs_type
+        >
         constexpr auto derive_expression(
-            atan2_op<lhs_type, rhs_type> op) {
+            atan2_op<lhs_type, rhs_type> op
+        ) {
             static_assert(is_symbolic_type<lhs_type> && is_symbolic_type<rhs_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_lhs = decltype(derive_expression<derivative_index>(lhs_type{}));
@@ -1818,9 +2073,11 @@ namespace gtl {
         template <
             unsigned long long int derivative_index,
             typename argument_type,
-            typename constant_type>
+            typename constant_type
+        >
         constexpr auto derive_expression(
-            pow_op<argument_type, constant<constant_type>> op) {
+            pow_op<argument_type, constant<constant_type>> op
+        ) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_lhs = decltype(derive_expression<derivative_index>(argument_type{}));
@@ -1830,9 +2087,11 @@ namespace gtl {
         template <
             unsigned long long int derivative_index,
             typename lhs_type,
-            typename rhs_type>
+            typename rhs_type
+        >
         constexpr auto derive_expression(
-            pow_op<lhs_type, rhs_type> op) {
+            pow_op<lhs_type, rhs_type> op
+        ) {
             static_assert(is_symbolic_type<lhs_type> && is_symbolic_type<rhs_type>, "All arguments must be symbolic types.");
             static_cast<void>(op);
             using d_lhs = decltype(derive_expression<derivative_index>(lhs_type{}));
@@ -1845,7 +2104,8 @@ namespace gtl {
         template <
             unsigned long long int derivative_index,
             unsigned long long int depth = 0,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_to_depth(argument_type argument) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             auto derived = simplify_fully(derive_expression<derivative_index>(simplify_fully(argument)));
@@ -1860,7 +2120,8 @@ namespace gtl {
         template <
             unsigned long long int derivative_index,
             unsigned long long int depth = 0,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_to_depth_with_history(argument_pack<argument_type> pack) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(pack);
@@ -1877,7 +2138,8 @@ namespace gtl {
         template <
             unsigned long long int derivative_index,
             unsigned long long int depth = 0,
-            typename argument_type>
+            typename argument_type
+        >
         constexpr auto derive_to_depth_with_history(argument_type argument) {
             static_assert(is_symbolic_type<argument_type>, "All arguments must be symbolic types.");
             static_cast<void>(argument);
@@ -1895,7 +2157,8 @@ namespace gtl {
         ///////////////////////////////////////////////////////////////////////////
 
         template <
-            unsigned long long int... indexes>
+            unsigned long long int... indexes
+        >
         class integer_sequence {
         public:
             using sequence_type = integer_sequence;
@@ -1903,18 +2166,21 @@ namespace gtl {
 
         template <
             typename lhs_sequence,
-            typename rhs_sequence>
+            typename rhs_sequence
+        >
         class merge_sequences;
 
         template <
             unsigned long long int... lhs_indexes,
-            unsigned long long int... rhs_indexes>
+            unsigned long long int... rhs_indexes
+        >
         class merge_sequences<integer_sequence<lhs_indexes...>, integer_sequence<rhs_indexes...>>
             : public integer_sequence<lhs_indexes..., (sizeof...(lhs_indexes) + rhs_indexes)...> {
         };
 
         template <
-            unsigned long long int length>
+            unsigned long long int length
+        >
         class make_integer_sequence final
             : public merge_sequences<typename make_integer_sequence<length / 2>::sequence_type, typename make_integer_sequence<length - length / 2>::sequence_type> {
         };
@@ -1931,13 +2197,15 @@ namespace gtl {
 
         template <
             unsigned long long int index,
-            typename... argument_types>
+            typename... argument_types
+        >
         class element_type;
 
         template <
             unsigned long long int index,
             typename argument_type,
-            typename... argument_types>
+            typename... argument_types
+        >
         class element_type<index, argument_type, argument_types...> final {
         public:
             using type = typename element_type<index - 1, argument_types...>::type;
@@ -1945,7 +2213,8 @@ namespace gtl {
 
         template <
             typename argument_type,
-            typename... argument_types>
+            typename... argument_types
+        >
         class element_type<0, argument_type, argument_types...> final {
         public:
             using type = argument_type;
@@ -1953,13 +2222,15 @@ namespace gtl {
 
         template <
             unsigned long long int index,
-            typename... argument_types>
+            typename... argument_types
+        >
         using element = typename element_type<index, argument_types...>::type;
 
         template <
             unsigned long long int rows,
             unsigned long long int columns,
-            typename... argument_types>
+            typename... argument_types
+        >
         class matrix final {
             static_assert(rows > 0, "");
             static_assert(columns > 0, "");
@@ -1967,7 +2238,8 @@ namespace gtl {
         };
 
         template <
-            typename argument_type>
+            typename argument_type
+        >
         class matrix<1, 1, argument_type> final {
         public:
             using type = argument_type;
@@ -1978,7 +2250,8 @@ namespace gtl {
             unsigned long long int rows,
             unsigned long long int columns,
             unsigned long long int... indexes,
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr inline auto get_row(matrix<rows, columns, argument_types...> m, integer_sequence<indexes...> index_sequence) {
             static_assert(index_row < rows, "");
             static_assert(sizeof...(indexes) == columns, "");
@@ -1991,7 +2264,8 @@ namespace gtl {
             unsigned long long int index_row,
             unsigned long long int rows,
             unsigned long long int columns,
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr inline auto get_row(matrix<rows, columns, argument_types...> m) {
             static_assert(index_row < rows, "");
             return get_row<index_row>(m, make_integer_sequence<columns>{});
@@ -2002,7 +2276,8 @@ namespace gtl {
             unsigned long long int rows,
             unsigned long long int columns,
             typename... argument_types,
-            unsigned long long int... indexes>
+            unsigned long long int... indexes
+        >
         constexpr inline auto get_column(matrix<rows, columns, argument_types...> m, integer_sequence<indexes...> index_sequence) {
             static_assert(index_column < columns, "");
             static_assert(sizeof...(indexes) == rows, "");
@@ -2015,7 +2290,8 @@ namespace gtl {
             unsigned long long int index_column,
             unsigned long long int rows,
             unsigned long long int columns,
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr inline auto get_column(matrix<rows, columns, argument_types...> m) {
             static_assert(index_column < columns, "");
             return get_column<index_column>(m, make_integer_sequence<rows>{});
@@ -2026,7 +2302,8 @@ namespace gtl {
             unsigned long long int index_column,
             unsigned long long int rows,
             unsigned long long int columns,
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr inline auto get_cell(matrix<rows, columns, argument_types...> m) {
             static_assert(index_row < rows, "");
             static_assert(index_column < columns, "");
@@ -2037,10 +2314,12 @@ namespace gtl {
             unsigned long long int rows,
             unsigned long long int columns,
             typename... lhs_types,
-            typename rhs_type>
+            typename rhs_type
+        >
         constexpr inline auto operator+(
             matrix<rows, columns, lhs_types...> lhs,
-            rhs_type rhs) {
+            rhs_type rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return matrix<rows, columns, decltype(lhs_types{} + rhs_type{})...>{};
@@ -2050,10 +2329,12 @@ namespace gtl {
             unsigned long long int rows,
             unsigned long long int columns,
             typename lhs_type,
-            typename... rhs_types>
+            typename... rhs_types
+        >
         constexpr inline auto operator+(
             lhs_type lhs,
-            matrix<rows, columns, rhs_types...> rhs) {
+            matrix<rows, columns, rhs_types...> rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return matrix<rows, columns, decltype(lhs_type{} + rhs_types{})...>{};
@@ -2063,10 +2344,12 @@ namespace gtl {
             unsigned long long int rows,
             unsigned long long int columns,
             typename... lhs_types,
-            typename... rhs_types>
+            typename... rhs_types
+        >
         constexpr inline auto operator+(
             matrix<rows, columns, lhs_types...> lhs,
-            matrix<rows, columns, rhs_types...> rhs) {
+            matrix<rows, columns, rhs_types...> rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return matrix<rows, columns, decltype(lhs_types{} + rhs_types{})...>{};
@@ -2076,10 +2359,12 @@ namespace gtl {
             unsigned long long int rows,
             unsigned long long int columns,
             typename... lhs_types,
-            typename rhs_type>
+            typename rhs_type
+        >
         constexpr inline auto operator-(
             matrix<rows, columns, lhs_types...> lhs,
-            rhs_type rhs) {
+            rhs_type rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return matrix<rows, columns, decltype(lhs_types{} - rhs_type{})...>{};
@@ -2089,10 +2374,12 @@ namespace gtl {
             unsigned long long int rows,
             unsigned long long int columns,
             typename lhs_type,
-            typename... rhs_types>
+            typename... rhs_types
+        >
         constexpr inline auto operator-(
             lhs_type lhs,
-            matrix<rows, columns, rhs_types...> rhs) {
+            matrix<rows, columns, rhs_types...> rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return matrix<rows, columns, decltype(lhs_type{} - rhs_types{})...>{};
@@ -2102,10 +2389,12 @@ namespace gtl {
             unsigned long long int rows,
             unsigned long long int columns,
             typename... lhs_types,
-            typename... rhs_types>
+            typename... rhs_types
+        >
         constexpr inline auto operator-(
             matrix<rows, columns, lhs_types...> lhs,
-            matrix<rows, columns, rhs_types...> rhs) {
+            matrix<rows, columns, rhs_types...> rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return matrix<rows, columns, decltype(lhs_types{} - rhs_types{})...>{};
@@ -2115,10 +2404,12 @@ namespace gtl {
             unsigned long long int rows,
             unsigned long long int columns,
             typename... lhs_types,
-            typename rhs_type>
+            typename rhs_type
+        >
         constexpr inline auto operator*(
             matrix<rows, columns, lhs_types...> lhs,
-            rhs_type rhs) {
+            rhs_type rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return matrix<rows, columns, decltype(lhs_types{} * rhs_type{})...>{};
@@ -2128,10 +2419,12 @@ namespace gtl {
             unsigned long long int rows,
             unsigned long long int columns,
             typename lhs_type,
-            typename... rhs_types>
+            typename... rhs_types
+        >
         constexpr inline auto operator*(
             lhs_type lhs,
-            matrix<rows, columns, rhs_types...> rhs) {
+            matrix<rows, columns, rhs_types...> rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return matrix<rows, columns, decltype(lhs_type{} * rhs_types{})...>{};
@@ -2140,10 +2433,12 @@ namespace gtl {
         template <
             unsigned long long int size,
             typename... lhs_types,
-            typename... rhs_types>
+            typename... rhs_types
+        >
         constexpr inline auto operator*(
             matrix<1, size, lhs_types...> lhs,
-            matrix<size, 1, rhs_types...> rhs) {
+            matrix<size, 1, rhs_types...> rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return ((lhs_types{} * rhs_types{}) + ...);
@@ -2155,11 +2450,13 @@ namespace gtl {
             unsigned long long int rhs_columns,
             typename... lhs_types,
             typename... rhs_types,
-            unsigned long long int... indexes>
+            unsigned long long int... indexes
+        >
         constexpr inline auto multiply(
             matrix<lhs_rows, size, lhs_types...> lhs,
             matrix<size, rhs_columns, rhs_types...> rhs,
-            integer_sequence<indexes...> index_sequence) {
+            integer_sequence<indexes...> index_sequence
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             static_cast<void>(index_sequence);
@@ -2171,10 +2468,12 @@ namespace gtl {
             unsigned long long int size,
             unsigned long long int rhs_columns,
             typename... lhs_types,
-            typename... rhs_types>
+            typename... rhs_types
+        >
         constexpr inline auto operator*(
             matrix<lhs_rows, size, lhs_types...> lhs,
-            matrix<size, rhs_columns, rhs_types...> rhs) {
+            matrix<size, rhs_columns, rhs_types...> rhs
+        ) {
             static_cast<void>(lhs);
             static_cast<void>(rhs);
             return multiply(lhs, rhs, make_integer_sequence<lhs_rows * rhs_columns>{});
@@ -2184,10 +2483,12 @@ namespace gtl {
             unsigned long long int rows,
             unsigned long long int columns,
             typename... argument_types,
-            unsigned long long int... indexes>
+            unsigned long long int... indexes
+        >
         constexpr inline auto transpose(
             matrix<rows, columns, argument_types...> m,
-            integer_sequence<indexes...> index_sequence) {
+            integer_sequence<indexes...> index_sequence
+        ) {
             static_cast<void>(m);
             static_cast<void>(index_sequence);
             return matrix<columns, rows, decltype(get_cell<indexes % rows, indexes / rows>(m))...>{};
@@ -2197,9 +2498,11 @@ namespace gtl {
         template <
             unsigned long long int rows,
             unsigned long long int columns,
-            typename... argument_types>
+            typename... argument_types
+        >
         constexpr inline auto transpose(
-            matrix<rows, columns, argument_types...> m) {
+            matrix<rows, columns, argument_types...> m
+        ) {
             static_cast<void>(m);
             return transpose(m, make_integer_sequence<rows * columns>{});
         }
@@ -2231,11 +2534,13 @@ namespace gtl {
         template <
             typename parameter_type,
             unsigned long long int parameter_count,
-            signed long long int value>
+            signed long long int value
+        >
         class integer final {
         public:
             constexpr inline const parameter_type& operator()(
-                const parameters<parameter_type, parameter_count>& values) const {
+                const parameters<parameter_type, parameter_count>& values
+            ) const {
                 static_cast<void>(values);
                 return static_cast<parameter_type>(value);
             }
@@ -2245,11 +2550,13 @@ namespace gtl {
             typename parameter_type,
             unsigned long long int parameter_count,
             signed long long int numerator,
-            unsigned long long int denominator>
+            unsigned long long int denominator
+        >
         class rational final {
         public:
             constexpr inline const parameter_type& operator()(
-                const parameters<parameter_type, parameter_count>& values) const {
+                const parameters<parameter_type, parameter_count>& values
+            ) const {
                 static_cast<void>(values);
                 return static_cast<parameter_type>(numerator) / static_cast<parameter_type>(denominator);
             }
@@ -2260,7 +2567,8 @@ namespace gtl {
             unsigned long long int parameter_count,
             signed long long int whole,
             unsigned long long int decimal,
-            unsigned long long int exponent>
+            unsigned long long int exponent
+        >
         class real final {
         public:
             constexpr static const parameter_type value = []() {
@@ -2271,7 +2579,8 @@ namespace gtl {
             }();
 
             constexpr inline const parameter_type& operator()(
-                const parameters<parameter_type, parameter_count>& values) const {
+                const parameters<parameter_type, parameter_count>& values
+            ) const {
                 static_cast<void>(values);
                 return static_cast<parameter_type>(value);
             }
@@ -2282,11 +2591,13 @@ namespace gtl {
             unsigned long long int parameter_count,
             unsigned int sign,
             unsigned int exponent,
-            unsigned int mantissa>
+            unsigned int mantissa
+        >
         class real_float final {
         public:
             constexpr inline const parameter_type& operator()(
-                const parameters<parameter_type, parameter_count>& values) const {
+                const parameters<parameter_type, parameter_count>& values
+            ) const {
                 static_cast<void>(values);
 
                 union {
@@ -2311,11 +2622,13 @@ namespace gtl {
             unsigned long long int parameter_count,
             unsigned long long int sign,
             unsigned long long int exponent,
-            unsigned long long int mantissa>
+            unsigned long long int mantissa
+        >
         class real_double final {
         public:
             constexpr inline const parameter_type& operator()(
-                const parameters<parameter_type, parameter_count>& values) const {
+                const parameters<parameter_type, parameter_count>& values
+            ) const {
                 static_cast<void>(values);
 
                 union {

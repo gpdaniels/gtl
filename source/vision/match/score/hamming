@@ -28,12 +28,14 @@ namespace gtl {
     template <unsigned int bits>
     unsigned int hamming(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs);
+        const unsigned char* __restrict const data_rhs
+    );
 
     template <>
     unsigned int hamming<8>(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs) {
+        const unsigned char* __restrict const data_rhs
+    ) {
         constexpr static const unsigned char Ox01 = 0x01u;
         constexpr static const unsigned char Ox0F = 0x0Fu;
         constexpr static const unsigned char Ox33 = 0x33u;
@@ -48,7 +50,8 @@ namespace gtl {
     template <>
     unsigned int hamming<16>(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs) {
+        const unsigned char* __restrict const data_rhs
+    ) {
         constexpr static const unsigned short int Ox01 = 0x0101u;
         constexpr static const unsigned short int Ox0F = 0x0F0Fu;
         constexpr static const unsigned short int Ox33 = 0x3333u;
@@ -72,7 +75,8 @@ namespace gtl {
     template <>
     unsigned int hamming<32>(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs) {
+        const unsigned char* __restrict const data_rhs
+    ) {
 #if __has_builtin(__builtin_popcount)
         unsigned int internal_lhs;
         unsigned int internal_rhs;
@@ -108,7 +112,8 @@ namespace gtl {
     template <>
     unsigned int hamming<64>(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs) {
+        const unsigned char* __restrict const data_rhs
+    ) {
 #if __has_builtin(__builtin_popcountll)
         unsigned long long int internal_lhs;
         unsigned long long int internal_rhs;
@@ -144,21 +149,24 @@ namespace gtl {
     template <>
     unsigned int hamming<128>(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs) {
+        const unsigned char* __restrict const data_rhs
+    ) {
         return hamming<64>(&data_lhs[0], &data_rhs[0]) + hamming<64>(&data_lhs[8], &data_rhs[8]);
     }
 
     template <>
     unsigned int hamming<256>(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs) {
+        const unsigned char* __restrict const data_rhs
+    ) {
         return hamming<128>(&data_lhs[0], &data_rhs[0]) + hamming<128>(&data_lhs[16], &data_rhs[16]);
     }
 
     template <>
     unsigned int hamming<512>(
         const unsigned char* __restrict const data_lhs,
-        const unsigned char* __restrict const data_rhs) {
+        const unsigned char* __restrict const data_rhs
+    ) {
         return hamming<256>(&data_lhs[0], &data_rhs[0]) + hamming<256>(&data_lhs[32], &data_rhs[32]);
     }
 }

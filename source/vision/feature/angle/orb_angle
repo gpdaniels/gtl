@@ -33,11 +33,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace gtl {
     float orb_angle(
         const unsigned char* __restrict const data,
-        const int stride);
+        const int stride
+    );
 
     float orb_angle(
         const unsigned char* __restrict const data,
-        const int stride) {
+        const int stride
+    ) {
         // This is the standard set of pattern sample locations for a patch size of 31.
         constexpr static const int patch_size = 31;
         constexpr static const int patch_radius = patch_size / 2;

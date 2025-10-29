@@ -153,7 +153,8 @@ namespace gtl {
             bool reflect_output = internals<crc::size>::default_reflect_output,
             typename internals<crc::size>::base_type polynomial_value = internals<crc::size>::default_polynomial_value,
             typename internals<crc::size>::base_type initial_hash_value = internals<crc::size>::default_initial_hash_value,
-            typename internals<crc::size>::base_type output_xor_value = internals<crc::size>::default_output_xor_value)
+            typename internals<crc::size>::base_type output_xor_value = internals<crc::size>::default_output_xor_value
+        )
             : setting_reflect_input(reflect_input)
             , setting_reflect_output(reflect_output)
             , setting_polynomial_value(polynomial_value)

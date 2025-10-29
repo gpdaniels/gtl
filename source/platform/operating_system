@@ -50,7 +50,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     (GTL_PLATFORM_OPERATING_SYSTEM_APPLE) ||   \
     (GTL_PLATFORM_OPERATING_SYSTEM_LINUX) ||   \
     (GTL_PLATFORM_OPERATING_SYSTEM_WINDOWS) || \
-    (GTL_PLATFORM_OPERATING_SYSTEM_ANDROID))
+    (GTL_PLATFORM_OPERATING_SYSTEM_ANDROID)    \
+)
 #undef GTL_PLATFORM_OPERATING_SYSTEM_UNKNOWN
 #define GTL_PLATFORM_OPERATING_SYSTEM_UNKNOWN 0
 #endif
@@ -66,7 +67,7 @@ namespace gtl {
     };
 
     /// @brief Compile time variable holding the detected operating system.
-    constexpr static const operating_system_types operating_system = []() constexpr->operating_system_types {
+    constexpr static const operating_system_types operating_system = []() constexpr -> operating_system_types {
 #if (GTL_PLATFORM_OPERATING_SYSTEM_ANDROID)
         return operating_system_types::android;
 #elif (GTL_PLATFORM_OPERATING_SYSTEM_APPLE)
@@ -80,8 +81,7 @@ namespace gtl {
 #else
 #error "Issue detecting platform operating system."
 #endif
-    }
-    ();
+    }();
 }
 
 #endif // GTL_PLATFORM_OPERATING_SYSTEM_HPP

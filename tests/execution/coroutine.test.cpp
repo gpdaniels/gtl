@@ -66,7 +66,8 @@ TEST(coroutine, constructor, lamda_argument) {
                 // Ensure coroutine has run.
                 coroutine.join();
             }
-        });
+        }
+    );
 }
 
 TEST(coroutine, constructor, move) {

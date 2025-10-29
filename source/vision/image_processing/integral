@@ -26,14 +26,16 @@ namespace gtl {
         const int width,
         const int height,
         const int stride,
-        int* __restrict const data_integral);
+        int* __restrict const data_integral
+    );
 
     void integral(
         const unsigned char* __restrict const data,
         const int width,
         const int height,
         const int stride,
-        int* __restrict const data_integral) {
+        int* __restrict const data_integral
+    ) {
         // First line: Sum from left.
         int sum = 0;
         for (int x = 0; x < width; ++x) {

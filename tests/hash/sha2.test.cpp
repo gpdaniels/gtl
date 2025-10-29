@@ -48,7 +48,8 @@ TEST(sha2, traits, standard) {
             REQUIRE((std::is_trivially_copyable<gtl::sha2<value>>::value == true));
 
             REQUIRE((std::is_standard_layout<gtl::sha2<value>>::value == true));
-        });
+        }
+    );
 }
 
 TEST(sha2, constructor, empty) {
@@ -57,7 +58,8 @@ TEST(sha2, constructor, empty) {
             constexpr static const unsigned long long int value = decltype(test_value)::value;
             gtl::sha2<value> sha2;
             testbench::do_not_optimise_away(sha2);
-        });
+        }
+    );
 }
 
 TEST(sha2, function, reset) {
@@ -66,7 +68,8 @@ TEST(sha2, function, reset) {
             constexpr static const unsigned long long int value = decltype(test_value)::value;
             gtl::sha2<value> sha2;
             sha2.reset();
-        });
+        }
+    );
 }
 
 TEST(sha2, function, consume) {
@@ -78,7 +81,8 @@ TEST(sha2, function, consume) {
             sha2.consume("123456781234567812345678123456781234567812345678123456781234567", 63);
             sha2.consume("1234567812345678123456781234567812345678123456781234567812345678", 64);
             sha2.consume("12345678123456781234567812345678123456781234567812345678123456781", 65);
-        });
+        }
+    );
 }
 
 TEST(sha2, function, finalise) {
@@ -87,7 +91,8 @@ TEST(sha2, function, finalise) {
             constexpr static const unsigned long long int value = decltype(test_value)::value;
             gtl::sha2<value> sha2;
             sha2.finalise();
-        });
+        }
+    );
 }
 
 TEST(sha2, function, get_hash) {
@@ -97,7 +102,8 @@ TEST(sha2, function, get_hash) {
             gtl::sha2<value> sha2;
             sha2.finalise();
             sha2.get_hash();
-        });
+        }
+    );
 }
 
 TEST(sha2, function, hash_buffer) {
@@ -108,7 +114,8 @@ TEST(sha2, function, hash_buffer) {
             gtl::sha2<value>::hash_buffer("123456781234567812345678123456781234567812345678123456781234567", 63);
             gtl::sha2<value>::hash_buffer("1234567812345678123456781234567812345678123456781234567812345678", 64);
             gtl::sha2<value>::hash_buffer("12345678123456781234567812345678123456781234567812345678123456781", 65);
-        });
+        }
+    );
 }
 
 TEST(sha2, evaluate, hash_as_integer) {
@@ -200,7 +207,8 @@ TEST(sha2, evaluate, hash_as_integer) {
                         result_sha2_224[i][3],
                         result_sha2_224[i][4],
                         result_sha2_224[i][5],
-                        result_sha2_224[i][6]);
+                        result_sha2_224[i][6]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, result_sha2_224[i], gtl::sha2<value>::hash_size) == true);
                 }
@@ -225,7 +233,8 @@ TEST(sha2, evaluate, hash_as_integer) {
                         result_sha2_256[i][4],
                         result_sha2_256[i][5],
                         result_sha2_256[i][6],
-                        result_sha2_256[i][7]);
+                        result_sha2_256[i][7]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, result_sha2_256[i], gtl::sha2<value>::hash_size) == true);
                 }
@@ -246,7 +255,8 @@ TEST(sha2, evaluate, hash_as_integer) {
                         result_sha2_384[i][2],
                         result_sha2_384[i][3],
                         result_sha2_384[i][4],
-                        result_sha2_384[i][5]);
+                        result_sha2_384[i][5]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, result_sha2_384[i], gtl::sha2<value>::hash_size) == true);
                 }
@@ -271,12 +281,14 @@ TEST(sha2, evaluate, hash_as_integer) {
                         result_sha2_512[i][4],
                         result_sha2_512[i][5],
                         result_sha2_512[i][6],
-                        result_sha2_512[i][7]);
+                        result_sha2_512[i][7]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, result_sha2_512[i], gtl::sha2<value>::hash_size) == true);
                 }
             }
-        });
+        }
+    );
 }
 
 TEST(sha2, evaluate, hash_as_string) {
@@ -348,7 +360,8 @@ TEST(sha2, evaluate, hash_as_string) {
                 PRINT("%s == %s\n", gtl::sha2<value>::hash_to_string(hash).hash, result[result_index][i]);
                 REQUIRE(testbench::is_string_same(gtl::sha2<value>::hash_to_string(hash).hash, result[result_index][i]) == true);
             }
-        });
+        }
+    );
 }
 
 TEST(sha2, evaluate, partial_insert) {
@@ -452,7 +465,8 @@ TEST(sha2, evaluate, partial_insert) {
                         result_sha2_224[i][3],
                         result_sha2_224[i][4],
                         result_sha2_224[i][5],
-                        result_sha2_224[i][6]);
+                        result_sha2_224[i][6]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, result_sha2_224[i], gtl::sha2<value>::hash_size) == true);
                 }
@@ -477,7 +491,8 @@ TEST(sha2, evaluate, partial_insert) {
                         result_sha2_256[i][4],
                         result_sha2_256[i][5],
                         result_sha2_256[i][6],
-                        result_sha2_256[i][7]);
+                        result_sha2_256[i][7]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, result_sha2_256[i], gtl::sha2<value>::hash_size) == true);
                 }
@@ -498,7 +513,8 @@ TEST(sha2, evaluate, partial_insert) {
                         result_sha2_384[i][2],
                         result_sha2_384[i][3],
                         result_sha2_384[i][4],
-                        result_sha2_384[i][5]);
+                        result_sha2_384[i][5]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, result_sha2_384[i], gtl::sha2<value>::hash_size) == true);
                 }
@@ -523,10 +539,12 @@ TEST(sha2, evaluate, partial_insert) {
                         result_sha2_512[i][4],
                         result_sha2_512[i][5],
                         result_sha2_512[i][6],
-                        result_sha2_512[i][7]);
+                        result_sha2_512[i][7]
+                    );
                     PRINT("%s\n", hash_string);
                     REQUIRE(testbench::is_memory_same(hash.data, result_sha2_512[i], gtl::sha2<value>::hash_size) == true);
                 }
             }
-        });
+        }
+    );
 }
