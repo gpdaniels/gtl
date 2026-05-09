@@ -31,6 +31,7 @@ The current classes are as described below:
 | [container](source/container) | [static_variant](source/container/static_variant) | A static\_variant class that can contain any one of its listed template types. | :construction: |
 | [container](source/container) | [static_view](source/container/static_view) | A non\-owning static\_view into multi\-dimensional memory. | :construction: |
 | [crypto](source/crypto) | [aes](source/crypto/aes) | An implementation of the aes encryption algorithm for 128, 196, and 256 bits. | :heavy_check_mark: |
+| [crypto](source/crypto) | [block_cipher](source/crypto/block_cipher) | An implementation of many block cipher modes to be used with block ciphers like aes<128>. | :heavy_check_mark: |
 | [crypto](source/crypto) | [chacha](source/crypto/chacha) | An implementation of the chacha encryption algorithm. | :heavy_check_mark: |
 | [crypto](source/crypto) | [rc4](source/crypto/rc4) | An implementation of the rc4 or arc4 encryption algorithm. | :construction: |
 | [crypto](source/crypto) | [rsa](source/crypto/rsa) | An implementation of the RSA (Rivest\-Shamir\-Adleman) asymmetric encryption algorithm. | :heavy_check_mark: |
