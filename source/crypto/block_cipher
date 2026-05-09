@@ -1,0 +1,713 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_CRYPTO_BLOCK_CIPHER_HPP
+#define GTL_CRYPTO_BLOCK_CIPHER_HPP
+
+// Summary: An implementation of many block cipher modes to be used with block ciphers like aes<128>.
+
+#ifndef NDEBUG
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
+/// @brief A simple assert macro to break the program if the block_cipher is misused.
+#define GTL_BLOCK_CIPHER_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#define GTL_BLOCK_CIPHER_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+namespace gtl {
+    /// @brief  Different block cipher modes available for block cipher operations.
+    enum class block_cipher_mode {
+        ecb, // Electronic codebook.
+        cbc, // Cipher block chaining.
+        cfb, // Cipher feedback.
+        ofb, // Output feedback.
+        ctr, // Counter.
+        gcm, // Galois/counter.
+        ccm, // Counter with cipher block chaining message authentication code.
+        siv  // Synthetic initialization vector.
+    };
+
+    namespace {
+        template <typename cipher_type>
+        static typename cipher_type::key_type load_key(const unsigned char* b) {
+            typename cipher_type::key_type k = {};
+            for (unsigned int i = 0; i < cipher_type::key_size; ++i)
+                k.data[i] = b[i];
+            return k;
+        }
+
+        template <typename cipher_type>
+        static typename cipher_type::block_type load_block(const unsigned char* b) {
+            typename cipher_type::block_type bl = {};
+            for (unsigned int i = 0; i < cipher_type::block_size * cipher_type::block_size; ++i)
+                bl.data[i % cipher_type::block_size].data[i / cipher_type::block_size] = b[i];
+            return bl;
+        }
+
+        template <typename cipher_type>
+        static void store_block(const typename cipher_type::block_type& bl, unsigned char* b) {
+            for (unsigned int i = 0; i < cipher_type::block_size * cipher_type::block_size; ++i)
+                b[i] = bl.data[i % cipher_type::block_size].data[i / cipher_type::block_size];
+        }
+
+        template <typename cipher_type>
+        static void encrypt_bytes(const typename cipher_type::key_type& k, const unsigned char* in, unsigned char* out) {
+            store_block<cipher_type>(cipher_type::encrypt_block(k, load_block<cipher_type>(in)), out);
+        }
+
+        template <typename cipher_type>
+        static void decrypt_bytes(const typename cipher_type::key_type& k, const unsigned char* in, unsigned char* out) {
+            store_block<cipher_type>(cipher_type::decrypt_block(k, load_block<cipher_type>(in)), out);
+        }
+
+        static void xor_bytes(const unsigned char* a, const unsigned char* b, unsigned char* o, unsigned int n) {
+            for (unsigned int i = 0; i < n; ++i)
+                o[i] = a[i] ^ b[i];
+        }
+
+        static void copy_bytes(const unsigned char* src, unsigned char* dst, unsigned int n) {
+            for (unsigned int i = 0; i < n; ++i)
+                dst[i] = src[i];
+        }
+
+        static void zero_bytes(unsigned char* dst, unsigned int n) {
+            for (unsigned int i = 0; i < n; ++i)
+                dst[i] = 0;
+        }
+
+        static void inc_be(unsigned char* c, unsigned int n) {
+            for (int i = static_cast<int>(n) - 1; i >= 0; --i) {
+                if (++c[i] != 0)
+                    return;
+            }
+        }
+
+        static void inc32(unsigned char* c) {
+            for (int i = 15; i >= 12; --i) {
+                if (++c[i] != 0)
+                    return;
+            }
+        }
+
+        static void gcm_gf_mul_128(const unsigned char* X, const unsigned char* Y, unsigned char* Z) {
+            unsigned char z[16] = {};
+            unsigned char v[16];
+            copy_bytes(X, v, 16);
+            for (unsigned int i = 0; i < 128; ++i) {
+                if ((Y[i / 8] >> (7 - (i % 8))) & 1)
+                    xor_bytes(z, v, z, 16);
+                unsigned char lsb = v[15] & 1;
+                for (int j = 15; j > 0; --j)
+                    v[j] = static_cast<unsigned char>((v[j] >> 1) | ((v[j - 1] & 1) << 7));
+                v[0] >>= 1;
+                if (lsb)
+                    v[0] ^= 0xE1;
+            }
+            copy_bytes(z, Z, 16);
+        }
+
+        static void gcm_ghash_block(const unsigned char* H, unsigned char* Y, const unsigned char* block) {
+            xor_bytes(Y, block, Y, 16);
+            unsigned char tmp[16];
+            gcm_gf_mul_128(Y, H, tmp);
+            copy_bytes(tmp, Y, 16);
+        }
+
+        static void gcm_ghash(const unsigned char* H, const unsigned char* aad, unsigned int aad_len, const unsigned char* data, unsigned int data_len, unsigned char* out) {
+            zero_bytes(out, 16);
+            unsigned char block[16];
+            for (unsigned int i = 0; i < aad_len; i += 16) {
+                zero_bytes(block, 16);
+                for (unsigned int j = 0; j < 16 && (i + j) < aad_len; ++j)
+                    block[j] = aad[i + j];
+                gcm_ghash_block(H, out, block);
+            }
+            for (unsigned int i = 0; i < data_len; i += 16) {
+                zero_bytes(block, 16);
+                for (unsigned int j = 0; j < 16 && (i + j) < data_len; ++j)
+                    block[j] = data[i + j];
+                gcm_ghash_block(H, out, block);
+            }
+            zero_bytes(block, 16);
+            unsigned long long ab = static_cast<unsigned long long>(aad_len) * 8;
+            unsigned long long db = static_cast<unsigned long long>(data_len) * 8;
+            for (unsigned int i = 0; i < 8; ++i) {
+                block[i] = static_cast<unsigned char>((ab >> (56 - 8 * i)) & 0xFF);
+                block[8 + i] = static_cast<unsigned char>((db >> (56 - 8 * i)) & 0xFF);
+            }
+            gcm_ghash_block(H, out, block);
+        }
+
+        static void siv_dbl(const unsigned char* in, unsigned char* out) {
+            unsigned char carry = 0;
+            for (int i = 15; i >= 0; --i) {
+                out[i] = static_cast<unsigned char>((in[i] << 1) | carry);
+                carry = (in[i] >> 7) & 1;
+            }
+            if (carry)
+                out[15] ^= 0x87;
+        }
+
+        template <typename cipher_type>
+        static void siv_cmac(const typename cipher_type::key_type& key, const unsigned char* data, unsigned int length, unsigned char* mac, const unsigned char* xor_end = nullptr) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            unsigned char zero[N] = {}, L[N], K1[N], K2[N];
+            encrypt_bytes<cipher_type>(key, zero, L);
+            siv_dbl(L, K1);
+            siv_dbl(K1, K2);
+            zero_bytes(mac, N);
+            unsigned int num = (length + N - 1) / N;
+            if (length == 0)
+                num = 1;
+            for (unsigned int i = 0; i < num; ++i) {
+                unsigned char block[N] = {};
+                bool last = (i == num - 1);
+                if (last) {
+                    if (length == 0 || length % N != 0) {
+                        unsigned int rem = length % N;
+                        copy_bytes(data + i * N, block, rem);
+                        block[rem] = 0x80;
+                        xor_bytes(block, K2, block, N);
+                    }
+                    else {
+                        copy_bytes(data + i * N, block, N);
+                        xor_bytes(block, K1, block, N);
+                    }
+                    if (xor_end)
+                        xor_bytes(block, xor_end, block, N);
+                }
+                else {
+                    copy_bytes(data + i * N, block, N);
+                }
+                xor_bytes(mac, block, mac, N);
+                encrypt_bytes<cipher_type>(key, mac, mac);
+            }
+        }
+
+        template <typename cipher_type>
+        static void siv_s2v(const typename cipher_type::key_type& key, const unsigned char* aad, unsigned int aad_len, const unsigned char* nonce, unsigned int nonce_len, const unsigned char* payload, unsigned int payload_len, unsigned char* out) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            unsigned char zero[N] = {}, d[N], tmp[N];
+            siv_cmac<cipher_type>(key, zero, N, d);
+            if (aad && aad_len > 0) {
+                siv_cmac<cipher_type>(key, aad, aad_len, tmp);
+                unsigned char dd[N];
+                siv_dbl(d, dd);
+                xor_bytes(dd, tmp, d, N);
+            }
+            else {
+                siv_dbl(d, d);
+            }
+            if (nonce && nonce_len > 0) {
+                siv_cmac<cipher_type>(key, nonce, nonce_len, tmp);
+                unsigned char dd[N];
+                siv_dbl(d, dd);
+                xor_bytes(dd, tmp, d, N);
+            }
+            else {
+                unsigned char dd[N];
+                siv_dbl(d, dd);
+                copy_bytes(dd, d, N);
+            }
+            if (payload_len >= N) {
+                siv_cmac<cipher_type>(key, payload, payload_len, out, d);
+            }
+            else {
+                unsigned char padded[N] = {};
+                if (payload)
+                    copy_bytes(payload, padded, payload_len);
+                padded[payload_len] = 0x80;
+                unsigned char dd[N];
+                siv_dbl(d, dd);
+                xor_bytes(dd, padded, tmp, N);
+                siv_cmac<cipher_type>(key, tmp, N, out);
+            }
+        }
+    }
+
+    template <typename cipher_type, block_cipher_mode mode>
+    class block_cipher;
+
+    // ECB
+    template <typename cipher_type>
+    class block_cipher<cipher_type, block_cipher_mode::ecb> final {
+    public:
+        constexpr static const unsigned int block_size = cipher_type::block_size;
+        constexpr static const unsigned int key_size = cipher_type::key_size;
+
+        static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, unsigned char* output) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            GTL_BLOCK_CIPHER_ASSERT((length % N) == 0, "Length must be multiple of block size.");
+            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            for (unsigned int i = 0; i < length; i += N) {
+                encrypt_bytes<cipher_type>(k, data + i, output + i);
+            }
+        }
+
+        static void decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, unsigned char* output) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            GTL_BLOCK_CIPHER_ASSERT((length % N) == 0, "Length must be multiple of block size.");
+            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            for (unsigned int i = 0; i < length; i += N) {
+                decrypt_bytes<cipher_type>(k, data + i, output + i);
+            }
+        }
+    };
+
+    // CBC
+    template <typename cipher_type>
+    class block_cipher<cipher_type, block_cipher_mode::cbc> final {
+    public:
+        constexpr static const unsigned int block_size = cipher_type::block_size;
+        constexpr static const unsigned int key_size = cipher_type::key_size;
+
+        static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            GTL_BLOCK_CIPHER_ASSERT((length % N) == 0, "Length must be multiple of block size.");
+            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            unsigned char prev[N];
+            copy_bytes(iv, prev, N);
+            for (unsigned int i = 0; i < length; i += N) {
+                unsigned char tmp[N];
+                xor_bytes(data + i, prev, tmp, N);
+                encrypt_bytes<cipher_type>(k, tmp, output + i);
+                copy_bytes(output + i, prev, N);
+            }
+        }
+
+        static void decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            GTL_BLOCK_CIPHER_ASSERT((length % N) == 0, "Length must be multiple of block size.");
+            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            unsigned char prev[N];
+            copy_bytes(iv, prev, N);
+            for (unsigned int i = 0; i < length; i += N) {
+                unsigned char dec[N];
+                decrypt_bytes<cipher_type>(k, data + i, dec);
+                xor_bytes(dec, prev, output + i, N);
+                copy_bytes(data + i, prev, N);
+            }
+        }
+    };
+
+    // CFB
+    template <typename cipher_type>
+    class block_cipher<cipher_type, block_cipher_mode::cfb> final {
+    public:
+        constexpr static const unsigned int block_size = cipher_type::block_size;
+        constexpr static const unsigned int key_size = cipher_type::key_size;
+
+        static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            GTL_BLOCK_CIPHER_ASSERT((length % N) == 0, "Length must be multiple of block size.");
+            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            unsigned char fb[N];
+            copy_bytes(iv, fb, N);
+            for (unsigned int i = 0; i < length; i += N) {
+                unsigned char enc[N];
+                encrypt_bytes<cipher_type>(k, fb, enc);
+                xor_bytes(data + i, enc, output + i, N);
+                copy_bytes(output + i, fb, N);
+            }
+        }
+
+        static void decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            GTL_BLOCK_CIPHER_ASSERT((length % N) == 0, "Length must be multiple of block size.");
+            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            unsigned char fb[N];
+            copy_bytes(iv, fb, N);
+            for (unsigned int i = 0; i < length; i += N) {
+                unsigned char enc[N];
+                encrypt_bytes<cipher_type>(k, fb, enc);
+                xor_bytes(data + i, enc, output + i, N);
+                copy_bytes(data + i, fb, N);
+            }
+        }
+    };
+
+    // OFB
+    template <typename cipher_type>
+    class block_cipher<cipher_type, block_cipher_mode::ofb> final {
+    public:
+        constexpr static const unsigned int block_size = cipher_type::block_size;
+        constexpr static const unsigned int key_size = cipher_type::key_size;
+
+        static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            GTL_BLOCK_CIPHER_ASSERT((length % N) == 0, "Length must be multiple of block size.");
+            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            unsigned char fb[N];
+            copy_bytes(iv, fb, N);
+            for (unsigned int i = 0; i < length; i += N) {
+                unsigned char enc[N];
+                encrypt_bytes<cipher_type>(k, fb, enc);
+                xor_bytes(data + i, enc, output + i, N);
+                copy_bytes(enc, fb, N);
+            }
+        }
+
+        static void decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
+            encrypt(data, length, key, iv, output);
+        }
+    };
+
+    // CTR
+    template <typename cipher_type>
+    class block_cipher<cipher_type, block_cipher_mode::ctr> final {
+    public:
+        constexpr static const unsigned int block_size = cipher_type::block_size;
+        constexpr static const unsigned int key_size = cipher_type::key_size;
+
+        static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            unsigned char ctr[N];
+            copy_bytes(iv, ctr, N);
+            for (unsigned int i = 0; i < length; i += N) {
+                unsigned char enc[N];
+                encrypt_bytes<cipher_type>(k, ctr, enc);
+                unsigned int blen = (length - i < N) ? (length - i) : N;
+                for (unsigned int j = 0; j < blen; ++j) {
+                    output[i + j] = data[i + j] ^ enc[j];
+                }
+                inc_be(ctr, N);
+            }
+        }
+
+        static void decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
+            encrypt(data, length, key, iv, output);
+        }
+    };
+
+    // GCM
+    template <typename cipher_type>
+    class block_cipher<cipher_type, block_cipher_mode::gcm> final {
+    public:
+        constexpr static const unsigned int block_size = cipher_type::block_size;
+        constexpr static const unsigned int key_size = cipher_type::key_size;
+
+        static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, unsigned char* tag, const unsigned char* aad = nullptr, unsigned int aad_length = 0) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            unsigned char h[N] = {}, zero[N] = {};
+            encrypt_bytes<cipher_type>(k, zero, h);
+            unsigned char j0[N] = {};
+            copy_bytes(iv, j0, 12);
+            j0[15] = 0x01;
+            unsigned char ctr[N];
+            copy_bytes(j0, ctr, N);
+            inc32(ctr);
+            for (unsigned int i = 0; i < length; i += N) {
+                unsigned char enc[N];
+                encrypt_bytes<cipher_type>(k, ctr, enc);
+                unsigned int blen = (length - i < N) ? (length - i) : N;
+                for (unsigned int j = 0; j < blen; ++j) {
+                    output[i + j] = data[i + j] ^ enc[j];
+                }
+                inc32(ctr);
+            }
+            if (tag) {
+                unsigned char ghash[N], j0e[N];
+                gcm_ghash(h, aad, aad_length, output, length, ghash);
+                encrypt_bytes<cipher_type>(k, j0, j0e);
+                xor_bytes(j0e, ghash, tag, N);
+            }
+        }
+
+        static bool decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, const unsigned char* tag, const unsigned char* aad = nullptr, unsigned int aad_length = 0) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            unsigned char h[N] = {}, zero[N] = {};
+            encrypt_bytes<cipher_type>(k, zero, h);
+            unsigned char j0[N] = {};
+            copy_bytes(iv, j0, 12);
+            j0[15] = 0x01;
+            // Verify tag if provided with AAD
+            if (tag && aad && aad_length > 0) {
+                unsigned char ghash[N], j0e[N], computed[N];
+                gcm_ghash(h, aad, aad_length, data, length, ghash);
+                encrypt_bytes<cipher_type>(k, j0, j0e);
+                xor_bytes(j0e, ghash, computed, N);
+                bool valid = true;
+                for (unsigned int i = 0; i < N; ++i) {
+                    if (tag[i] != computed[i]) {
+                        valid = false;
+                    }
+                }
+                if (!valid) {
+                    zero_bytes(output, length);
+                    return false;
+                }
+            }
+            unsigned char ctr[N];
+            copy_bytes(j0, ctr, N);
+            inc32(ctr);
+            for (unsigned int i = 0; i < length; i += N) {
+                unsigned char enc[N];
+                encrypt_bytes<cipher_type>(k, ctr, enc);
+                unsigned int blen = (length - i < N) ? (length - i) : N;
+                for (unsigned int j = 0; j < blen; ++j) {
+                    output[i + j] = data[i + j] ^ enc[j];
+                }
+                inc32(ctr);
+            }
+            return true;
+        }
+    };
+
+    // CCM
+    template <typename cipher_type>
+    class block_cipher<cipher_type, block_cipher_mode::ccm> final {
+    public:
+        constexpr static const unsigned int block_size = cipher_type::block_size;
+        constexpr static const unsigned int key_size = cipher_type::key_size;
+
+        static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, unsigned char* tag, const unsigned char* aad = nullptr, unsigned int aad_length = 0) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            const unsigned int nonce_len = 12;
+            const unsigned int L = 15 - nonce_len;
+            // B0
+            unsigned char b0[N] = {};
+            b0[0] = static_cast<unsigned char>((aad_length > 0 ? 0x40 : 0x00) | (((N - 2) / 2) << 3) | (L - 1));
+            copy_bytes(iv, b0 + 1, nonce_len);
+            for (unsigned int i = 0; i < L; ++i)
+                b0[15 - i] = static_cast<unsigned char>((length >> (8 * i)) & 0xFF);
+            unsigned char Y[N];
+            encrypt_bytes<cipher_type>(k, b0, Y);
+            // AAD
+            if (aad_length > 0) {
+                unsigned char ba[N] = {};
+                unsigned int off = 0;
+                if (aad_length < 0xFF00) {
+                    ba[0] = static_cast<unsigned char>((aad_length >> 8) & 0xFF);
+                    ba[1] = static_cast<unsigned char>(aad_length & 0xFF);
+                    off = 2;
+                }
+                else {
+                    ba[0] = 0xFF;
+                    ba[1] = 0xFE;
+                    ba[2] = static_cast<unsigned char>((aad_length >> 24) & 0xFF);
+                    ba[3] = static_cast<unsigned char>((aad_length >> 16) & 0xFF);
+                    ba[4] = static_cast<unsigned char>((aad_length >> 8) & 0xFF);
+                    ba[5] = static_cast<unsigned char>(aad_length & 0xFF);
+                    off = 6;
+                }
+                for (unsigned int i = 0; i < aad_length; ++i) {
+                    if (off == N) {
+                        unsigned char tmp[N];
+                        xor_bytes(Y, ba, tmp, N);
+                        encrypt_bytes<cipher_type>(k, tmp, Y);
+                        zero_bytes(ba, N);
+                        off = 0;
+                    }
+                    ba[off++] ^= aad[i];
+                }
+                unsigned char tmp[N];
+                xor_bytes(Y, ba, tmp, N);
+                encrypt_bytes<cipher_type>(k, tmp, Y);
+            }
+            // Payload auth
+            for (unsigned int i = 0; i < length; i += N) {
+                unsigned char bp[N] = {};
+                unsigned int blen = (length - i < N) ? (length - i) : N;
+                copy_bytes(data + i, bp, blen);
+                unsigned char tmp[N];
+                xor_bytes(Y, bp, tmp, N);
+                encrypt_bytes<cipher_type>(k, tmp, Y);
+            }
+            // Counter blocks
+            unsigned char a0[N] = {};
+            a0[0] = static_cast<unsigned char>(L - 1);
+            copy_bytes(iv, a0 + 1, nonce_len);
+            unsigned char s0[N];
+            encrypt_bytes<cipher_type>(k, a0, s0);
+            for (unsigned int i = 0; i < length; i += N) {
+                unsigned char ai[N];
+                copy_bytes(a0, ai, N);
+                unsigned int counter = (i / N) + 1;
+                for (unsigned int j = 0; j < L; ++j) {
+                    ai[15 - j] = static_cast<unsigned char>((counter >> (8 * j)) & 0xFF);
+                }
+                unsigned char si[N];
+                encrypt_bytes<cipher_type>(k, ai, si);
+                unsigned int blen = (length - i < N) ? (length - i) : N;
+                for (unsigned int j = 0; j < blen; ++j) {
+                    output[i + j] = data[i + j] ^ si[j];
+                }
+            }
+            if (tag)
+                xor_bytes(Y, s0, tag, N);
+        }
+
+        static bool decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, const unsigned char* tag, const unsigned char* aad = nullptr, unsigned int aad_length = 0) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            const unsigned int nonce_len = 12;
+            const unsigned int L = 15 - nonce_len;
+            // Decrypt
+            unsigned char a0[N] = {};
+            a0[0] = static_cast<unsigned char>(L - 1);
+            copy_bytes(iv, a0 + 1, nonce_len);
+            unsigned char s0[N];
+            encrypt_bytes<cipher_type>(k, a0, s0);
+            for (unsigned int i = 0; i < length; i += N) {
+                unsigned char ai[N];
+                copy_bytes(a0, ai, N);
+                unsigned int counter = (i / N) + 1;
+                for (unsigned int j = 0; j < L; ++j) {
+                    ai[15 - j] = static_cast<unsigned char>((counter >> (8 * j)) & 0xFF);
+                }
+                unsigned char si[N];
+                encrypt_bytes<cipher_type>(k, ai, si);
+                unsigned int blen = (length - i < N) ? (length - i) : N;
+                for (unsigned int j = 0; j < blen; ++j) {
+                    output[i + j] = data[i + j] ^ si[j];
+                }
+            }
+            // Verify
+            if (tag && aad && aad_length > 0) {
+                unsigned char b0[N] = {};
+                b0[0] = static_cast<unsigned char>(0x40 | (((N - 2) / 2) << 3) | (L - 1));
+                copy_bytes(iv, b0 + 1, nonce_len);
+                for (unsigned int i = 0; i < L; ++i) {
+                    b0[15 - i] = static_cast<unsigned char>((length >> (8 * i)) & 0xFF);
+                }
+                unsigned char Y[N];
+                encrypt_bytes<cipher_type>(k, b0, Y);
+                unsigned char ba[N] = {};
+                unsigned int off = 0;
+                if (aad_length < 0xFF00) {
+                    ba[0] = static_cast<unsigned char>((aad_length >> 8) & 0xFF);
+                    ba[1] = static_cast<unsigned char>(aad_length & 0xFF);
+                    off = 2;
+                }
+                else {
+                    ba[0] = 0xFF;
+                    ba[1] = 0xFE;
+                    ba[2] = static_cast<unsigned char>((aad_length >> 24) & 0xFF);
+                    ba[3] = static_cast<unsigned char>((aad_length >> 16) & 0xFF);
+                    ba[4] = static_cast<unsigned char>((aad_length >> 8) & 0xFF);
+                    ba[5] = static_cast<unsigned char>(aad_length & 0xFF);
+                    off = 6;
+                }
+                for (unsigned int i = 0; i < aad_length; ++i) {
+                    if (off == N) {
+                        unsigned char tmp[N];
+                        xor_bytes(Y, ba, tmp, N);
+                        encrypt_bytes<cipher_type>(k, tmp, Y);
+                        zero_bytes(ba, N);
+                        off = 0;
+                    }
+                    ba[off++] ^= aad[i];
+                }
+                unsigned char tmp[N];
+                xor_bytes(Y, ba, tmp, N);
+                encrypt_bytes<cipher_type>(k, tmp, Y);
+                for (unsigned int i = 0; i < length; i += N) {
+                    unsigned char bp[N] = {};
+                    unsigned int blen = (length - i < N) ? (length - i) : N;
+                    copy_bytes(output + i, bp, blen);
+                    xor_bytes(Y, bp, tmp, N);
+                    encrypt_bytes<cipher_type>(k, tmp, Y);
+                }
+                unsigned char computed[N];
+                xor_bytes(Y, s0, computed, N);
+                for (unsigned int i = 0; i < N; ++i) {
+                    if (tag[i] != computed[i]) {
+                        zero_bytes(output, length);
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+    };
+
+    // SIV
+    template <typename cipher_type>
+    class block_cipher<cipher_type, block_cipher_mode::siv> final {
+    public:
+        constexpr static const unsigned int block_size = cipher_type::block_size;
+        constexpr static const unsigned int key_size = cipher_type::key_size;
+
+        static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, unsigned char* tag, const unsigned char* aad = nullptr, unsigned int aad_length = 0) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            unsigned char v[N];
+            siv_s2v<cipher_type>(k, aad, aad_length, iv, 12, data, length, v);
+            if (tag) {
+                copy_bytes(v, tag, N);
+            }
+            unsigned char ctr[N];
+            copy_bytes(v, ctr, N);
+            ctr[8] &= 0x7F;
+            ctr[12] &= 0x7F;
+            for (unsigned int i = 0; i < length; i += N) {
+                unsigned char enc[N];
+                encrypt_bytes<cipher_type>(k, ctr, enc);
+                unsigned int blen = (length - i < N) ? (length - i) : N;
+                for (unsigned int j = 0; j < blen; ++j) {
+                    output[i + j] = data[i + j] ^ enc[j];
+                }
+                inc_be(ctr, N);
+            }
+        }
+
+        static bool decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, const unsigned char* tag, const unsigned char* aad = nullptr, unsigned int aad_length = 0) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            if (!tag) {
+                zero_bytes(output, length);
+                return false;
+            }
+            unsigned char v[N];
+            copy_bytes(tag, v, N);
+            unsigned char ctr[N];
+            copy_bytes(v, ctr, N);
+            ctr[8] &= 0x7F;
+            ctr[12] &= 0x7F;
+            for (unsigned int i = 0; i < length; i += N) {
+                unsigned char enc[N];
+                encrypt_bytes<cipher_type>(k, ctr, enc);
+                unsigned int blen = (length - i < N) ? (length - i) : N;
+                for (unsigned int j = 0; j < blen; ++j) {
+                    output[i + j] = data[i + j] ^ enc[j];
+                }
+                inc_be(ctr, N);
+            }
+            if (aad && aad_length > 0) {
+                unsigned char cv[N];
+                siv_s2v<cipher_type>(k, aad, aad_length, iv, 12, output, length, cv);
+                for (unsigned int i = 0; i < N; ++i) {
+                    if (cv[i] != v[i]) {
+                        zero_bytes(output, length);
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+    };
+}
+
+#undef GTL_BLOCK_CIPHER_ASSERT
+#endif // GTL_CRYPTO_BLOCK_CIPHER_HPP
