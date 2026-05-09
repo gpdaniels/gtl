@@ -32,19 +32,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 namespace gtl {
-    /// @brief  Different block cipher modes available for the aes class.
-    enum class aes_mode {
-        ecb, // Electronic codebook.
-        cbc, // Cipher block chaining.
-        cfb, // Cipher feedback.
-        ofb, // Output feedback.
-        ctr  // Counter.
-    };
-
     /// @brief  The aes class computes an encrypted output from a sequence of data.
     /// @tparam aes_size The size of the key length used in the aes algorithm.
-    /// @tparam block_cipher_mode The mode used to chain together blocks.
-    template <unsigned long long int aes_size, aes_mode block_cipher_mode>
+    template <unsigned long long int aes_size>
     class aes final {
     private:
         static_assert(aes_size % 8 == 0, "Size of aes key must be a multiple of eight.");
@@ -54,17 +44,14 @@ namespace gtl {
         /// @brief  Handy variable for accessing the size in bits.
         constexpr static const unsigned long long int size = aes_size;
 
-        /// @brief  Handy variable for accessing the aes mode type.
-        constexpr static const aes_mode mode = block_cipher_mode;
-
         /// @brief  Internal size of each processed block of data in bytes.
         constexpr static const unsigned int block_size = 32 / 8;
 
         /// @brief  Size of the key in bytes.
-        constexpr static const unsigned int key_size = size / 8;
+        constexpr static const unsigned int key_size = aes::size / 8;
 
         /// @brief  The number of encryption/decryption rounds.
-        constexpr static const int number_of_rounds = 6 + (size / 32);
+        constexpr static const int number_of_rounds = 6 + (aes::size / 32);
 
     public:
         /// @brief  Type used to hold words of data for processing.
@@ -334,59 +321,6 @@ namespace gtl {
         }
 
     private:
-        /// @brief  Transform a block of data from decrypted to encrypted.
-        /// @param  key The input key used to encrypt the data.
-        /// @param  data Data to encrypt.
-        /// @return The encrypted data.
-        constexpr static block_type transform_block_forward(const key_type& key, const block_type& data) {
-            block_type round_keys[aes::number_of_rounds + 1];
-            aes::key_expansion(key, round_keys);
-
-            block_type state = data;
-
-            state = aes::xor_data(round_keys[0], state);
-
-            for (unsigned int round = 1; round < aes::number_of_rounds; ++round) {
-                aes::substitute_forward(state);
-                aes::rotate_rows_forward(state);
-                aes::mix_columns_forward(state);
-                state = aes::xor_data(round_keys[round], state);
-            }
-
-            aes::substitute_forward(state);
-            aes::rotate_rows_forward(state);
-            state = aes::xor_data(round_keys[aes::number_of_rounds], state);
-
-            return state;
-        }
-
-        /// @brief  Transform a block of data from encrypted to decrypted.
-        /// @param  key The input key used to decrypt the data.
-        /// @param  data Data to decrypt.
-        /// @return The decrypted data.
-        constexpr static block_type transform_block_inverse(const key_type& key, const block_type& data) {
-            block_type round_keys[aes::number_of_rounds + 1];
-            aes::key_expansion(key, round_keys);
-
-            block_type state = data;
-
-            state = aes::xor_data(round_keys[aes::number_of_rounds], state);
-
-            for (unsigned int round = aes::number_of_rounds - 1; round > 0; --round) {
-                aes::substitute_inverse(state);
-                aes::rotate_rows_inverse(state);
-                state = aes::xor_data(round_keys[round], state);
-                aes::mix_columns_inverse(state);
-            }
-
-            aes::substitute_inverse(state);
-            aes::rotate_rows_inverse(state);
-            state = aes::xor_data(round_keys[0], state);
-
-            return state;
-        }
-
-    private:
         /// @brief  Calculate and return the byte by byte xor of the lhs and rhs words.
         /// @param  lhs The lhs word.
         /// @param  rhs The rhs word.
@@ -412,213 +346,56 @@ namespace gtl {
         }
 
     public:
-        /// @brief  Transform a block of data from decrypted to encrypted chaining together blocks using an initialisation vector.
+        /// @brief  Transform a block of data from decrypted to encrypted.
         /// @param  key The input key used to encrypt the data.
         /// @param  data Data to encrypt.
-        /// @param  initialisation_vector Data optionally used to seed the encryption process depending on the mode.
         /// @return The encrypted data.
-        constexpr static block_type encrypt_block(const key_type& key, const block_type& data, block_type& initialisation_vector = {}) {
-            block_type result;
-            if constexpr (aes::mode == aes_mode::cbc) {
-                const block_type block = aes::xor_data(initialisation_vector, data);
-                result = aes::transform_block_forward(key, block);
-                initialisation_vector = result;
+        constexpr static block_type encrypt_block(const key_type& key, const block_type& data) {
+            block_type round_keys[aes::number_of_rounds + 1];
+            aes::key_expansion(key, round_keys);
+
+            block_type state = data;
+
+            state = aes::xor_data(round_keys[0], state);
+
+            for (unsigned int round = 1; round < aes::number_of_rounds; ++round) {
+                aes::substitute_forward(state);
+                aes::rotate_rows_forward(state);
+                aes::mix_columns_forward(state);
+                state = aes::xor_data(round_keys[round], state);
             }
-            else if constexpr (aes::mode == aes_mode::cfb) {
-                const block_type block = aes::transform_block_forward(key, initialisation_vector);
-                result = aes::xor_data(data, block);
-                initialisation_vector = result;
-            }
-            else if constexpr (aes::mode == aes_mode::ecb) {
-                static_cast<void>(initialisation_vector);
-                result = aes::transform_block_forward(key, data);
-            }
-            else if constexpr (aes::mode == aes_mode::ofb) {
-                const block_type block = aes::transform_block_forward(key, initialisation_vector);
-                result = aes::xor_data(data, block);
-                initialisation_vector = block;
-            }
-            else if constexpr (aes::mode == aes_mode::ctr) {
-                const block_type block = aes::transform_block_forward(key, initialisation_vector);
-                result = aes::xor_data(data, block);
-                [&]() {
-                    for (int i = static_cast<int>(aes::block_size) - 1; i >= 0; --i) {
-                        for (int j = static_cast<int>(aes::block_size) - 1; j >= 0; --j) {
-                            if (++initialisation_vector.data[i].data[j]) {
-                                return;
-                            }
-                        }
-                    }
-                }();
-            }
-            else {
-                static_cast<void>(key);
-                static_cast<void>(data);
-                static_cast<void>(initialisation_vector);
-                static_assert(
-                    (aes::mode == aes_mode::cbc) ||
-                        (aes::mode == aes_mode::cfb) ||
-                        (aes::mode == aes_mode::ecb) ||
-                        (aes::mode == aes_mode::ofb) ||
-                        (aes::mode == aes_mode::ctr),
-                    "No valid mode selected for aes process."
-                );
-            }
-            return result;
+
+            aes::substitute_forward(state);
+            aes::rotate_rows_forward(state);
+            state = aes::xor_data(round_keys[aes::number_of_rounds], state);
+
+            return state;
         }
 
-        /// @brief  Transform a block of data from encrypted to decrypted chaining together blocks using an initialisation vector.
+        /// @brief  Transform a block of data from encrypted to decrypted.
         /// @param  key The input key used to decrypt the data.
         /// @param  data Data to decrypt.
-        /// @param  initialisation_vector Data optionally used to seed the decryption process depending on the mode.
         /// @return The decrypted data.
-        constexpr static block_type decrypt_block(const key_type& key, const block_type& data, block_type& initialisation_vector = {}) {
-            block_type result;
-            if constexpr (aes::mode == aes_mode::cbc) {
-                const block_type block = aes::transform_block_inverse(key, data);
-                result = aes::xor_data(initialisation_vector, block);
-                initialisation_vector = data;
-            }
-            else if constexpr (aes::mode == aes_mode::cfb) {
-                const block_type block = aes::transform_block_forward(key, initialisation_vector);
-                result = aes::xor_data(data, block);
-                initialisation_vector = data;
-            }
-            else if constexpr (aes::mode == aes_mode::ecb) {
-                static_cast<void>(initialisation_vector);
-                result = aes::transform_block_inverse(key, data);
-            }
-            else if constexpr (aes::mode == aes_mode::ofb) {
-                const block_type block = aes::transform_block_forward(key, initialisation_vector);
-                result = aes::xor_data(data, block);
-                initialisation_vector = block;
-            }
-            else if constexpr (aes::mode == aes_mode::ctr) {
-                const block_type block = aes::transform_block_forward(key, initialisation_vector);
-                result = aes::xor_data(data, block);
-                [&]() {
-                    for (int i = static_cast<int>(aes::block_size) - 1; i >= 0; --i) {
-                        for (int j = static_cast<int>(aes::block_size) - 1; j >= 0; --j) {
-                            if (++initialisation_vector.data[i].data[j]) {
-                                return;
-                            }
-                        }
-                    }
-                }();
-            }
-            else {
-                static_cast<void>(key);
-                static_cast<void>(data);
-                static_cast<void>(initialisation_vector);
-                static_assert(
-                    (aes::mode == aes_mode::cbc) ||
-                        (aes::mode == aes_mode::cfb) ||
-                        (aes::mode == aes_mode::ecb) ||
-                        (aes::mode == aes_mode::ofb) ||
-                        (aes::mode == aes_mode::ctr),
-                    "No valid mode selected for aes process."
-                );
-            }
-            return result;
-        }
+        constexpr static block_type decrypt_block(const key_type& key, const block_type& data) {
+            block_type round_keys[aes::number_of_rounds + 1];
+            aes::key_expansion(key, round_keys);
 
-    public:
-        /// @brief  Encrypt a string of data writing the encrypted data into the output string.
-        /// @param  data The string of data to encrypt.
-        /// @param  length The length of the data, must be a multiple of the aes block size.
-        /// @param  key The encryption key, must be at least the length required by the selected aes bitsize.
-        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
-        static void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, unsigned char* output) {
-            const unsigned char iv[32] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            aes::encrypt(data, length, key, iv, output);
-        }
+            block_type state = data;
 
-        /// @brief  Decrypt a string of data writing the decrypted data into the output string.
-        /// @param  data The string of data to decrypt.
-        /// @param  length The length of the data, must be a multiple of the aes block size.
-        /// @param  key The decryption key, must be at least the length required by the selected aes bitsize.
-        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
-        static void decrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, unsigned char* output) {
-            const unsigned char iv[32] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            aes::decrypt(data, length, key, iv, output);
-        }
+            state = aes::xor_data(round_keys[aes::number_of_rounds], state);
 
-        /// @brief  Encrypt a string of data writing the encrypted data into the output string.
-        /// @param  data The string of data to encrypt.
-        /// @param  length The length of the data, must be a multiple of the aes block size.
-        /// @param  key The encryption key, must be at least the length required by the selected aes bitsize.
-        /// @param  iv The initialisation vector used to seed the encryption process.
-        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
-        static void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
-            GTL_AES_ASSERT((length % (aes::block_size * aes::block_size)) == 0, "Data length must be a multiple of the aes block size.");
-
-            key_type key_data;
-            for (unsigned int i = 0; i < aes::key_size; ++i) {
-                key_data.data[i] = key[i];
+            for (unsigned int round = aes::number_of_rounds - 1; round > 0; --round) {
+                aes::substitute_inverse(state);
+                aes::rotate_rows_inverse(state);
+                state = aes::xor_data(round_keys[round], state);
+                aes::mix_columns_inverse(state);
             }
 
-            block_type initialisation_vector;
-            for (unsigned int i = 0; i < aes::block_size; ++i) {
-                for (unsigned int j = 0; j < aes::block_size; ++j) {
-                    initialisation_vector.data[j].data[i] = iv[i * (aes::block_size) + j];
-                }
-            }
+            aes::substitute_inverse(state);
+            aes::rotate_rows_inverse(state);
+            state = aes::xor_data(round_keys[0], state);
 
-            for (unsigned int i = 0; i < length / (aes::block_size * aes::block_size); ++i) {
-                block_type block;
-                for (unsigned int j = 0; j < aes::block_size; ++j) {
-                    for (unsigned int k = 0; k < aes::block_size; ++k) {
-                        block.data[k].data[j] = data[i * (aes::block_size * aes::block_size) + j * (aes::block_size) + k];
-                    }
-                }
-
-                block = aes::encrypt_block(key_data, block, initialisation_vector);
-
-                for (unsigned int j = 0; j < aes::block_size; ++j) {
-                    for (unsigned int k = 0; k < aes::block_size; ++k) {
-                        output[i * (aes::block_size * aes::block_size) + j * (aes::block_size) + k] = block.data[k].data[j];
-                    }
-                }
-            }
-        }
-
-        /// @brief  Decrypt a string of data writing the decrypted data into the output string.
-        /// @param  data The string of data to decrypt.
-        /// @param  length The length of the data, must be a multiple of the aes block size.
-        /// @param  key The decryption key, must be at least the length required by the selected aes bitsize.
-        /// @param  iv The initialisation vector used to seed the decryption process.
-        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
-        static void decrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
-            GTL_AES_ASSERT((length % (aes::block_size * aes::block_size)) == 0, "Data length must be a multiple of the aes block size.");
-
-            key_type key_data;
-            for (unsigned int i = 0; i < aes::key_size; ++i) {
-                key_data.data[i] = key[i];
-            }
-
-            block_type initialisation_vector;
-            for (unsigned int i = 0; i < aes::block_size; ++i) {
-                for (unsigned int j = 0; j < aes::block_size; ++j) {
-                    initialisation_vector.data[j].data[i] = iv[i * (aes::block_size) + j];
-                }
-            }
-
-            for (unsigned int i = 0; i < length / (aes::block_size * aes::block_size); ++i) {
-                block_type block;
-                for (unsigned int j = 0; j < aes::block_size; ++j) {
-                    for (unsigned int k = 0; k < aes::block_size; ++k) {
-                        block.data[k].data[j] = data[i * (aes::block_size * aes::block_size) + j * (aes::block_size) + k];
-                    }
-                }
-
-                block = aes::decrypt_block(key_data, block, initialisation_vector);
-
-                for (unsigned int j = 0; j < aes::block_size; ++j) {
-                    for (unsigned int k = 0; k < aes::block_size; ++k) {
-                        output[i * (aes::block_size * aes::block_size) + j * (aes::block_size) + k] = block.data[k].data[j];
-                    }
-                }
-            }
+            return state;
         }
     };
 }
