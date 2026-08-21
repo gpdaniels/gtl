@@ -79,3 +79,102 @@ TEST(json, function, compose) {
         REQUIRE(testbench::is_string_same(json.compose().c_str(), string), "Failed to compose json: parse(%s) != %s", string, json.compose().c_str());
     }
 }
+
+TEST(json, function, parse_whitespace) {
+    gtl::json json;
+
+    struct test_data {
+        const char* string;
+        const char* composed;
+    };
+
+    constexpr static const test_data whitespace_strings[] = {
+        { " {}", "{}" },
+        { "{ }", "{}" },
+        { "[] ", "[]" },
+        { " [ ] ", "[]" },
+        { "\r\n\t null \n", "null" },
+        { "{ \"a\" : true , \"b\" : [ 1 , 2 ] }\n", "{\"a\":true,\"b\":[1,2]}" },
+    };
+    for (const test_data& data : whitespace_strings) {
+        REQUIRE(json.parse(data.string), "Failed to parse json: %s", data.string);
+        REQUIRE(testbench::is_string_same(json.compose().c_str(), data.composed), "Failed to compose json: parse(%s) != %s", data.string, json.compose().c_str());
+    }
+}
+
+TEST(json, function, parse_rejects_trailing_comma) {
+    gtl::json json;
+    constexpr static const char* invalid_strings[] = {
+        R"([1,])",
+        R"([1, ])",
+        R"({"a":1,})",
+        R"({"a":1, })",
+    };
+    for (const char* string : invalid_strings) {
+        REQUIRE(!json.parse(string), "Unexpectedly parsed json: %s", string);
+    }
+}
+
+TEST(json, function, escape_compose) {
+    gtl::json json;
+    json.document() = gtl::json::value(std::string("quote:\" slash:\\ controls:\b\f\n\r\t other:\x01"));
+    REQUIRE(testbench::is_string_same(json.compose().c_str(), R"("quote:\" slash:\\ controls:\b\f\n\r\t other:\u0001")"), "Failed to compose escaped json: %s", json.compose().c_str());
+}
+
+TEST(json, function, escape_parse) {
+    gtl::json json;
+
+    struct test_data {
+        const char* string;
+        const char* decoded;
+    };
+
+    constexpr static const test_data escape_strings[] = {
+        { R"("")", "" },
+        { R"("\/")", "/" },
+        { R"("\"")", "\"" },
+        { R"("\\")", "\\" },
+        { R"("a\\")", "a\\" },
+        { R"("A\u0041B")", "AAB" },
+        { R"("\ud83d\ude00")", "\xF0\x9F\x98\x80" },
+    };
+    for (const test_data& data : escape_strings) {
+        REQUIRE(json.parse(data.string), "Failed to parse json: %s", data.string);
+        REQUIRE(testbench::is_string_same(json.document().as<gtl::json::value::string_type>().c_str(), data.decoded), "Failed to decode json: parse(%s) != %s", data.string, data.decoded);
+    }
+}
+
+TEST(json, function, escape_rejects_invalid) {
+    gtl::json json;
+    constexpr static const char* invalid_strings[] = {
+        R"("\q")",
+        R"("\u12g4")",
+        R"("\u123")",
+        R"("\ud800")",
+        R"("\ude00")",
+        R"("\ud800X")",
+        R"("\ud800\ud800")",
+        "\"raw\ttab\"",
+        R"("unterminated)",
+        R"("trailing\)",
+    };
+    for (const char* string : invalid_strings) {
+        REQUIRE(!json.parse(string), "Unexpectedly parsed json: %s", string);
+    }
+}
+
+TEST(json, function, escape_round_trip) {
+    gtl::json json;
+    const std::string text = std::string("quote:\" slash:\\ controls:\b\f\n\r\t\x01 unicode:\xC3\xA9 emoji:\xF0\x9F\x98\x80");
+    json.document() = gtl::json::value(text);
+    const std::string composed = json.compose();
+    REQUIRE(json.parse(composed), "Failed to parse composed json: %s", composed.c_str());
+    REQUIRE(testbench::is_string_same(json.document().as<gtl::json::value::string_type>().c_str(), text.c_str()), "Failed to round trip json: %s", composed.c_str());
+
+    gtl::json::value::object_type object;
+    object[std::string("key\"\\\n")] = gtl::json::value(std::string("\t value \x01"));
+    json.document() = gtl::json::value(object);
+    const std::string composed_object = json.compose();
+    REQUIRE(json.parse(composed_object), "Failed to parse composed json: %s", composed_object.c_str());
+    REQUIRE(json.compose() == composed_object, "Failed to round trip json: %s", composed_object.c_str());
+}

@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cstdio>
 #include <cstdlib>
 #include <map>
+#include <new>
 #include <string>
 #include <vector>
 
@@ -320,19 +321,55 @@ namespace gtl {
                 }
             }
 
+        private:
+            static string_type escape(const string_type& input) {
+                string_type string;
+                string.reserve(input.size() + 2);
+                string += '"';
+                for (const char character : input) {
+                    switch (character) {
+                        case '\"': {
+                            string += "\\\"";
+                        } break;
+                        case '\\': {
+                            string += "\\\\";
+                        } break;
+                        case '\b': {
+                            string += "\\b";
+                        } break;
+                        case '\f': {
+                            string += "\\f";
+                        } break;
+                        case '\n': {
+                            string += "\\n";
+                        } break;
+                        case '\r': {
+                            string += "\\r";
+                        } break;
+                        case '\t': {
+                            string += "\\t";
+                        } break;
+                        default: {
+                            const unsigned char byte = static_cast<unsigned char>(character);
+                            if (byte < 0x20) {
+                                char buffer[7] = {};
+                                const int length = std::snprintf(&buffer[0], sizeof(buffer), "\\u%04x", static_cast<unsigned int>(byte));
+                                if ((length > 0) && (static_cast<string_type::size_type>(length) < sizeof(buffer))) {
+                                    string += &buffer[0];
+                                }
+                            }
+                            else {
+                                string += character;
+                            }
+                        } break;
+                    }
+                }
+                string += '"';
+                return string;
+            }
+
         public:
             string_type to_string() const {
-                constexpr static const auto replace = [](string_type& string, const string_type& from, const string_type& to) {
-                    string_type::size_type position = 0;
-                    while (true) {
-                        string_type::size_type start = string.find(from, position);
-                        if (start == string_type::npos) {
-                            return;
-                        }
-                        string.replace(start, from.size(), to);
-                        position += to.size();
-                    }
-                };
                 switch (this->type) {
                     case contains::null_type: {
                         return "null";
@@ -352,32 +389,16 @@ namespace gtl {
                         return std::string(&buffer[0]);
                     } break;
                     case contains::string_type: {
-                        string_type string = this->string_value;
-                        replace(string, "\\", "\\\\");
-                        replace(string, "\b", "\\\b");
-                        replace(string, "\f", "\\\f");
-                        replace(string, "\n", "\\\n");
-                        replace(string, "\r", "\\\r");
-                        replace(string, "\t", "\\\t");
-                        replace(string, "\"", "\\\"");
-                        return "\"" + string + "\"";
+                        return escape(this->string_value);
                     } break;
                     case contains::object_type: {
                         string_type string = "{";
                         for (const auto& [key, item] : this->object_value) {
-                            string_type key_escaped = key;
-                            replace(key_escaped, "\\", "\\\\");
-                            replace(key_escaped, "\b", "\\\b");
-                            replace(key_escaped, "\f", "\\\f");
-                            replace(key_escaped, "\n", "\\\n");
-                            replace(key_escaped, "\r", "\\\r");
-                            replace(key_escaped, "\t", "\\\t");
-                            replace(key_escaped, "\"", "\\\"");
                             if (string.size() == 1) {
-                                string += "\"" + key_escaped + "\":" + item.to_string();
+                                string += escape(key) + ":" + item.to_string();
                             }
                             else {
-                                string += ",\"" + key_escaped + "\":" + item.to_string();
+                                string += "," + escape(key) + ":" + item.to_string();
                             }
                         }
                         return string + "}";
@@ -491,35 +512,135 @@ namespace gtl {
             return false;
         }
 
-        bool parse_string(const std::string& data, std::string::size_type& index, value::string_type& string) {
-            if (data[index] != '"') {
+        static bool append_hex_digit(const char digit, unsigned int& value) {
+            value <<= 4;
+            if ((digit >= '0') && (digit <= '9')) {
+                value |= static_cast<unsigned int>(digit - '0');
+                return true;
+            }
+            if ((digit >= 'a') && (digit <= 'f')) {
+                value |= (static_cast<unsigned int>(digit - 'a') + 10);
+                return true;
+            }
+            if ((digit >= 'A') && (digit <= 'F')) {
+                value |= (static_cast<unsigned int>(digit - 'A') + 10);
+                return true;
+            }
+            return false;
+        }
+
+        bool append_unicode_escape(const std::string& data, std::string::size_type& position, value::string_type& string) {
+            if ((position + 4) >= data.size()) {
                 return false;
             }
-            std::string::size_type length = 1;
-            while ((index + length < data.size()) && ((data[index + length] != '"') || ((data[index + length - 1] == '\\') && (data[index + length] == '"')))) {
-                if (data[index + length] == '\b') {
+            unsigned int code_point = 0;
+            for (std::string::size_type offset = 1; offset <= 4; ++offset) {
+                if (!append_hex_digit(data[position + offset], code_point)) {
                     return false;
                 }
-                if (data[index + length] == '\f') {
-                    return false;
-                }
-                if (data[index + length] == '\n') {
-                    return false;
-                }
-                if (data[index + length] == '\r') {
-                    return false;
-                }
-                if (data[index + length] == '\t') {
-                    return false;
-                }
-                ++length;
             }
-            if (index + length == data.size()) {
+            position += 4;
+            if ((code_point >= 0xD800) && (code_point <= 0xDBFF)) {
+                if (((position + 6) >= data.size()) || (data[position + 1] != '\\') || (data[position + 2] != 'u')) {
+                    return false;
+                }
+                unsigned int low_surrogate = 0;
+                for (std::string::size_type offset = 3; offset <= 6; ++offset) {
+                    if (!append_hex_digit(data[position + offset], low_surrogate)) {
+                        return false;
+                    }
+                }
+                if ((low_surrogate < 0xDC00) || (low_surrogate > 0xDFFF)) {
+                    return false;
+                }
+                code_point = 0x10000 + ((code_point - 0xD800) << 10) + (low_surrogate - 0xDC00);
+                position += 6;
+            }
+            else if ((code_point >= 0xDC00) && (code_point <= 0xDFFF)) {
                 return false;
             }
-            string = data.substr(index + 1, length - 1);
-            index += length + 1;
+            if (code_point < 0x80) {
+                string += static_cast<char>(code_point);
+            }
+            else if (code_point < 0x800) {
+                string += static_cast<char>(0xC0 | (code_point >> 6));
+                string += static_cast<char>(0x80 | (code_point & 0x3F));
+            }
+            else if (code_point < 0x10000) {
+                string += static_cast<char>(0xE0 | (code_point >> 12));
+                string += static_cast<char>(0x80 | ((code_point >> 6) & 0x3F));
+                string += static_cast<char>(0x80 | (code_point & 0x3F));
+            }
+            else {
+                string += static_cast<char>(0xF0 | (code_point >> 18));
+                string += static_cast<char>(0x80 | ((code_point >> 12) & 0x3F));
+                string += static_cast<char>(0x80 | ((code_point >> 6) & 0x3F));
+                string += static_cast<char>(0x80 | (code_point & 0x3F));
+            }
             return true;
+        }
+
+        bool parse_string(const std::string& data, std::string::size_type& index, value::string_type& string) {
+            if ((index >= data.size()) || (data[index] != '"')) {
+                return false;
+            }
+            std::string::size_type position = index + 1;
+            string.clear();
+            while (position < data.size()) {
+                const char character = data[position];
+                if (character == '"') {
+                    index = position + 1;
+                    return true;
+                }
+                if (character == '\\') {
+                    ++position;
+                    if (position >= data.size()) {
+                        return false;
+                    }
+                    switch (data[position]) {
+                        case '\"': {
+                            string += '\"';
+                        } break;
+                        case '\\': {
+                            string += '\\';
+                        } break;
+                        case '/': {
+                            string += '/';
+                        } break;
+                        case 'b': {
+                            string += '\b';
+                        } break;
+                        case 'f': {
+                            string += '\f';
+                        } break;
+                        case 'n': {
+                            string += '\n';
+                        } break;
+                        case 'r': {
+                            string += '\r';
+                        } break;
+                        case 't': {
+                            string += '\t';
+                        } break;
+                        case 'u': {
+                            if (!append_unicode_escape(data, position, string)) {
+                                return false;
+                            }
+                        } break;
+                        default: {
+                            return false;
+                        } break;
+                    }
+                    ++position;
+                    continue;
+                }
+                if (static_cast<unsigned char>(character) < 0x20) {
+                    return false;
+                }
+                string += character;
+                ++position;
+            }
+            return false;
         }
 
         bool parse_object(const std::string& data, std::string::size_type& index, value::object_type& object) {
@@ -528,6 +649,7 @@ namespace gtl {
             }
             std::string::size_type index_object = index + 1;
             object = value::object_type();
+            skip_whitespace(data, index_object);
             if (index_object >= data.size()) {
                 return false;
             }
@@ -537,6 +659,9 @@ namespace gtl {
             }
             while (index_object < data.size()) {
                 skip_whitespace(data, index_object);
+                if ((index_object >= data.size()) || (data[index_object] == '}')) {
+                    return false;
+                }
                 value::string_type key;
                 if (!parse_string(data, index_object, key)) {
                     return false;
@@ -571,6 +696,7 @@ namespace gtl {
             }
             std::string::size_type index_array = index + 1;
             array = value::array_type();
+            skip_whitespace(data, index_array);
             if (index_array >= data.size()) {
                 return false;
             }
@@ -580,6 +706,9 @@ namespace gtl {
             }
             while (index_array < data.size()) {
                 skip_whitespace(data, index_array);
+                if ((index_array >= data.size()) || (data[index_array] == ']')) {
+                    return false;
+                }
                 value item = parse_recursive(data, index_array);
                 array.push_back(item);
                 skip_whitespace(data, index_array);
@@ -602,6 +731,7 @@ namespace gtl {
         bool parse(const std::string& data) {
             std::string::size_type index = 0;
             this->root = parse_recursive(data, index);
+            skip_whitespace(data, index);
             return (index == data.size());
         }
 
