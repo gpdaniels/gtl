@@ -250,21 +250,21 @@ namespace gtl {
 
                 // Chi (Bitwise combine).
                 for (unsigned int y = 0; y < 5; ++y) {
-                    unsigned char coefficients[5][8] = {};
+                    unsigned char lanes[5][8] = {};
 
                     // Read all lanes in this row.
                     for (unsigned int x = 0; x < 5; ++x) {
-                        const unsigned int offset = (x + 5 * y) * 8;
+                        const unsigned int lane_offset = (x + 5 * y) * 8;
                         for (unsigned int i = 0; i < 8; ++i) {
-                            coefficients[x][i] = this->current_state.data[offset + i];
+                            lanes[x][i] = this->current_state.data[lane_offset + i];
                         }
                     }
 
                     // Apply chi transformation: result = a ^ ((~b) & c)
                     for (unsigned int x = 0; x < 5; ++x) {
-                        const unsigned int offset = (x + 5 * y) * 8;
+                        const unsigned int lane_offset = (x + 5 * y) * 8;
                         for (unsigned int i = 0; i < 8; ++i) {
-                            this->current_state.data[offset + i] = coefficients[x][i] ^ ((~coefficients[(x + 1) % 5][i]) & coefficients[(x + 2) % 5][i]);
+                            this->current_state.data[lane_offset + i] = lanes[x][i] ^ ((~lanes[(x + 1) % 5][i]) & lanes[(x + 2) % 5][i]);
                         }
                     }
                 }

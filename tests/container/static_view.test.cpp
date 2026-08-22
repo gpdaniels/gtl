@@ -53,22 +53,19 @@ TEST(static_view, traits, standard) {
                     testbench::test_template<testbench::value_collection<0, 1, 10>>(
                         [](auto value_2) -> void {
                             using type_value2 = decltype(value_2);
-                            constexpr static const unsigned long long value1 = type_value1::value;
                             constexpr static const unsigned long long value2 = type_value2::value;
-                            REQUIRE((std::is_pod<gtl::static_view<type, value1, value2>>::value == false), "Expected std::is_pod to be false.");
-                            REQUIRE((std::is_trivial<gtl::static_view<type, value1, value2>>::value == false), "Expected std::is_trivial to be false.");
-                            REQUIRE((std::is_trivially_copyable<gtl::static_view<type, value1, value2>>::value == true), "Expected std::is_trivially_copyable to be true.");
-                            REQUIRE((std::is_standard_layout<gtl::static_view<type, value1, value2>>::value == true), "Expected std::is_standard_layout to be true.");
+                            REQUIRE((std::is_pod<gtl::static_view<type, type_value1::value, value2>>::value == false), "Expected std::is_pod to be false.");
+                            REQUIRE((std::is_trivial<gtl::static_view<type, type_value1::value, value2>>::value == false), "Expected std::is_trivial to be false.");
+                            REQUIRE((std::is_trivially_copyable<gtl::static_view<type, type_value1::value, value2>>::value == true), "Expected std::is_trivially_copyable to be true.");
+                            REQUIRE((std::is_standard_layout<gtl::static_view<type, type_value1::value, value2>>::value == true), "Expected std::is_standard_layout to be true.");
                             testbench::test_template<testbench::value_collection<0, 1, 10>>(
                                 [](auto value_3) -> void {
                                     using type_value3 = decltype(value_3);
-                                    constexpr static const unsigned long long value1 = type_value1::value;
-                                    constexpr static const unsigned long long value2 = type_value2::value;
                                     constexpr static const unsigned long long value3 = type_value3::value;
-                                    REQUIRE((std::is_pod<gtl::static_view<type, value1, value2, value3>>::value == false), "Expected std::is_pod to be false.");
-                                    REQUIRE((std::is_trivial<gtl::static_view<type, value1, value2, value3>>::value == false), "Expected std::is_trivial to be false.");
-                                    REQUIRE((std::is_trivially_copyable<gtl::static_view<type, value1, value2, value3>>::value == true), "Expected std::is_trivially_copyable to be true.");
-                                    REQUIRE((std::is_standard_layout<gtl::static_view<type, value1, value2, value3>>::value == true), "Expected std::is_standard_layout to be true.");
+                                    REQUIRE((std::is_pod<gtl::static_view<type, type_value1::value, type_value2::value, value3>>::value == false), "Expected std::is_pod to be false.");
+                                    REQUIRE((std::is_trivial<gtl::static_view<type, type_value1::value, type_value2::value, value3>>::value == false), "Expected std::is_trivial to be false.");
+                                    REQUIRE((std::is_trivially_copyable<gtl::static_view<type, type_value1::value, type_value2::value, value3>>::value == true), "Expected std::is_trivially_copyable to be true.");
+                                    REQUIRE((std::is_standard_layout<gtl::static_view<type, type_value1::value, type_value2::value, value3>>::value == true), "Expected std::is_standard_layout to be true.");
                                 }
                             );
                         }
@@ -94,17 +91,14 @@ TEST(static_view, constructor, empty) {
                     testbench::test_template<testbench::value_collection<0, 1, 10>>(
                         [](auto value_2) -> void {
                             using type_value2 = decltype(value_2);
-                            constexpr static const unsigned long long value1 = type_value1::value;
                             constexpr static const unsigned long long value2 = type_value2::value;
-                            gtl::static_view<type, value1, value2> static_view_2d(nullptr);
+                            gtl::static_view<type, type_value1::value, value2> static_view_2d(nullptr);
                             testbench::do_not_optimise_away(static_view_2d);
                             testbench::test_template<testbench::value_collection<0, 1, 10>>(
                                 [](auto value_3) -> void {
                                     using type_value3 = decltype(value_3);
-                                    constexpr static const unsigned long long value1 = type_value1::value;
-                                    constexpr static const unsigned long long value2 = type_value2::value;
                                     constexpr static const unsigned long long value3 = type_value3::value;
-                                    gtl::static_view<type, value1, value2, value3> static_view_3d(nullptr);
+                                    gtl::static_view<type, type_value1::value, type_value2::value, value3> static_view_3d(nullptr);
                                     testbench::do_not_optimise_away(static_view_3d);
                                 }
                             );
@@ -121,28 +115,25 @@ TEST(static_view, function, dimensions) {
         [](auto test_type) -> void {
             using type = typename decltype(test_type)::type;
             gtl::static_view<type> static_view_0d(nullptr);
-            REQUIRE(static_view_0d.dimensions() == 0, "static_view_0d.dimensions() = %d, expected %d", static_view_0d.dimensions(), 0);
+            REQUIRE(static_view_0d.dimensions() == 0, "static_view_0d.dimensions() = %u, expected %d", static_view_0d.dimensions(), 0);
             testbench::test_template<testbench::value_collection<0, 1, 10>>(
                 [](auto value_1) -> void {
                     using type_value1 = decltype(value_1);
                     constexpr static const unsigned long long value1 = type_value1::value;
                     gtl::static_view<type, value1> static_view_1d(nullptr);
-                    REQUIRE(static_view_1d.dimensions() == 1, "static_view_1d.dimensions() = %d, expected %d", static_view_1d.dimensions(), 1);
+                    REQUIRE(static_view_1d.dimensions() == 1, "static_view_1d.dimensions() = %u, expected %d", static_view_1d.dimensions(), 1);
                     testbench::test_template<testbench::value_collection<0, 1, 10>>(
                         [](auto value_2) -> void {
                             using type_value2 = decltype(value_2);
-                            constexpr static const unsigned long long value1 = type_value1::value;
                             constexpr static const unsigned long long value2 = type_value2::value;
-                            gtl::static_view<type, value1, value2> static_view_2d(nullptr);
-                            REQUIRE(static_view_2d.dimensions() == 2, "static_view_2d.dimensions() = %d, expected %d", static_view_2d.dimensions(), 2);
+                            gtl::static_view<type, type_value1::value, value2> static_view_2d(nullptr);
+                            REQUIRE(static_view_2d.dimensions() == 2, "static_view_2d.dimensions() = %u, expected %d", static_view_2d.dimensions(), 2);
                             testbench::test_template<testbench::value_collection<0, 1, 10>>(
                                 [](auto value_3) -> void {
                                     using type_value3 = decltype(value_3);
-                                    constexpr static const unsigned long long value1 = type_value1::value;
-                                    constexpr static const unsigned long long value2 = type_value2::value;
                                     constexpr static const unsigned long long value3 = type_value3::value;
-                                    gtl::static_view<type, value1, value2, value3> static_view_3d(nullptr);
-                                    REQUIRE(static_view_3d.dimensions() == 3, "static_view_3d.dimensions() = %d, expected %d", static_view_3d.dimensions(), 3);
+                                    gtl::static_view<type, type_value1::value, type_value2::value, value3> static_view_3d(nullptr);
+                                    REQUIRE(static_view_3d.dimensions() == 3, "static_view_3d.dimensions() = %u, expected %d", static_view_3d.dimensions(), 3);
                                 }
                             );
                         }
@@ -169,22 +160,19 @@ TEST(static_view, function, size) {
                     testbench::test_template<testbench::value_collection<0, 1, 10>>(
                         [](auto value_2) -> void {
                             using type_value2 = decltype(value_2);
-                            constexpr static const unsigned long long value1 = type_value1::value;
                             constexpr static const unsigned long long value2 = type_value2::value;
-                            gtl::static_view<type, value1, value2> static_view_2d(nullptr);
-                            REQUIRE(static_view_2d.size() == value1 * value2);
-                            REQUIRE(static_view_2d.size(0) == value1);
+                            gtl::static_view<type, type_value1::value, value2> static_view_2d(nullptr);
+                            REQUIRE(static_view_2d.size() == type_value1::value * value2);
+                            REQUIRE(static_view_2d.size(0) == type_value1::value);
                             REQUIRE(static_view_2d.size(1) == value2);
                             testbench::test_template<testbench::value_collection<0, 1, 10>>(
                                 [](auto value_3) -> void {
                                     using type_value3 = decltype(value_3);
-                                    constexpr static const unsigned long long value1 = type_value1::value;
-                                    constexpr static const unsigned long long value2 = type_value2::value;
                                     constexpr static const unsigned long long value3 = type_value3::value;
-                                    gtl::static_view<type, value1, value2, value3> static_view_3d(nullptr);
-                                    REQUIRE(static_view_3d.size() == value1 * value2 * value3);
-                                    REQUIRE(static_view_3d.size(0) == value1);
-                                    REQUIRE(static_view_3d.size(1) == value2);
+                                    gtl::static_view<type, type_value1::value, type_value2::value, value3> static_view_3d(nullptr);
+                                    REQUIRE(static_view_3d.size() == type_value1::value * type_value2::value * value3);
+                                    REQUIRE(static_view_3d.size(0) == type_value1::value);
+                                    REQUIRE(static_view_3d.size(1) == type_value2::value);
                                     REQUIRE(static_view_3d.size(2) == value3);
                                 }
                             );
@@ -213,12 +201,11 @@ TEST(static_view, operator, subscript) {
             testbench::test_template<testbench::value_collection<1, 10>>(
                 [](auto value_2) -> void {
                     using type_value2 = decltype(value_2);
-                    constexpr static const unsigned long long value1 = type_value1::value;
                     constexpr static const unsigned long long value2 = type_value2::value;
-                    type buffer_2d[value1 * value2]{};
+                    type buffer_2d[type_value1::value * value2]{};
                     for (const type& value : testbench::test_data<type>()) {
-                        gtl::static_view<type, value1, value2> static_view_2d(&buffer_2d[0]);
-                        for (unsigned int index1 = 0; index1 < value1; ++index1) {
+                        gtl::static_view<type, type_value1::value, value2> static_view_2d(&buffer_2d[0]);
+                        for (unsigned int index1 = 0; index1 < type_value1::value; ++index1) {
                             for (unsigned int index2 = 0; index2 < value2; ++index2) {
                                 static_view_2d[index1][index2] = value;
                                 REQUIRE(testbench::is_value_equal(static_view_2d[index1][index2], value));
@@ -228,14 +215,12 @@ TEST(static_view, operator, subscript) {
                     testbench::test_template<testbench::value_collection<1, 10>>(
                         [](auto value_3) -> void {
                             using type_value3 = decltype(value_3);
-                            constexpr static const unsigned long long value1 = type_value1::value;
-                            constexpr static const unsigned long long value2 = type_value2::value;
                             constexpr static const unsigned long long value3 = type_value3::value;
-                            type buffer_3d[value1 * value2 * value3]{};
+                            type buffer_3d[type_value1::value * type_value2::value * value3]{};
                             for (const type& value : testbench::test_data<type>()) {
-                                gtl::static_view<type, value1, value2, value3> static_view_3d(&buffer_3d[0]);
-                                for (unsigned int index1 = 0; index1 < value1; ++index1) {
-                                    for (unsigned int index2 = 0; index2 < value2; ++index2) {
+                                gtl::static_view<type, type_value1::value, type_value2::value, value3> static_view_3d(&buffer_3d[0]);
+                                for (unsigned int index1 = 0; index1 < type_value1::value; ++index1) {
+                                    for (unsigned int index2 = 0; index2 < type_value2::value; ++index2) {
                                         for (unsigned int index3 = 0; index3 < value3; ++index3) {
                                             static_view_3d[index1][index2][index3] = value;
                                             REQUIRE(testbench::is_value_equal(static_view_3d[index1][index2][index3], value));
@@ -268,12 +253,11 @@ TEST(static_view, operator, parenthesis) {
             testbench::test_template<testbench::value_collection<1, 10>>(
                 [](auto value_2) -> void {
                     using type_value2 = decltype(value_2);
-                    constexpr static const unsigned long long value1 = type_value1::value;
                     constexpr static const unsigned long long value2 = type_value2::value;
-                    type buffer_2d[value1 * value2]{};
+                    type buffer_2d[type_value1::value * value2]{};
                     for (const type& value : testbench::test_data<type>()) {
-                        gtl::static_view<type, value1, value2> static_view_2d(&buffer_2d[0]);
-                        for (unsigned int index1 = 0; index1 < value1; ++index1) {
+                        gtl::static_view<type, type_value1::value, value2> static_view_2d(&buffer_2d[0]);
+                        for (unsigned int index1 = 0; index1 < type_value1::value; ++index1) {
                             for (unsigned int index2 = 0; index2 < value2; ++index2) {
                                 static_view_2d(index1, index2) = value;
                                 REQUIRE(testbench::is_value_equal(static_view_2d(index1, index2), value));
@@ -283,14 +267,12 @@ TEST(static_view, operator, parenthesis) {
                     testbench::test_template<testbench::value_collection<1, 10>>(
                         [](auto value_3) -> void {
                             using type_value3 = decltype(value_3);
-                            constexpr static const unsigned long long value1 = type_value1::value;
-                            constexpr static const unsigned long long value2 = type_value2::value;
                             constexpr static const unsigned long long value3 = type_value3::value;
-                            type buffer_3d[value1 * value2 * value3]{};
+                            type buffer_3d[type_value1::value * type_value2::value * value3]{};
                             for (const type& value : testbench::test_data<type>()) {
-                                gtl::static_view<type, value1, value2, value3> static_view_3d(&buffer_3d[0]);
-                                for (unsigned int index1 = 0; index1 < value1; ++index1) {
-                                    for (unsigned int index2 = 0; index2 < value2; ++index2) {
+                                gtl::static_view<type, type_value1::value, type_value2::value, value3> static_view_3d(&buffer_3d[0]);
+                                for (unsigned int index1 = 0; index1 < type_value1::value; ++index1) {
+                                    for (unsigned int index2 = 0; index2 < type_value2::value; ++index2) {
                                         for (unsigned int index3 = 0; index3 < value3; ++index3) {
                                             static_view_3d(index1, index2, index3) = value;
                                             REQUIRE(testbench::is_value_equal(static_view_3d(index1, index2, index3), value));
