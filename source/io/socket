@@ -47,6 +47,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma comment(lib, "Ws2_32.lib")
 
+#if !defined(MSG_NOSIGNAL)
+#define MSG_NOSIGNAL 0
+#endif
+
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
@@ -67,6 +71,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define closesocket ::close
 #define SD_BOTH SHUT_RDWR
 #define ioctlsocket ioctl
+
+#if !defined(MSG_NOSIGNAL)
+#define MSG_NOSIGNAL 0
+#endif
 #endif
 
 static_assert(INVALID_SOCKET == -1, "The invalid socket definition must be negative one.");
@@ -148,6 +156,7 @@ namespace gtl {
 
         socket& operator=(socket&& other) {
             if (this != &other) {
+                this->close();
                 this->handle = other.handle;
                 other.handle = INVALID_SOCKET;
             }
@@ -155,11 +164,13 @@ namespace gtl {
         }
 
     private:
-        bool configure_tcp_socket(ip address, unsigned short port) {
+        bool configure_tcp_socket(ip address, unsigned short port, bool reuse_address = true) {
             // Enable port and address reuse.
-            const int reuseaddr_value = 1;
-            if (setsockopt(this->handle, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuseaddr_value), sizeof(int)) < 0) {
-                return false;
+            if (reuse_address) {
+                const int reuseaddr_value = 1;
+                if (setsockopt(this->handle, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuseaddr_value), sizeof(int)) < 0) {
+                    return false;
+                }
             }
 
             // Configure keepalive options for the socket.
@@ -181,6 +192,13 @@ namespace gtl {
             }
             const int keepcnt_value = 10;
             if (setsockopt(this->handle, IPPROTO_TCP, TCP_KEEPCNT, reinterpret_cast<const char*>(&keepcnt_value), sizeof(int)) < 0) {
+                return false;
+            }
+#endif
+
+#if defined(__APPLE__)
+            const int nosigpipe_value = 1;
+            if (setsockopt(this->handle, SOL_SOCKET, SO_NOSIGPIPE, reinterpret_cast<const char*>(&nosigpipe_value), sizeof(int)) < 0) {
                 return false;
             }
 #endif
@@ -230,6 +248,15 @@ namespace gtl {
                 return false;
             }
 
+#if defined(__APPLE__)
+            const int nosigpipe_value = 1;
+            if (setsockopt(this->handle, SOL_SOCKET, SO_NOSIGPIPE, reinterpret_cast<const char*>(&nosigpipe_value), sizeof(int)) < 0) {
+                closesocket(this->handle);
+                this->handle = INVALID_SOCKET;
+                return false;
+            }
+#endif
+
             // Setup the local address and port for the bind call.
             sockaddr_in address_bind = {};
             address_bind.sin_family = AF_INET;
@@ -255,7 +282,7 @@ namespace gtl {
             return ((this->handle >= 0) && (this->handle != INVALID_SOCKET));
         }
 
-        bool open(const tcp_server& connection) {
+        bool open(const tcp_server& connection, bool listen = true) {
             // Ensure closed.
             this->close();
 
@@ -267,24 +294,26 @@ namespace gtl {
                 return false;
             }
 
-            // Configure the socket.
-            if (!this->configure_tcp_socket(connection.address, connection.port)) {
+            // Configure the socket, when not listening disable address reuse to make the port reservation exclusive.
+            if (!this->configure_tcp_socket(connection.address, connection.port, listen)) {
                 closesocket(this->handle);
                 this->handle = INVALID_SOCKET;
                 return false;
             }
 
             // Now set the socket to listen for incoming connections.
-            if (listen(this->handle, SOMAXCONN) < 0) {
-                closesocket(this->handle);
-                this->handle = INVALID_SOCKET;
-                return false;
+            if (listen) {
+                if (::listen(this->handle, SOMAXCONN) < 0) {
+                    closesocket(this->handle);
+                    this->handle = INVALID_SOCKET;
+                    return false;
+                }
             }
 
             return true;
         }
 
-        bool open(const tcp_client& connection) {
+        bool open(const tcp_client& connection, bool connect = true) {
             // Ensure closed.
             this->close();
 
@@ -296,28 +325,40 @@ namespace gtl {
                 return false;
             }
 
-            // Configure the socket.
-            if (!this->configure_tcp_socket(connection.address_local, connection.port_local)) {
+            // Configure the socket, when not connecting disable address reuse to make the port reservation exclusive.
+            if (!this->configure_tcp_socket(connection.address_local, connection.port_local, connect)) {
                 closesocket(this->handle);
                 this->handle = INVALID_SOCKET;
                 return false;
             }
 
-            // Setup the address and port
-            sockaddr_in address_connect = {};
-            address_connect.sin_family = AF_INET;
-            address_connect.sin_addr.s_addr =
-                (static_cast<unsigned int>(connection.address_remote.segment[3]) << 24) |
-                (static_cast<unsigned int>(connection.address_remote.segment[2]) << 16) |
-                (static_cast<unsigned int>(connection.address_remote.segment[1]) << 8) |
-                (static_cast<unsigned int>(connection.address_remote.segment[0]) << 0);
-            address_connect.sin_port = htons(connection.port_remote);
+            // Now connect the socket to the remote host.
+            if (connect) {
+                // Setup the address and port
+                sockaddr_in address_connect = {};
+                address_connect.sin_family = AF_INET;
+                address_connect.sin_addr.s_addr =
+                    (static_cast<unsigned int>(connection.address_remote.segment[3]) << 24) |
+                    (static_cast<unsigned int>(connection.address_remote.segment[2]) << 16) |
+                    (static_cast<unsigned int>(connection.address_remote.segment[1]) << 8) |
+                    (static_cast<unsigned int>(connection.address_remote.segment[0]) << 0);
+                address_connect.sin_port = htons(connection.port_remote);
 
-            // Try to connect to the remote host
-            if (connect(this->handle, reinterpret_cast<const sockaddr*>(&address_connect), sizeof(sockaddr_in)) < 0) {
-                closesocket(this->handle);
-                this->handle = INVALID_SOCKET;
-                return false;
+#if defined(__APPLE__)
+                const int connectiontimeout_value = 1;
+                if (setsockopt(this->handle, IPPROTO_TCP, TCP_CONNECTIONTIMEOUT, reinterpret_cast<const char*>(&connectiontimeout_value), sizeof(int)) < 0) {
+                    closesocket(this->handle);
+                    this->handle = INVALID_SOCKET;
+                    return false;
+                }
+#endif
+
+                // Try to connect to the remote host
+                if (::connect(this->handle, reinterpret_cast<const sockaddr*>(&address_connect), sizeof(sockaddr_in)) < 0) {
+                    closesocket(this->handle);
+                    this->handle = INVALID_SOCKET;
+                    return false;
+                }
             }
 
             return true;
@@ -393,6 +434,14 @@ namespace gtl {
             if (handle_accepted == INVALID_SOCKET) {
                 return false;
             }
+
+#if defined(__APPLE__)
+            const int nosigpipe_value = 1;
+            if (setsockopt(handle_accepted, SOL_SOCKET, SO_NOSIGPIPE, reinterpret_cast<const char*>(&nosigpipe_value), sizeof(int)) < 0) {
+                closesocket(handle_accepted);
+                return false;
+            }
+#endif
 
             // Get the sender.
             address.segment[0] = (address_accepted.sin_addr.s_addr >> 0) & 0xFF;
@@ -481,8 +530,8 @@ namespace gtl {
             // The available data length.
             unsigned long long int length_available = 0;
 
-// // Get the available data length in linux.
 #if defined(linux) || defined(__linux) || defined(__linux__)
+            // Get the available data length in linux.
             int length_available_int = 0;
             if (ioctlsocket(this->handle, FIONREAD, &length_available_int) < 0) {
                 return false;
@@ -490,8 +539,8 @@ namespace gtl {
             length_available = static_cast<unsigned long long int>(length_available_int);
 #endif
 
-// Get the available data length in windows.
 #if defined(_WIN32)
+            // Get the available data length in windows.
             unsigned long int length_available_int = 0;
             if (ioctlsocket(this->handle, FIONREAD, &length_available_int) < 0) {
                 return false;
@@ -499,8 +548,8 @@ namespace gtl {
             length_available = static_cast<unsigned long long int>(length_available_int);
 #endif
 
-// Get the available data length in macos.
 #if defined(__APPLE__)
+            // Get the available data length in macos.
             int length_available_int;
             socklen_t option_length = sizeof(int);
             if (getsockopt(this->handle, SOL_SOCKET, SO_NREAD, &length_available_int, &option_length) < 0) {
@@ -559,9 +608,9 @@ namespace gtl {
 
 // Write out the whole buffer as a single message.
 #if defined(_WIN32)
-            const long long int length_written = send(this->handle, reinterpret_cast<const char*>(buffer), static_cast<int>(length), 0);
+            const long long int length_written = send(this->handle, reinterpret_cast<const char*>(buffer), static_cast<int>(length), MSG_NOSIGNAL);
 #else
-            const long long int length_written = send(this->handle, buffer, length, 0);
+            const long long int length_written = send(this->handle, buffer, length, MSG_NOSIGNAL);
 #endif
 
             // Check the write was successful.
@@ -596,9 +645,9 @@ namespace gtl {
 
 // Write out the whole buffer as a single message.
 #if defined(_WIN32)
-            const long long int length_written = sendto(this->handle, reinterpret_cast<const char*>(buffer), static_cast<int>(length), 0, reinterpret_cast<const sockaddr*>(&address_target), sizeof(sockaddr_in));
+            const long long int length_written = sendto(this->handle, reinterpret_cast<const char*>(buffer), static_cast<int>(length), MSG_NOSIGNAL, reinterpret_cast<const sockaddr*>(&address_target), sizeof(sockaddr_in));
 #else
-            const long long int length_written = sendto(this->handle, buffer, length, 0, reinterpret_cast<const sockaddr*>(&address_target), sizeof(sockaddr_in));
+            const long long int length_written = sendto(this->handle, buffer, length, MSG_NOSIGNAL, reinterpret_cast<const sockaddr*>(&address_target), sizeof(sockaddr_in));
 #endif
 
             // Check the write was successful.
