@@ -104,7 +104,7 @@ TEST(beblid, function, gradient) {
     for (int angle = 0; angle < 360; angle += 10) {
         const unsigned int bits_different = gtl::hamming<256>(&descriptors[angle / 10][0], &descriptors_opencv[angle / 10][0]);
         if (bits_different != 0) {
-            PRINT("Warning: Angle %d has %d bits different\n", angle, bits_different);
+            PRINT("Warning: Angle %d has %u bits different\n", angle, bits_different);
         }
         REQUIRE(bits_different < acceptance_threshold);
     }
@@ -118,7 +118,7 @@ TEST(beblid, function, gradient) {
         const unsigned int bits_different = gtl::hamming<256>(&descriptors_backwards[angle / 10][0], &descriptors_opencv[angle / 10][0]);
         REQUIRE(bits_different < acceptance_threshold);
         if (bits_different != 0) {
-            PRINT("Warning: Reverse angle %d has %d bits different\n", angle, bits_different);
+            PRINT("Warning: Reverse angle %d has %u bits different\n", angle, bits_different);
         }
     }
 }
@@ -250,7 +250,7 @@ TEST(beblid, function, random) {
     for (int angle = 0; angle < 360; angle += 10) {
         const unsigned int bits_different = gtl::hamming<256>(&descriptors[angle / 10][0], &descriptors_opencv[angle / 10][0]);
         if (bits_different != 0) {
-            PRINT("Warning: Angle %d has %d bits different\n", angle, bits_different);
+            PRINT("Warning: Angle %d has %u bits different\n", angle, bits_different);
         }
         REQUIRE(bits_different < acceptance_threshold);
     }

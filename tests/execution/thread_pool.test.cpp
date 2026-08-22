@@ -91,7 +91,7 @@ TEST(thread_pool, function, push_job) {
         thread_pool.join();
 
         for (unsigned int i = 0; i < flag_count; ++i) {
-            REQUIRE(flags[i], "Expected flags[%d] == true", i);
+            REQUIRE(flags[i], "Expected flags[%u] == true", i);
         }
     }
 
@@ -113,7 +113,7 @@ TEST(thread_pool, function, push_job) {
         thread_pool.join();
 
         for (unsigned int i = 0; i < flag_count; ++i) {
-            REQUIRE(flags[i], "Expected flags[%d] == true", i);
+            REQUIRE(flags[i], "Expected flags[%u] == true", i);
         }
     }
 }
@@ -137,7 +137,7 @@ TEST(thread_pool, function, drain) {
         thread_pool.drain(queue);
 
         for (unsigned int i = 0; i < flag_count; ++i) {
-            REQUIRE(flags[i], "Expected flags[%d] == true", i);
+            REQUIRE(flags[i], "Expected flags[%u] == true", i);
         }
     }
 
@@ -153,7 +153,7 @@ TEST(thread_pool, function, drain) {
         thread_pool.join();
 
         for (unsigned int i = 0; i < flag_count; ++i) {
-            REQUIRE(flags[i], "Expected flags[%d] == true", i);
+            REQUIRE(flags[i], "Expected flags[%u] == true", i);
         }
     }
 }
@@ -251,7 +251,7 @@ TEST(thread_pool, evaluate, work) {
     thread_pool.join();
 
     for (unsigned int i = 0; i < flag_count; ++i) {
-        REQUIRE(flags[i], "Expected flags[%d] == true", i);
+        REQUIRE(flags[i], "Expected flags[%u] == true", i);
     }
 }
 
@@ -278,7 +278,7 @@ TEST(thread_pool, evaluate, priority) {
     thread_pool.join();
 
     for (unsigned int i = 0; i < flag_count; ++i) {
-        REQUIRE(flags[i], "Expected flags[%d] == true", i);
+        REQUIRE(flags[i], "Expected flags[%u] == true", i);
     }
 }
 
@@ -304,7 +304,7 @@ TEST(thread_pool, evaluate, add_work_from_job) {
     thread_pool.join();
 
     for (unsigned int i = 0; i < flag_count; ++i) {
-        REQUIRE(flags[i], "Expected flags[%d] == true", i);
+        REQUIRE(flags[i], "Expected flags[%u] == true", i);
     }
 }
 
@@ -338,7 +338,7 @@ TEST(thread_pool, evaluate, benchmark) {
         }
 
         for (unsigned long long int i = 0; i < flag_count; ++i) {
-            REQUIRE(values[i] == sum_count - i, "Expected values[%lld] == %lld not %lld", i, sum_count - i, values[i]);
+            REQUIRE(values[i] == sum_count - i, "Expected values[%llu] == %llu not %llu", i, sum_count - i, values[i]);
         }
 
         std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
@@ -366,7 +366,7 @@ TEST(thread_pool, evaluate, benchmark) {
         thread_pool.drain(queue);
 
         for (unsigned long long int i = 0; i < flag_count; ++i) {
-            REQUIRE(values[i] == sum_count - i, "Expected values[%lld] == %lld not %lld", i, sum_count - i, values[i]);
+            REQUIRE(values[i] == sum_count - i, "Expected values[%llu] == %llu not %llu", i, sum_count - i, values[i]);
         }
 
         std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();

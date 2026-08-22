@@ -255,13 +255,13 @@ TEST(ann, evaluate, learning_rate) {
     bool learnt_erf = train_network(ann_erf, iterations_erf);
 
     PRINT("Evaluate learning speed: \n");
-    PRINT(" none     -> %d in %d\n", learnt_none, iterations_none);
-    PRINT(" identity -> %d in %d\n", learnt_identity, iterations_identity);
-    PRINT(" step     -> %d in %d\n", learnt_step, iterations_step);
-    PRINT(" sigmoid  -> %d in %d\n", learnt_sigmoid, iterations_sigmoid);
-    PRINT(" softplus -> %d in %d\n", learnt_softplus, iterations_softplus);
-    PRINT(" tanh     -> %d in %d\n", learnt_tanh, iterations_tanh);
-    PRINT(" erf      -> %d in %d\n", learnt_erf, iterations_erf);
+    PRINT(" none     -> %d in %u\n", learnt_none, iterations_none);
+    PRINT(" identity -> %d in %u\n", learnt_identity, iterations_identity);
+    PRINT(" step     -> %d in %u\n", learnt_step, iterations_step);
+    PRINT(" sigmoid  -> %d in %u\n", learnt_sigmoid, iterations_sigmoid);
+    PRINT(" softplus -> %d in %u\n", learnt_softplus, iterations_softplus);
+    PRINT(" tanh     -> %d in %u\n", learnt_tanh, iterations_tanh);
+    PRINT(" erf      -> %d in %u\n", learnt_erf, iterations_erf);
 
     // Require that the activation functions with sensible derivatives all succeed.
     REQUIRE(learnt_sigmoid);

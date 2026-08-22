@@ -491,13 +491,13 @@ TEST(maxn, evaluate, tic_tac_toe) {
                 REQUIRE(false, "Failed to correctly solve this game.");
                 game.print();
                 if (evaluate_wins_X != required_wins_X) {
-                    PRINT("Wins for X do not match. EVAL:%d REQ:%d\n", evaluate_wins_X, required_wins_X);
+                    PRINT("Wins for X do not match. EVAL:%u REQ:%u\n", evaluate_wins_X, required_wins_X);
                 }
                 if (evaluate_wins_O != required_wins_O) {
-                    PRINT("Wins for O do not match. EVAL:%d REQ:%d\n", evaluate_wins_O, required_wins_O);
+                    PRINT("Wins for O do not match. EVAL:%u REQ:%u\n", evaluate_wins_O, required_wins_O);
                 }
                 if (evaluate_ties != required_ties) {
-                    PRINT("Ties do not match. EVAL:%d REQ:%d\n", evaluate_ties, required_ties);
+                    PRINT("Ties do not match. EVAL:%u REQ:%u\n", evaluate_ties, required_ties);
                 }
                 current_game.print();
             }

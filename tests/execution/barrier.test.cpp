@@ -55,14 +55,14 @@ TEST(barrier, constructor, value) {
 
 TEST(barrier, function, get_and_set_trigger_count) {
     gtl::barrier barrier;
-    REQUIRE(barrier.get_trigger_count() == 0, "Expected the trigger count of an empty barrier to be %d, not %lld", 0, barrier.get_trigger_count());
+    REQUIRE(barrier.get_trigger_count() == 0, "Expected the trigger count of an empty barrier to be %d, not %llu", 0, barrier.get_trigger_count());
     barrier.set_trigger_count(1);
-    REQUIRE(barrier.get_trigger_count() == 1, "Expected the trigger count of an empty barrier to be %d, not %lld", 1, barrier.get_trigger_count());
+    REQUIRE(barrier.get_trigger_count() == 1, "Expected the trigger count of an empty barrier to be %d, not %llu", 1, barrier.get_trigger_count());
 }
 
 TEST(barrier, function, get_waiting_count) {
     gtl::barrier barrier;
-    REQUIRE(barrier.get_waiting_count() == 0, "Expected the waiting count of an empty barrier to be %d, not %lld", 0, barrier.get_waiting_count());
+    REQUIRE(barrier.get_waiting_count() == 0, "Expected the waiting count of an empty barrier to be %d, not %llu", 0, barrier.get_waiting_count());
 }
 
 TEST(barrier, function, trigger) {

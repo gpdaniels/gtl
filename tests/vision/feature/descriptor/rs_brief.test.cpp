@@ -92,7 +92,7 @@ TEST(rs_brief, function, gradient) {
         REQUIRE_SILENT(testbench::is_memory_same(&descriptors[angle / 10][0], &descriptors_regression[angle / 10][0], 32));
 
         if (!testbench::is_memory_same(&descriptors[angle / 10][0], &descriptors_regression[angle / 10][0], 32)) {
-            PRINT("Angle %u:\n", angle);
+            PRINT("Angle %d:\n", angle);
             for (unsigned int byte = 0; byte < 32; ++byte) {
                 PRINT("0x%02x, ", descriptors_regression[angle / 10][byte]);
             }
@@ -122,7 +122,7 @@ TEST(rs_brief, function, gradient) {
         REQUIRE_SILENT(testbench::is_memory_same(&descriptors_backwards[angle / 10][0], &descriptors_regression[angle / 10][0], 32));
 
         if (!testbench::is_memory_same(&descriptors_backwards[angle / 10][0], &descriptors_regression[angle / 10][0], 32)) {
-            PRINT("Reverse Angle %u:\n", angle);
+            PRINT("Reverse Angle %d:\n", angle);
             for (unsigned int byte = 0; byte < 32; ++byte) {
                 PRINT("0x%02x, ", descriptors_regression[angle / 10][byte]);
             }

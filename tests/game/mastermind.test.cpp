@@ -48,7 +48,7 @@ TEST(mastermind, function, solve) {
     }
     {
         unsigned int turns = gtl::mastermind<code_length, code_base>::solve({ 5, 4, 3, 2 }, [](unsigned int turn, const std::array<unsigned int, 4>& guess, unsigned int correct, unsigned int close) {
-            PRINT("GUESS %d: %d %d %d %d ==> %d %d\n", turn, guess[0], guess[1], guess[2], guess[3], correct, close);
+            PRINT("GUESS %u: %u %u %u %u ==> %u %u\n", turn, guess[0], guess[1], guess[2], guess[3], correct, close);
         });
         REQUIRE(turns <= 5);
     }
@@ -82,7 +82,7 @@ TEST(mastermind, evaluate, all) {
     // Solve codes.
     for (unsigned int i = 0; i < test_codes.size(); ++i) {
         unsigned int turns = gtl::mastermind<code_length, code_base>::solve(test_codes[i]);
-        REQUIRE(turns <= 5, "Code %d %d %d %d took %d turns.", test_codes[i][0], test_codes[i][1], test_codes[i][2], test_codes[i][3], turns);
+        REQUIRE(turns <= 5, "Code %u %u %u %u took %u turns.", test_codes[i][0], test_codes[i][1], test_codes[i][2], test_codes[i][3], turns);
     }
 }
 

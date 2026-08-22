@@ -246,7 +246,7 @@ TEST(virtual_machine, evaluate, complex_jumps) {
     while (virtual_machine.tick()) {
         ++successful_ticks;
     }
-    REQUIRE(successful_ticks == 7, "%d\n", successful_ticks);
+    REQUIRE(successful_ticks == 7, "%u\n", successful_ticks);
 
     const unsigned char result = gtl::vm::reg<gtl::vm::rn::program_counter>::get(virtual_machine);
     REQUIRE(result == 35, "%d\n", result);
@@ -313,7 +313,7 @@ TEST(virtual_machine, evaluate, complex_calls_and_returns) {
     while (virtual_machine.tick()) {
         ++successful_ticks;
     }
-    REQUIRE(successful_ticks == 14, "%d\n", successful_ticks);
+    REQUIRE(successful_ticks == 14, "%u\n", successful_ticks);
 
     const unsigned char result = gtl::vm::reg<gtl::vm::rn::program_counter>::get(virtual_machine);
     REQUIRE(result == 17, "%d\n", result);

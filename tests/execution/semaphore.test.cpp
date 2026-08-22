@@ -34,7 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 TEST(semaphore, traits, standard) {
-    REQUIRE((sizeof(gtl::semaphore<std::mutex, std::condition_variable>) >= 1), "sizeof(gtl::semaphore) = %ld, expected >= %lld", sizeof(gtl::semaphore<std::mutex, std::condition_variable>), 1ull);
+    REQUIRE((sizeof(gtl::semaphore<std::mutex, std::condition_variable>) >= 1), "sizeof(gtl::semaphore) = %lu, expected >= %llu", sizeof(gtl::semaphore<std::mutex, std::condition_variable>), 1ull);
 
     REQUIRE((std::is_pod<gtl::semaphore<std::mutex, std::condition_variable>>::value == false), "Expected std::is_pod to be false.");
 

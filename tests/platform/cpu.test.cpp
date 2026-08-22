@@ -91,8 +91,8 @@ TEST(cpu, function, has_xxx) {
 
 TEST(cpu, evaluate, print_flags) {
     gtl::cpu cpu;
-    PRINT("get_max_leaf_id:             %d\n", cpu.get_max_leaf_id());
-    PRINT("get_max_extended_leaf_id:    %d\n", cpu.get_max_extended_leaf_id());
+    PRINT("get_max_leaf_id:             %u\n", cpu.get_max_leaf_id());
+    PRINT("get_max_extended_leaf_id:    %u\n", cpu.get_max_extended_leaf_id());
 
     PRINT("get_manufacturer_id:         %s\n", cpu.get_manufacturer_id().data);
     PRINT("get_brand_string:            %s\n", cpu.get_brand_string().data);
