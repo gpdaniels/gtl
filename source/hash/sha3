@@ -138,9 +138,9 @@ namespace gtl {
                     bytes[i] = temp[(i - byte_shift + 8) % 8];
                 }
                 else {
-                    const unsigned char low_bits = temp[(i - byte_shift + 8) % 8] << bit_shift;
-                    const unsigned char high_bits = temp[(i - byte_shift - 1 + 8) % 8] >> (8 - bit_shift);
-                    bytes[i] = low_bits | high_bits;
+                    const unsigned char low_bits = static_cast<unsigned char>(temp[(i - byte_shift + 8) % 8] << bit_shift);
+                    const unsigned char high_bits = static_cast<unsigned char>(temp[(i - byte_shift - 1 + 8) % 8] >> (8 - bit_shift));
+                    bytes[i] = static_cast<unsigned char>(low_bits | high_bits);
                 }
             }
         }
