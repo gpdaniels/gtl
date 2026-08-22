@@ -22,9 +22,9 @@ jobs:
       security-events: write
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
     - name: Build and test in ${{ matrix.config }}.
@@ -37,4 +37,4 @@ jobs:
         cmake -S. -Bbuild/${{ matrix.config }} -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DBUILD_TESTING=ON -DBUILD_MEMCHECK=ON ${CMAKE_GENERATOR_PLATFORM_ARG}
         cmake --build build/${{ matrix.config }} --config ${{ matrix.config }} --parallel 4 --target gtl_build
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v4

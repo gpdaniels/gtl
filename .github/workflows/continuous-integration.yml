@@ -30,7 +30,7 @@ jobs:
           echo "Nothing to install for $RUNNER_OS."
         fi
     - name: Checkout repository.
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Build and test in ${{ matrix.config }}.
       shell: bash
       run: |
