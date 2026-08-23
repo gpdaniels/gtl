@@ -32,6 +32,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <type_traits>
 #include <utility>
 
+#if defined(_WIN32)
+
+#include <direct.h>
+
+#else
+
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#endif
+
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
@@ -251,6 +263,70 @@ TEST(file, function, open) {
         REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::write_only, gtl::file::creation_type::open_only, gtl::file::cursor_type::start_of_truncated) == false);
         REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::write_only, gtl::file::creation_type::create_only, gtl::file::cursor_type::start_of_truncated));
         REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::write_only, gtl::file::creation_type::create_only, gtl::file::cursor_type::start_of_truncated) == false);
+    }
+
+    IGNORED(std::remove(temp_filename.c_str()));
+}
+
+TEST(file, function, open_directory) {
+    const std::string temp_dirname = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    PRINT("Temp dirname for '%s' is: %s\n", __FUNCTION__, temp_dirname.c_str());
+
+#if defined(_WIN32)
+    IGNORED(_rmdir(temp_dirname.c_str()));
+    REQUIRE(_mkdir(temp_dirname.c_str()) == 0, "Expected the directory to be created.");
+#else
+    IGNORED(rmdir(temp_dirname.c_str()));
+    REQUIRE(mkdir(temp_dirname.c_str(), 0777) == 0, "Expected the directory to be created.");
+#endif
+
+    // Ensure no combination of modes can open a directory.
+    testbench::test_template<access_types, creation_types, cursor_types>(
+        [&temp_dirname](auto test_access, auto test_creation, auto test_cursor) -> void {
+            constexpr static const gtl::file::access_type access = decltype(test_access)::value;
+            constexpr static const gtl::file::creation_type creation = decltype(test_creation)::value;
+            constexpr static const gtl::file::cursor_type cursor = decltype(test_cursor)::value;
+            gtl::file file;
+            REQUIRE(file.open(temp_dirname.c_str(), access, creation, cursor) == false, "Expected opening a directory to fail.");
+            REQUIRE(file.is_open() == false, "Expected a directory to not be open.");
+        }
+    );
+
+#if defined(_WIN32)
+    REQUIRE(_rmdir(temp_dirname.c_str()) == 0, "Expected the directory to be removed.");
+#else
+    REQUIRE(rmdir(temp_dirname.c_str()) == 0, "Expected the directory to be removed.");
+#endif
+}
+
+TEST(file, function, open_read_data) {
+    const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    PRINT("Temp filename for '%s' is: %s\n", __FUNCTION__, temp_filename.c_str());
+    IGNORED(std::remove(temp_filename.c_str()));
+    {
+        std::FILE* stream = std::fopen(temp_filename.c_str(), "wb");
+        REQUIRE(stream != nullptr);
+        REQUIRE(std::fwrite("abcd", 1, 4, stream) == 4);
+        IGNORED(std::fclose(stream));
+    }
+
+    // Ensure opening in read-only mode does not consume or skip any data.
+    {
+        gtl::file file;
+        REQUIRE(file.open(temp_filename.c_str(), gtl::file::access_type::read_only), "Expected opening a regular file in read-only mode to succeed.");
+
+        char buffer[4] = {};
+        gtl::file::size_type length = 4;
+        REQUIRE(file.read(buffer, length));
+        REQUIRE(length == 4, "Expected to read all characters.");
+        REQUIRE(buffer[0] == 'a');
+        REQUIRE(buffer[1] == 'b');
+        REQUIRE(buffer[2] == 'c');
+        REQUIRE(buffer[3] == 'd');
+
+        bool eof = true;
+        REQUIRE(file.is_eof(eof));
+        REQUIRE(eof == true);
     }
 
     IGNORED(std::remove(temp_filename.c_str()));

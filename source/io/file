@@ -20,16 +20,30 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Summary: An RAII file handle that wraps file operation functions. [wip]
 
+#if defined(__APPLE__)
+#define GTL_IO_FILE_ALIAS(name) __asm__("_" #name)
+#else
+#define GTL_IO_FILE_ALIAS(name)
+#endif
+
 namespace {
     using size_t = decltype(sizeof(0));
     using ssize_t = decltype(static_cast<char*>(nullptr) - static_cast<char*>(nullptr));
 
-    extern "C" int open(const char* path, int flags, ...);
-    extern "C" int close(int handle);
-    extern "C" ssize_t lseek(int handle, ssize_t offset, int whence);
-    extern "C" ssize_t read(int handle, void* buffer, size_t count);
-    extern "C" ssize_t write(int handle, const void* buffer, size_t count);
+#if defined(__APPLE__)
+    using off_t = long long;
+#else
+    using off_t = ssize_t;
+#endif
+
+    extern "C" int open(const char* path, int flags, ...) GTL_IO_FILE_ALIAS(open);
+    extern "C" int close(int handle) GTL_IO_FILE_ALIAS(close);
+    extern "C" off_t lseek(int handle, off_t offset, int whence);
+    extern "C" ssize_t read(int handle, void* buffer, size_t count) GTL_IO_FILE_ALIAS(read);
+    extern "C" ssize_t write(int handle, const void* buffer, size_t count) GTL_IO_FILE_ALIAS(write);
 }
+
+#undef GTL_IO_FILE_ALIAS
 
 namespace gtl {
     /// @brief A class to hold an RAII file handle and provide member functions to operate on it.
@@ -242,6 +256,19 @@ namespace gtl {
 
             this->handle = ::open(path, mode_flags, 0666);
 
+            // Validate that the opened handle refers to a real file, and not a directory, pipe, or other special file.
+            // Note: Write modes cannot open directories or pipes, so only read mode needs validation.
+            // Note: On windows the open call above already fails for directories, so this check passes trivially.
+            if (this->is_open() && (access_mode == access_type::read_only)) {
+                char probe = 0;
+                const ssize_t probe_length = ::read(this->handle, &probe, 1);
+                const ssize_t restored_position = (probe_length > 0) ? static_cast<ssize_t>(::lseek(this->handle, 0, 0)) : 0;
+                if ((probe_length < 0) || (restored_position != 0)) {
+                    ::close(this->handle);
+                    this->handle = -1;
+                }
+            }
+
             return this->is_open();
         }
 
@@ -278,15 +305,15 @@ namespace gtl {
             if (!this->is_open()) {
                 return false;
             }
-            const ssize_t position_current = ::lseek(this->handle, 0, 1);
+            const ssize_t position_current = static_cast<ssize_t>(::lseek(this->handle, 0, 1));
             if (position_current < 0) {
                 return false;
             }
-            const ssize_t position_end = ::lseek(this->handle, 0, 2);
+            const ssize_t position_end = static_cast<ssize_t>(::lseek(this->handle, 0, 2));
             if (position_end < 0) {
                 return false;
             }
-            const ssize_t position_restored = ::lseek(this->handle, position_current, 0);
+            const ssize_t position_restored = static_cast<ssize_t>(::lseek(this->handle, position_current, 0));
             if (position_restored < 0) {
                 return false;
             }
@@ -306,15 +333,15 @@ namespace gtl {
                 return false;
             }
 
-            const ssize_t position_current = ::lseek(this->handle, 0, 1);
+            const ssize_t position_current = static_cast<ssize_t>(::lseek(this->handle, 0, 1));
             if (position_current < 0) {
                 return false;
             }
-            const ssize_t position_end = ::lseek(this->handle, 0, 2);
+            const ssize_t position_end = static_cast<ssize_t>(::lseek(this->handle, 0, 2));
             if (position_end < 0) {
                 return false;
             }
-            const ssize_t position_restored = ::lseek(this->handle, position_current, 0);
+            const ssize_t position_restored = static_cast<ssize_t>(::lseek(this->handle, position_current, 0));
             if (position_restored < 0) {
                 return false;
             }
@@ -334,7 +361,7 @@ namespace gtl {
                 return false;
             }
 
-            ssize_t position_current = ::lseek(this->handle, 0, 1);
+            ssize_t position_current = static_cast<ssize_t>(::lseek(this->handle, 0, 1));
             if (position_current < 0) {
                 return false;
             }
@@ -365,7 +392,7 @@ namespace gtl {
                     break;
             }
 
-            ssize_t position_current = ::lseek(this->handle, position, direction_flags);
+            ssize_t position_current = static_cast<ssize_t>(::lseek(this->handle, position, direction_flags));
             if (position_current < 0) {
                 return false;
             }
