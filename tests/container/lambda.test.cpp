@@ -468,3 +468,112 @@ TEST(lambda, evaluate, construction_and_destruction) {
     }
     REQUIRE(destructed == 2);
 }
+
+TEST(lambda, evaluate, copying_and_moving) {
+    static int constructed = 0;
+    static int copied = 0;
+    static int moved = 0;
+    static int destructed = 0;
+
+    // A function type that tracks how it is constructed, and knows if it has been relocated without being constructed.
+    struct function_type {
+        const function_type* self;
+        int value;
+
+        function_type(int initial_value)
+            : self(this)
+            , value(initial_value) {
+            ++constructed;
+        }
+
+        function_type(const function_type& other)
+            : self(this)
+            , value(other.value) {
+            ++copied;
+        }
+
+        function_type(function_type&& other)
+            : self(this)
+            , value(other.value) {
+            other.value = -1;
+            ++moved;
+        }
+
+        function_type& operator=(const function_type&) = delete;
+        function_type& operator=(function_type&&) = delete;
+
+        int operator()() const {
+            return (this->self == this) ? this->value : -2;
+        }
+
+        ~function_type() {
+            ++destructed;
+        }
+    };
+
+    {
+        // Constructing from a temporary moves the function.
+        gtl::lambda<int()> lambda1(function_type(123));
+        REQUIRE(constructed == 1);
+        REQUIRE(copied == 0);
+        REQUIRE(moved == 1);
+        REQUIRE(destructed == 1);
+        REQUIRE(lambda1() == 123);
+
+        // Copy constructing must not modify the source.
+        gtl::lambda<int()> lambda2(lambda1);
+        REQUIRE(copied == 1);
+        REQUIRE(lambda1() == 123);
+        REQUIRE(lambda2() == 123);
+
+        const gtl::lambda<int()>& lambda1_const = lambda1;
+        gtl::lambda<int()> lambda3(lambda1_const);
+        REQUIRE(copied == 2);
+        REQUIRE(lambda1() == 123);
+        REQUIRE(lambda3() == 123);
+
+        // Copy assigning must not modify the source.
+        gtl::lambda<int()> lambda4;
+        REQUIRE(!lambda4);
+        lambda4 = lambda1;
+        REQUIRE(copied == 3);
+        REQUIRE(lambda1() == 123);
+        REQUIRE(lambda4() == 123);
+
+        lambda4 = lambda1_const;
+        REQUIRE(copied == 4);
+        REQUIRE(lambda1() == 123);
+        REQUIRE(lambda4() == 123);
+
+        // Copy assigning from itself must keep the function.
+        const gtl::lambda<int()>& lambda4_const = lambda4;
+        lambda4 = lambda4_const;
+        REQUIRE(lambda4() == 123);
+
+        // Move constructing takes the function from the source.
+        gtl::lambda<int()> lambda5(static_cast<gtl::lambda<int()>&&>(lambda2));
+        REQUIRE(!lambda2);
+        REQUIRE(lambda5() == 123);
+
+        // Move assigning takes the function from the source.
+        gtl::lambda<int()> lambda6;
+        lambda6 = static_cast<gtl::lambda<int()>&&>(lambda3);
+        REQUIRE(!lambda3);
+        REQUIRE(lambda6() == 123);
+
+        // Assigning a null pointer destructs the function.
+        lambda6 = nullptr;
+        REQUIRE(!lambda6);
+
+        // Copy assigning over a function replaces it.
+        lambda5 = lambda1;
+        REQUIRE(lambda1() == 123);
+        REQUIRE(lambda5() == 123);
+
+        // The first function must never have been modified.
+        REQUIRE(lambda1() == 123);
+    }
+
+    // Every function that was constructed must have been destructed.
+    REQUIRE(constructed + copied + moved == destructed, "Expected %d == %d", constructed + copied + moved, destructed);
+}
