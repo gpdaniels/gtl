@@ -482,6 +482,8 @@ namespace gtl {
             }
             // Denormalise the remainder.
             remainder.chunks.resize(rhs_chunks);
+            // Remove zeros on the end, otherwise a remainder with fewer chunks than the rhs would be treated as zero by the shift.
+            remainder.trim();
             remainder >>= rhs_empty_significant_bits;
             // Remove zeros on the end.
             result.trim();

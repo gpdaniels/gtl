@@ -412,6 +412,57 @@ TEST(big_unsigned, operator, modulo) {
     REQUIRE(check_power_of_two(big_unsigned_333 % (big_unsigned_333 + 1), 0, 333, 1));
 }
 
+TEST(big_unsigned, operator, modulo_multiple_chunks) {
+    // Remainders that have fewer chunks than a divisor with multiple chunks.
+    REQUIRE(gtl::big_unsigned((1ull << 40) + 5) % gtl::big_unsigned(1ull << 40) == 5);
+    REQUIRE(gtl::big_unsigned(8589934592ull) % gtl::big_unsigned(8589934591ull) == 1);
+
+    constexpr static const unsigned long long int divisors[] = {
+        (1ull << 32),
+        (1ull << 32) + 1,
+        (1ull << 33) - 1,
+        (1ull << 40),
+        (1ull << 40) + 12345,
+        (1ull << 47) - 1,
+        (1ull << 48) + 0xFFFFFFFFull
+    };
+    constexpr static const unsigned long long int quotients[] = { 1, 2, 3, 255, 65535 };
+    constexpr static const unsigned long long int remainders[] = { 0, 1, 5, 0xFFFF, 0xFFFFFFFFull, (1ull << 32) - 2 };
+
+    for (const unsigned long long int divisor : divisors) {
+        for (const unsigned long long int quotient : quotients) {
+            for (const unsigned long long int remainder : remainders) {
+                const unsigned long long int value = divisor * quotient + remainder;
+                REQUIRE(gtl::big_unsigned(value) % gtl::big_unsigned(divisor) == value % divisor);
+                REQUIRE(gtl::big_unsigned(value) / gtl::big_unsigned(divisor) == value / divisor);
+                gtl::big_unsigned big_unsigned_value(value);
+                big_unsigned_value %= gtl::big_unsigned(divisor);
+                REQUIRE(big_unsigned_value == value % divisor);
+            }
+        }
+    }
+
+    // A divisor with three chunks, and remainders with one, two, and three chunks.
+    const gtl::big_unsigned big_unsigned_divisor = (gtl::big_unsigned(1) << 80) + 12345;
+    const gtl::big_unsigned big_unsigned_remainders[] = {
+        gtl::big_unsigned(0),
+        gtl::big_unsigned(9),
+        gtl::big_unsigned(0xFFFFFFFFull),
+        (gtl::big_unsigned(1) << 33) + 1,
+        (gtl::big_unsigned(1) << 63) + 7,
+        (gtl::big_unsigned(1) << 64) + 3,
+        (gtl::big_unsigned(1) << 80) + 12344
+    };
+    for (const gtl::big_unsigned& big_unsigned_remainder : big_unsigned_remainders) {
+        for (const unsigned long long int quotient : quotients) {
+            const gtl::big_unsigned big_unsigned_value = big_unsigned_divisor * quotient + big_unsigned_remainder;
+            REQUIRE(big_unsigned_value % big_unsigned_divisor == big_unsigned_remainder);
+            REQUIRE(big_unsigned_value / big_unsigned_divisor == quotient);
+            REQUIRE((big_unsigned_value / big_unsigned_divisor) * big_unsigned_divisor + (big_unsigned_value % big_unsigned_divisor) == big_unsigned_value);
+        }
+    }
+}
+
 TEST(big_unsigned, operator, bit_shift_left) {
     unsigned long long int lhs = 1ull << 62;
     unsigned long long int rhs = 2;
