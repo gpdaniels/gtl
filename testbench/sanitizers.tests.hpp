@@ -23,7 +23,9 @@ namespace testbench {
 }
 
 #if !defined(GTL_HAS_SANITIZER_ADDRESS)
-#if defined(__has_feature)
+#if defined(__SANITIZE_ADDRESS__)
+#define GTL_HAS_SANITIZER_ADDRESS 1
+#elif defined(__has_feature)
 #if __has_feature(address_sanitizer)
 #define GTL_HAS_SANITIZER_ADDRESS 1
 #else
@@ -47,7 +49,9 @@ namespace testbench {
 #endif
 
 #if !defined(GTL_HAS_SANITIZER_THREAD)
-#if defined(__has_feature)
+#if defined(__SANITIZE_THREAD__)
+#define GTL_HAS_SANITIZER_THREAD 1
+#elif defined(__has_feature)
 #if __has_feature(thread_sanitizer)
 #define GTL_HAS_SANITIZER_THREAD 1
 #else
