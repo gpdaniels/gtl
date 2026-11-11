@@ -308,6 +308,159 @@ TEST(thread_pool, evaluate, add_work_from_job) {
     }
 }
 
+TEST(thread_pool, evaluate, queues_with_same_priority) {
+    constexpr static const unsigned int flag_count = 10;
+
+    // Without threads, all the work is done by the join.
+    {
+        gtl::thread_pool thread_pool = gtl::thread_pool(0);
+
+        gtl::thread_pool::queue queue0(thread_pool);
+        gtl::thread_pool::queue queue1(thread_pool);
+        gtl::thread_pool::queue queue2(thread_pool, 0);
+
+        bool flags0[flag_count] = {};
+        bool flags1[flag_count] = {};
+        bool flags2[flag_count] = {};
+        for (unsigned int i = 0; i < flag_count; ++i) {
+            unsigned int index = i;
+            queue0.push([&flags0, index]() {
+                flags0[index] = true;
+            });
+            queue1.push([&flags1, index]() {
+                flags1[index] = true;
+            });
+            queue2.push([&flags2, index]() {
+                flags2[index] = true;
+            });
+        }
+
+        thread_pool.join();
+
+        REQUIRE(queue0.empty() && queue0.finished());
+        REQUIRE(queue1.empty() && queue1.finished());
+        REQUIRE(queue2.empty() && queue2.finished());
+
+        for (unsigned int i = 0; i < flag_count; ++i) {
+            REQUIRE(flags0[i], "Expected flags0[%u] == true", i);
+            REQUIRE(flags1[i], "Expected flags1[%u] == true", i);
+            REQUIRE(flags2[i], "Expected flags2[%u] == true", i);
+        }
+    }
+
+    // With threads, the work is done by the threads or by draining.
+    {
+        gtl::thread_pool thread_pool = gtl::thread_pool(2);
+
+        gtl::thread_pool::queue queue0(thread_pool);
+        gtl::thread_pool::queue queue1(thread_pool);
+
+        std::atomic<unsigned int> count0 = 0;
+        std::atomic<unsigned int> count1 = 0;
+        for (unsigned int i = 0; i < flag_count; ++i) {
+            queue0.push([&count0]() {
+                ++count0;
+            });
+            queue1.push([&count1]() {
+                ++count1;
+            });
+        }
+
+        queue0.drain();
+        queue1.drain();
+
+        REQUIRE(count0 == flag_count, "Expected count0 == %u not %u", flag_count, count0.load());
+        REQUIRE(count1 == flag_count, "Expected count1 == %u not %u", flag_count, count1.load());
+
+        thread_pool.join();
+    }
+}
+
+TEST(thread_pool, evaluate, queue_destructed_before_thread_pool) {
+    constexpr static const unsigned int queue_count = 100;
+    constexpr static const unsigned int task_count = 10;
+
+    // Without threads, queues are emptied by draining.
+    {
+        gtl::thread_pool thread_pool = gtl::thread_pool(0);
+
+        unsigned int count = 0;
+        for (unsigned int i = 0; i < queue_count; ++i) {
+            gtl::thread_pool::queue queue(thread_pool);
+            for (unsigned int j = 0; j < task_count; ++j) {
+                queue.push([&count]() {
+                    ++count;
+                });
+            }
+            queue.drain();
+        }
+
+        // Use the thread_pool after the queues have been destructed.
+        gtl::thread_pool::queue queue(thread_pool);
+        queue.push([&count]() {
+            ++count;
+        });
+
+        thread_pool.join();
+
+        REQUIRE(count == (queue_count * task_count) + 1, "Expected count == %u not %u", (queue_count * task_count) + 1, count);
+    }
+
+    // With threads, queues are emptied by draining.
+    {
+        gtl::thread_pool thread_pool = gtl::thread_pool(3);
+
+        std::atomic<unsigned int> count = 0;
+        for (unsigned int i = 0; i < queue_count; ++i) {
+            gtl::thread_pool::queue queue(thread_pool);
+            for (unsigned int j = 0; j < task_count; ++j) {
+                queue.push([&count]() {
+                    ++count;
+                });
+            }
+            queue.drain();
+        }
+
+        // Use the thread_pool after the queues have been destructed.
+        gtl::thread_pool::queue queue(thread_pool);
+        queue.push([&count]() {
+            ++count;
+        });
+
+        thread_pool.join();
+
+        REQUIRE(count == (queue_count * task_count) + 1, "Expected count == %u not %u", (queue_count * task_count) + 1, count.load());
+    }
+
+    // With threads, queues are emptied by the threads.
+    {
+        gtl::thread_pool thread_pool = gtl::thread_pool(3);
+
+        std::atomic<unsigned int> count = 0;
+        for (unsigned int i = 0; i < queue_count; ++i) {
+            gtl::thread_pool::queue queue(thread_pool);
+            for (unsigned int j = 0; j < task_count; ++j) {
+                queue.push([&count]() {
+                    ++count;
+                });
+            }
+            while (!queue.finished()) {
+                std::this_thread::yield();
+            }
+        }
+
+        // Use the thread_pool after the queues have been destructed.
+        gtl::thread_pool::queue queue(thread_pool);
+        queue.push([&count]() {
+            ++count;
+        });
+
+        thread_pool.join();
+
+        REQUIRE(count == (queue_count * task_count) + 1, "Expected count == %u not %u", (queue_count * task_count) + 1, count.load());
+    }
+}
+
 #define LINKED_TO_LIBDISPATCH 0
 #if LINKED_TO_LIBDISPATCH
 #include <dispatch/dispatch.h>
