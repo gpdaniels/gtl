@@ -41,3 +41,27 @@ jobs:
         cmake -S. -Bbuild/${{ matrix.config }} -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DBUILD_TESTING=ON -DBUILD_MEMCHECK=ON ${CMAKE_GENERATOR_PLATFORM_ARG}
         cmake --build build/${{ matrix.config }} --config ${{ matrix.config }} --parallel 4 --target gtl_test
         rm -rf build/${{ matrix.config }}
+
+  sanitize:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest']
+        sanitizer: ['address-undefined', 'thread']
+        config: ['RelWithDebInfo']
+    name: Sanitize (${{ matrix.sanitizer }}) on ${{ matrix.os }} in ${{ matrix.config }}
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout repository.
+      uses: actions/checkout@v7
+    - name: Build and test with the ${{ matrix.sanitizer }} sanitizer.
+      shell: bash
+      run: |
+        if [ "${{ matrix.sanitizer }}" == "address-undefined" ]; then
+          SANITIZER_ARGS="-DBUILD_SANITIZE_ADDRESS=ON -DBUILD_SANITIZE_UNDEFINED_BEHAVIOR=ON"
+        else
+          SANITIZER_ARGS="-DBUILD_SANITIZE_THREAD=ON"
+        fi
+        cmake -S. -Bbuild/${{ matrix.sanitizer }} -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DBUILD_TESTING=ON -DBUILD_CHECKS=OFF -DBUILD_TESTING_TIMEOUT=300 ${SANITIZER_ARGS}
+        cmake --build build/${{ matrix.sanitizer }} --config ${{ matrix.config }} --parallel 4 --target gtl_test
+        rm -rf build/${{ matrix.sanitizer }}
