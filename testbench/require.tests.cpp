@@ -17,6 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "require.tests.hpp"
 
 namespace testbench {
-    unsigned long long REQUIRE_COUNT = 0;
-    unsigned long long REQUIRE_FAILURE_COUNT = 0;
+    std::atomic<unsigned long long> REQUIRE_COUNT(0);
+    std::atomic<unsigned long long> REQUIRE_FAILURE_COUNT(0);
 }

@@ -21,12 +21,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "print.tests.hpp"
 #include "unused.tests.hpp"
 
-namespace testbench {
-    /// @brief  Variable to hold the number of "REQUIRE" calls.
-    extern unsigned long long REQUIRE_COUNT;
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
 
-    /// @brief  Variable to hold the number of "REQUIRE" failures.
-    extern unsigned long long REQUIRE_FAILURE_COUNT;
+#include <atomic>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace testbench {
+    /// @brief  Variable to hold the number of "REQUIRE" calls, atomic as tests call "REQUIRE" from multiple threads.
+    extern std::atomic<unsigned long long> REQUIRE_COUNT;
+
+    /// @brief  Variable to hold the number of "REQUIRE" failures, atomic as tests call "REQUIRE" from multiple threads.
+    extern std::atomic<unsigned long long> REQUIRE_FAILURE_COUNT;
 }
 
 // Attempt to use a more detailed function macro if possible.

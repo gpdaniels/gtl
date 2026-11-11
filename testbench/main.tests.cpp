@@ -225,7 +225,9 @@ int main(int argument_count, char* arguments[]) {
                 ++TEST_FAILURE_COUNT;
             }
             if (!quiet) {
-                PRINT("REQUIRES: [TOTAL: %llu] [PASSED: %llu] [FAILED: %llu].\n", testbench::REQUIRE_COUNT, testbench::REQUIRE_COUNT - testbench::REQUIRE_FAILURE_COUNT, testbench::REQUIRE_FAILURE_COUNT);
+                const unsigned long long require_count = testbench::REQUIRE_COUNT;
+                const unsigned long long require_failure_count = testbench::REQUIRE_FAILURE_COUNT;
+                PRINT("REQUIRES: [TOTAL: %llu] [PASSED: %llu] [FAILED: %llu].\n", require_count, require_count - require_failure_count, require_failure_count);
             }
         }
         if (!quiet) {
