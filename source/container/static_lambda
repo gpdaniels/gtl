@@ -119,6 +119,9 @@ namespace gtl {
         /// @brief  The type of the copier function created on construction of the internal lambda.
         using copier_type = void (*)(erased_type_const, erased_type);
 
+        /// @brief  The type of the mover function created on construction of the internal lambda.
+        using mover_type = void (*)(erased_type, erased_type);
+
         /// @brief  The type of the executer function created on construction of the internal lambda.
         using executor_type = return_type (*)(erased_type_const, argument_types...);
 
@@ -132,6 +135,9 @@ namespace gtl {
         /// @brief  A function pointer to a lambda to copy the function.
         copier_type copier;
 
+        /// @brief  A function pointer to a lambda to move the function, destructing the source.
+        mover_type mover;
+
         /// @brief  A function pointer to a lambda to execute the function.
         executor_type executor;
 
@@ -139,27 +145,32 @@ namespace gtl {
         destructor_type destructor;
 
     private:
-        /// @brief  Swap function to simplify constructors by following the copy-and-swap idiom.
-        /// @param  lhs The left hand side static_lambda to swap.
-        /// @param  rhs The right hand side static_lambda to swap.
-        constexpr static void swap(static_lambda& lhs, static_lambda& rhs) {
-            for (unsigned long long int index = 0; index < size; ++index) {
-                unsigned char byte = lhs.function[index];
-                lhs.function[index] = rhs.function[index];
-                rhs.function[index] = byte;
+        /// @brief  Destruct the internal type erased lambda, leaving this static_lambda empty.
+        constexpr void reset() {
+            if (this->destructor) {
+                this->destructor(this->function);
             }
+            this->copier = nullptr;
+            this->mover = nullptr;
+            this->executor = nullptr;
+            this->destructor = nullptr;
+        }
 
-            copier_type copier = lhs.copier;
-            lhs.copier = rhs.copier;
-            rhs.copier = copier;
-
-            executor_type executor = lhs.executor;
-            lhs.executor = rhs.executor;
-            rhs.executor = executor;
-
-            destructor_type destructor = lhs.destructor;
-            lhs.destructor = rhs.destructor;
-            rhs.destructor = destructor;
+        /// @brief  Take the internal type erased lambda from another static_lambda, leaving it empty.
+        /// @note   The function is moved using its own move constructor, as it may not be safe to relocate its bytes.
+        /// @param  other The static_lambda to take from, this static_lambda must be empty.
+        constexpr void take(static_lambda& other) {
+            if (other.mover) {
+                other.mover(other.function, this->function);
+            }
+            this->copier = other.copier;
+            this->mover = other.mover;
+            this->executor = other.executor;
+            this->destructor = other.destructor;
+            other.copier = nullptr;
+            other.mover = nullptr;
+            other.executor = nullptr;
+            other.destructor = nullptr;
         }
 
     public:
@@ -174,6 +185,7 @@ namespace gtl {
         constexpr static_lambda()
             : function{}
             , copier(nullptr)
+            , mover(nullptr)
             , executor(nullptr)
             , destructor(nullptr) {
         }
@@ -183,6 +195,7 @@ namespace gtl {
         constexpr static_lambda(const static_lambda& other)
             : function{}
             , copier(other.copier)
+            , mover(other.mover)
             , executor(other.executor)
             , destructor(other.destructor) {
             if (this->copier) {
@@ -194,20 +207,27 @@ namespace gtl {
         /// @param  other The static_lambda to move.
         constexpr static_lambda(static_lambda&& other)
             : static_lambda() {
-            static_lambda::swap(*this, other);
+            this->take(other);
         }
 
         /// @brief  Copy assignment operator for const static_lambda types.
         /// @param  other The static_lambda to copy.
         constexpr static_lambda& operator=(const static_lambda& other) {
-            static_lambda::swap(*this, static_lambda(other));
+            if (this != &other) {
+                static_lambda copy(other);
+                this->reset();
+                this->take(copy);
+            }
             return *this;
         }
 
         /// @brief  Move assignment operator.
         /// @param  other The static_lambda to move.
         constexpr static_lambda& operator=(static_lambda&& other) {
-            static_lambda::swap(*this, other);
+            if (this != &other) {
+                this->reset();
+                this->take(other);
+            }
             return *this;
         }
 
@@ -226,24 +246,24 @@ namespace gtl {
             if constexpr (is_lambda) {
                 constexpr bool is_move = is_same_type<real_function_type, pure_function_type&&>::value;
                 if constexpr (is_move) {
-                    static_lambda other(static_cast<static_lambda&&>(raw_function));
-                    static_lambda::swap(*this, other);
+                    this->take(raw_function);
                 }
                 else {
                     static_lambda other(static_cast<const static_lambda&>(raw_function));
-                    static_lambda::swap(*this, other);
+                    this->take(other);
                 }
             }
             else {
                 static_assert(sizeof(pure_function_type) <= size, "Functional object is larger than static_lambda size.");
+                // The copier must always copy, even if this static_lambda was constructed by moving, otherwise copying a static_lambda would modify the source.
                 this->copier = [](erased_type_const source, erased_type destination) -> void {
-                    constexpr bool is_move = is_same_type<real_function_type, pure_function_type&&>::value;
-                    if constexpr ((is_move)) {
-                        new (destination, static_cast<static_lambda*>(nullptr)) pure_function_type(static_cast<function_type&&>(*static_cast<pure_function_type*>(const_cast<erased_type>(source))));
-                    }
-                    else {
-                        new (destination, static_cast<static_lambda*>(nullptr)) pure_function_type(static_cast<const function_type&>(*static_cast<pure_function_type*>(const_cast<erased_type>(source))));
-                    }
+                    new (destination, static_cast<static_lambda*>(nullptr)) pure_function_type(*static_cast<const pure_function_type*>(source));
+                };
+                // The mover move constructs the function in the destination and then destructs the source.
+                this->mover = [](erased_type source, erased_type destination) -> void {
+                    pure_function_type* function_pointer = static_cast<pure_function_type*>(source);
+                    new (destination, static_cast<static_lambda*>(nullptr)) pure_function_type(static_cast<pure_function_type&&>(*function_pointer));
+                    function_pointer->~pure_function_type();
                 };
                 this->executor = [](erased_type_const function_pointer, argument_types... arguments) -> return_type {
                     return static_cast<const pure_function_type*>(function_pointer)->operator()(arguments...);
@@ -251,14 +271,20 @@ namespace gtl {
                 this->destructor = [](erased_type function_pointer) -> void {
                     static_cast<pure_function_type*>(function_pointer)->~pure_function_type();
                 };
-                this->copier(&raw_function, this->function);
+                // Only the initial construction is allowed to move from the provided function.
+                constexpr bool is_move = is_same_type<real_function_type, pure_function_type&&>::value;
+                if constexpr (is_move) {
+                    new (this->function, static_cast<static_lambda*>(nullptr)) pure_function_type(static_cast<pure_function_type&&>(raw_function));
+                }
+                else {
+                    new (this->function, static_cast<static_lambda*>(nullptr)) pure_function_type(raw_function);
+                }
             }
         }
 
         /// @brief  Asignment operator from a null pointer.
         constexpr static_lambda& operator=(decltype(nullptr)) {
-            static_lambda other;
-            static_lambda::swap(*this, other);
+            this->reset();
             return *this;
         }
 
