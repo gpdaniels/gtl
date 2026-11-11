@@ -118,13 +118,17 @@ constexpr static const unsigned char data_xy_empty[data_height][data_width] = {
 
 template <unsigned long long value1, unsigned long long value2>
 void test(const unsigned char lhs[data_height][data_width], const unsigned char rhs[data_height][data_width], const float results[data_height][data_width]) {
+    const float result = gtl::zssd<value1, value2>(&lhs[0][0], data_width, &rhs[0][0], data_width);
+    const float expected = results[value2 - 1][value1 - 1];
+    // The score is a sum of squares, so its rounding error scales with its size and changes when the compiler fuses the multiply and add.
+    const float epsilon = 1E-6f * ((expected > 1.0f) ? expected : 1.0f);
     REQUIRE(
-        testbench::is_value_approx(gtl::zssd<value1, value2>(&lhs[0][0], data_width, &rhs[0][0], data_width), results[value2 - 1][value1 - 1], 1E-6f),
-        "ncc<%llu, %llu> = %f (!= %f)",
+        testbench::is_value_approx(result, expected, epsilon),
+        "zssd<%llu, %llu> = %f (!= %f)",
         value1,
         value2,
-        static_cast<double>(gtl::zssd<value1, value2>(&lhs[0][0], data_width, &rhs[0][0], data_width)),
-        static_cast<double>(results[value2 - 1][value1 - 1])
+        static_cast<double>(result),
+        static_cast<double>(expected)
     );
 }
 
