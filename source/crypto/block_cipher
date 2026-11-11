@@ -440,8 +440,13 @@ namespace gtl {
             unsigned char j0[N] = {};
             copy_bytes(iv, j0, 12);
             j0[15] = 0x01;
-            // Verify tag if provided with AAD
-            if (tag && aad && aad_length > 0) {
+            // The tag is required, without it the data cannot be authenticated.
+            if (!tag) {
+                zero_bytes(output, length);
+                return false;
+            }
+            // Always verify the tag, it covers the encrypted data even when there is no AAD.
+            {
                 unsigned char ghash[N], j0e[N], computed[N];
                 gcm_ghash(h, aad, aad_length, data, length, ghash);
                 encrypt_bytes<cipher_type>(k, j0, j0e);
@@ -563,6 +568,11 @@ namespace gtl {
             const typename cipher_type::key_type k = load_key<cipher_type>(key);
             const unsigned int nonce_len = 12;
             const unsigned int L = 15 - nonce_len;
+            // The tag is required, without it the data cannot be authenticated.
+            if (!tag) {
+                zero_bytes(output, length);
+                return false;
+            }
             // Decrypt
             unsigned char a0[N] = {};
             a0[0] = static_cast<unsigned char>(L - 1);
@@ -583,16 +593,17 @@ namespace gtl {
                     output[i + j] = data[i + j] ^ si[j];
                 }
             }
-            // Verify
-            if (tag && aad && aad_length > 0) {
-                unsigned char b0[N] = {};
-                b0[0] = static_cast<unsigned char>(0x40 | (((N - 2) / 2) << 3) | (L - 1));
-                copy_bytes(iv, b0 + 1, nonce_len);
-                for (unsigned int i = 0; i < L; ++i) {
-                    b0[15 - i] = static_cast<unsigned char>((length >> (8 * i)) & 0xFF);
-                }
-                unsigned char Y[N];
-                encrypt_bytes<cipher_type>(k, b0, Y);
+            // Always verify the tag, it covers the decrypted data even when there is no AAD.
+            unsigned char b0[N] = {};
+            b0[0] = static_cast<unsigned char>((aad_length > 0 ? 0x40 : 0x00) | (((N - 2) / 2) << 3) | (L - 1));
+            copy_bytes(iv, b0 + 1, nonce_len);
+            for (unsigned int i = 0; i < L; ++i) {
+                b0[15 - i] = static_cast<unsigned char>((length >> (8 * i)) & 0xFF);
+            }
+            unsigned char Y[N];
+            encrypt_bytes<cipher_type>(k, b0, Y);
+            // AAD
+            if (aad_length > 0) {
                 unsigned char ba[N] = {};
                 unsigned int off = 0;
                 if (aad_length < 0xFF00) {
@@ -622,20 +633,22 @@ namespace gtl {
                 unsigned char tmp[N];
                 xor_bytes(Y, ba, tmp, N);
                 encrypt_bytes<cipher_type>(k, tmp, Y);
-                for (unsigned int i = 0; i < length; i += N) {
-                    unsigned char bp[N] = {};
-                    unsigned int blen = (length - i < N) ? (length - i) : N;
-                    copy_bytes(output + i, bp, blen);
-                    xor_bytes(Y, bp, tmp, N);
-                    encrypt_bytes<cipher_type>(k, tmp, Y);
-                }
-                unsigned char computed[N];
-                xor_bytes(Y, s0, computed, N);
-                for (unsigned int i = 0; i < N; ++i) {
-                    if (tag[i] != computed[i]) {
-                        zero_bytes(output, length);
-                        return false;
-                    }
+            }
+            // Payload auth
+            for (unsigned int i = 0; i < length; i += N) {
+                unsigned char bp[N] = {};
+                unsigned int blen = (length - i < N) ? (length - i) : N;
+                copy_bytes(output + i, bp, blen);
+                unsigned char tmp[N];
+                xor_bytes(Y, bp, tmp, N);
+                encrypt_bytes<cipher_type>(k, tmp, Y);
+            }
+            unsigned char computed[N];
+            xor_bytes(Y, s0, computed, N);
+            for (unsigned int i = 0; i < N; ++i) {
+                if (tag[i] != computed[i]) {
+                    zero_bytes(output, length);
+                    return false;
                 }
             }
             return true;
@@ -694,14 +707,13 @@ namespace gtl {
                 }
                 inc_be(ctr, N);
             }
-            if (aad && aad_length > 0) {
-                unsigned char cv[N];
-                siv_s2v<cipher_type>(k, aad, aad_length, iv, 12, output, length, cv);
-                for (unsigned int i = 0; i < N; ++i) {
-                    if (cv[i] != v[i]) {
-                        zero_bytes(output, length);
-                        return false;
-                    }
+            // Always verify the tag, it covers the decrypted data even when there is no AAD.
+            unsigned char cv[N];
+            siv_s2v<cipher_type>(k, aad, aad_length, iv, 12, output, length, cv);
+            for (unsigned int i = 0; i < N; ++i) {
+                if (cv[i] != v[i]) {
+                    zero_bytes(output, length);
+                    return false;
                 }
             }
             return true;

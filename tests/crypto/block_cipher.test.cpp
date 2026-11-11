@@ -407,3 +407,143 @@ TEST(block_cipher, verify_decrypt, siv) {
 
     REQUIRE(testbench::is_memory_same(plain, output, plain_length), "%s != %s\n", hex_2_string(plain, plain_length).c_str(), hex_2_string(output, plain_length).c_str());
 }
+
+using aes_authenticated_block_modes = testbench::enum_collection<
+    gtl::block_cipher_mode,
+    gtl::block_cipher_mode::gcm,
+    gtl::block_cipher_mode::ccm,
+    gtl::block_cipher_mode::siv
+>;
+
+TEST(block_cipher, authenticate, without_aad) {
+    testbench::test_template<aes_key_sizes, aes_authenticated_block_modes>(
+        [](auto test_value, auto test_mode) -> void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
+            constexpr static const gtl::block_cipher_mode mode = decltype(test_mode)::value;
+
+            using bc = gtl::block_cipher<gtl::aes<value>, mode>;
+            constexpr static const unsigned int length = 32;
+            constexpr static const unsigned int tag_length = 16;
+            const unsigned char plain[length] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F };
+            const unsigned char key[256 / 8] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F };
+            const unsigned char iv[bc::block_size * bc::block_size] = { 0 };
+            const unsigned char zeros[length] = { 0 };
+
+            unsigned char encrypted[length];
+            unsigned char tag[tag_length] = { 0 };
+            bc::encrypt(plain, length, key, iv, encrypted, tag);
+
+            // The untouched data must decrypt and authenticate.
+            unsigned char output[length];
+            REQUIRE(bc::decrypt(encrypted, length, key, iv, output, tag) == true);
+            REQUIRE(testbench::is_memory_same(plain, output, length), "%s != %s\n", hex_2_string(plain, length).c_str(), hex_2_string(output, length).c_str());
+
+            // A missing tag must be rejected.
+            REQUIRE(bc::decrypt(encrypted, length, key, iv, output, nullptr) == false);
+            REQUIRE(testbench::is_memory_same(zeros, output, length), "%s != %s\n", hex_2_string(zeros, length).c_str(), hex_2_string(output, length).c_str());
+
+            // An incorrect tag must be rejected.
+            unsigned char tag_zero[tag_length] = { 0 };
+            REQUIRE(bc::decrypt(encrypted, length, key, iv, output, tag_zero) == false);
+            REQUIRE(testbench::is_memory_same(zeros, output, length), "%s != %s\n", hex_2_string(zeros, length).c_str(), hex_2_string(output, length).c_str());
+
+            for (unsigned int i = 0; i < tag_length; ++i) {
+                unsigned char tag_tampered[tag_length];
+                for (unsigned int j = 0; j < tag_length; ++j) {
+                    tag_tampered[j] = tag[j];
+                }
+                tag_tampered[i] ^= 0x01;
+                REQUIRE(bc::decrypt(encrypted, length, key, iv, output, tag_tampered) == false);
+                REQUIRE(testbench::is_memory_same(zeros, output, length), "%s != %s\n", hex_2_string(zeros, length).c_str(), hex_2_string(output, length).c_str());
+            }
+
+            // Tampered data must be rejected.
+            for (unsigned int i = 0; i < length; ++i) {
+                unsigned char encrypted_tampered[length];
+                for (unsigned int j = 0; j < length; ++j) {
+                    encrypted_tampered[j] = encrypted[j];
+                }
+                encrypted_tampered[i] ^= 0x80;
+                REQUIRE(bc::decrypt(encrypted_tampered, length, key, iv, output, tag) == false);
+                REQUIRE(testbench::is_memory_same(zeros, output, length), "%s != %s\n", hex_2_string(zeros, length).c_str(), hex_2_string(output, length).c_str());
+            }
+
+            // Unexpected additional authenticated data must be rejected.
+            const unsigned char aad[4] = { 0x01, 0x02, 0x03, 0x04 };
+            REQUIRE(bc::decrypt(encrypted, length, key, iv, output, tag, aad, 4) == false);
+            REQUIRE(testbench::is_memory_same(zeros, output, length), "%s != %s\n", hex_2_string(zeros, length).c_str(), hex_2_string(output, length).c_str());
+        }
+    );
+}
+
+TEST(block_cipher, authenticate, with_aad) {
+    testbench::test_template<aes_key_sizes, aes_authenticated_block_modes>(
+        [](auto test_value, auto test_mode) -> void {
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
+            constexpr static const gtl::block_cipher_mode mode = decltype(test_mode)::value;
+
+            using bc = gtl::block_cipher<gtl::aes<value>, mode>;
+            constexpr static const unsigned int length = 32;
+            constexpr static const unsigned int tag_length = 16;
+            constexpr static const unsigned int aad_length = 20;
+            const unsigned char plain[length] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F };
+            const unsigned char key[256 / 8] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F };
+            const unsigned char iv[bc::block_size * bc::block_size] = { 0 };
+            const unsigned char aad[aad_length] = { 0xF0, 0xE0, 0xD0, 0xC0, 0xB0, 0xA0, 0x90, 0x80, 0x70, 0x60, 0x50, 0x40, 0x30, 0x20, 0x10, 0x00, 0x0F, 0x0E, 0x0D, 0x0C };
+            const unsigned char zeros[length] = { 0 };
+
+            unsigned char encrypted[length];
+            unsigned char tag[tag_length] = { 0 };
+            bc::encrypt(plain, length, key, iv, encrypted, tag, aad, aad_length);
+
+            // The untouched data must decrypt and authenticate.
+            unsigned char output[length];
+            REQUIRE(bc::decrypt(encrypted, length, key, iv, output, tag, aad, aad_length) == true);
+            REQUIRE(testbench::is_memory_same(plain, output, length), "%s != %s\n", hex_2_string(plain, length).c_str(), hex_2_string(output, length).c_str());
+
+            // A missing tag must be rejected.
+            REQUIRE(bc::decrypt(encrypted, length, key, iv, output, nullptr, aad, aad_length) == false);
+            REQUIRE(testbench::is_memory_same(zeros, output, length), "%s != %s\n", hex_2_string(zeros, length).c_str(), hex_2_string(output, length).c_str());
+
+            // Missing additional authenticated data must be rejected.
+            REQUIRE(bc::decrypt(encrypted, length, key, iv, output, tag) == false);
+            REQUIRE(testbench::is_memory_same(zeros, output, length), "%s != %s\n", hex_2_string(zeros, length).c_str(), hex_2_string(output, length).c_str());
+
+            REQUIRE(bc::decrypt(encrypted, length, key, iv, output, tag, aad, 0) == false);
+            REQUIRE(testbench::is_memory_same(zeros, output, length), "%s != %s\n", hex_2_string(zeros, length).c_str(), hex_2_string(output, length).c_str());
+
+            // Tampered additional authenticated data must be rejected.
+            for (unsigned int i = 0; i < aad_length; ++i) {
+                unsigned char aad_tampered[aad_length];
+                for (unsigned int j = 0; j < aad_length; ++j) {
+                    aad_tampered[j] = aad[j];
+                }
+                aad_tampered[i] ^= 0x01;
+                REQUIRE(bc::decrypt(encrypted, length, key, iv, output, tag, aad_tampered, aad_length) == false);
+                REQUIRE(testbench::is_memory_same(zeros, output, length), "%s != %s\n", hex_2_string(zeros, length).c_str(), hex_2_string(output, length).c_str());
+            }
+
+            // Tampered data must be rejected.
+            for (unsigned int i = 0; i < length; ++i) {
+                unsigned char encrypted_tampered[length];
+                for (unsigned int j = 0; j < length; ++j) {
+                    encrypted_tampered[j] = encrypted[j];
+                }
+                encrypted_tampered[i] ^= 0x80;
+                REQUIRE(bc::decrypt(encrypted_tampered, length, key, iv, output, tag, aad, aad_length) == false);
+                REQUIRE(testbench::is_memory_same(zeros, output, length), "%s != %s\n", hex_2_string(zeros, length).c_str(), hex_2_string(output, length).c_str());
+            }
+
+            // An incorrect tag must be rejected.
+            for (unsigned int i = 0; i < tag_length; ++i) {
+                unsigned char tag_tampered[tag_length];
+                for (unsigned int j = 0; j < tag_length; ++j) {
+                    tag_tampered[j] = tag[j];
+                }
+                tag_tampered[i] ^= 0x01;
+                REQUIRE(bc::decrypt(encrypted, length, key, iv, output, tag_tampered, aad, aad_length) == false);
+                REQUIRE(testbench::is_memory_same(zeros, output, length), "%s != %s\n", hex_2_string(zeros, length).c_str(), hex_2_string(output, length).c_str());
+            }
+        }
+    );
+}
