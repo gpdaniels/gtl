@@ -37,8 +37,14 @@ TEST(paths, traits, standard) {
     REQUIRE((std::is_trivial<gtl::paths>::value == false));
     REQUIRE((std::is_trivially_copyable<gtl::paths>::value == false));
 #elif (defined(__GNUC__) || defined(__GNUG__)) && (!defined(__clang__) && (!defined(__INTEL_COMPILER)))
+#if (__GNUC__ >= 15)
+    // From version 15 a class with a deleted default constructor is no longer trivial.
+    REQUIRE((std::is_pod<gtl::paths>::value == false));
+    REQUIRE((std::is_trivial<gtl::paths>::value == false));
+#else
     REQUIRE((std::is_pod<gtl::paths>::value == true));
     REQUIRE((std::is_trivial<gtl::paths>::value == true));
+#endif
     REQUIRE((std::is_trivially_copyable<gtl::paths>::value == true));
 #elif defined(_MSC_VER)
     REQUIRE((std::is_pod<gtl::paths>::value == false));

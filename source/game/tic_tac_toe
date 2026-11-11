@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Summary: Solver for the game tic-tac-toe on a 3x3 board. [wip]
 
+#include <utility>
 #include <vector>
 
 namespace gtl {

@@ -82,8 +82,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma warning(push, 0)
 #endif
 
+#include <exception>
 #include <mutex>
 #include <thread>
+#include <utility>
 
 #if defined(_MSC_VER)
 #pragma warning(pop)
@@ -340,9 +342,16 @@ namespace gtl {
 #endif
         }
 
-        /// @brief  Default constructor does nothing.
+        /// @brief  Default constructor creates an empty coroutine with no stack or function.
         coroutine()
-            : signal_raised(0)
+#if !defined(_WIN32)
+            : coroutine_context()
+            , parent_context()
+            , parent_signal_set()
+#else
+            : parent_stack(nullptr)
+#endif
+            , signal_raised(0)
             , stack(nullptr) {
         }
 

@@ -96,13 +96,13 @@ namespace gtl {
                 // If we just moved down.
                 if (heading_down) {
                     // Handy variables.
-                    evaluation_type& current = stack[depth];
                     evaluation_type& parent = stack[depth_parent];
                     const state_type& current_state = parent.options[parent.current_option_index];
 
                     // Check if we have reached max depth yet.
                     if (depth < max_depth) {
-                        // Save to the stack for further processing.
+                        // Save to the stack for further processing, the stack only has an entry for depths below the max depth.
+                        evaluation_type& current = stack[depth];
                         current = evaluation_type(current_state, max_score);
                         // Check if there is more depth to search.
                         if (!current.options.empty()) {
