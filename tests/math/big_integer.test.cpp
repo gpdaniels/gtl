@@ -598,8 +598,8 @@ TEST(big_integer, operator, bit_shift_left) {
 
     gtl::big_integer big_integer_lhs_negative(lhs_negative);
     gtl::big_integer big_integer_rhs_negative(rhs_negative);
-    REQUIRE(big_integer_lhs_negative << 1 == lhs_negative << 1);
-    REQUIRE(big_integer_rhs_negative << 1 == rhs_negative << 1);
+    REQUIRE(big_integer_lhs_negative << 1 == lhs_negative * 2);
+    REQUIRE(big_integer_rhs_negative << 1 == rhs_negative * 2);
     REQUIRE(big_integer_lhs_negative << 0 == lhs_negative);
     REQUIRE(big_integer_rhs_negative << 0 == rhs_negative);
     REQUIRE(big_integer_rhs_negative << 60 == lhs_negative);

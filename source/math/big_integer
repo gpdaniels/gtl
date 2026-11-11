@@ -776,7 +776,9 @@ namespace gtl {
         /// @brief  Convert the big number to an integer and return it.
         /// @return The integer value of the big number.
         int to_integer() const {
-            return this->sign * static_cast<int>(this->magnitude.to_unsigned_integer());
+            // Negate as an unsigned value, negating the most negative integer as a signed value overflows.
+            const unsigned int value = this->magnitude.to_unsigned_integer();
+            return static_cast<int>((this->sign < 0) ? (0u - value) : value);
         }
     };
 }
