@@ -33,20 +33,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #if (defined(linux) || defined(__linux) || defined(__linux__)) || defined(__APPLE__)
 
-#if defined(_FORTIFY_SOURCE)
-#define GTL_COROUTINE_UNFORTIFY_SOURCE
-#pragma push_macro("_FORTIFY_SOURCE")
-#undef _FORTIFY_SOURCE
-#endif
 #include <csetjmp>
-#if defined(GTL_COROUTINE_UNFORTIFY_SOURCE)
-#undef GTL_COROUTINE_UNFORTIFY_SOURCE
-#pragma pop_macro("_FORTIFY_SOURCE")
-#endif
-
 #include <csignal>
 #include <cstdint>
 #include <cstdlib>
+
+#if defined(__GLIBC__)
+// When fortified, glibc redirects the long jump functions to versions that abort if the destination stack frame is below the current one.
+// Jumping into the stack of a coroutine does exactly that, so bind directly to the unchecked function.
+extern "C" void gtl_coroutine_long_jump(sigjmp_buf context, int value) __asm__("siglongjmp") __attribute__((__noreturn__));
+#define GTL_COROUTINE_LONG_JUMP(CONTEXT, VALUE) gtl_coroutine_long_jump(CONTEXT, VALUE)
+#else
+#define GTL_COROUTINE_LONG_JUMP(CONTEXT, VALUE) siglongjmp(CONTEXT, VALUE)
+#endif
 
 //  Valgrind.
 #if !defined(NDEBUG) && __has_include(<valgrind/valgrind.h>)
@@ -328,7 +327,7 @@ namespace gtl {
 #if !defined(_WIN32)
             // Cleanup stack.
             if (this->stack) {
-                std::free(this->stack);
+                operator delete(this->stack);
             }
             // If we are testing with valgrind deregister the coroutine stack.
 #if GTL_COROUTINE_HAVE_VALGRIND
@@ -524,7 +523,7 @@ namespace gtl {
             // Step 8:
             // Restore the previously saved machine context of the trampoline function to again transfer execution control onto the alternate stack.
             // This time without(!) signal handler scope.
-            siglongjmp(this->coroutine_context, 1);
+            GTL_COROUTINE_LONG_JUMP(this->coroutine_context, 1);
         }
 
         // Restore the currently running coroutine.
@@ -610,7 +609,7 @@ private :
         if (sigsetjmp(gtl::coroutine::current->coroutine_context, 0) == 0) {
             // Step 13:
             // Restore the previously saved machine context of the coroutine to transfer execution control back to it.
-            siglongjmp(gtl::coroutine::current->parent_context, 1);
+            GTL_COROUTINE_LONG_JUMP(gtl::coroutine::current->parent_context, 1);
         }
 
         // The coroutine function call.
@@ -620,7 +619,7 @@ private :
         gtl::coroutine::current->signal_raised = 0;
 
         // Exit by jumping to the creator location.
-        siglongjmp(gtl::coroutine::current->parent_context, 1);
+        GTL_COROUTINE_LONG_JUMP(gtl::coroutine::current->parent_context, 1);
 
         // Silence warning about function returning.
         std::abort();
@@ -650,7 +649,7 @@ public:
 #if !defined(_WIN32)
         // Switch execution contexts.
         if (sigsetjmp(gtl::coroutine::current->parent_context, 0) == 0) {
-            siglongjmp(gtl::coroutine::current->coroutine_context, 1);
+            GTL_COROUTINE_LONG_JUMP(gtl::coroutine::current->coroutine_context, 1);
         }
 #else
             // If there is no parent coroutine then convert this thread to a fiber.
@@ -678,7 +677,7 @@ public:
         GTL_COROUTINE_ASSERT(gtl::coroutine::current == this, "This coroutine must be running to yield.");
 #if !defined(_WIN32)
         if (sigsetjmp(gtl::coroutine::current->coroutine_context, 0) == 0) {
-            siglongjmp(gtl::coroutine::current->parent_context, 1);
+            GTL_COROUTINE_LONG_JUMP(gtl::coroutine::current->parent_context, 1);
         }
 #else
             SwitchToFiber(gtl::coroutine::current->parent_stack);
@@ -729,9 +728,8 @@ namespace gtl {
     }
 }
 
-// Undo the siglongjmp override.
-#ifdef __GLIBC__
-#undef siglongjmp
+#if !defined(_WIN32)
+#undef GTL_COROUTINE_LONG_JUMP
 #endif
 
 #undef GTL_COROUTINE_HAVE_VALGRIND

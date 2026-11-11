@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <testbench/data.tests.hpp>
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
+#include <testbench/sanitizers.tests.hpp>
 #include <testbench/template.tests.hpp>
 
 #include <execution/coroutine>
@@ -47,6 +48,9 @@ TEST(coroutine, constructor, empty) {
     gtl::coroutine coroutine;
     testbench::do_not_optimise_away(coroutine);
 }
+
+// The thread sanitizer cannot follow the jumps between the stacks of coroutines, so skip the tests that start one.
+#if !GTL_HAS_SANITIZER_THREAD
 
 TEST(coroutine, constructor, lambda) {
     gtl::coroutine coroutine([]() {
@@ -154,3 +158,5 @@ TEST(coroutine, function, current_sleep_until) {
     });
     coroutine.join();
 }
+
+#endif
