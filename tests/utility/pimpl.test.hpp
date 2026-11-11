@@ -28,4 +28,16 @@ public:
     int return_value() const;
 };
 
+class test_pimpl_tracked
+    : private gtl::pimpl<test_pimpl_tracked, sizeof(int*), alignof(int*)> {
+public:
+    ~test_pimpl_tracked();
+    test_pimpl_tracked(int value);
+    test_pimpl_tracked(const test_pimpl_tracked& other);
+    test_pimpl_tracked(test_pimpl_tracked&& other);
+    test_pimpl_tracked& operator=(const test_pimpl_tracked& other);
+    test_pimpl_tracked& operator=(test_pimpl_tracked&& other);
+    int return_value() const;
+};
+
 #endif // GTL_UTILITY_PIMPL_TEST_HPP

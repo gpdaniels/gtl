@@ -88,6 +88,40 @@ namespace gtl {
             new (this->implementation_data, static_cast<pimpl*>(nullptr)) implementation(static_cast<argument_types&&>(arguments)...);
         }
 
+        /// @brief  Copy constructor calls the copy constructor of the implementation.
+        /// @param  other The pimpl to copy the implementation from.
+        pimpl(const pimpl& other) {
+            static_assert(sizeof(implementation) == implementation_size, "The implementation must have the same size as the pre-allocated array.");
+            new (this->implementation_data, static_cast<pimpl*>(nullptr)) implementation(*other.operator->());
+        }
+
+        /// @brief  Copy constructor for non-constant values, without this the forwarding constructor would be selected instead.
+        /// @param  other The pimpl to copy the implementation from.
+        pimpl(pimpl& other)
+            : pimpl(static_cast<const pimpl&>(other)) {
+        }
+
+        /// @brief  Move constructor calls the move constructor of the implementation.
+        /// @param  other The pimpl to move the implementation from.
+        pimpl(pimpl&& other) {
+            static_assert(sizeof(implementation) == implementation_size, "The implementation must have the same size as the pre-allocated array.");
+            new (this->implementation_data, static_cast<pimpl*>(nullptr)) implementation(static_cast<implementation&&>(*other.operator->()));
+        }
+
+        /// @brief  Copy assignment operator calls the copy assignment operator of the implementation.
+        /// @param  other The pimpl to copy the implementation from.
+        pimpl& operator=(const pimpl& other) {
+            *this->operator->() = *other.operator->();
+            return *this;
+        }
+
+        /// @brief  Move assignment operator calls the move assignment operator of the implementation.
+        /// @param  other The pimpl to move the implementation from.
+        pimpl& operator=(pimpl&& other) {
+            *this->operator->() = static_cast<implementation&&>(*other.operator->());
+            return *this;
+        }
+
         /// @brief  Member access operator to allow easy use of internal implementation members by using "(*this)->".
         implementation* operator->() {
             return reinterpret_cast<implementation*>(this->implementation_data);
