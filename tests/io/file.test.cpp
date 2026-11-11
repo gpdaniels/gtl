@@ -104,6 +104,125 @@ TEST(file, constructor, parameterised) {
     IGNORED(std::remove(temp_filename.c_str()));
 }
 
+TEST(file, constructor, moving) {
+    const std::string temp_filename = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__)));
+    PRINT("Temp filename for '%s' is: %s\n", __FUNCTION__, temp_filename.c_str());
+    IGNORED(std::remove(temp_filename.c_str()));
+    IGNORED(std::fclose(std::fopen(temp_filename.c_str(), "wb")));
+
+    {
+        gtl::file file1(temp_filename.c_str(), gtl::file::access_type::read_and_write);
+        REQUIRE(file1.is_open() == true);
+        const int handle = file1.get_handle();
+
+        // The file handle must be owned by only the new file.
+        gtl::file file2(static_cast<gtl::file&&>(file1));
+        REQUIRE(file1.is_open() == false);
+        REQUIRE(file1.get_handle() == -1);
+        REQUIRE(file2.is_open() == true);
+        REQUIRE(file2.get_handle() == handle);
+
+        // Closing or destructing the old file must not close the file handle.
+        REQUIRE(file1.close() == false);
+        {
+            gtl::file file3(static_cast<gtl::file&&>(file1));
+            REQUIRE(file3.is_open() == false);
+        }
+        {
+            gtl::file::size_type length = 1;
+            REQUIRE(file2.write("a", length));
+            REQUIRE(length == 1);
+        }
+        {
+            gtl::file::size_type size = 0;
+            REQUIRE(file2.get_size(size));
+            REQUIRE(size == 1);
+        }
+
+        REQUIRE(file2.close() == true);
+    }
+
+    IGNORED(std::remove(temp_filename.c_str()));
+}
+
+TEST(file, operator, moving) {
+    const std::string temp_filename1 = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__) + "1"));
+    const std::string temp_filename2 = std::to_string(std::hash<std::string>{}(std::string(__FUNCTION__) + "2"));
+    PRINT("Temp filenames for '%s' are: %s and %s\n", __FUNCTION__, temp_filename1.c_str(), temp_filename2.c_str());
+    IGNORED(std::remove(temp_filename1.c_str()));
+    IGNORED(std::remove(temp_filename2.c_str()));
+    IGNORED(std::fclose(std::fopen(temp_filename1.c_str(), "wb")));
+    IGNORED(std::fclose(std::fopen(temp_filename2.c_str(), "wb")));
+
+    {
+        gtl::file file1(temp_filename1.c_str(), gtl::file::access_type::read_and_write);
+        gtl::file file2(temp_filename2.c_str(), gtl::file::access_type::read_and_write);
+        REQUIRE(file1.is_open() == true);
+        REQUIRE(file2.is_open() == true);
+        const int handle1 = file1.get_handle();
+        const int handle2 = file2.get_handle();
+        REQUIRE(handle1 != handle2);
+
+        // Moving into a closed file takes the file handle.
+        gtl::file file3;
+        file3 = static_cast<gtl::file&&>(file1);
+        REQUIRE(file1.is_open() == false);
+        REQUIRE(file1.get_handle() == -1);
+        REQUIRE(file3.is_open() == true);
+        REQUIRE(file3.get_handle() == handle1);
+
+        // Moving into an open file closes its file handle, and takes the new one.
+        file3 = static_cast<gtl::file&&>(file2);
+        REQUIRE(file2.is_open() == false);
+        REQUIRE(file2.get_handle() == -1);
+        REQUIRE(file3.is_open() == true);
+        REQUIRE(file3.get_handle() == handle2);
+
+        // The first file handle must have been closed, so it is available to be used again.
+        gtl::file file4(temp_filename1.c_str(), gtl::file::access_type::read_and_write);
+        REQUIRE(file4.is_open() == true);
+#if !defined(_WIN32)
+        // The lowest available file handle is always used when opening a file.
+        REQUIRE(file4.get_handle() == handle1);
+#endif
+
+        // Moving a file into itself keeps the file open.
+        gtl::file& file3_reference = file3;
+        file3 = static_cast<gtl::file&&>(file3_reference);
+        REQUIRE(file3.is_open() == true);
+        REQUIRE(file3.get_handle() == handle2);
+
+        // Destructing the old files must not close the file handles of the new files.
+        {
+            gtl::file file5(static_cast<gtl::file&&>(file1));
+            gtl::file file6;
+            file6 = static_cast<gtl::file&&>(file2);
+        }
+        {
+            gtl::file::size_type length = 2;
+            REQUIRE(file3.write("ab", length));
+            REQUIRE(length == 2);
+        }
+        {
+            gtl::file::size_type size = 0;
+            REQUIRE(file3.get_size(size));
+            REQUIRE(size == 2);
+        }
+        {
+            gtl::file::size_type size = 1;
+            REQUIRE(file4.get_size(size));
+            REQUIRE(size == 0);
+        }
+
+        // Moving a closed file into an open file closes it.
+        file3 = static_cast<gtl::file&&>(file1);
+        REQUIRE(file3.is_open() == false);
+    }
+
+    IGNORED(std::remove(temp_filename1.c_str()));
+    IGNORED(std::remove(temp_filename2.c_str()));
+}
+
 TEST(file, function, is_open) {
     gtl::file file;
     REQUIRE(file.is_open() == false);
