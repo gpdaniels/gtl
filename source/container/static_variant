@@ -134,21 +134,30 @@ namespace gtl {
         }
 
         constexpr static_variant(const static_variant& other) {
-            this->construct_copy<first_type, remaining_types...>(other);
+            if (!other.empty()) {
+                this->construct_copy<first_type, remaining_types...>(other);
+            }
         }
 
         constexpr static_variant(static_variant&& other) {
-            this->construct_move<first_type, remaining_types...>(other);
+            if (!other.empty()) {
+                this->construct_move<first_type, remaining_types...>(static_cast<static_variant&&>(other));
+            }
         }
 
         constexpr static_variant& operator=(const static_variant& other) {
+            if (this == &other) {
+                // Assigning to itself.
+                return *this;
+            }
             if ((!this->empty()) && (!other.empty())) {
                 // Both valid.
-                if (this->active_type_id != other.active_type_id) {
-                    this->destruct<first_type, remaining_types...>();
+                if (this->active_type_id == other.active_type_id) {
+                    // The same type is already constructed, so it can be assigned.
                     this->assign_copy<first_type, remaining_types...>(other);
                 }
                 else {
+                    // A different type is constructed, so it must be destructed before the new type is constructed.
                     this->destruct<first_type, remaining_types...>();
                     this->construct_copy<first_type, remaining_types...>(other);
                 }
@@ -157,7 +166,7 @@ namespace gtl {
                 // Only other valid.
                 this->construct_copy<first_type, remaining_types...>(other);
             }
-            else {
+            else if (!this->empty()) {
                 // Only this valid.
                 this->destruct<first_type, remaining_types...>();
             }
@@ -165,13 +174,18 @@ namespace gtl {
         }
 
         constexpr static_variant& operator=(static_variant&& other) {
+            if (this == &other) {
+                // Assigning to itself.
+                return *this;
+            }
             if ((!this->empty()) && (!other.empty())) {
                 // Both valid.
-                if (this->active_type_id != other.active_type_id) {
-                    this->destruct<first_type, remaining_types...>();
+                if (this->active_type_id == other.active_type_id) {
+                    // The same type is already constructed, so it can be assigned.
                     this->assign_move<first_type, remaining_types...>(static_cast<static_variant&&>(other));
                 }
                 else {
+                    // A different type is constructed, so it must be destructed before the new type is constructed.
                     this->destruct<first_type, remaining_types...>();
                     this->construct_move<first_type, remaining_types...>(static_cast<static_variant&&>(other));
                 }
@@ -180,7 +194,7 @@ namespace gtl {
                 // Only other valid.
                 this->construct_move<first_type, remaining_types...>(static_cast<static_variant&&>(other));
             }
-            else {
+            else if (!this->empty()) {
                 // Only this valid.
                 this->destruct<first_type, remaining_types...>();
             }
@@ -192,7 +206,7 @@ namespace gtl {
         constexpr void construct_copy(const static_variant& other) {
             if (other.is<type>()) {
                 this->active_type_id = reinterpret_cast<const unsigned long long int>(&static_variant<void*>::type_identifier_generator<type>::identifier);
-                type& other_data = *reinterpret_cast<type*>(&other.data[0]);
+                const type& other_data = *reinterpret_cast<const type*>(&other.data[0]);
                 new (&this->data[0], static_cast<static_variant*>(nullptr)) type(other_data);
             }
             else {
@@ -227,7 +241,7 @@ namespace gtl {
             if (other.is<type>()) {
                 this->active_type_id = reinterpret_cast<const unsigned long long int>(&static_variant<void*>::type_identifier_generator<type>::identifier);
                 type& thus_data = *reinterpret_cast<type*>(&this->data[0]);
-                type& other_data = *reinterpret_cast<type*>(&other.data[0]);
+                const type& other_data = *reinterpret_cast<const type*>(&other.data[0]);
                 thus_data = other_data;
             }
             else {

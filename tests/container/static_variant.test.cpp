@@ -141,3 +141,241 @@ TEST(static_variant, function, set) {
     REQUIRE(testbench::is_value_equal(static_variant_i.get<int>(), 4321));
     REQUIRE(testbench::is_value_equal(static_variant_f.get<float>(), 0.1f));
 }
+
+namespace {
+    int tracked_constructed = 0;
+    int tracked_copy_constructed = 0;
+    int tracked_move_constructed = 0;
+    int tracked_copy_assigned = 0;
+    int tracked_move_assigned = 0;
+    int tracked_destructed = 0;
+    int tracked_invalid = 0;
+
+    // A type that tracks how it is constructed, assigned, and destructed, and knows if it is used without being constructed.
+    struct tracked_type {
+        const tracked_type* self;
+        int value;
+
+        tracked_type(int initial_value)
+            : self(this)
+            , value(initial_value) {
+            ++tracked_constructed;
+        }
+
+        tracked_type(const tracked_type& other)
+            : self(this)
+            , value(other.value) {
+            tracked_invalid += (other.self != &other);
+            ++tracked_copy_constructed;
+        }
+
+        tracked_type(tracked_type&& other)
+            : self(this)
+            , value(other.value) {
+            tracked_invalid += (other.self != &other);
+            other.value = -1;
+            ++tracked_move_constructed;
+        }
+
+        tracked_type& operator=(const tracked_type& other) {
+            tracked_invalid += (this->self != this);
+            tracked_invalid += (other.self != &other);
+            this->value = other.value;
+            ++tracked_copy_assigned;
+            return *this;
+        }
+
+        tracked_type& operator=(tracked_type&& other) {
+            tracked_invalid += (this->self != this);
+            tracked_invalid += (other.self != &other);
+            this->value = other.value;
+            other.value = -1;
+            ++tracked_move_assigned;
+            return *this;
+        }
+
+        ~tracked_type() {
+            tracked_invalid += (this->self != this);
+            this->self = nullptr;
+            ++tracked_destructed;
+        }
+    };
+
+    void tracked_reset() {
+        tracked_constructed = 0;
+        tracked_copy_constructed = 0;
+        tracked_move_constructed = 0;
+        tracked_copy_assigned = 0;
+        tracked_move_assigned = 0;
+        tracked_destructed = 0;
+        tracked_invalid = 0;
+    }
+
+    bool tracked_balanced() {
+        return (tracked_invalid == 0) && ((tracked_constructed + tracked_copy_constructed + tracked_move_constructed) == tracked_destructed);
+    }
+}
+
+TEST(static_variant, constructor, copying) {
+    tracked_reset();
+    {
+        gtl::static_variant<int, tracked_type> static_variant_e;
+        gtl::static_variant<int, tracked_type> static_variant_i(1234);
+        gtl::static_variant<int, tracked_type> static_variant_t(tracked_type(5678));
+        const gtl::static_variant<int, tracked_type>& static_variant_t_const = static_variant_t;
+
+        gtl::static_variant<int, tracked_type> static_variant_copy_e(static_variant_e);
+        REQUIRE(static_variant_copy_e.empty() == true);
+
+        gtl::static_variant<int, tracked_type> static_variant_copy_i(static_variant_i);
+        REQUIRE(static_variant_copy_i.is<int>() == true);
+        REQUIRE(static_variant_copy_i.get<int>() == 1234);
+        REQUIRE(static_variant_i.get<int>() == 1234);
+
+        gtl::static_variant<int, tracked_type> static_variant_copy_t1(static_variant_t);
+        REQUIRE(static_variant_copy_t1.is<tracked_type>() == true);
+        REQUIRE(static_variant_copy_t1.get<tracked_type>().value == 5678);
+        REQUIRE(static_variant_t.get<tracked_type>().value == 5678);
+
+        gtl::static_variant<int, tracked_type> static_variant_copy_t2(static_variant_t_const);
+        REQUIRE(static_variant_copy_t2.is<tracked_type>() == true);
+        REQUIRE(static_variant_copy_t2.get<tracked_type>().value == 5678);
+        REQUIRE(static_variant_t.get<tracked_type>().value == 5678);
+
+        REQUIRE(tracked_copy_constructed == 3, "Expected 3 not %d", tracked_copy_constructed);
+        REQUIRE(tracked_copy_assigned == 0);
+        REQUIRE(tracked_move_assigned == 0);
+    }
+    REQUIRE(tracked_balanced(), "Invalid: %d, Constructed: %d, Destructed: %d", tracked_invalid, tracked_constructed + tracked_copy_constructed + tracked_move_constructed, tracked_destructed);
+}
+
+TEST(static_variant, constructor, moving) {
+    tracked_reset();
+    {
+        gtl::static_variant<int, tracked_type> static_variant_e;
+        gtl::static_variant<int, tracked_type> static_variant_i(1234);
+        gtl::static_variant<int, tracked_type> static_variant_t(tracked_type(5678));
+        const int move_constructed = tracked_move_constructed;
+
+        gtl::static_variant<int, tracked_type> static_variant_move_e(static_cast<gtl::static_variant<int, tracked_type>&&>(static_variant_e));
+        REQUIRE(static_variant_move_e.empty() == true);
+
+        gtl::static_variant<int, tracked_type> static_variant_move_i(static_cast<gtl::static_variant<int, tracked_type>&&>(static_variant_i));
+        REQUIRE(static_variant_move_i.is<int>() == true);
+        REQUIRE(static_variant_move_i.get<int>() == 1234);
+
+        gtl::static_variant<int, tracked_type> static_variant_move_t(static_cast<gtl::static_variant<int, tracked_type>&&>(static_variant_t));
+        REQUIRE(static_variant_move_t.is<tracked_type>() == true);
+        REQUIRE(static_variant_move_t.get<tracked_type>().value == 5678);
+
+        REQUIRE(tracked_move_constructed == move_constructed + 1);
+        REQUIRE(tracked_copy_assigned == 0);
+        REQUIRE(tracked_move_assigned == 0);
+    }
+    REQUIRE(tracked_balanced(), "Invalid: %d, Constructed: %d, Destructed: %d", tracked_invalid, tracked_constructed + tracked_copy_constructed + tracked_move_constructed, tracked_destructed);
+}
+
+TEST(static_variant, operator, copying) {
+    tracked_reset();
+    {
+        const gtl::static_variant<int, tracked_type> static_variant_e;
+        const gtl::static_variant<int, tracked_type> static_variant_i(1234);
+        const gtl::static_variant<int, tracked_type> static_variant_t1(tracked_type(5678));
+        const gtl::static_variant<int, tracked_type> static_variant_t2(tracked_type(8765));
+
+        gtl::static_variant<int, tracked_type> static_variant;
+
+        // Empty to empty.
+        static_variant = static_variant_e;
+        REQUIRE(static_variant.empty() == true);
+
+        // Empty to a non-trivial type.
+        static_variant = static_variant_t1;
+        REQUIRE(static_variant.is<tracked_type>() == true);
+        REQUIRE(static_variant.get<tracked_type>().value == 5678);
+        REQUIRE(tracked_copy_assigned == 0);
+
+        // A non-trivial type to the same type.
+        static_variant = static_variant_t2;
+        REQUIRE(static_variant.is<tracked_type>() == true);
+        REQUIRE(static_variant.get<tracked_type>().value == 8765);
+        REQUIRE(tracked_copy_assigned == 1);
+
+        // A non-trivial type to itself.
+        const gtl::static_variant<int, tracked_type>& static_variant_const = static_variant;
+        static_variant = static_variant_const;
+        REQUIRE(static_variant.is<tracked_type>() == true);
+        REQUIRE(static_variant.get<tracked_type>().value == 8765);
+
+        // A non-trivial type to a different type.
+        static_variant = static_variant_i;
+        REQUIRE(static_variant.is<int>() == true);
+        REQUIRE(static_variant.get<int>() == 1234);
+
+        // A different type to a non-trivial type.
+        static_variant = static_variant_t1;
+        REQUIRE(static_variant.is<tracked_type>() == true);
+        REQUIRE(static_variant.get<tracked_type>().value == 5678);
+        REQUIRE(tracked_copy_assigned == 1);
+
+        // A non-trivial type to empty.
+        static_variant = static_variant_e;
+        REQUIRE(static_variant.empty() == true);
+
+        // The sources must not have been modified.
+        REQUIRE(static_variant_i.get<int>() == 1234);
+        REQUIRE(static_variant_t1.get<tracked_type>().value == 5678);
+        REQUIRE(static_variant_t2.get<tracked_type>().value == 8765);
+        REQUIRE(tracked_move_assigned == 0);
+    }
+    REQUIRE(tracked_balanced(), "Invalid: %d, Constructed: %d, Destructed: %d", tracked_invalid, tracked_constructed + tracked_copy_constructed + tracked_move_constructed, tracked_destructed);
+}
+
+TEST(static_variant, operator, moving) {
+    tracked_reset();
+    {
+        using static_variant_type = gtl::static_variant<int, tracked_type>;
+
+        static_variant_type static_variant;
+
+        // Empty to empty.
+        static_variant = static_variant_type();
+        REQUIRE(static_variant.empty() == true);
+
+        // Empty to a non-trivial type.
+        static_variant = static_variant_type(tracked_type(5678));
+        REQUIRE(static_variant.is<tracked_type>() == true);
+        REQUIRE(static_variant.get<tracked_type>().value == 5678);
+        REQUIRE(tracked_move_assigned == 0);
+
+        // A non-trivial type to the same type.
+        static_variant = static_variant_type(tracked_type(8765));
+        REQUIRE(static_variant.is<tracked_type>() == true);
+        REQUIRE(static_variant.get<tracked_type>().value == 8765);
+        REQUIRE(tracked_move_assigned == 1);
+
+        // A non-trivial type to itself.
+        static_variant_type& static_variant_reference = static_variant;
+        static_variant = static_cast<static_variant_type&&>(static_variant_reference);
+        REQUIRE(static_variant.is<tracked_type>() == true);
+        REQUIRE(static_variant.get<tracked_type>().value == 8765);
+
+        // A non-trivial type to a different type.
+        static_variant = static_variant_type(1234);
+        REQUIRE(static_variant.is<int>() == true);
+        REQUIRE(static_variant.get<int>() == 1234);
+
+        // A different type to a non-trivial type.
+        static_variant = static_variant_type(tracked_type(5678));
+        REQUIRE(static_variant.is<tracked_type>() == true);
+        REQUIRE(static_variant.get<tracked_type>().value == 5678);
+        REQUIRE(tracked_move_assigned == 1);
+
+        // A non-trivial type to empty.
+        static_variant = static_variant_type();
+        REQUIRE(static_variant.empty() == true);
+
+        REQUIRE(tracked_copy_assigned == 0);
+    }
+    REQUIRE(tracked_balanced(), "Invalid: %d, Constructed: %d, Destructed: %d", tracked_invalid, tracked_constructed + tracked_copy_constructed + tracked_move_constructed, tracked_destructed);
+}
