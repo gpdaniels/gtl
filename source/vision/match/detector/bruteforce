@@ -42,16 +42,20 @@ namespace gtl {
             match* matches,
             const size_t matches_size
         ) {
+            // Without any rhs descriptors there is nothing to match against.
+            if (rhs_descriptors_size == 0) {
+                return 0;
+            }
             size_t count = 0;
             for (size_t lhs_index = 0; lhs_index < lhs_descriptors_size; ++lhs_index) {
                 if (count >= matches_size) {
                     break;
                 }
                 matches[count].lhs_index = lhs_index;
-                matches[count].score = -1e30f;
                 for (size_t rhs_index = 0; rhs_index < rhs_descriptors_size; ++rhs_index) {
                     const float score = score_function(lhs_descriptors[lhs_index], rhs_descriptors[rhs_index]);
-                    if (score < matches[count].score) {
+                    // The first score is always the best so far, after that lower scores are better.
+                    if ((rhs_index == 0) || (score < matches[count].score)) {
                         matches[count].score = score;
                         matches[count].rhs_index = rhs_index;
                     }
@@ -107,28 +111,31 @@ namespace gtl {
             // TODO: Assert matches_count > 0 ?
             size_t count = 0;
             for (size_t lhs_index = 0; lhs_index < lhs_descriptors_size; ++lhs_index) {
-                if (count + matches_count >= matches_size) {
+                if (count + matches_count > matches_size) {
                     break;
                 }
-                for (size_t matches_index = 0; matches_index < matches_count; ++matches_index) {
-                    matches[count + matches_index].lhs_index = lhs_index;
-                    matches[count + matches_index].score = -1e30f;
-                }
+                // The matches found so far for this lhs descriptor are kept sorted, lower scores are better.
+                size_t found_count = 0;
                 for (size_t rhs_index = 0; rhs_index < rhs_descriptors_size; ++rhs_index) {
                     const float score = score_function(lhs_descriptors[lhs_index], rhs_descriptors[rhs_index]);
-                    for (size_t matches_index = 0; matches_index < matches_count; ++matches_index) {
-                        if (score < matches[count + matches_index].score) {
-                            for (size_t shift_index = matches_count - 1; shift_index > matches_index; --shift_index) {
-                                matches[count + shift_index].score = matches[count + shift_index - 1].score;
-                                matches[count + shift_index].rhs_index = matches[count + shift_index - 1].rhs_index;
-                            }
-                            matches[count + matches_index].score = score;
-                            matches[count + matches_index].rhs_index = rhs_index;
-                            break;
-                        }
+                    size_t matches_index = found_count;
+                    while ((matches_index > 0) && (score < matches[count + matches_index - 1].score)) {
+                        --matches_index;
                     }
+                    if (matches_index >= matches_count) {
+                        continue;
+                    }
+                    if (found_count < matches_count) {
+                        ++found_count;
+                    }
+                    for (size_t shift_index = found_count - 1; shift_index > matches_index; --shift_index) {
+                        matches[count + shift_index] = matches[count + shift_index - 1];
+                    }
+                    matches[count + matches_index].lhs_index = lhs_index;
+                    matches[count + matches_index].score = score;
+                    matches[count + matches_index].rhs_index = rhs_index;
                 }
-                count += matches_count;
+                count += found_count;
             }
             return count;
         }
@@ -148,7 +155,7 @@ namespace gtl {
             // TODO: Assert matches_count > 0 ?
             size_t count = 0;
             for (size_t lhs_index = 0; lhs_index < lhs_descriptors_size; ++lhs_index) {
-                if (count + matches_count >= matches_size) {
+                if (count + matches_count > matches_size) {
                     break;
                 }
                 for (size_t matches_index = 0; matches_index < matches_count; ++matches_index) {
