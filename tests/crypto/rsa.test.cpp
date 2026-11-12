@@ -1329,3 +1329,126 @@ TEST(rsa, evaluate, generate_keys_encrypt_and_decrypt_32) {
 
     REQUIRE(testbench::is_memory_same(test_decrypted, known_decrypted, 32));
 }
+
+TEST(rsa, evaluate, leading_zero_bytes_exhaustive) {
+    // The classic small key: modulus 3233 = 61 * 53, public exponent 17, private exponent 2753.
+    const unsigned char key_public[2] = { 0x0C, 0xA1 };
+    const unsigned char key_private[2] = { 0x0A, 0xC1 };
+    const unsigned char key_exponent[2] = { 0x00, 0x11 };
+
+    gtl::rsa::key_type keys{
+        gtl::rsa::public_key_type{
+            gtl::big_unsigned(key_public, 2),
+            gtl::big_unsigned(key_exponent, 2) },
+        gtl::rsa::private_key_type{
+            gtl::big_unsigned(key_public, 2),
+            gtl::big_unsigned(key_exponent, 2),
+            gtl::big_unsigned(key_private, 2),
+            { gtl::big_unsigned(), gtl::big_unsigned() },
+            { gtl::big_unsigned(), gtl::big_unsigned() },
+            gtl::big_unsigned() }
+    };
+
+    // A known value: 65 encrypts to 2790.
+    {
+        const unsigned char known_decrypted[2] = { 0x00, 0x41 };
+        const unsigned char known_encrypted[2] = { 0x0A, 0xE6 };
+
+        unsigned char test_encrypted[2] = { 0xFF, 0xFF };
+        gtl::rsa::encrypt(known_decrypted, 2, keys.public_key, test_encrypted);
+        REQUIRE(testbench::is_memory_same(test_encrypted, known_encrypted, 2));
+
+        unsigned char test_decrypted[2] = { 0xFF, 0xFF };
+        gtl::rsa::decrypt(known_encrypted, 2, keys.private_key, test_decrypted);
+        REQUIRE(testbench::is_memory_same(test_decrypted, known_decrypted, 2));
+    }
+
+    // Every message below the modulus must round trip, including those where the message or the encrypted message have a leading zero byte.
+    unsigned int leading_zero_decrypted = 0;
+    unsigned int leading_zero_encrypted = 0;
+    for (unsigned int message = 0; message < 3233; ++message) {
+        const unsigned char known_decrypted[2] = { static_cast<unsigned char>(message >> 8), static_cast<unsigned char>(message & 0xFF) };
+
+        unsigned char test_encrypted[2] = { 0xFF, 0xFF };
+        gtl::rsa::encrypt(known_decrypted, 2, keys.public_key, test_encrypted);
+
+        unsigned char test_decrypted[2] = { 0xFF, 0xFF };
+        gtl::rsa::decrypt(test_encrypted, 2, keys.private_key, test_decrypted);
+
+        REQUIRE(testbench::is_memory_same(test_decrypted, known_decrypted, 2), "Message %u decrypted to 0x%02X%02X.", message, test_decrypted[0], test_decrypted[1]);
+
+        unsigned char test_transform_encrypted[2] = { 0xFF, 0xFF };
+        gtl::rsa::transform_block(known_decrypted, 2, key_exponent, key_public, test_transform_encrypted);
+
+        REQUIRE(testbench::is_memory_same(test_transform_encrypted, test_encrypted, 2), "Message %u transformed to 0x%02X%02X.", message, test_transform_encrypted[0], test_transform_encrypted[1]);
+
+        unsigned char test_transform_decrypted[2] = { 0xFF, 0xFF };
+        gtl::rsa::transform_block(test_transform_encrypted, 2, key_private, key_public, test_transform_decrypted);
+
+        REQUIRE(testbench::is_memory_same(test_transform_decrypted, known_decrypted, 2), "Message %u transformed back to 0x%02X%02X.", message, test_transform_decrypted[0], test_transform_decrypted[1]);
+
+        leading_zero_decrypted += (known_decrypted[0] == 0x00);
+        leading_zero_encrypted += (test_encrypted[0] == 0x00);
+    }
+
+    // Ensure the loop above covered both leading zero cases.
+    REQUIRE(leading_zero_decrypted == 256, "Expected 256 messages with a leading zero byte, found %u.", leading_zero_decrypted);
+    REQUIRE(leading_zero_encrypted == 256, "Expected 256 encrypted messages with a leading zero byte, found %u.", leading_zero_encrypted);
+}
+
+TEST(rsa, evaluate, leading_zero_bytes_64) {
+    // Modulus 0xFFFFFFEA00000055 = 4294967291 * 4294967279, public exponent 65537, private exponent 0x81817E725D5DA2D9.
+    const unsigned char key_public[8] = { 0xFF, 0xFF, 0xFF, 0xEA, 0x00, 0x00, 0x00, 0x55 };
+    const unsigned char key_private[8] = { 0x81, 0x81, 0x7E, 0x72, 0x5D, 0x5D, 0xA2, 0xD9 };
+    const unsigned char key_exponent[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01 };
+
+    constexpr static const unsigned int data_count = 5;
+
+    // Values computed independently of this library.
+    const unsigned char known_decrypted[data_count][8] = {
+        { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+        { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 },
+        { 0x00, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE },
+        { 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCE, 0x5D },
+        { 0x00, 0x00, 0x00, 0x00, 0x00, 0xAC, 0xD4, 0x3A }
+    };
+    const unsigned char known_encrypted[data_count][8] = {
+        { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+        { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 },
+        { 0x05, 0x7D, 0x42, 0x4E, 0x96, 0xB6, 0x16, 0x0C },
+        { 0x00, 0xB6, 0x85, 0xB1, 0xCF, 0xEF, 0xFB, 0x38 },
+        { 0x00, 0x00, 0x82, 0xEA, 0xA7, 0x1E, 0x9D, 0x93 }
+    };
+
+    gtl::rsa::key_type keys{
+        gtl::rsa::public_key_type{
+            gtl::big_unsigned(key_public, 8),
+            gtl::big_unsigned(key_exponent, 8) },
+        gtl::rsa::private_key_type{
+            gtl::big_unsigned(key_public, 8),
+            gtl::big_unsigned(key_exponent, 8),
+            gtl::big_unsigned(key_private, 8),
+            { gtl::big_unsigned(), gtl::big_unsigned() },
+            { gtl::big_unsigned(), gtl::big_unsigned() },
+            gtl::big_unsigned() }
+    };
+
+    for (unsigned int i = 0; i < data_count; ++i) {
+        // The output buffers are filled so that unwritten bytes are detected.
+        unsigned char test_encrypted[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+        gtl::rsa::encrypt(known_decrypted[i], 8, keys.public_key, test_encrypted);
+        REQUIRE(testbench::is_memory_same(test_encrypted, known_encrypted[i], 8), "Encrypt failed for message %u.", i);
+
+        unsigned char test_decrypted[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+        gtl::rsa::decrypt(known_encrypted[i], 8, keys.private_key, test_decrypted);
+        REQUIRE(testbench::is_memory_same(test_decrypted, known_decrypted[i], 8), "Decrypt failed for message %u.", i);
+
+        unsigned char test_transform_encrypted[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+        gtl::rsa::transform_block(known_decrypted[i], 8, key_exponent, key_public, test_transform_encrypted);
+        REQUIRE(testbench::is_memory_same(test_transform_encrypted, known_encrypted[i], 8), "Transform to encrypt failed for message %u.", i);
+
+        unsigned char test_transform_decrypted[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+        gtl::rsa::transform_block(known_encrypted[i], 8, key_private, key_public, test_transform_decrypted);
+        REQUIRE(testbench::is_memory_same(test_transform_decrypted, known_decrypted[i], 8), "Transform to decrypt failed for message %u.", i);
+    }
+}

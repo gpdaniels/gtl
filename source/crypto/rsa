@@ -553,7 +553,7 @@ namespace gtl {
                 gtl::big_unsigned(exponent, length),
                 gtl::big_unsigned(modulus, length)
             )
-                .to_bytes(output, length);
+                .to_bytes(output, length, true);
         }
 
     public:
@@ -568,7 +568,7 @@ namespace gtl {
                 public_key.public_exponent,
                 public_key.public_modulus
             )
-                .to_bytes(output, length);
+                .to_bytes(output, length, true);
         }
 
         /// @brief  Decrypt a block of data, writing the decrypted data into the output.
@@ -582,7 +582,7 @@ namespace gtl {
                 private_key.private_exponent,
                 private_key.public_modulus
             )
-                .to_bytes(output, length);
+                .to_bytes(output, length, true);
         }
     };
 }
