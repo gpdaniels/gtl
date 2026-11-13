@@ -2555,3 +2555,171 @@ TEST(chacha, evaluate, verify_ctr_64_rounds_20_data) {
     chacha.decrypt(output_encrypt, length, key, nonce, output_decrypt);
     REQUIRE(testbench::is_memory_same(plain, output_decrypt, length), "%s != %s\n", hex_2_string(plain, length).c_str(), hex_2_string(output_decrypt, length).c_str());
 }
+
+TEST(chacha, evaluate, verify_ctr_32_rounds_20_partial_block) {
+    // A length that is not a multiple of the block size, with the expected output computed independently of this library.
+    gtl::chacha<gtl::chacha_mode::ctr_32, 20> chacha;
+    constexpr static const unsigned int length = 100;
+    const unsigned char key[32] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F };
+    const unsigned char nonce[16] = { 0x01, 0x00, 0x00, 0x00, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B };
+    const unsigned char encrypted[length] = { 0x5F, 0xCE, 0x42, 0x0D, 0x0B, 0x09, 0xD5, 0x7F, 0x02, 0xDA, 0x2C, 0x41, 0xFC, 0x83, 0x9E, 0x5B, 0x4B, 0x52, 0xC2, 0x13, 0xB9, 0x82, 0x95, 0x32, 0xCB, 0xDF, 0xF8, 0x5F, 0xB9, 0xE4, 0xF8, 0xB8, 0x9D, 0xEE, 0xE7, 0x13, 0xB4, 0xF4, 0xC8, 0xAA, 0x0C, 0xE9, 0x84, 0x6E, 0x00, 0x25, 0x88, 0x52, 0x81, 0x9C, 0xC7, 0x97, 0x29, 0xC0, 0x87, 0xCF, 0x22, 0x3B, 0x28, 0x6F, 0x1E, 0x53, 0x89, 0x7E, 0x92, 0x81, 0x52, 0x0B, 0xDC, 0x74, 0x0E, 0x95, 0x6C, 0xF1, 0xAD, 0xC4, 0x11, 0x3B, 0x4F, 0x7D, 0xC4, 0x03, 0xF0, 0xC6, 0x4A, 0x57, 0x00, 0x81, 0xC5, 0x35, 0x8E, 0xAB, 0xC5, 0x85, 0x0D, 0x69, 0x83, 0x84, 0x46, 0x60 };
+
+    unsigned char plain[length];
+    for (unsigned int i = 0; i < length; ++i) {
+        plain[i] = static_cast<unsigned char>((i * 3 + 1) % 256);
+    }
+
+    unsigned char output_encrypt[length] = {};
+    chacha.encrypt(plain, length, key, nonce, output_encrypt);
+    REQUIRE(testbench::is_memory_same(encrypted, output_encrypt, length), "%s != %s\n", hex_2_string(encrypted, length).c_str(), hex_2_string(output_encrypt, length).c_str());
+
+    unsigned char output_decrypt[length] = {};
+    chacha.decrypt(output_encrypt, length, key, nonce, output_decrypt);
+    REQUIRE(testbench::is_memory_same(plain, output_decrypt, length), "%s != %s\n", hex_2_string(plain, length).c_str(), hex_2_string(output_decrypt, length).c_str());
+}
+
+TEST(chacha, encrypt_decrypt, any_length) {
+    testbench::test_template<chacha_modes, chacha_types>(
+        [](auto test_mode, auto test_value) -> void {
+            constexpr static const gtl::chacha_mode mode = decltype(test_mode)::value;
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
+
+            gtl::chacha<mode, value> chacha;
+            constexpr static const unsigned int length_maximum = 64 * 3;
+            const unsigned char key[32] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F };
+            const unsigned char nonce[16] = { 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7 };
+
+            unsigned char plain[length_maximum];
+            for (unsigned int i = 0; i < length_maximum; ++i) {
+                plain[i] = static_cast<unsigned char>((i * 5 + 2) % 256);
+            }
+
+            // The output for whole blocks is the reference for every shorter length.
+            unsigned char encrypted[length_maximum] = {};
+            chacha.encrypt(plain, length_maximum, key, nonce, encrypted);
+
+            for (unsigned int length = 0; length <= length_maximum; ++length) {
+                // One extra byte either side to detect writes outside of the output.
+                unsigned char output_encrypt[1 + length_maximum + 1];
+                for (unsigned int i = 0; i < 1 + length_maximum + 1; ++i) {
+                    output_encrypt[i] = 0xA5;
+                }
+                chacha.encrypt(plain, length, key, nonce, &output_encrypt[1]);
+                REQUIRE(testbench::is_memory_same(encrypted, &output_encrypt[1], length), "Length %u: %s != %s\n", length, hex_2_string(encrypted, length).c_str(), hex_2_string(&output_encrypt[1], length).c_str());
+                REQUIRE(output_encrypt[0] == 0xA5, "Length %u wrote before the output.", length);
+                for (unsigned int i = length; i < length_maximum + 1; ++i) {
+                    REQUIRE(output_encrypt[1 + i] == 0xA5, "Length %u wrote after the output at %u.", length, i);
+                }
+
+                unsigned char output_decrypt[length_maximum] = {};
+                chacha.decrypt(&output_encrypt[1], length, key, nonce, output_decrypt);
+                REQUIRE(testbench::is_memory_same(plain, output_decrypt, length), "Length %u: %s != %s\n", length, hex_2_string(plain, length).c_str(), hex_2_string(output_decrypt, length).c_str());
+
+                // Encrypting in place must give the same result.
+                unsigned char in_place[length_maximum];
+                for (unsigned int i = 0; i < length_maximum; ++i) {
+                    in_place[i] = plain[i];
+                }
+                chacha.encrypt(in_place, length, key, nonce, in_place);
+                REQUIRE(testbench::is_memory_same(encrypted, in_place, length), "Length %u: %s != %s\n", length, hex_2_string(encrypted, length).c_str(), hex_2_string(in_place, length).c_str());
+            }
+        }
+    );
+}
+
+TEST(chacha, encrypt_decrypt, continue_with_iv_output) {
+    testbench::test_template<chacha_modes, chacha_types>(
+        [](auto test_mode, auto test_value) -> void {
+            constexpr static const gtl::chacha_mode mode = decltype(test_mode)::value;
+            constexpr static const unsigned long long int value = decltype(test_value)::value;
+
+            gtl::chacha<mode, value> chacha;
+            constexpr static const unsigned int length = 64 * 3 + 10;
+            const unsigned char key[32] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F };
+            const unsigned char nonce[16] = { 0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7 };
+
+            unsigned char plain[length];
+            for (unsigned int i = 0; i < length; ++i) {
+                plain[i] = static_cast<unsigned char>((i * 5 + 2) % 256);
+            }
+
+            // Encrypt the message in one call.
+            unsigned char encrypted[length] = {};
+            unsigned char nonce_end[16] = {};
+            chacha.encrypt(plain, length, key, nonce, encrypted, nonce_end);
+
+            // The counter must have advanced by the four blocks that were used, and the rest must be unchanged.
+            const unsigned char nonce_expected[16] = { 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7 };
+            REQUIRE(testbench::is_memory_same(nonce_expected, nonce_end, 16), "%s != %s\n", hex_2_string(nonce_expected, 16).c_str(), hex_2_string(nonce_end, 16).c_str());
+
+            // Encrypt the message in three calls, continuing from the returned initialisation vector each time.
+            unsigned char encrypted_parts[length] = {};
+            unsigned char nonce_parts[16];
+            for (unsigned int i = 0; i < 16; ++i) {
+                nonce_parts[i] = nonce[i];
+            }
+            chacha.encrypt(&plain[0], 64, key, nonce_parts, &encrypted_parts[0], nonce_parts);
+            chacha.encrypt(&plain[64], 128, key, nonce_parts, &encrypted_parts[64], nonce_parts);
+            chacha.encrypt(&plain[192], 10, key, nonce_parts, &encrypted_parts[192], nonce_parts);
+            REQUIRE(testbench::is_memory_same(encrypted, encrypted_parts, length), "%s != %s\n", hex_2_string(encrypted, length).c_str(), hex_2_string(encrypted_parts, length).c_str());
+            REQUIRE(testbench::is_memory_same(nonce_expected, nonce_parts, 16), "%s != %s\n", hex_2_string(nonce_expected, 16).c_str(), hex_2_string(nonce_parts, 16).c_str());
+
+            // Decryption advances the counter in the same way.
+            unsigned char decrypted[length] = {};
+            unsigned char nonce_decrypt[16] = {};
+            chacha.decrypt(encrypted, length, key, nonce, decrypted, nonce_decrypt);
+            REQUIRE(testbench::is_memory_same(plain, decrypted, length), "%s != %s\n", hex_2_string(plain, length).c_str(), hex_2_string(decrypted, length).c_str());
+            REQUIRE(testbench::is_memory_same(nonce_expected, nonce_decrypt, 16), "%s != %s\n", hex_2_string(nonce_expected, 16).c_str(), hex_2_string(nonce_decrypt, 16).c_str());
+        }
+    );
+}
+
+TEST(chacha, encrypt_decrypt, counter_wrap_ctr_32) {
+    // The 32 bit counter wraps to zero without changing the nonce.
+    gtl::chacha<gtl::chacha_mode::ctr_32, 20> chacha;
+    constexpr static const unsigned int length = 64;
+    const unsigned char key[32] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F };
+    const unsigned char nonce_last[16] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB };
+    const unsigned char nonce_zero[16] = { 0x00, 0x00, 0x00, 0x00, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB };
+    const unsigned char plain[length * 2] = {};
+
+    unsigned char output_wrapped[length * 2] = {};
+    unsigned char nonce_end[16] = {};
+    chacha.encrypt(plain, length * 2, key, nonce_last, output_wrapped, nonce_end);
+
+    unsigned char output_zero[length] = {};
+    chacha.encrypt(plain, length, key, nonce_zero, output_zero);
+
+    REQUIRE(testbench::is_memory_same(output_zero, &output_wrapped[length], length), "%s != %s\n", hex_2_string(output_zero, length).c_str(), hex_2_string(&output_wrapped[length], length).c_str());
+
+    const unsigned char nonce_expected[16] = { 0x01, 0x00, 0x00, 0x00, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB };
+    REQUIRE(testbench::is_memory_same(nonce_expected, nonce_end, 16), "%s != %s\n", hex_2_string(nonce_expected, 16).c_str(), hex_2_string(nonce_end, 16).c_str());
+}
+
+TEST(chacha, encrypt_decrypt, counter_carry_ctr_64) {
+    // The 64 bit counter carries from its low half into its high half without changing the nonce.
+    gtl::chacha<gtl::chacha_mode::ctr_64, 20> chacha;
+    constexpr static const unsigned int length = 64;
+    const unsigned char key[32] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F };
+    const unsigned char nonce_low[16] = { 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB };
+    const unsigned char nonce_high[16] = { 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB };
+    const unsigned char plain[length * 2] = {};
+
+    unsigned char output_carried[length * 2] = {};
+    unsigned char nonce_end[16] = {};
+    chacha.encrypt(plain, length * 2, key, nonce_low, output_carried, nonce_end);
+
+    unsigned char output_high[length] = {};
+    chacha.encrypt(plain, length, key, nonce_high, output_high);
+
+    REQUIRE(testbench::is_memory_same(output_high, &output_carried[length], length), "%s != %s\n", hex_2_string(output_high, length).c_str(), hex_2_string(&output_carried[length], length).c_str());
+
+    const unsigned char nonce_expected[16] = { 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB };
+    REQUIRE(testbench::is_memory_same(nonce_expected, nonce_end, 16), "%s != %s\n", hex_2_string(nonce_expected, 16).c_str(), hex_2_string(nonce_end, 16).c_str());
+
+    // The 64 bit counter wraps to zero without changing the nonce.
+    const unsigned char nonce_last[16] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB };
+    const unsigned char nonce_wrapped[16] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB };
+    chacha.encrypt(plain, length, key, nonce_last, output_high, nonce_end);
+    REQUIRE(testbench::is_memory_same(nonce_wrapped, nonce_end, 16), "%s != %s\n", hex_2_string(nonce_wrapped, 16).c_str(), hex_2_string(nonce_end, 16).c_str());
+}

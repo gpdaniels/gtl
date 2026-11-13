@@ -20,17 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Summary: An implementation of many block cipher modes to be used with block ciphers like aes<128>.
 
-#ifndef NDEBUG
-#if defined(_MSC_VER)
-#define __builtin_trap() __debugbreak()
-#endif
-/// @brief A simple assert macro to break the program if the block_cipher is misused.
-#define GTL_BLOCK_CIPHER_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
-#else
-/// @brief At release time the assert macro is implemented as a nop.
-#define GTL_BLOCK_CIPHER_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
-#endif
-
 namespace gtl {
     /// @brief  Different block cipher modes available for block cipher operations.
     enum class block_cipher_mode {
@@ -45,12 +34,41 @@ namespace gtl {
     };
 
     namespace {
+        /// @brief  Overwrite a buffer with zeros in a way that is not optimised away.
+        static void wipe_bytes(void* dst, unsigned long long int n) {
+            volatile unsigned char* bytes = static_cast<unsigned char*>(dst);
+            for (unsigned long long int i = 0; i < n; ++i)
+                bytes[i] = 0;
+        }
+
+        /// @brief  Wipes an object holding key dependent data when the scope it was declared in is left.
+        class wipe_guard final {
+        private:
+            void* data;
+            unsigned long long int length;
+
+        public:
+            ~wipe_guard() {
+                wipe_bytes(this->data, this->length);
+            }
+
+            template <typename type>
+            explicit wipe_guard(type& object)
+                : data(&object)
+                , length(sizeof(type)) {
+            }
+
+            wipe_guard(const wipe_guard&) = delete;
+            wipe_guard& operator=(const wipe_guard&) = delete;
+        };
+
         template <typename cipher_type>
-        static typename cipher_type::key_type load_key(const unsigned char* b) {
+        static typename cipher_type::round_keys_type load_key(const unsigned char* b) {
             typename cipher_type::key_type k = {};
+            const wipe_guard guard_k(k);
             for (unsigned int i = 0; i < cipher_type::key_size; ++i)
                 k.data[i] = b[i];
-            return k;
+            return cipher_type::expand_key(k);
         }
 
         template <typename cipher_type>
@@ -68,12 +86,12 @@ namespace gtl {
         }
 
         template <typename cipher_type>
-        static void encrypt_bytes(const typename cipher_type::key_type& k, const unsigned char* in, unsigned char* out) {
+        static void encrypt_bytes(const typename cipher_type::round_keys_type& k, const unsigned char* in, unsigned char* out) {
             store_block<cipher_type>(cipher_type::encrypt_block(k, load_block<cipher_type>(in)), out);
         }
 
         template <typename cipher_type>
-        static void decrypt_bytes(const typename cipher_type::key_type& k, const unsigned char* in, unsigned char* out) {
+        static void decrypt_bytes(const typename cipher_type::round_keys_type& k, const unsigned char* in, unsigned char* out) {
             store_block<cipher_type>(cipher_type::decrypt_block(k, load_block<cipher_type>(in)), out);
         }
 
@@ -92,6 +110,14 @@ namespace gtl {
                 dst[i] = 0;
         }
 
+        /// @brief  Compare two buffers, taking the same time wherever the first difference is.
+        static bool equal_bytes(const unsigned char* a, const unsigned char* b, unsigned int n) {
+            unsigned char difference = 0;
+            for (unsigned int i = 0; i < n; ++i)
+                difference |= static_cast<unsigned char>(a[i] ^ b[i]);
+            return difference == 0;
+        }
+
         static void inc_be(unsigned char* c, unsigned int n) {
             for (int i = static_cast<int>(n) - 1; i >= 0; --i) {
                 if (++c[i] != 0)
@@ -106,21 +132,45 @@ namespace gtl {
             }
         }
 
+        /// @brief  Transform data by xoring it with the encrypted values of an incrementing counter.
+        /// @note   The offset only ever advances by the number of bytes left, so it cannot wrap for any length.
+        template <typename cipher_type>
+        static void ctr_bytes(const typename cipher_type::round_keys_type& k, unsigned char* ctr, bool increment_32, const unsigned char* data, unsigned int length, unsigned char* output) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            unsigned char enc[N];
+            const wipe_guard guard_enc(enc);
+            for (unsigned int i = 0; i < length;) {
+                encrypt_bytes<cipher_type>(k, ctr, enc);
+                const unsigned int blen = (length - i < N) ? (length - i) : N;
+                for (unsigned int j = 0; j < blen; ++j) {
+                    output[i + j] = data[i + j] ^ enc[j];
+                }
+                if (increment_32)
+                    inc32(ctr);
+                else
+                    inc_be(ctr, N);
+                i += blen;
+            }
+        }
+
         static void gcm_gf_mul_128(const unsigned char* X, const unsigned char* Y, unsigned char* Z) {
             unsigned char z[16] = {};
             unsigned char v[16];
             copy_bytes(X, v, 16);
             for (unsigned int i = 0; i < 128; ++i) {
-                if ((Y[i / 8] >> (7 - (i % 8))) & 1)
-                    xor_bytes(z, v, z, 16);
-                unsigned char lsb = v[15] & 1;
+                // Each byte of the mask is 0xFF if the bit is set, otherwise 0x00, so that there is no branch on key dependent data.
+                const unsigned char mask = static_cast<unsigned char>(0 - ((Y[i / 8] >> (7 - (i % 8))) & 1));
+                for (unsigned int j = 0; j < 16; ++j)
+                    z[j] ^= static_cast<unsigned char>(v[j] & mask);
+                const unsigned char reduce = static_cast<unsigned char>(0 - (v[15] & 1));
                 for (int j = 15; j > 0; --j)
                     v[j] = static_cast<unsigned char>((v[j] >> 1) | ((v[j - 1] & 1) << 7));
                 v[0] >>= 1;
-                if (lsb)
-                    v[0] ^= 0xE1;
+                v[0] ^= static_cast<unsigned char>(0xE1 & reduce);
             }
             copy_bytes(z, Z, 16);
+            wipe_bytes(z, 16);
+            wipe_bytes(v, 16);
         }
 
         static void gcm_ghash_block(const unsigned char* H, unsigned char* Y, const unsigned char* block) {
@@ -130,22 +180,22 @@ namespace gtl {
             copy_bytes(tmp, Y, 16);
         }
 
+        static void gcm_ghash_blocks(const unsigned char* H, const unsigned char* data, unsigned int length, unsigned char* out) {
+            unsigned char block[16];
+            for (unsigned int i = 0; i < length;) {
+                const unsigned int blen = (length - i < 16) ? (length - i) : 16;
+                zero_bytes(block, 16);
+                copy_bytes(data + i, block, blen);
+                gcm_ghash_block(H, out, block);
+                i += blen;
+            }
+        }
+
         static void gcm_ghash(const unsigned char* H, const unsigned char* aad, unsigned int aad_len, const unsigned char* data, unsigned int data_len, unsigned char* out) {
             zero_bytes(out, 16);
-            unsigned char block[16];
-            for (unsigned int i = 0; i < aad_len; i += 16) {
-                zero_bytes(block, 16);
-                for (unsigned int j = 0; j < 16 && (i + j) < aad_len; ++j)
-                    block[j] = aad[i + j];
-                gcm_ghash_block(H, out, block);
-            }
-            for (unsigned int i = 0; i < data_len; i += 16) {
-                zero_bytes(block, 16);
-                for (unsigned int j = 0; j < 16 && (i + j) < data_len; ++j)
-                    block[j] = data[i + j];
-                gcm_ghash_block(H, out, block);
-            }
-            zero_bytes(block, 16);
+            gcm_ghash_blocks(H, aad, aad_len, out);
+            gcm_ghash_blocks(H, data, data_len, out);
+            unsigned char block[16] = {};
             unsigned long long ab = static_cast<unsigned long long>(aad_len) * 8;
             unsigned long long db = static_cast<unsigned long long>(data_len) * 8;
             for (unsigned int i = 0; i < 8; ++i) {
@@ -155,86 +205,170 @@ namespace gtl {
             gcm_ghash_block(H, out, block);
         }
 
+        /// @brief  Calculate the gcm tag of the additional authenticated data and the encrypted data.
+        template <typename cipher_type>
+        static void gcm_tag(const typename cipher_type::round_keys_type& k, const unsigned char* j0, const unsigned char* aad, unsigned int aad_len, const unsigned char* encrypted, unsigned int length, unsigned char* tag) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            unsigned char h[N] = {}, zero[N] = {}, ghash[N], j0e[N];
+            const wipe_guard guard_h(h);
+            const wipe_guard guard_j0e(j0e);
+            encrypt_bytes<cipher_type>(k, zero, h);
+            gcm_ghash(h, aad, aad_len, encrypted, length, ghash);
+            encrypt_bytes<cipher_type>(k, j0, j0e);
+            xor_bytes(j0e, ghash, tag, N);
+        }
+
+        /// @brief  The length in bytes of the nonce used by the ccm mode.
+        constexpr static const unsigned int ccm_nonce_len = 12;
+
+        /// @brief  The length in bytes of the field that holds the message length and the block counter in the ccm mode.
+        constexpr static const unsigned int ccm_L = 15 - ccm_nonce_len;
+
+        /// @brief  Calculate the ccm cbc-mac of the additional authenticated data and the decrypted data.
+        template <typename cipher_type>
+        static void ccm_mac(const typename cipher_type::round_keys_type& k, const unsigned char* iv, const unsigned char* aad, unsigned int aad_length, const unsigned char* data, unsigned int length, unsigned char* Y) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            unsigned char tmp[N];
+            const wipe_guard guard_tmp(tmp);
+            // B0
+            unsigned char b0[N] = {};
+            b0[0] = static_cast<unsigned char>((aad_length > 0 ? 0x40 : 0x00) | (((N - 2) / 2) << 3) | (ccm_L - 1));
+            copy_bytes(iv, b0 + 1, ccm_nonce_len);
+            for (unsigned int i = 0; i < ccm_L; ++i)
+                b0[15 - i] = static_cast<unsigned char>((length >> (8 * i)) & 0xFF);
+            encrypt_bytes<cipher_type>(k, b0, Y);
+            // AAD
+            if (aad_length > 0) {
+                unsigned char ba[N] = {};
+                unsigned int off = 0;
+                if (aad_length < 0xFF00) {
+                    ba[0] = static_cast<unsigned char>((aad_length >> 8) & 0xFF);
+                    ba[1] = static_cast<unsigned char>(aad_length & 0xFF);
+                    off = 2;
+                }
+                else {
+                    ba[0] = 0xFF;
+                    ba[1] = 0xFE;
+                    ba[2] = static_cast<unsigned char>((aad_length >> 24) & 0xFF);
+                    ba[3] = static_cast<unsigned char>((aad_length >> 16) & 0xFF);
+                    ba[4] = static_cast<unsigned char>((aad_length >> 8) & 0xFF);
+                    ba[5] = static_cast<unsigned char>(aad_length & 0xFF);
+                    off = 6;
+                }
+                for (unsigned int i = 0; i < aad_length; ++i) {
+                    if (off == N) {
+                        xor_bytes(Y, ba, tmp, N);
+                        encrypt_bytes<cipher_type>(k, tmp, Y);
+                        zero_bytes(ba, N);
+                        off = 0;
+                    }
+                    ba[off++] ^= aad[i];
+                }
+                xor_bytes(Y, ba, tmp, N);
+                encrypt_bytes<cipher_type>(k, tmp, Y);
+            }
+            // Payload auth
+            unsigned char bp[N];
+            const wipe_guard guard_bp(bp);
+            for (unsigned int i = 0; i < length;) {
+                const unsigned int blen = (length - i < N) ? (length - i) : N;
+                zero_bytes(bp, N);
+                copy_bytes(data + i, bp, blen);
+                xor_bytes(Y, bp, tmp, N);
+                encrypt_bytes<cipher_type>(k, tmp, Y);
+                i += blen;
+            }
+        }
+
+        /// @brief  Transform data using the ccm counter blocks, also calculating the block used to encrypt the cbc-mac.
+        template <typename cipher_type>
+        static void ccm_ctr(const typename cipher_type::round_keys_type& k, const unsigned char* iv, const unsigned char* data, unsigned int length, unsigned char* output, unsigned char* s0) {
+            constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
+            unsigned char ctr[N] = {};
+            ctr[0] = static_cast<unsigned char>(ccm_L - 1);
+            copy_bytes(iv, ctr + 1, ccm_nonce_len);
+            encrypt_bytes<cipher_type>(k, ctr, s0);
+            // The counter field is the last ccm_L bytes, which cannot overflow as the length is limited to fit in the same number of bytes.
+            ctr[15] = 0x01;
+            ctr_bytes<cipher_type>(k, ctr, false, data, length, output);
+        }
+
         static void siv_dbl(const unsigned char* in, unsigned char* out) {
             unsigned char carry = 0;
             for (int i = 15; i >= 0; --i) {
+                const unsigned char next = static_cast<unsigned char>((in[i] >> 7) & 1);
                 out[i] = static_cast<unsigned char>((in[i] << 1) | carry);
-                carry = (in[i] >> 7) & 1;
+                carry = next;
             }
-            if (carry)
-                out[15] ^= 0x87;
+            out[15] ^= static_cast<unsigned char>(0x87 & (0 - carry));
         }
 
+        /// @brief  Calculate the cmac of a string, optionally xoring a block into the end of the string first.
+        /// @param  xor_end If not null a block that is xored with the last block size bytes of the data, the data must be at least that long.
         template <typename cipher_type>
-        static void siv_cmac(const typename cipher_type::key_type& key, const unsigned char* data, unsigned int length, unsigned char* mac, const unsigned char* xor_end = nullptr) {
+        static void siv_cmac(const typename cipher_type::round_keys_type& key, const unsigned char* data, unsigned int length, unsigned char* mac, const unsigned char* xor_end = nullptr) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            unsigned char zero[N] = {}, L[N], K1[N], K2[N];
+            unsigned char zero[N] = {}, L[N], K1[N], K2[N], block[N];
+            const wipe_guard guard_L(L);
+            const wipe_guard guard_K1(K1);
+            const wipe_guard guard_K2(K2);
+            const wipe_guard guard_block(block);
             encrypt_bytes<cipher_type>(key, zero, L);
             siv_dbl(L, K1);
             siv_dbl(K1, K2);
             zero_bytes(mac, N);
-            unsigned int num = (length + N - 1) / N;
-            if (length == 0)
-                num = 1;
-            for (unsigned int i = 0; i < num; ++i) {
-                unsigned char block[N] = {};
-                bool last = (i == num - 1);
-                if (last) {
-                    if (length == 0 || length % N != 0) {
-                        unsigned int rem = length % N;
-                        copy_bytes(data + i * N, block, rem);
-                        block[rem] = 0x80;
-                        xor_bytes(block, K2, block, N);
-                    }
-                    else {
-                        copy_bytes(data + i * N, block, N);
-                        xor_bytes(block, K1, block, N);
-                    }
-                    if (xor_end)
-                        xor_bytes(block, xor_end, block, N);
-                }
-                else {
-                    copy_bytes(data + i * N, block, N);
-                }
+            // The last block is always processed separately, it is the only one that can be partial or empty.
+            const unsigned int rem = (length == 0) ? 0 : (((length - 1) % N) + 1);
+            const unsigned int last = length - rem;
+            // The offset of the first byte that is xored with the xor_end block.
+            const unsigned int xor_start = (xor_end && (length >= N)) ? (length - N) : length;
+            for (unsigned int i = 0; i < last; i += N) {
+                for (unsigned int j = 0; j < N; ++j)
+                    block[j] = static_cast<unsigned char>(data[i + j] ^ (((i + j) >= xor_start) ? xor_end[i + j - xor_start] : 0));
                 xor_bytes(mac, block, mac, N);
                 encrypt_bytes<cipher_type>(key, mac, mac);
             }
+            zero_bytes(block, N);
+            for (unsigned int j = 0; j < rem; ++j)
+                block[j] = static_cast<unsigned char>(data[last + j] ^ (((last + j) >= xor_start) ? xor_end[last + j - xor_start] : 0));
+            if (rem == N) {
+                xor_bytes(block, K1, block, N);
+            }
+            else {
+                block[rem] = 0x80;
+                xor_bytes(block, K2, block, N);
+            }
+            xor_bytes(mac, block, mac, N);
+            encrypt_bytes<cipher_type>(key, mac, mac);
         }
 
+        /// @brief  The S2V function of RFC 5297 over the strings: additional authenticated data (if any), nonce (if any), payload.
         template <typename cipher_type>
-        static void siv_s2v(const typename cipher_type::key_type& key, const unsigned char* aad, unsigned int aad_len, const unsigned char* nonce, unsigned int nonce_len, const unsigned char* payload, unsigned int payload_len, unsigned char* out) {
+        static void siv_s2v(const typename cipher_type::round_keys_type& key, const unsigned char* aad, unsigned int aad_len, const unsigned char* nonce, unsigned int nonce_len, const unsigned char* payload, unsigned int payload_len, unsigned char* out) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            unsigned char zero[N] = {}, d[N], tmp[N];
+            unsigned char zero[N] = {}, d[N], dd[N], tmp[N];
+            const wipe_guard guard_d(d);
+            const wipe_guard guard_dd(dd);
+            const wipe_guard guard_tmp(tmp);
             siv_cmac<cipher_type>(key, zero, N, d);
             if (aad && aad_len > 0) {
                 siv_cmac<cipher_type>(key, aad, aad_len, tmp);
-                unsigned char dd[N];
                 siv_dbl(d, dd);
                 xor_bytes(dd, tmp, d, N);
-            }
-            else {
-                siv_dbl(d, d);
             }
             if (nonce && nonce_len > 0) {
                 siv_cmac<cipher_type>(key, nonce, nonce_len, tmp);
-                unsigned char dd[N];
                 siv_dbl(d, dd);
                 xor_bytes(dd, tmp, d, N);
-            }
-            else {
-                unsigned char dd[N];
-                siv_dbl(d, dd);
-                copy_bytes(dd, d, N);
             }
             if (payload_len >= N) {
                 siv_cmac<cipher_type>(key, payload, payload_len, out, d);
             }
             else {
                 unsigned char padded[N] = {};
-                if (payload)
-                    copy_bytes(payload, padded, payload_len);
+                const wipe_guard guard_padded(padded);
+                copy_bytes(payload, padded, payload_len);
                 padded[payload_len] = 0x80;
-                unsigned char dd[N];
                 siv_dbl(d, dd);
                 xor_bytes(dd, padded, tmp, N);
                 siv_cmac<cipher_type>(key, tmp, N, out);
@@ -242,46 +376,95 @@ namespace gtl {
         }
     }
 
+    /// @brief  The block_cipher class encrypts and decrypts data of any length by chaining together the blocks of a block cipher.
+    /// @tparam cipher_type The block cipher, for example aes<128>.
+    /// @tparam mode The mode used to chain together blocks.
+    /// @note   In every mode the output buffer may be the same buffer as the data buffer, but the two must not otherwise overlap.
     template <typename cipher_type, block_cipher_mode mode>
     class block_cipher;
 
-    // ECB
+    /// @brief  Electronic codebook mode, every block is encrypted independently so patterns in the data are visible in the output.
     template <typename cipher_type>
     class block_cipher<cipher_type, block_cipher_mode::ecb> final {
     public:
+        /// @brief  Internal size of each processed block of data in sets of four bytes, a block is block_size by block_size bytes.
         constexpr static const unsigned int block_size = cipher_type::block_size;
+
+        /// @brief  Size of each processed block of data in bytes.
+        constexpr static const unsigned int block_size_bytes = cipher_type::block_size * cipher_type::block_size;
+
+        /// @brief  Size of the key in bytes.
         constexpr static const unsigned int key_size = cipher_type::key_size;
 
-        static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, unsigned char* output) {
+        /// @brief  Encrypt a string of data writing the encrypted data into the output string.
+        /// @param  data The string of data to encrypt.
+        /// @param  length The length of the data, must be a multiple of block_size_bytes.
+        /// @param  key The encryption key, must be key_size bytes long.
+        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
+        /// @return true if the data was encrypted, false if the length is invalid in which case the output is not written.
+        static bool encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, unsigned char* output) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            GTL_BLOCK_CIPHER_ASSERT((length % N) == 0, "Length must be multiple of block size.");
-            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            if ((length % N) != 0) {
+                return false;
+            }
+            typename cipher_type::round_keys_type k = load_key<cipher_type>(key);
+            const wipe_guard guard_k(k);
             for (unsigned int i = 0; i < length; i += N) {
                 encrypt_bytes<cipher_type>(k, data + i, output + i);
             }
+            return true;
         }
 
-        static void decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, unsigned char* output) {
+        /// @brief  Decrypt a string of data writing the decrypted data into the output string.
+        /// @param  data The string of data to decrypt.
+        /// @param  length The length of the data, must be a multiple of block_size_bytes.
+        /// @param  key The decryption key, must be key_size bytes long.
+        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
+        /// @return true if the data was decrypted, false if the length is invalid in which case the output is not written.
+        static bool decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, unsigned char* output) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            GTL_BLOCK_CIPHER_ASSERT((length % N) == 0, "Length must be multiple of block size.");
-            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            if ((length % N) != 0) {
+                return false;
+            }
+            typename cipher_type::round_keys_type k = load_key<cipher_type>(key);
+            const wipe_guard guard_k(k);
             for (unsigned int i = 0; i < length; i += N) {
                 decrypt_bytes<cipher_type>(k, data + i, output + i);
             }
+            return true;
         }
     };
 
-    // CBC
+    /// @brief  Cipher block chaining mode, every block is xored with the previous encrypted block before it is encrypted.
     template <typename cipher_type>
     class block_cipher<cipher_type, block_cipher_mode::cbc> final {
     public:
+        /// @brief  Internal size of each processed block of data in sets of four bytes, a block is block_size by block_size bytes.
         constexpr static const unsigned int block_size = cipher_type::block_size;
+
+        /// @brief  Size of each processed block of data in bytes.
+        constexpr static const unsigned int block_size_bytes = cipher_type::block_size * cipher_type::block_size;
+
+        /// @brief  Size of the key in bytes.
         constexpr static const unsigned int key_size = cipher_type::key_size;
 
-        static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
+        /// @brief  Size of the initialisation vector in bytes.
+        constexpr static const unsigned int iv_size = cipher_type::block_size * cipher_type::block_size;
+
+        /// @brief  Encrypt a string of data writing the encrypted data into the output string.
+        /// @param  data The string of data to encrypt.
+        /// @param  length The length of the data, must be a multiple of block_size_bytes.
+        /// @param  key The encryption key, must be key_size bytes long.
+        /// @param  iv The initialisation vector, must be iv_size bytes long and unpredictable for every message encrypted with the same key.
+        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
+        /// @return true if the data was encrypted, false if the length is invalid in which case the output is not written.
+        static bool encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            GTL_BLOCK_CIPHER_ASSERT((length % N) == 0, "Length must be multiple of block size.");
-            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            if ((length % N) != 0) {
+                return false;
+            }
+            typename cipher_type::round_keys_type k = load_key<cipher_type>(key);
+            const wipe_guard guard_k(k);
             unsigned char prev[N];
             copy_bytes(iv, prev, N);
             for (unsigned int i = 0; i < length; i += N) {
@@ -290,436 +473,458 @@ namespace gtl {
                 encrypt_bytes<cipher_type>(k, tmp, output + i);
                 copy_bytes(output + i, prev, N);
             }
+            return true;
         }
 
-        static void decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
+        /// @brief  Decrypt a string of data writing the decrypted data into the output string.
+        /// @param  data The string of data to decrypt.
+        /// @param  length The length of the data, must be a multiple of block_size_bytes.
+        /// @param  key The decryption key, must be key_size bytes long.
+        /// @param  iv The initialisation vector that was used to encrypt the data, must be iv_size bytes long.
+        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
+        /// @return true if the data was decrypted, false if the length is invalid in which case the output is not written.
+        static bool decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            GTL_BLOCK_CIPHER_ASSERT((length % N) == 0, "Length must be multiple of block size.");
-            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            if ((length % N) != 0) {
+                return false;
+            }
+            typename cipher_type::round_keys_type k = load_key<cipher_type>(key);
+            const wipe_guard guard_k(k);
             unsigned char prev[N];
             copy_bytes(iv, prev, N);
             for (unsigned int i = 0; i < length; i += N) {
+                // Keep a copy of the encrypted block, as it is overwritten when decrypting in place.
+                unsigned char cur[N];
+                copy_bytes(data + i, cur, N);
                 unsigned char dec[N];
-                decrypt_bytes<cipher_type>(k, data + i, dec);
+                decrypt_bytes<cipher_type>(k, cur, dec);
                 xor_bytes(dec, prev, output + i, N);
-                copy_bytes(data + i, prev, N);
+                copy_bytes(cur, prev, N);
             }
+            return true;
         }
     };
 
-    // CFB
+    /// @brief  Cipher feedback mode, a stream mode where the previous encrypted block is encrypted and xored with the data.
     template <typename cipher_type>
     class block_cipher<cipher_type, block_cipher_mode::cfb> final {
     public:
+        /// @brief  Internal size of each processed block of data in sets of four bytes, a block is block_size by block_size bytes.
         constexpr static const unsigned int block_size = cipher_type::block_size;
+
+        /// @brief  Size of each processed block of data in bytes.
+        constexpr static const unsigned int block_size_bytes = cipher_type::block_size * cipher_type::block_size;
+
+        /// @brief  Size of the key in bytes.
         constexpr static const unsigned int key_size = cipher_type::key_size;
 
+        /// @brief  Size of the initialisation vector in bytes.
+        constexpr static const unsigned int iv_size = cipher_type::block_size * cipher_type::block_size;
+
+        /// @brief  Encrypt a string of data writing the encrypted data into the output string.
+        /// @param  data The string of data to encrypt.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The encryption key, must be key_size bytes long.
+        /// @param  iv The initialisation vector, must be iv_size bytes long and unique for every message encrypted with the same key.
+        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
         static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            GTL_BLOCK_CIPHER_ASSERT((length % N) == 0, "Length must be multiple of block size.");
-            const typename cipher_type::key_type k = load_key<cipher_type>(key);
-            unsigned char fb[N];
+            typename cipher_type::round_keys_type k = load_key<cipher_type>(key);
+            const wipe_guard guard_k(k);
+            unsigned char fb[N], enc[N];
+            const wipe_guard guard_enc(enc);
             copy_bytes(iv, fb, N);
-            for (unsigned int i = 0; i < length; i += N) {
-                unsigned char enc[N];
+            for (unsigned int i = 0; i < length;) {
                 encrypt_bytes<cipher_type>(k, fb, enc);
-                xor_bytes(data + i, enc, output + i, N);
-                copy_bytes(output + i, fb, N);
+                const unsigned int blen = (length - i < N) ? (length - i) : N;
+                for (unsigned int j = 0; j < blen; ++j) {
+                    output[i + j] = data[i + j] ^ enc[j];
+                    fb[j] = output[i + j];
+                }
+                i += blen;
             }
         }
 
+        /// @brief  Decrypt a string of data writing the decrypted data into the output string.
+        /// @param  data The string of data to decrypt.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The decryption key, must be key_size bytes long.
+        /// @param  iv The initialisation vector that was used to encrypt the data, must be iv_size bytes long.
+        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
         static void decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            GTL_BLOCK_CIPHER_ASSERT((length % N) == 0, "Length must be multiple of block size.");
-            const typename cipher_type::key_type k = load_key<cipher_type>(key);
-            unsigned char fb[N];
+            typename cipher_type::round_keys_type k = load_key<cipher_type>(key);
+            const wipe_guard guard_k(k);
+            unsigned char fb[N], enc[N];
+            const wipe_guard guard_enc(enc);
             copy_bytes(iv, fb, N);
-            for (unsigned int i = 0; i < length; i += N) {
-                unsigned char enc[N];
+            for (unsigned int i = 0; i < length;) {
                 encrypt_bytes<cipher_type>(k, fb, enc);
-                xor_bytes(data + i, enc, output + i, N);
-                copy_bytes(data + i, fb, N);
+                const unsigned int blen = (length - i < N) ? (length - i) : N;
+                for (unsigned int j = 0; j < blen; ++j) {
+                    // Read the encrypted byte before writing, as it is overwritten when decrypting in place.
+                    const unsigned char cur = data[i + j];
+                    output[i + j] = cur ^ enc[j];
+                    fb[j] = cur;
+                }
+                i += blen;
             }
         }
     };
 
-    // OFB
+    /// @brief  Output feedback mode, a stream mode where the initialisation vector is repeatedly encrypted and xored with the data.
     template <typename cipher_type>
     class block_cipher<cipher_type, block_cipher_mode::ofb> final {
     public:
+        /// @brief  Internal size of each processed block of data in sets of four bytes, a block is block_size by block_size bytes.
         constexpr static const unsigned int block_size = cipher_type::block_size;
+
+        /// @brief  Size of each processed block of data in bytes.
+        constexpr static const unsigned int block_size_bytes = cipher_type::block_size * cipher_type::block_size;
+
+        /// @brief  Size of the key in bytes.
         constexpr static const unsigned int key_size = cipher_type::key_size;
 
+        /// @brief  Size of the initialisation vector in bytes.
+        constexpr static const unsigned int iv_size = cipher_type::block_size * cipher_type::block_size;
+
+        /// @brief  Encrypt a string of data writing the encrypted data into the output string.
+        /// @param  data The string of data to encrypt.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The encryption key, must be key_size bytes long.
+        /// @param  iv The initialisation vector, must be iv_size bytes long and unique for every message encrypted with the same key.
+        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
         static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            GTL_BLOCK_CIPHER_ASSERT((length % N) == 0, "Length must be multiple of block size.");
-            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            typename cipher_type::round_keys_type k = load_key<cipher_type>(key);
+            const wipe_guard guard_k(k);
             unsigned char fb[N];
+            const wipe_guard guard_fb(fb);
             copy_bytes(iv, fb, N);
-            for (unsigned int i = 0; i < length; i += N) {
-                unsigned char enc[N];
-                encrypt_bytes<cipher_type>(k, fb, enc);
-                xor_bytes(data + i, enc, output + i, N);
-                copy_bytes(enc, fb, N);
+            for (unsigned int i = 0; i < length;) {
+                encrypt_bytes<cipher_type>(k, fb, fb);
+                const unsigned int blen = (length - i < N) ? (length - i) : N;
+                for (unsigned int j = 0; j < blen; ++j) {
+                    output[i + j] = data[i + j] ^ fb[j];
+                }
+                i += blen;
             }
         }
 
+        /// @brief  Decrypt a string of data writing the decrypted data into the output string.
+        /// @param  data The string of data to decrypt.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The decryption key, must be key_size bytes long.
+        /// @param  iv The initialisation vector that was used to encrypt the data, must be iv_size bytes long.
+        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
         static void decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
             encrypt(data, length, key, iv, output);
         }
     };
 
-    // CTR
+    /// @brief  Counter mode, a stream mode where an incrementing counter is encrypted and xored with the data.
     template <typename cipher_type>
     class block_cipher<cipher_type, block_cipher_mode::ctr> final {
     public:
+        /// @brief  Internal size of each processed block of data in sets of four bytes, a block is block_size by block_size bytes.
         constexpr static const unsigned int block_size = cipher_type::block_size;
+
+        /// @brief  Size of each processed block of data in bytes.
+        constexpr static const unsigned int block_size_bytes = cipher_type::block_size * cipher_type::block_size;
+
+        /// @brief  Size of the key in bytes.
         constexpr static const unsigned int key_size = cipher_type::key_size;
 
+        /// @brief  Size of the initialisation vector in bytes.
+        constexpr static const unsigned int iv_size = cipher_type::block_size * cipher_type::block_size;
+
+        /// @brief  Encrypt a string of data writing the encrypted data into the output string.
+        /// @param  data The string of data to encrypt.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The encryption key, must be key_size bytes long.
+        /// @param  iv The initial value of the big endian counter, must be iv_size bytes long, no counter value may be used twice with the same key.
+        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
         static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            const typename cipher_type::key_type k = load_key<cipher_type>(key);
+            typename cipher_type::round_keys_type k = load_key<cipher_type>(key);
+            const wipe_guard guard_k(k);
             unsigned char ctr[N];
             copy_bytes(iv, ctr, N);
-            for (unsigned int i = 0; i < length; i += N) {
-                unsigned char enc[N];
-                encrypt_bytes<cipher_type>(k, ctr, enc);
-                unsigned int blen = (length - i < N) ? (length - i) : N;
-                for (unsigned int j = 0; j < blen; ++j) {
-                    output[i + j] = data[i + j] ^ enc[j];
-                }
-                inc_be(ctr, N);
-            }
+            ctr_bytes<cipher_type>(k, ctr, false, data, length, output);
         }
 
+        /// @brief  Decrypt a string of data writing the decrypted data into the output string.
+        /// @param  data The string of data to decrypt.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The decryption key, must be key_size bytes long.
+        /// @param  iv The initial value of the counter that was used to encrypt the data, must be iv_size bytes long.
+        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
         static void decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
             encrypt(data, length, key, iv, output);
         }
     };
 
-    // GCM
+    /// @brief  Galois/counter mode, counter mode with a tag that authenticates the data and optional additional data.
     template <typename cipher_type>
     class block_cipher<cipher_type, block_cipher_mode::gcm> final {
     public:
+        /// @brief  Internal size of each processed block of data in sets of four bytes, a block is block_size by block_size bytes.
         constexpr static const unsigned int block_size = cipher_type::block_size;
+
+        /// @brief  Size of each processed block of data in bytes.
+        constexpr static const unsigned int block_size_bytes = cipher_type::block_size * cipher_type::block_size;
+
+        /// @brief  Size of the key in bytes.
         constexpr static const unsigned int key_size = cipher_type::key_size;
 
+        /// @brief  Size of the initialisation vector in bytes.
+        constexpr static const unsigned int iv_size = 12;
+
+        /// @brief  Size of the authentication tag in bytes.
+        constexpr static const unsigned int tag_size = cipher_type::block_size * cipher_type::block_size;
+
+        /// @brief  Encrypt a string of data writing the encrypted data into the output string.
+        /// @param  data The string of data to encrypt.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The encryption key, must be key_size bytes long.
+        /// @param  iv The initialisation vector, must be iv_size bytes long and never used for more than one message with the same key.
+        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
+        /// @param  tag Pointer to a tag_size buffer that will receive the authentication tag, if null no tag is calculated and the data cannot be decrypted.
+        /// @param  aad Optional additional data that is authenticated but not encrypted.
+        /// @param  aad_length The length of the additional authenticated data.
         static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, unsigned char* tag, const unsigned char* aad = nullptr, unsigned int aad_length = 0) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            const typename cipher_type::key_type k = load_key<cipher_type>(key);
-            unsigned char h[N] = {}, zero[N] = {};
-            encrypt_bytes<cipher_type>(k, zero, h);
+            typename cipher_type::round_keys_type k = load_key<cipher_type>(key);
+            const wipe_guard guard_k(k);
             unsigned char j0[N] = {};
-            copy_bytes(iv, j0, 12);
+            copy_bytes(iv, j0, iv_size);
             j0[15] = 0x01;
             unsigned char ctr[N];
             copy_bytes(j0, ctr, N);
             inc32(ctr);
-            for (unsigned int i = 0; i < length; i += N) {
-                unsigned char enc[N];
-                encrypt_bytes<cipher_type>(k, ctr, enc);
-                unsigned int blen = (length - i < N) ? (length - i) : N;
-                for (unsigned int j = 0; j < blen; ++j) {
-                    output[i + j] = data[i + j] ^ enc[j];
-                }
-                inc32(ctr);
-            }
+            ctr_bytes<cipher_type>(k, ctr, true, data, length, output);
             if (tag) {
-                unsigned char ghash[N], j0e[N];
-                gcm_ghash(h, aad, aad_length, output, length, ghash);
-                encrypt_bytes<cipher_type>(k, j0, j0e);
-                xor_bytes(j0e, ghash, tag, N);
+                gcm_tag<cipher_type>(k, j0, aad, aad_length, output, length, tag);
             }
         }
 
+        /// @brief  Authenticate and decrypt a string of data writing the decrypted data into the output string.
+        /// @param  data The string of data to decrypt.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The decryption key, must be key_size bytes long.
+        /// @param  iv The initialisation vector that was used to encrypt the data, must be iv_size bytes long.
+        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
+        /// @param  tag The tag_size authentication tag that was calculated when encrypting the data.
+        /// @param  aad The additional authenticated data that was provided when encrypting the data.
+        /// @param  aad_length The length of the additional authenticated data.
+        /// @return true if the data is authentic and was decrypted, otherwise false in which case the output is filled with zeros.
         static bool decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, const unsigned char* tag, const unsigned char* aad = nullptr, unsigned int aad_length = 0) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            const typename cipher_type::key_type k = load_key<cipher_type>(key);
-            unsigned char h[N] = {}, zero[N] = {};
-            encrypt_bytes<cipher_type>(k, zero, h);
-            unsigned char j0[N] = {};
-            copy_bytes(iv, j0, 12);
-            j0[15] = 0x01;
             // The tag is required, without it the data cannot be authenticated.
             if (!tag) {
                 zero_bytes(output, length);
                 return false;
             }
+            typename cipher_type::round_keys_type k = load_key<cipher_type>(key);
+            const wipe_guard guard_k(k);
+            unsigned char j0[N] = {};
+            copy_bytes(iv, j0, iv_size);
+            j0[15] = 0x01;
             // Always verify the tag, it covers the encrypted data even when there is no AAD.
-            {
-                unsigned char ghash[N], j0e[N], computed[N];
-                gcm_ghash(h, aad, aad_length, data, length, ghash);
-                encrypt_bytes<cipher_type>(k, j0, j0e);
-                xor_bytes(j0e, ghash, computed, N);
-                bool valid = true;
-                for (unsigned int i = 0; i < N; ++i) {
-                    if (tag[i] != computed[i]) {
-                        valid = false;
-                    }
-                }
-                if (!valid) {
-                    zero_bytes(output, length);
-                    return false;
-                }
+            unsigned char computed[N];
+            gcm_tag<cipher_type>(k, j0, aad, aad_length, data, length, computed);
+            if (!equal_bytes(tag, computed, N)) {
+                zero_bytes(output, length);
+                return false;
             }
             unsigned char ctr[N];
             copy_bytes(j0, ctr, N);
             inc32(ctr);
-            for (unsigned int i = 0; i < length; i += N) {
-                unsigned char enc[N];
-                encrypt_bytes<cipher_type>(k, ctr, enc);
-                unsigned int blen = (length - i < N) ? (length - i) : N;
-                for (unsigned int j = 0; j < blen; ++j) {
-                    output[i + j] = data[i + j] ^ enc[j];
-                }
-                inc32(ctr);
-            }
+            ctr_bytes<cipher_type>(k, ctr, true, data, length, output);
             return true;
         }
     };
 
-    // CCM
+    /// @brief  Counter with cipher block chaining message authentication code mode, counter mode with a tag that authenticates the data and optional additional data.
     template <typename cipher_type>
     class block_cipher<cipher_type, block_cipher_mode::ccm> final {
     public:
+        /// @brief  Internal size of each processed block of data in sets of four bytes, a block is block_size by block_size bytes.
         constexpr static const unsigned int block_size = cipher_type::block_size;
+
+        /// @brief  Size of each processed block of data in bytes.
+        constexpr static const unsigned int block_size_bytes = cipher_type::block_size * cipher_type::block_size;
+
+        /// @brief  Size of the key in bytes.
         constexpr static const unsigned int key_size = cipher_type::key_size;
 
-        static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, unsigned char* tag, const unsigned char* aad = nullptr, unsigned int aad_length = 0) {
+        /// @brief  Size of the initialisation vector in bytes.
+        constexpr static const unsigned int iv_size = ccm_nonce_len;
+
+        /// @brief  Size of the authentication tag in bytes.
+        constexpr static const unsigned int tag_size = cipher_type::block_size * cipher_type::block_size;
+
+        /// @brief  The maximum length of the data in bytes, set by the space left for the length once the initialisation vector is stored.
+        constexpr static const unsigned int length_max = (1u << (8 * ccm_L)) - 1;
+
+        /// @brief  Encrypt a string of data writing the encrypted data into the output string.
+        /// @param  data The string of data to encrypt.
+        /// @param  length The length of the data, must be no more than length_max.
+        /// @param  key The encryption key, must be key_size bytes long.
+        /// @param  iv The initialisation vector, must be iv_size bytes long and never used for more than one message with the same key.
+        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
+        /// @param  tag Pointer to a tag_size buffer that will receive the authentication tag, if null no tag is calculated and the data cannot be decrypted.
+        /// @param  aad Optional additional data that is authenticated but not encrypted.
+        /// @param  aad_length The length of the additional authenticated data.
+        /// @return true if the data was encrypted, false if the length is invalid in which case the output and tag are not written.
+        static bool encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, unsigned char* tag, const unsigned char* aad = nullptr, unsigned int aad_length = 0) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            const typename cipher_type::key_type k = load_key<cipher_type>(key);
-            const unsigned int nonce_len = 12;
-            const unsigned int L = 15 - nonce_len;
-            // B0
-            unsigned char b0[N] = {};
-            b0[0] = static_cast<unsigned char>((aad_length > 0 ? 0x40 : 0x00) | (((N - 2) / 2) << 3) | (L - 1));
-            copy_bytes(iv, b0 + 1, nonce_len);
-            for (unsigned int i = 0; i < L; ++i)
-                b0[15 - i] = static_cast<unsigned char>((length >> (8 * i)) & 0xFF);
-            unsigned char Y[N];
-            encrypt_bytes<cipher_type>(k, b0, Y);
-            // AAD
-            if (aad_length > 0) {
-                unsigned char ba[N] = {};
-                unsigned int off = 0;
-                if (aad_length < 0xFF00) {
-                    ba[0] = static_cast<unsigned char>((aad_length >> 8) & 0xFF);
-                    ba[1] = static_cast<unsigned char>(aad_length & 0xFF);
-                    off = 2;
-                }
-                else {
-                    ba[0] = 0xFF;
-                    ba[1] = 0xFE;
-                    ba[2] = static_cast<unsigned char>((aad_length >> 24) & 0xFF);
-                    ba[3] = static_cast<unsigned char>((aad_length >> 16) & 0xFF);
-                    ba[4] = static_cast<unsigned char>((aad_length >> 8) & 0xFF);
-                    ba[5] = static_cast<unsigned char>(aad_length & 0xFF);
-                    off = 6;
-                }
-                for (unsigned int i = 0; i < aad_length; ++i) {
-                    if (off == N) {
-                        unsigned char tmp[N];
-                        xor_bytes(Y, ba, tmp, N);
-                        encrypt_bytes<cipher_type>(k, tmp, Y);
-                        zero_bytes(ba, N);
-                        off = 0;
-                    }
-                    ba[off++] ^= aad[i];
-                }
-                unsigned char tmp[N];
-                xor_bytes(Y, ba, tmp, N);
-                encrypt_bytes<cipher_type>(k, tmp, Y);
+            if (length > length_max) {
+                return false;
             }
-            // Payload auth
-            for (unsigned int i = 0; i < length; i += N) {
-                unsigned char bp[N] = {};
-                unsigned int blen = (length - i < N) ? (length - i) : N;
-                copy_bytes(data + i, bp, blen);
-                unsigned char tmp[N];
-                xor_bytes(Y, bp, tmp, N);
-                encrypt_bytes<cipher_type>(k, tmp, Y);
+            typename cipher_type::round_keys_type k = load_key<cipher_type>(key);
+            const wipe_guard guard_k(k);
+            // The authentication covers the data before it is encrypted, so it must be calculated first to allow encrypting in place.
+            unsigned char Y[N], s0[N];
+            const wipe_guard guard_Y(Y);
+            const wipe_guard guard_s0(s0);
+            if (tag) {
+                ccm_mac<cipher_type>(k, iv, aad, aad_length, data, length, Y);
             }
-            // Counter blocks
-            unsigned char a0[N] = {};
-            a0[0] = static_cast<unsigned char>(L - 1);
-            copy_bytes(iv, a0 + 1, nonce_len);
-            unsigned char s0[N];
-            encrypt_bytes<cipher_type>(k, a0, s0);
-            for (unsigned int i = 0; i < length; i += N) {
-                unsigned char ai[N];
-                copy_bytes(a0, ai, N);
-                unsigned int counter = (i / N) + 1;
-                for (unsigned int j = 0; j < L; ++j) {
-                    ai[15 - j] = static_cast<unsigned char>((counter >> (8 * j)) & 0xFF);
-                }
-                unsigned char si[N];
-                encrypt_bytes<cipher_type>(k, ai, si);
-                unsigned int blen = (length - i < N) ? (length - i) : N;
-                for (unsigned int j = 0; j < blen; ++j) {
-                    output[i + j] = data[i + j] ^ si[j];
-                }
-            }
-            if (tag)
+            ccm_ctr<cipher_type>(k, iv, data, length, output, s0);
+            if (tag) {
                 xor_bytes(Y, s0, tag, N);
+            }
+            return true;
         }
 
+        /// @brief  Authenticate and decrypt a string of data writing the decrypted data into the output string.
+        /// @param  data The string of data to decrypt.
+        /// @param  length The length of the data, must be no more than length_max.
+        /// @param  key The decryption key, must be key_size bytes long.
+        /// @param  iv The initialisation vector that was used to encrypt the data, must be iv_size bytes long.
+        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
+        /// @param  tag The tag_size authentication tag that was calculated when encrypting the data.
+        /// @param  aad The additional authenticated data that was provided when encrypting the data.
+        /// @param  aad_length The length of the additional authenticated data.
+        /// @return true if the data is authentic and was decrypted, otherwise false in which case the output is filled with zeros, unless the length is invalid in which case the output is not written.
         static bool decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, const unsigned char* tag, const unsigned char* aad = nullptr, unsigned int aad_length = 0) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            const typename cipher_type::key_type k = load_key<cipher_type>(key);
-            const unsigned int nonce_len = 12;
-            const unsigned int L = 15 - nonce_len;
+            if (length > length_max) {
+                return false;
+            }
             // The tag is required, without it the data cannot be authenticated.
             if (!tag) {
                 zero_bytes(output, length);
                 return false;
             }
+            typename cipher_type::round_keys_type k = load_key<cipher_type>(key);
+            const wipe_guard guard_k(k);
             // Decrypt
-            unsigned char a0[N] = {};
-            a0[0] = static_cast<unsigned char>(L - 1);
-            copy_bytes(iv, a0 + 1, nonce_len);
-            unsigned char s0[N];
-            encrypt_bytes<cipher_type>(k, a0, s0);
-            for (unsigned int i = 0; i < length; i += N) {
-                unsigned char ai[N];
-                copy_bytes(a0, ai, N);
-                unsigned int counter = (i / N) + 1;
-                for (unsigned int j = 0; j < L; ++j) {
-                    ai[15 - j] = static_cast<unsigned char>((counter >> (8 * j)) & 0xFF);
-                }
-                unsigned char si[N];
-                encrypt_bytes<cipher_type>(k, ai, si);
-                unsigned int blen = (length - i < N) ? (length - i) : N;
-                for (unsigned int j = 0; j < blen; ++j) {
-                    output[i + j] = data[i + j] ^ si[j];
-                }
-            }
+            unsigned char Y[N], s0[N], computed[N];
+            const wipe_guard guard_Y(Y);
+            const wipe_guard guard_s0(s0);
+            ccm_ctr<cipher_type>(k, iv, data, length, output, s0);
             // Always verify the tag, it covers the decrypted data even when there is no AAD.
-            unsigned char b0[N] = {};
-            b0[0] = static_cast<unsigned char>((aad_length > 0 ? 0x40 : 0x00) | (((N - 2) / 2) << 3) | (L - 1));
-            copy_bytes(iv, b0 + 1, nonce_len);
-            for (unsigned int i = 0; i < L; ++i) {
-                b0[15 - i] = static_cast<unsigned char>((length >> (8 * i)) & 0xFF);
-            }
-            unsigned char Y[N];
-            encrypt_bytes<cipher_type>(k, b0, Y);
-            // AAD
-            if (aad_length > 0) {
-                unsigned char ba[N] = {};
-                unsigned int off = 0;
-                if (aad_length < 0xFF00) {
-                    ba[0] = static_cast<unsigned char>((aad_length >> 8) & 0xFF);
-                    ba[1] = static_cast<unsigned char>(aad_length & 0xFF);
-                    off = 2;
-                }
-                else {
-                    ba[0] = 0xFF;
-                    ba[1] = 0xFE;
-                    ba[2] = static_cast<unsigned char>((aad_length >> 24) & 0xFF);
-                    ba[3] = static_cast<unsigned char>((aad_length >> 16) & 0xFF);
-                    ba[4] = static_cast<unsigned char>((aad_length >> 8) & 0xFF);
-                    ba[5] = static_cast<unsigned char>(aad_length & 0xFF);
-                    off = 6;
-                }
-                for (unsigned int i = 0; i < aad_length; ++i) {
-                    if (off == N) {
-                        unsigned char tmp[N];
-                        xor_bytes(Y, ba, tmp, N);
-                        encrypt_bytes<cipher_type>(k, tmp, Y);
-                        zero_bytes(ba, N);
-                        off = 0;
-                    }
-                    ba[off++] ^= aad[i];
-                }
-                unsigned char tmp[N];
-                xor_bytes(Y, ba, tmp, N);
-                encrypt_bytes<cipher_type>(k, tmp, Y);
-            }
-            // Payload auth
-            for (unsigned int i = 0; i < length; i += N) {
-                unsigned char bp[N] = {};
-                unsigned int blen = (length - i < N) ? (length - i) : N;
-                copy_bytes(output + i, bp, blen);
-                unsigned char tmp[N];
-                xor_bytes(Y, bp, tmp, N);
-                encrypt_bytes<cipher_type>(k, tmp, Y);
-            }
-            unsigned char computed[N];
+            ccm_mac<cipher_type>(k, iv, aad, aad_length, output, length, Y);
             xor_bytes(Y, s0, computed, N);
-            for (unsigned int i = 0; i < N; ++i) {
-                if (tag[i] != computed[i]) {
-                    zero_bytes(output, length);
-                    return false;
-                }
+            if (!equal_bytes(tag, computed, N)) {
+                zero_bytes(output, length);
+                return false;
             }
             return true;
         }
     };
 
-    // SIV
+    /// @brief  Synthetic initialisation vector mode as defined by RFC 5297, counter mode where the tag is used as the counter so that reusing an initialisation vector only reveals if two messages are identical.
     template <typename cipher_type>
     class block_cipher<cipher_type, block_cipher_mode::siv> final {
     public:
+        /// @brief  Internal size of each processed block of data in sets of four bytes, a block is block_size by block_size bytes.
         constexpr static const unsigned int block_size = cipher_type::block_size;
-        constexpr static const unsigned int key_size = cipher_type::key_size;
 
-        static void encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, unsigned char* tag, const unsigned char* aad = nullptr, unsigned int aad_length = 0) {
+        /// @brief  Size of each processed block of data in bytes.
+        constexpr static const unsigned int block_size_bytes = cipher_type::block_size * cipher_type::block_size;
+
+        /// @brief  Size of the key in bytes, this mode uses two keys of the block cipher, the first to authenticate and the second to encrypt.
+        constexpr static const unsigned int key_size = cipher_type::key_size * 2;
+
+        /// @brief  Size of the initialisation vector in bytes.
+        constexpr static const unsigned int iv_size = 12;
+
+        /// @brief  Size of the authentication tag in bytes.
+        constexpr static const unsigned int tag_size = cipher_type::block_size * cipher_type::block_size;
+
+        /// @brief  Encrypt a string of data writing the encrypted data into the output string.
+        /// @param  data The string of data to encrypt.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The encryption key, must be key_size bytes long.
+        /// @param  iv The initialisation vector, must be iv_size bytes long, or null for deterministic encryption where identical messages produce identical output.
+        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
+        /// @param  tag Pointer to a tag_size buffer that will receive the authentication tag, which must not be null as it is required to decrypt the data.
+        /// @param  aad Optional additional data that is authenticated but not encrypted.
+        /// @param  aad_length The length of the additional authenticated data.
+        /// @return true if the data was encrypted, false if the tag is null in which case the output is not written.
+        /// @note   The tag followed by the output is the output defined by RFC 5297, where the initialisation vector is the last string of associated data.
+        static bool encrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, unsigned char* tag, const unsigned char* aad = nullptr, unsigned int aad_length = 0) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            const typename cipher_type::key_type k = load_key<cipher_type>(key);
-            unsigned char v[N];
-            siv_s2v<cipher_type>(k, aad, aad_length, iv, 12, data, length, v);
-            if (tag) {
-                copy_bytes(v, tag, N);
+            // The tag is the initial counter value, without it the data cannot be decrypted.
+            if (!tag) {
+                return false;
             }
+            typename cipher_type::round_keys_type k1 = load_key<cipher_type>(key);
+            const wipe_guard guard_k1(k1);
+            typename cipher_type::round_keys_type k2 = load_key<cipher_type>(key + cipher_type::key_size);
+            const wipe_guard guard_k2(k2);
+            unsigned char v[N];
+            siv_s2v<cipher_type>(k1, aad, aad_length, iv, iv_size, data, length, v);
             unsigned char ctr[N];
             copy_bytes(v, ctr, N);
             ctr[8] &= 0x7F;
             ctr[12] &= 0x7F;
-            for (unsigned int i = 0; i < length; i += N) {
-                unsigned char enc[N];
-                encrypt_bytes<cipher_type>(k, ctr, enc);
-                unsigned int blen = (length - i < N) ? (length - i) : N;
-                for (unsigned int j = 0; j < blen; ++j) {
-                    output[i + j] = data[i + j] ^ enc[j];
-                }
-                inc_be(ctr, N);
-            }
+            ctr_bytes<cipher_type>(k2, ctr, false, data, length, output);
+            copy_bytes(v, tag, N);
+            return true;
         }
 
+        /// @brief  Authenticate and decrypt a string of data writing the decrypted data into the output string.
+        /// @param  data The string of data to decrypt.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The decryption key, must be key_size bytes long.
+        /// @param  iv The initialisation vector that was used to encrypt the data, must be iv_size bytes long, or null if the data was encrypted without one.
+        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
+        /// @param  tag The tag_size authentication tag that was calculated when encrypting the data.
+        /// @param  aad The additional authenticated data that was provided when encrypting the data.
+        /// @param  aad_length The length of the additional authenticated data.
+        /// @return true if the data is authentic and was decrypted, otherwise false in which case the output is filled with zeros.
         static bool decrypt(const unsigned char* data, unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, const unsigned char* tag, const unsigned char* aad = nullptr, unsigned int aad_length = 0) {
             constexpr unsigned int N = cipher_type::block_size * cipher_type::block_size;
-            const typename cipher_type::key_type k = load_key<cipher_type>(key);
             if (!tag) {
                 zero_bytes(output, length);
                 return false;
             }
+            typename cipher_type::round_keys_type k1 = load_key<cipher_type>(key);
+            const wipe_guard guard_k1(k1);
+            typename cipher_type::round_keys_type k2 = load_key<cipher_type>(key + cipher_type::key_size);
+            const wipe_guard guard_k2(k2);
             unsigned char v[N];
             copy_bytes(tag, v, N);
             unsigned char ctr[N];
             copy_bytes(v, ctr, N);
             ctr[8] &= 0x7F;
             ctr[12] &= 0x7F;
-            for (unsigned int i = 0; i < length; i += N) {
-                unsigned char enc[N];
-                encrypt_bytes<cipher_type>(k, ctr, enc);
-                unsigned int blen = (length - i < N) ? (length - i) : N;
-                for (unsigned int j = 0; j < blen; ++j) {
-                    output[i + j] = data[i + j] ^ enc[j];
-                }
-                inc_be(ctr, N);
-            }
+            ctr_bytes<cipher_type>(k2, ctr, false, data, length, output);
             // Always verify the tag, it covers the decrypted data even when there is no AAD.
             unsigned char cv[N];
-            siv_s2v<cipher_type>(k, aad, aad_length, iv, 12, output, length, cv);
-            for (unsigned int i = 0; i < N; ++i) {
-                if (cv[i] != v[i]) {
-                    zero_bytes(output, length);
-                    return false;
-                }
+            const wipe_guard guard_cv(cv);
+            siv_s2v<cipher_type>(k1, aad, aad_length, iv, iv_size, output, length, cv);
+            if (!equal_bytes(cv, v, N)) {
+                zero_bytes(output, length);
+                return false;
             }
             return true;
         }
     };
 }
 
-#undef GTL_BLOCK_CIPHER_ASSERT
 #endif // GTL_CRYPTO_BLOCK_CIPHER_HPP

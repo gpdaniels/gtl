@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define GTL_RSA_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
+#include <hash/sha2>
 #include <math/big_unsigned>
 
 #if defined(_MSC_VER)
@@ -38,6 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 #include <functional>
+#include <vector>
 
 #if defined(_MSC_VER)
 #pragma warning(pop)
@@ -45,7 +47,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace gtl {
     /// @brief  The rsa class implements all the routines needed to generate primes and used them to perform asymmetric encryption.
+    /// @note   The encrypt, decrypt, and transform_block functions are the raw rsa operation with no padding.
+    /// @note   The raw operation is deterministic and malleable, so to encrypt messages use encrypt_oaep and decrypt_oaep.
+    /// @note   The big number arithmetic is not constant time, use the decrypt functions that take a random generator to blind the private key operation.
     class rsa final {
+    public:
+        /// @brief  The number of bytes of an encrypted block that are used by the optimal asymmetric encryption padding.
+        /// @note   The longest message that fits in a key is the key length in bytes minus this overhead.
+        constexpr static const unsigned int oaep_overhead = (2 * (256 / 8)) + 2;
+
     public:
         /// @brief  The public key is used to encrypt data or verify signed data.
         class public_key_type final {
@@ -56,6 +66,8 @@ namespace gtl {
 
         /// @brief  The private key is used to decrypt data or sign data.
         /// @note   Only the public_modulus and private_exponent are needed for decryption.
+        /// @note   If the primes, exponents, coefficient, and public_exponent are all set they are used to decrypt around four times faster.
+        /// @note   The public_exponent is also needed to blind the private key operation.
         class private_key_type final {
         public:
             gtl::big_unsigned public_modulus;
@@ -75,20 +87,25 @@ namespace gtl {
 
     private:
         /// @brief  Generate a random big number.
+        /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called.
         /// @param  minimum The lower inclusive bound for the returned random number.
-        /// @param  maximum The upper exclusive bound for the returned random number.
+        /// @param  maximum The upper exclusive bound for the returned random number, must be greater than the minimum.
         /// @return A random number between the (inclusive) minimum and (exclusive) maximum bounds.
         static gtl::big_unsigned generate_random(const std::function<unsigned int()>& random_generator, const gtl::big_unsigned& minimum, const gtl::big_unsigned& maximum) {
-            // Generate random bits
-            gtl::big_unsigned random = minimum;
-            while (random < maximum) {
+            GTL_RSA_ASSERT(minimum < maximum, "The minimum must be less than the maximum.");
+            const gtl::big_unsigned range = maximum - minimum;
+            // Generate 64 more bits than the range needs, so that the bias from reducing the random bits into the range is negligible.
+            const unsigned long long int chunks = (range.get_length_bits() / gtl::big_unsigned::chunk_bits) + 3;
+            gtl::big_unsigned random(0u);
+            for (unsigned long long int chunk = 0; chunk < chunks; ++chunk) {
                 random = (random << gtl::big_unsigned::chunk_bits) | random_generator();
             }
-            return (minimum + random) % maximum;
+            return minimum + (random % range);
         }
 
         /// @brief  Generate a random prime number.
-        /// @param  size_bytes The number of bytes in the prime.
+        /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called.
+        /// @param  size_bytes The number of bytes in the prime, must be greater than zero.
         /// @param  miller_rabin_iterations The number of miller rabin test iterations to validate primality.
         /// @return A random prime number.
         static gtl::big_unsigned generate_prime(const std::function<unsigned int()>& random_generator, unsigned int size_bytes, unsigned int miller_rabin_iterations) {
@@ -96,14 +113,16 @@ namespace gtl {
             do {
                 // Generate a number.
                 prime = rsa::generate_random(random_generator, 1u, gtl::big_unsigned(1u) << (size_bytes * 8));
-                // Ensure it's got the lsb and msb set, aka odd and full size.
-                prime |= (gtl::big_unsigned(1u) << ((size_bytes * 8u) - 1u)) | 1u;
+                // Ensure it's got the lsb and the two msbs set, aka odd and full size.
+                // With the two msbs set the product of two primes is always the full size, with only the msb set it can be one bit short.
+                prime |= (gtl::big_unsigned(1u) << ((size_bytes * 8u) - 1u)) | (gtl::big_unsigned(1u) << ((size_bytes * 8u) - 2u)) | 1u;
                 // Check if the number is prime, if not try again.
             } while (!rsa::is_prime(random_generator, prime, miller_rabin_iterations));
             return prime;
         }
 
         /// @brief  Check if a given number is a prime number.
+        /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called.
         /// @param  prime_candidate The prime number candidate to test.
         /// @param  miller_rabin_iterations The number of miller rabin test iterations to validate primality.
         /// @return true if the prime number candidate is probably a prime number.
@@ -135,6 +154,26 @@ namespace gtl {
                 61,
                 67,
                 71,
+                73,
+                79,
+                83,
+                89,
+                97,
+                101,
+                103,
+                107,
+                109,
+                113,
+                127,
+                131,
+                137,
+                139,
+                149,
+                151,
+                157,
+                163,
+                167,
+                173,
                 179,
                 181,
                 191,
@@ -350,27 +389,7 @@ namespace gtl {
                 1607,
                 1609,
                 1613,
-                1619,
-                1621,
-                1627,
-                1637,
-                1657,
-                1663,
-                1667,
-                1669,
-                1693,
-                1697,
-                1699,
-                1709,
-                1721,
-                1723,
-                1733,
-                1741,
-                1747,
-                1753,
-                1759,
-                1777,
-                1783
+                1619
             };
             // Check if the candidate is divisible by one of the first 256 primes.
             for (unsigned int i = 0; i < 256; ++i) {
@@ -398,12 +417,13 @@ namespace gtl {
         }
 
         /// @brief  The miller rabin test to evaluate the primality of a number.
-        /// @param  prime_candidate The prime number candidate to test.
+        /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called.
+        /// @param  prime_candidate The prime number candidate to test, must be greater than three.
         /// @param  power_of_two_multiplier Helper variable equal to "(prime_candidate - 1) / (2 ^ power_of_two)" for "power_of_two >= 1"
         /// @return true if the test past and the number could be a prime number, false if the number is definitely not prime.
         static bool miller_rabin(const std::function<unsigned int()>& random_generator, const gtl::big_unsigned& prime_candidate, gtl::big_unsigned power_of_two_multiplier) {
             // Pick a random number in "[2 ... prime_candidate - 2]".
-            gtl::big_unsigned base = rsa::generate_random(random_generator, 2, prime_candidate - 2);
+            gtl::big_unsigned base = rsa::generate_random(random_generator, 2, prime_candidate - 1);
 
             // Compute "(base ^ power_of_two_multiplier) % prime_candidate".
             gtl::big_unsigned test = rsa::modular_exponentiation(base, power_of_two_multiplier, prime_candidate);
@@ -511,13 +531,172 @@ namespace gtl {
             return result;
         }
 
+    private:
+        /// @brief  Check if a value can be transformed with a modulus and written to a buffer.
+        /// @param  value The value to transform.
+        /// @param  modulus The modulus used to transform the value.
+        /// @param  length The length of the buffer that will receive the transformed value.
+        /// @return true if the modulus is usable, the value is less than the modulus, and any transformed value fits in the buffer.
+        static bool is_transformable(const gtl::big_unsigned& value, const gtl::big_unsigned& modulus, const unsigned int length) {
+            return (modulus > 1) && (value < modulus) && (modulus.get_length_bytes() <= length);
+        }
+
+        /// @brief  Perform the private key operation, raising a value to the power of the private exponent.
+        /// @param  value The value to transform, must be less than the modulus.
+        /// @param  private_key The private key.
+        /// @return The value raised to the power of the private exponent, modulo the modulus.
+        static gtl::big_unsigned private_operation(const gtl::big_unsigned& value, const private_key_type& private_key) {
+            // If the key has them, use the primes to split the operation into two with half the size, using the chinese remainder theorem.
+            const bool has_primes =
+                (private_key.primes[0] != 0) &&
+                (private_key.primes[1] != 0) &&
+                (private_key.exponents[0] != 0) &&
+                (private_key.exponents[1] != 0) &&
+                (private_key.coefficient != 0) &&
+                (private_key.public_exponent != 0);
+            if (has_primes) {
+                const gtl::big_unsigned result_0 = rsa::modular_exponentiation(value % private_key.primes[0], private_key.exponents[0], private_key.primes[0]);
+                const gtl::big_unsigned result_1 = rsa::modular_exponentiation(value % private_key.primes[1], private_key.exponents[1], private_key.primes[1]);
+                // Combine the results, the subtraction is kept positive by adding the prime.
+                const gtl::big_unsigned difference = (result_0 + private_key.primes[0] - (result_1 % private_key.primes[0])) % private_key.primes[0];
+                const gtl::big_unsigned result = result_1 + (((private_key.coefficient * difference) % private_key.primes[0]) * private_key.primes[1]);
+                // Verify the result using the public key before returning it.
+                // A result that is wrong, from a fault or from inconsistent key data, would otherwise reveal the primes.
+                if ((result < private_key.public_modulus) && (rsa::modular_exponentiation(result, private_key.public_exponent, private_key.public_modulus) == value)) {
+                    return result;
+                }
+            }
+            return rsa::modular_exponentiation(value, private_key.private_exponent, private_key.public_modulus);
+        }
+
+        /// @brief  Perform the private key operation on a value that is first hidden by multiplying it with a random number.
+        /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called.
+        /// @param  value The value to transform, must be less than the modulus.
+        /// @param  private_key The private key, the public exponent must be set.
+        /// @param  result The value raised to the power of the private exponent, modulo the modulus.
+        /// @return true if the operation was performed, false if the key cannot be used for blinding.
+        /// @note   The time taken by the private key operation depends on its input, blinding stops that time from being related to the value.
+        static bool private_operation_blinded(const std::function<unsigned int()>& random_generator, const gtl::big_unsigned& value, const private_key_type& private_key, gtl::big_unsigned& result) {
+            if ((!random_generator) || (private_key.public_exponent == 0) || (private_key.public_modulus < 4)) {
+                return false;
+            }
+            // Pick a random number that has an inverse, for a real key every number other than a multiple of the primes does.
+            gtl::big_unsigned blind;
+            do {
+                blind = rsa::generate_random(random_generator, 2, private_key.public_modulus);
+            } while (rsa::greatest_common_denominator(blind, private_key.public_modulus) != 1);
+            const gtl::big_unsigned unblind = rsa::modular_inverse(blind, private_key.public_modulus);
+            // Multiplying by "blind ^ public_exponent" before the operation multiplies the result by "blind".
+            const gtl::big_unsigned blinded = (value * rsa::modular_exponentiation(blind, private_key.public_exponent, private_key.public_modulus)) % private_key.public_modulus;
+            result = (rsa::private_operation(blinded, private_key) * unblind) % private_key.public_modulus;
+            return true;
+        }
+
+        /// @brief  Perform the private key operation, with blinding if a random generator is provided.
+        /// @param  random_generator Null, or a function that returns 32 uniformly distributed random bits each time it is called.
+        /// @param  value The value to transform, must be less than the modulus.
+        /// @param  private_key The private key.
+        /// @param  result The value raised to the power of the private exponent, modulo the modulus.
+        /// @return true if the operation was performed, false if blinding was requested but the key cannot be used for blinding.
+        static bool private_operation(const std::function<unsigned int()>* random_generator, const gtl::big_unsigned& value, const private_key_type& private_key, gtl::big_unsigned& result) {
+            if (random_generator != nullptr) {
+                return rsa::private_operation_blinded(*random_generator, value, private_key, result);
+            }
+            result = rsa::private_operation(value, private_key);
+            return true;
+        }
+
+        /// @brief  The mask generation function MGF1 of RFC 8017 using sha2-256, xoring the mask into a buffer.
+        /// @param  seed The seed that the mask is generated from.
+        /// @param  seed_length The length of the seed.
+        /// @param  output The buffer that the mask is xored into.
+        /// @param  output_length The length of the buffer.
+        static void xor_mask(const unsigned char* seed, const unsigned int seed_length, unsigned char* output, const unsigned int output_length) {
+            unsigned int counter = 0;
+            for (unsigned int offset = 0; offset < output_length; ++counter) {
+                const unsigned char counter_bytes[4] = {
+                    static_cast<unsigned char>((counter >> 24) & 0xFF),
+                    static_cast<unsigned char>((counter >> 16) & 0xFF),
+                    static_cast<unsigned char>((counter >> 8) & 0xFF),
+                    static_cast<unsigned char>((counter >> 0) & 0xFF)
+                };
+                gtl::sha2<256> hash_function;
+                hash_function.reset();
+                hash_function.consume(reinterpret_cast<const char*>(seed), seed_length);
+                hash_function.consume(reinterpret_cast<const char*>(counter_bytes), 4);
+                hash_function.finalise();
+                for (unsigned int i = 0; (i < gtl::sha2<256>::hash_size) && (offset < output_length); ++i, ++offset) {
+                    output[offset] ^= hash_function.get_hash().data[i];
+                }
+            }
+        }
+
+        /// @brief  Decrypt a block of data that was encrypted with optimal asymmetric encryption padding.
+        /// @param  random_generator Null, or a function that returns 32 uniformly distributed random bits each time it is called.
+        /// @see    decrypt_oaep
+        static bool decrypt_oaep_block(const std::function<unsigned int()>* random_generator, const unsigned char* data, const unsigned int length, const private_key_type& private_key, unsigned char* output, unsigned int& output_length, const unsigned char* label, const unsigned int label_length) {
+            constexpr const unsigned int hash_size = static_cast<unsigned int>(gtl::sha2<256>::hash_size);
+            output_length = 0;
+            // The encrypted data is always exactly as long as the modulus.
+            if ((length < rsa::oaep_overhead) || (private_key.public_modulus.get_length_bytes() != length)) {
+                return false;
+            }
+            const gtl::big_unsigned value(data, length);
+            if (!rsa::is_transformable(value, private_key.public_modulus, length)) {
+                return false;
+            }
+            gtl::big_unsigned result;
+            if (!rsa::private_operation(random_generator, value, private_key, result)) {
+                return false;
+            }
+            // The encoded message is a zero byte, the masked seed, then the masked data block.
+            std::vector<unsigned char> encoded(length, 0);
+            result.to_bytes(encoded.data(), length, true);
+            unsigned char* seed = &encoded[1];
+            unsigned char* data_block = &encoded[1 + hash_size];
+            const unsigned int data_block_length = length - hash_size - 1;
+            rsa::xor_mask(data_block, data_block_length, seed, hash_size);
+            rsa::xor_mask(seed, hash_size, data_block, data_block_length);
+            // The data block is the hash of the label, padding zeros, a one byte, then the message.
+            // Every check is made before deciding if the data is valid, so that the reason for a failure is not revealed.
+            const typename gtl::sha2<256>::hash_type label_hash = gtl::sha2<256>::hash(reinterpret_cast<const char*>(label), label_length);
+            unsigned int invalid = encoded[0];
+            for (unsigned int i = 0; i < hash_size; ++i) {
+                invalid |= static_cast<unsigned int>(data_block[i] ^ label_hash.data[i]);
+            }
+            unsigned int message_offset = 0;
+            unsigned int searching = 1;
+            for (unsigned int i = hash_size; i < data_block_length; ++i) {
+                const unsigned int is_one = (data_block[i] == 0x01) ? 1u : 0u;
+                const unsigned int is_zero = (data_block[i] == 0x00) ? 1u : 0u;
+                // The first non zero byte must be the one byte that marks the start of the message.
+                message_offset |= (searching & is_one) * (i + 1);
+                invalid |= searching & (1u - is_one) & (1u - is_zero);
+                searching &= is_zero;
+            }
+            invalid |= searching;
+            if (invalid != 0) {
+                return false;
+            }
+            output_length = data_block_length - message_offset;
+            for (unsigned int i = 0; i < output_length; ++i) {
+                output[i] = data_block[message_offset + i];
+            }
+            return true;
+        }
+
     public:
         /// @brief  Generate a public and private key set.
-        /// @param  size_bytes The number of bytes in the keys..
+        /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called, the keys are only as unpredictable as its output.
+        /// @param  size_bytes The number of bytes in the keys, must be an even number greater than zero.
+        /// @param  exponent The public exponent, must be an odd number greater than one.
         /// @param  miller_rabin_iterations The number of miller rabin test iterations to validate primality.
-        /// @return A public and private key set.
+        /// @return A public and private key set, or if any argument is invalid a key set where every value is zero.
         static key_type generate_key_pair(const std::function<unsigned int()>& random_generator, unsigned int size_bytes, unsigned int exponent = 65537, unsigned int miller_rabin_iterations = 64) {
             key_type keys;
+            if ((!random_generator) || (size_bytes < 2) || ((size_bytes % 2) != 0) || (exponent < 3) || ((exponent % 2) == 0)) {
+                return keys;
+            }
             keys.private_key.public_exponent = exponent;
             keys.public_key.public_exponent = exponent;
             gtl::big_unsigned phi;
@@ -540,49 +719,150 @@ namespace gtl {
 
     public:
         /// @brief  Transform a block of data writing the transformed data into the output.
-        /// @param  data The block of data to encrypt, must be at least length bytes long.
+        /// @param  data The block of data to encrypt, must be at least length bytes long, and as a big endian number must be less than the modulus.
         /// @param  length The length of the data, must be equal to the key length.
         /// @param  exponent Exponent used to transform the data, must be length bytes long.
         /// @param  modulus Modulus used to transform the data, must be length bytes long.
         /// @param  output Pointer to an output buffer that will receive the transformed data, must be at least length bytes long
+        /// @return true if the data was transformed, false if the data is not less than the modulus in which case the output is not written.
         /// @note   For encryption the exponent is the public exponent, and modulus is the public modulus.
         /// @note   For decryption the exponent is the private exponent, and modulus is the public modulus.
-        static void transform_block(const unsigned char* data, const unsigned int length, const unsigned char* exponent, const unsigned char* modulus, unsigned char* output) {
-            rsa::modular_exponentiation(
-                gtl::big_unsigned(data, length),
-                gtl::big_unsigned(exponent, length),
-                gtl::big_unsigned(modulus, length)
-            )
-                .to_bytes(output, length, true);
+        static bool transform_block(const unsigned char* data, const unsigned int length, const unsigned char* exponent, const unsigned char* modulus, unsigned char* output) {
+            const gtl::big_unsigned value(data, length);
+            const gtl::big_unsigned modulus_value(modulus, length);
+            if (!rsa::is_transformable(value, modulus_value, length)) {
+                return false;
+            }
+            rsa::modular_exponentiation(value, gtl::big_unsigned(exponent, length), modulus_value).to_bytes(output, length, true);
+            return true;
         }
 
     public:
-        /// @brief  Encrypt a block of data, writing the edcrypted data into the output.
-        /// @param  data The block of data to encrypt, must be at least length bytes long.
+        /// @brief  Encrypt a block of data, writing the encrypted data into the output.
+        /// @param  data The block of data to encrypt, must be at least length bytes long, and as a big endian number must be less than the modulus.
         /// @param  length The length of the data, must be equal to the key length.
         /// @param  public_key The public key data used to encrypt the data.
         /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least length bytes long.
-        static void encrypt(const unsigned char* data, const unsigned int length, const public_key_type& public_key, unsigned char* output) {
-            rsa::modular_exponentiation(
-                gtl::big_unsigned(data, length),
-                public_key.public_exponent,
-                public_key.public_modulus
-            )
-                .to_bytes(output, length, true);
+        /// @return true if the data was encrypted, false if the data is not less than the modulus or the key is longer than the length, in which case the output is not written.
+        /// @note   This is the raw rsa operation with no padding, to encrypt a message use encrypt_oaep.
+        static bool encrypt(const unsigned char* data, const unsigned int length, const public_key_type& public_key, unsigned char* output) {
+            const gtl::big_unsigned value(data, length);
+            if (!rsa::is_transformable(value, public_key.public_modulus, length)) {
+                return false;
+            }
+            rsa::modular_exponentiation(value, public_key.public_exponent, public_key.public_modulus).to_bytes(output, length, true);
+            return true;
         }
 
         /// @brief  Decrypt a block of data, writing the decrypted data into the output.
-        /// @param  data The block of data to decrypt, must be at least length bytes long.
+        /// @param  data The block of data to decrypt, must be at least length bytes long, and as a big endian number must be less than the modulus.
         /// @param  length The length of the data, must be equal to the key length.
         /// @param  private_key The private key data used to decrypt the data.
         /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least length bytes long.
-        static void decrypt(const unsigned char* data, const unsigned int length, const private_key_type& private_key, unsigned char* output) {
-            rsa::modular_exponentiation(
-                gtl::big_unsigned(data, length),
-                private_key.private_exponent,
-                private_key.public_modulus
-            )
-                .to_bytes(output, length, true);
+        /// @return true if the data was decrypted, false if the data is not less than the modulus or the key is longer than the length, in which case the output is not written.
+        /// @note   This is the raw rsa operation with no padding, to decrypt a message use decrypt_oaep.
+        /// @note   The time this takes depends on the data and the private key, use the overload with a random generator if that time can be observed.
+        static bool decrypt(const unsigned char* data, const unsigned int length, const private_key_type& private_key, unsigned char* output) {
+            const gtl::big_unsigned value(data, length);
+            if (!rsa::is_transformable(value, private_key.public_modulus, length)) {
+                return false;
+            }
+            rsa::private_operation(value, private_key).to_bytes(output, length, true);
+            return true;
+        }
+
+        /// @brief  Decrypt a block of data with the private key operation blinded, writing the decrypted data into the output.
+        /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called.
+        /// @param  data The block of data to decrypt, must be at least length bytes long, and as a big endian number must be less than the modulus.
+        /// @param  length The length of the data, must be equal to the key length.
+        /// @param  private_key The private key data used to decrypt the data, the public exponent must be set.
+        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least length bytes long.
+        /// @return true if the data was decrypted, false if the data is not less than the modulus, the key is longer than the length, or the key has no public exponent, in which case the output is not written.
+        /// @note   This is the raw rsa operation with no padding, to decrypt a message use decrypt_oaep.
+        static bool decrypt(const std::function<unsigned int()>& random_generator, const unsigned char* data, const unsigned int length, const private_key_type& private_key, unsigned char* output) {
+            const gtl::big_unsigned value(data, length);
+            if (!rsa::is_transformable(value, private_key.public_modulus, length)) {
+                return false;
+            }
+            gtl::big_unsigned result;
+            if (!rsa::private_operation_blinded(random_generator, value, private_key, result)) {
+                return false;
+            }
+            result.to_bytes(output, length, true);
+            return true;
+        }
+
+    public:
+        /// @brief  Encrypt a message using the optimal asymmetric encryption padding of RFC 8017 with sha2-256, writing the encrypted data into the output.
+        /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called.
+        /// @param  message The message to encrypt.
+        /// @param  message_length The length of the message, must be no more than length minus oaep_overhead.
+        /// @param  public_key The public key data used to encrypt the message.
+        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be length bytes long.
+        /// @param  length The length of the output, must be equal to the key length.
+        /// @param  label Optional data that is not encrypted but must be provided again to decrypt the message.
+        /// @param  label_length The length of the label.
+        /// @return true if the message was encrypted, false if the message is too long or the length is not the key length, in which case the output is not written.
+        static bool encrypt_oaep(const std::function<unsigned int()>& random_generator, const unsigned char* message, const unsigned int message_length, const public_key_type& public_key, unsigned char* output, const unsigned int length, const unsigned char* label = nullptr, const unsigned int label_length = 0) {
+            constexpr const unsigned int hash_size = static_cast<unsigned int>(gtl::sha2<256>::hash_size);
+            if ((!random_generator) || (length < rsa::oaep_overhead) || (message_length > (length - rsa::oaep_overhead)) || (public_key.public_modulus.get_length_bytes() != length)) {
+                return false;
+            }
+            // The encoded message is a zero byte, the masked seed, then the masked data block.
+            std::vector<unsigned char> encoded(length, 0);
+            unsigned char* seed = &encoded[1];
+            unsigned char* data_block = &encoded[1 + hash_size];
+            const unsigned int data_block_length = length - hash_size - 1;
+            // The data block is the hash of the label, padding zeros, a one byte, then the message.
+            const typename gtl::sha2<256>::hash_type label_hash = gtl::sha2<256>::hash(reinterpret_cast<const char*>(label), label_length);
+            for (unsigned int i = 0; i < hash_size; ++i) {
+                data_block[i] = label_hash.data[i];
+            }
+            data_block[data_block_length - message_length - 1] = 0x01;
+            for (unsigned int i = 0; i < message_length; ++i) {
+                data_block[data_block_length - message_length + i] = message[i];
+            }
+            // The seed is random, so that encrypting the same message twice gives different data.
+            for (unsigned int i = 0; i < hash_size; i += 4) {
+                const unsigned int random = random_generator();
+                seed[i + 0] = static_cast<unsigned char>((random >> 24) & 0xFF);
+                seed[i + 1] = static_cast<unsigned char>((random >> 16) & 0xFF);
+                seed[i + 2] = static_cast<unsigned char>((random >> 8) & 0xFF);
+                seed[i + 3] = static_cast<unsigned char>((random >> 0) & 0xFF);
+            }
+            rsa::xor_mask(seed, hash_size, data_block, data_block_length);
+            rsa::xor_mask(data_block, data_block_length, seed, hash_size);
+            // The leading zero byte ensures that the encoded message is less than the modulus.
+            rsa::modular_exponentiation(gtl::big_unsigned(encoded.data(), length), public_key.public_exponent, public_key.public_modulus).to_bytes(output, length, true);
+            return true;
+        }
+
+        /// @brief  Decrypt a message that was encrypted using the optimal asymmetric encryption padding of RFC 8017 with sha2-256, writing the message into the output.
+        /// @param  data The encrypted data to decrypt.
+        /// @param  length The length of the data, must be equal to the key length.
+        /// @param  private_key The private key data used to decrypt the data.
+        /// @param  output Pointer to an output buffer that will receive the message, must be at least length minus oaep_overhead bytes long.
+        /// @param  output_length Receives the length of the message, or zero if the data is not valid.
+        /// @param  label The label that was provided when the message was encrypted.
+        /// @param  label_length The length of the label.
+        /// @return true if the data was valid and decrypted, false otherwise in which case the output is not written.
+        /// @note   The time this takes depends on the data and the private key, use the overload with a random generator if that time can be observed.
+        static bool decrypt_oaep(const unsigned char* data, const unsigned int length, const private_key_type& private_key, unsigned char* output, unsigned int& output_length, const unsigned char* label = nullptr, const unsigned int label_length = 0) {
+            return rsa::decrypt_oaep_block(nullptr, data, length, private_key, output, output_length, label, label_length);
+        }
+
+        /// @brief  Decrypt a message that was encrypted using the optimal asymmetric encryption padding of RFC 8017 with sha2-256, with the private key operation blinded.
+        /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called.
+        /// @param  data The encrypted data to decrypt.
+        /// @param  length The length of the data, must be equal to the key length.
+        /// @param  private_key The private key data used to decrypt the data, the public exponent must be set.
+        /// @param  output Pointer to an output buffer that will receive the message, must be at least length minus oaep_overhead bytes long.
+        /// @param  output_length Receives the length of the message, or zero if the data is not valid.
+        /// @param  label The label that was provided when the message was encrypted.
+        /// @param  label_length The length of the label.
+        /// @return true if the data was valid and decrypted, false otherwise in which case the output is not written.
+        static bool decrypt_oaep(const std::function<unsigned int()>& random_generator, const unsigned char* data, const unsigned int length, const private_key_type& private_key, unsigned char* output, unsigned int& output_length, const unsigned char* label = nullptr, const unsigned int label_length = 0) {
+            return rsa::decrypt_oaep_block(&random_generator, data, length, private_key, output, output_length, label, label_length);
         }
     };
 }

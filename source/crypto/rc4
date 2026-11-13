@@ -20,17 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Summary: An implementation of the rc4 or arc4 encryption algorithm. [wip]
 
-#ifndef NDEBUG
-#if defined(_MSC_VER)
-#define __builtin_trap() __debugbreak()
-#endif
-/// @brief A simple assert macro to break the program if the rc4 is misused.
-#define GTL_RC4_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
-#else
-/// @brief At release time the assert macro is implemented as a nop.
-#define GTL_RC4_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
-#endif
-
 namespace gtl {
     /// @brief  The rc4 class computes an encrypted output from a sequence of data.
     class rc4 final {
@@ -39,6 +28,16 @@ namespace gtl {
         constexpr static const unsigned int key_size_max = 256;
 
     private:
+        /// @brief  Overwrite a buffer with zeros in a way that is not optimised away.
+        /// @param  data The buffer to overwrite.
+        /// @param  length The length of the buffer.
+        static void wipe(unsigned char* data, const unsigned int length) {
+            volatile unsigned char* bytes = data;
+            for (unsigned int index = 0; index < length; ++index) {
+                bytes[index] = 0;
+            }
+        }
+
         static void process(const unsigned char* data, const unsigned int length_data, const unsigned char* key, const unsigned int length_key, unsigned char* output) {
             // Prepare the cipher stream.
             unsigned char cipher_stream[256];
@@ -75,33 +74,41 @@ namespace gtl {
                     output[index_data] = data[index_data] ^ cipher_stream[(cipher_stream[index_stream] + cipher_stream[index_mix]) % 256];
                 }
             }
+            // The cipher stream is derived from the key, so do not leave it on the stack.
+            rc4::wipe(cipher_stream, 256);
         }
 
     public:
         /// @brief  Encrypt a string of data writing the encrypted data into the output string.
         /// @param  data The string of data to encrypt.
-        /// @param  length_data The length of the data, must be a multiple of the aes block size.
-        /// @param  key The encryption key, must be at least the length required by the selected aes bitsize.
+        /// @param  length_data The length of the data, any length is valid.
+        /// @param  key The encryption key.
+        /// @param  length_key The length of the encryption key, must be greater than zero and no more than key_size_max.
         /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
-        static void encrypt(const unsigned char* data, const unsigned int length_data, const unsigned char* key, const unsigned int length_key, unsigned char* output) {
-            GTL_RC4_ASSERT(length_key > 0, "The encryption key must be longer than 0 bytes.");
-            GTL_RC4_ASSERT(length_key < 256, "The encryption key must be shorter than 256 bytes.");
+        /// @return true if the data was encrypted, false if the key length is invalid in which case the output is not written.
+        static bool encrypt(const unsigned char* data, const unsigned int length_data, const unsigned char* key, const unsigned int length_key, unsigned char* output) {
+            if ((length_key == 0) || (length_key > rc4::key_size_max)) {
+                return false;
+            }
             rc4::process(data, length_data, key, length_key, output); // lgtm [cpp/weak-cryptographic-algorithm]
+            return true;
         }
 
         /// @brief  Decrypt a string of data writing the decrypted data into the output string.
         /// @param  data The string of data to decrypt.
-        /// @param  length_data The length of the data, must be a multiple of the aes block size.
-        /// @param  key The decryption key, must be at least the length required by the selected aes bitsize.
+        /// @param  length_data The length of the data, any length is valid.
+        /// @param  key The decryption key.
+        /// @param  length_key The length of the decryption key, must be greater than zero and no more than key_size_max.
         /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
-        static void decrypt(const unsigned char* data, const unsigned int length_data, const unsigned char* key, const unsigned int length_key, unsigned char* output) {
-            GTL_RC4_ASSERT(length_key > 0, "The decryption key must be longer than 0 bytes.");
-            GTL_RC4_ASSERT(length_key < 256, "The decryption key must be shorter than 256 bytes.");
+        /// @return true if the data was decrypted, false if the key length is invalid in which case the output is not written.
+        static bool decrypt(const unsigned char* data, const unsigned int length_data, const unsigned char* key, const unsigned int length_key, unsigned char* output) {
+            if ((length_key == 0) || (length_key > rc4::key_size_max)) {
+                return false;
+            }
             rc4::process(data, length_data, key, length_key, output); // lgtm [cpp/weak-cryptographic-algorithm]
+            return true;
         }
     };
 }
-
-#undef GTL_RC4_ASSERT
 
 #endif // GTL_CRYPTO_RC4_HPP

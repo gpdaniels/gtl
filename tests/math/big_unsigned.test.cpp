@@ -748,6 +748,28 @@ TEST(big_unsigned, operator, not_equal_to) {
     REQUIRE((big_unsigned_333 != big_unsigned_333) == false);
 }
 
+TEST(big_unsigned, function, get_bit) {
+    // A value with a single chunk.
+    const unsigned int value = 0x80000005u;
+    gtl::big_unsigned big_unsigned_single(value);
+    for (unsigned long long int index = 0; index < 32; ++index) {
+        REQUIRE(big_unsigned_single.get_bit(index) == (((value >> index) & 1) != 0), "Unexpected bit at index %llu.", index);
+    }
+    // Bits beyond the stored chunks are zero, including the first bit past the last chunk.
+    REQUIRE(big_unsigned_single.get_bit(32) == false);
+    REQUIRE(big_unsigned_single.get_bit(33) == false);
+    REQUIRE(big_unsigned_single.get_bit(64) == false);
+    REQUIRE(big_unsigned_single.get_bit(1000) == false);
+
+    // A value with multiple chunks, two to the power of 40 plus five.
+    gtl::big_unsigned big_unsigned_multiple = (gtl::big_unsigned(1u) << 40) + gtl::big_unsigned(5u);
+    for (unsigned long long int index = 0; index < 64; ++index) {
+        REQUIRE(big_unsigned_multiple.get_bit(index) == ((index == 0) || (index == 2) || (index == 40)), "Unexpected bit at index %llu.", index);
+    }
+    REQUIRE(big_unsigned_multiple.get_bit(64) == false);
+    REQUIRE(big_unsigned_multiple.get_bit(65) == false);
+}
+
 TEST(big_unsigned, function, get_length_bits) {
     unsigned long long int lhs = 1ull << 62;
     unsigned long long int rhs = 2;

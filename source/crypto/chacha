@@ -20,17 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Summary: An implementation of the chacha encryption algorithm.
 
-#ifndef NDEBUG
-#if defined(_MSC_VER)
-#define __builtin_trap() __debugbreak()
-#endif
-/// @brief A simple assert macro to break the program if the chacha is misused.
-#define GTL_CHACHA_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
-#else
-/// @brief At release time the assert macro is implemented as a nop.
-#define GTL_CHACHA_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
-#endif
-
 namespace gtl {
     /// @brief  Different block cipher modes available for the chacha class.
     enum class chacha_mode {
@@ -219,9 +208,9 @@ namespace gtl {
         /// @brief  Transform a block of data from decrypted to encrypted chaining together blocks using an initialisation vector.
         /// @param  key The input key used to encrypt the data.
         /// @param  data Data to encrypt.
-        /// @param  initialisation_vector Data optionally used to seed the encryption process depending on the mode.
+        /// @param  initialisation_vector The counter followed by the nonce, the counter is advanced by one block on return.
         /// @return The encrypted data.
-        constexpr static block_type encrypt_block(const key_type& key, const block_type& data, nonce_type& initialisation_vector = {}) {
+        constexpr static block_type encrypt_block(const key_type& key, const block_type& data, nonce_type& initialisation_vector) {
             block_type result;
             if constexpr (chacha::mode == chacha_mode::ctr_32) {
                 unsigned int counter = chacha::pack_bytes_32(&initialisation_vector.data[0]);
@@ -253,18 +242,33 @@ namespace gtl {
         /// @brief  Transform a block of data from encrypted to decrypted chaining together blocks using an initialisation vector.
         /// @param  key The input key used to decrypt the data.
         /// @param  data Data to decrypt.
-        /// @param  initialisation_vector Data optionally used to seed the decryption process depending on the mode.
+        /// @param  initialisation_vector The counter followed by the nonce, the counter is advanced by one block on return.
         /// @return The decrypted data.
-        constexpr static block_type decrypt_block(const key_type& key, const block_type& data, nonce_type& initialisation_vector = {}) {
+        constexpr static block_type decrypt_block(const key_type& key, const block_type& data, nonce_type& initialisation_vector) {
             return encrypt_block(key, data, initialisation_vector);
         }
 
+    private:
+        /// @brief  Overwrite an object with zeros in a way that is not optimised away.
+        /// @param  object The object to overwrite.
+        template <typename type>
+        static void wipe(type& object) {
+            volatile unsigned char* bytes = reinterpret_cast<unsigned char*>(&object);
+            for (unsigned long long int index = 0; index < sizeof(type); ++index) {
+                bytes[index] = 0;
+            }
+        }
+
     public:
+        /// @brief  Size of each block of cypherstream in bytes.
+        constexpr static const unsigned int block_size_bytes = chacha::block_size * chacha::block_size * 4;
+
         /// @brief  Encrypt a string of data writing the encrypted data into the output string.
         /// @param  data The string of data to encrypt.
-        /// @param  length The length of the data, must be a multiple of the chacha block size.
-        /// @param  key The encryption key, must be at least the length required by the selected chacha bitsize.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The encryption key, must be key_size bytes long.
         /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
+        /// @note   This uses an all zero counter and nonce, so a key must never be used for more than one message, otherwise use the overload that takes an initialisation vector.
         static void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, unsigned char* output) {
             const unsigned char iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             chacha::encrypt(data, length, key, iv, output);
@@ -272,9 +276,10 @@ namespace gtl {
 
         /// @brief  Decrypt a string of data writing the decrypted data into the output string.
         /// @param  data The string of data to decrypt.
-        /// @param  length The length of the data, must be a multiple of the chacha block size.
-        /// @param  key The decryption key, must be at least the length required by the selected chacha bitsize.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The decryption key, must be key_size bytes long.
         /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
+        /// @note   This uses an all zero counter and nonce, matching the encrypt overload without an initialisation vector.
         static void decrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, unsigned char* output) {
             const unsigned char iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             chacha::decrypt(data, length, key, iv, output);
@@ -282,13 +287,13 @@ namespace gtl {
 
         /// @brief  Encrypt a string of data writing the encrypted data into the output string.
         /// @param  data The string of data to encrypt.
-        /// @param  length The length of the data, must be a multiple of the chacha block size.
-        /// @param  key The encryption key, must be at least the length required by the selected chacha bitsize.
-        /// @param  iv The initialisation vector used to seed the encryption process.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The encryption key, must be key_size bytes long.
+        /// @param  iv The initialisation vector, must be nonce_size bytes long, holding the little endian block counter (four bytes for ctr_32, eight bytes for ctr_64) followed by the nonce.
         /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer.
-        static void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
-            GTL_CHACHA_ASSERT((length % (chacha::block_size * chacha::block_size * 4)) == 0, "Data length must be a multiple of the chacha block size.");
-
+        /// @param  iv_output Optional pointer to a nonce_size buffer that receives the initialisation vector with the counter advanced past the blocks that were used, may be the same buffer as iv.
+        /// @note   To continue a message over multiple calls using iv_output the length of every call but the last must be a multiple of block_size_bytes, as the unused part of a partial block is discarded.
+        static void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, unsigned char* iv_output = nullptr) {
             key_type key_data;
             for (unsigned int i = 0; i < chacha::key_size; ++i) {
                 key_data.data[i] = key[i];
@@ -299,11 +304,18 @@ namespace gtl {
                 initialisation_vector.data[i] = iv[i];
             }
 
-            for (unsigned int i = 0; i < length / (chacha::block_size * chacha::block_size * 4); ++i) {
-                block_type block;
+            unsigned char buffer[chacha::block_size_bytes] = {};
+            block_type block;
+            for (unsigned int offset = 0; offset < length;) {
+                // The last block may be shorter than a full block, in which case it is padded with zeros.
+                const unsigned int block_length = ((length - offset) < chacha::block_size_bytes) ? (length - offset) : chacha::block_size_bytes;
+                for (unsigned int i = 0; i < chacha::block_size_bytes; ++i) {
+                    buffer[i] = (i < block_length) ? data[offset + i] : static_cast<unsigned char>(0);
+                }
+
                 for (unsigned int j = 0; j < chacha::block_size; ++j) {
                     for (unsigned int k = 0; k < chacha::block_size; ++k) {
-                        block.data[j].data[k] = chacha::pack_bytes_32(&data[i * (chacha::block_size * chacha::block_size * 4) + j * (chacha::block_size * 4) + k * 4]);
+                        block.data[j].data[k] = chacha::pack_bytes_32(&buffer[j * (chacha::block_size * 4) + k * 4]);
                     }
                 }
 
@@ -312,54 +324,44 @@ namespace gtl {
                 for (unsigned int j = 0; j < chacha::block_size; ++j) {
                     for (unsigned int k = 0; k < chacha::block_size; ++k) {
                         for (unsigned int l = 0; l < 4; ++l) {
-                            output[i * (chacha::block_size * chacha::block_size * 4) + j * (chacha::block_size * 4) + k * 4 + l] = chacha::unpack_byte(block.data[j].data[k], l);
+                            buffer[j * (chacha::block_size * 4) + k * 4 + l] = chacha::unpack_byte(block.data[j].data[k], l);
                         }
                     }
                 }
+
+                // Only the bytes that were provided are written, the rest of a partial block is unused cypherstream.
+                for (unsigned int i = 0; i < block_length; ++i) {
+                    output[offset + i] = buffer[i];
+                }
+
+                offset += block_length;
             }
+
+            if (iv_output != nullptr) {
+                for (unsigned int i = 0; i < chacha::nonce_size; ++i) {
+                    iv_output[i] = initialisation_vector.data[i];
+                }
+            }
+
+            // The key and any unused cypherstream of a partial block must not be left on the stack.
+            chacha::wipe(key_data);
+            chacha::wipe(block);
+            chacha::wipe(buffer);
         }
 
         /// @brief  Decrypt a string of data writing the decrypted data into the output string.
         /// @param  data The string of data to decrypt.
-        /// @param  length The length of the data, must be a multiple of the chacha block size.
-        /// @param  key The decryption key, must be at least the length required by the selected chacha bitsize.
-        /// @param  iv The initialisation vector used to seed the decryption process.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The decryption key, must be key_size bytes long.
+        /// @param  iv The initialisation vector, must be nonce_size bytes long, holding the little endian block counter (four bytes for ctr_32, eight bytes for ctr_64) followed by the nonce.
         /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer.
-        static void decrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output) {
-            GTL_CHACHA_ASSERT((length % (chacha::block_size * chacha::block_size * 4)) == 0, "Data length must be a multiple of the chacha block size.");
-
-            key_type key_data;
-            for (unsigned int i = 0; i < chacha::key_size; ++i) {
-                key_data.data[i] = key[i];
-            }
-
-            nonce_type initialisation_vector;
-            for (unsigned int i = 0; i < chacha::nonce_size; ++i) {
-                initialisation_vector.data[i] = iv[i];
-            }
-
-            for (unsigned int i = 0; i < length / (chacha::block_size * chacha::block_size * 4); ++i) {
-                block_type block;
-                for (unsigned int j = 0; j < chacha::block_size; ++j) {
-                    for (unsigned int k = 0; k < chacha::block_size; ++k) {
-                        block.data[j].data[k] = chacha::pack_bytes_32(&data[i * (chacha::block_size * chacha::block_size * 4) + j * (chacha::block_size * 4) + k * 4]);
-                    }
-                }
-
-                block = chacha::decrypt_block(key_data, block, initialisation_vector);
-
-                for (unsigned int j = 0; j < chacha::block_size; ++j) {
-                    for (unsigned int k = 0; k < chacha::block_size; ++k) {
-                        for (unsigned int l = 0; l < 4; ++l) {
-                            output[i * (chacha::block_size * chacha::block_size * 4) + j * (chacha::block_size * 4) + k * 4 + l] = chacha::unpack_byte(block.data[j].data[k], l);
-                        }
-                    }
-                }
-            }
+        /// @param  iv_output Optional pointer to a nonce_size buffer that receives the initialisation vector with the counter advanced past the blocks that were used, may be the same buffer as iv.
+        /// @note   To continue a message over multiple calls using iv_output the length of every call but the last must be a multiple of block_size_bytes, as the unused part of a partial block is discarded.
+        static void decrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, unsigned char* iv_output = nullptr) {
+            // The cypherstream is xored with the data, so decrypting is the same operation as encrypting.
+            chacha::encrypt(data, length, key, iv, output, iv_output);
         }
     };
 }
-
-#undef GTL_CHACHA_ASSERT
 
 #endif // GTL_CRYPTO_CHACHA_HPP

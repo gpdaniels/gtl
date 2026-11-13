@@ -80,7 +80,7 @@ TEST(rc4, evaluate, roundtrip) {
     random_pcg rng;
 
     for (unsigned int length_data = 1; length_data < 257; ++length_data) {
-        for (unsigned int length_key = 1; length_key < 256; ++length_key) {
+        for (unsigned int length_key = 1; length_key <= gtl::rc4::key_size_max; ++length_key) {
             unsigned char* plain = new unsigned char[length_data];
             unsigned char* key = new unsigned char[length_key];
             unsigned char* output = new unsigned char[length_data];
@@ -105,4 +105,49 @@ TEST(rc4, evaluate, roundtrip) {
             delete[] input;
         }
     }
+}
+
+TEST(rc4, evaluate, key_length_maximum) {
+    // The longest valid key, with the expected output computed independently of this library.
+    constexpr static const unsigned int length_data = 16;
+    constexpr static const unsigned int length_key = gtl::rc4::key_size_max;
+    const unsigned char plain[length_data] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF };
+    const unsigned char encrypted[length_data] = { 0x61, 0xE2, 0xAA, 0xCA, 0xFD, 0x81, 0xA8, 0x1D, 0x84, 0xC1, 0x63, 0xA2, 0xB2, 0xAF, 0xFC, 0xB8 };
+
+    unsigned char key[length_key];
+    for (unsigned int i = 0; i < length_key; ++i) {
+        key[i] = static_cast<unsigned char>((i * 7 + 3) % 256);
+    }
+
+    unsigned char output[length_data] = {};
+    REQUIRE(gtl::rc4::encrypt(plain, length_data, key, length_key, output) == true); // lgtm [cpp/weak-cryptographic-algorithm]
+    REQUIRE(testbench::is_memory_same(encrypted, output, length_data), "%s != %s\n", hex_2_string(encrypted, length_data).c_str(), hex_2_string(output, length_data).c_str());
+
+    unsigned char input[length_data] = {};
+    REQUIRE(gtl::rc4::decrypt(output, length_data, key, length_key, input) == true); // lgtm [cpp/weak-cryptographic-algorithm]
+    REQUIRE(testbench::is_memory_same(plain, input, length_data), "%s != %s\n", hex_2_string(plain, length_data).c_str(), hex_2_string(input, length_data).c_str());
+}
+
+TEST(rc4, evaluate, key_length_invalid) {
+    constexpr static const unsigned int length_data = 16;
+    const unsigned char plain[length_data] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF };
+    const unsigned char untouched[length_data] = { 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5 };
+    const unsigned char key[gtl::rc4::key_size_max + 1] = {};
+
+    // An empty key is rejected and the output is not written.
+    unsigned char output[length_data] = { 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5 };
+    REQUIRE(gtl::rc4::encrypt(plain, length_data, key, 0, output) == false); // lgtm [cpp/weak-cryptographic-algorithm]
+    REQUIRE(testbench::is_memory_same(untouched, output, length_data), "%s != %s\n", hex_2_string(untouched, length_data).c_str(), hex_2_string(output, length_data).c_str());
+    REQUIRE(gtl::rc4::decrypt(plain, length_data, key, 0, output) == false); // lgtm [cpp/weak-cryptographic-algorithm]
+    REQUIRE(testbench::is_memory_same(untouched, output, length_data), "%s != %s\n", hex_2_string(untouched, length_data).c_str(), hex_2_string(output, length_data).c_str());
+
+    // A key that is too long is rejected and the output is not written.
+    REQUIRE(gtl::rc4::encrypt(plain, length_data, key, gtl::rc4::key_size_max + 1, output) == false); // lgtm [cpp/weak-cryptographic-algorithm]
+    REQUIRE(testbench::is_memory_same(untouched, output, length_data), "%s != %s\n", hex_2_string(untouched, length_data).c_str(), hex_2_string(output, length_data).c_str());
+    REQUIRE(gtl::rc4::decrypt(plain, length_data, key, gtl::rc4::key_size_max + 1, output) == false); // lgtm [cpp/weak-cryptographic-algorithm]
+    REQUIRE(testbench::is_memory_same(untouched, output, length_data), "%s != %s\n", hex_2_string(untouched, length_data).c_str(), hex_2_string(output, length_data).c_str());
+
+    // The shortest and longest valid keys are accepted.
+    REQUIRE(gtl::rc4::encrypt(plain, length_data, key, 1, output) == true);                      // lgtm [cpp/weak-cryptographic-algorithm]
+    REQUIRE(gtl::rc4::encrypt(plain, length_data, key, gtl::rc4::key_size_max, output) == true); // lgtm [cpp/weak-cryptographic-algorithm]
 }

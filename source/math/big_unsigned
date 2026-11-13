@@ -908,7 +908,7 @@ namespace gtl {
         /// @param  index The index of the bit to evaluate.
         /// @return true if the bit is a one, false if the bit is a zero.
         bool get_bit(unsigned long long int index) const {
-            if (index > this->chunks.size() * big_unsigned::chunk_bits) {
+            if (index >= this->chunks.size() * big_unsigned::chunk_bits) {
                 return 0;
             }
             return this->chunks[index / big_unsigned::chunk_bits] & (1u << (index % big_unsigned::chunk_bits));
