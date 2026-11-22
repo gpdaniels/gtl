@@ -1,0 +1,325 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_CRYPTO_KDF_HKDF_HPP
+#define GTL_CRYPTO_KDF_HKDF_HPP
+
+// Summary: An implementation of the HMAC-based Extract-and-Expand Key Derivation Function (HKDF) as per RFC 5869.
+
+#ifndef NDEBUG
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
+/// @brief A simple assert macro to break the program if the hkdf is misused.
+#define GTL_HKDF_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#define GTL_HKDF_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+#include <crypto/mac/hmac>
+
+namespace gtl {
+    /// @brief  The hkdf class implements the HKDF Extract-and-Expand key derivation function (RFC 5869).
+    /// @tparam hash_function_type The hash function type (e.g. gtl::sha2<256>, gtl::sha1).
+    template <typename hash_function_type>
+    class hkdf final {
+        static_assert(hash_function_type::hash_size > 0, "Hash type must have a hash_size member.");
+
+    public:
+        /// @brief  Size of the hash in bytes.
+        constexpr static const unsigned long long int hash_size = hash_function_type::hash_size;
+
+    public:
+        /// @brief  Simple type to hold a hash-sized key (PRK).
+        struct key_type final {
+            unsigned char data[hkdf::hash_size] = {};
+        };
+
+        /// @brief  Simple type to hold hash-sized data.
+        using hash_type = typename hash_function_type::hash_type;
+
+        /// @brief  Simple type to hold the string representation of the hash.
+        struct hash_string_type final {
+            char hash[(hkdf::hash_size * 2) + 1] = {};
+        };
+
+    public:
+        /// @brief  A static array of zero bytes for use as a null key or context.
+        constexpr static const unsigned char null[64] = {};
+
+    private:
+        /// @brief  The pseudorandom key (PRK) resulting from the Extract step.
+        unsigned char prk[hkdf::hash_size] = {};
+
+        /// @brief  Current digest block for the Expand step.
+        unsigned char digest[64] = {};
+
+        /// @brief  Pointer to the info data for the Expand step.
+        const unsigned char* info_ptr = nullptr;
+
+        /// @brief  Size of the info data.
+        unsigned long long int info_size = 0;
+
+        /// @brief  Remaining bytes in the current digest block.
+        unsigned long long int block_size = 0;
+
+        /// @brief  Counter for the Expand step (1-based).
+        unsigned int counter = 0;
+
+    public:
+        /// @brief  Perform the HKDF Extract step (RFC 5869 Section 2.2).
+        ///         PRK = HMAC-Hash(salt, IKM). If IKM is empty, PRK is set to the salt directly.
+        /// @param  key The salt bytes (optional, can be null/empty for a zero salt).
+        /// @param  key_size The size of the salt in bytes.
+        /// @param  ikm The input key material (optional, can be null/empty).
+        /// @param  ikm_size The size of the IKM in bytes.
+        hkdf(const unsigned char* key, unsigned long long int key_size, const unsigned char* ikm, unsigned long long int ikm_size) {
+            if (!ikm || ikm_size == 0) {
+                unsigned long long int copy_size = (key && key_size) ? key_size : hkdf::hash_size;
+                const unsigned char* source = (key && key_size) ? key : hkdf::null;
+                unsigned long long int limit = (copy_size < hkdf::hash_size) ? copy_size : hkdf::hash_size;
+                for (unsigned long long int i = 0; i < limit; ++i) {
+                    this->prk[i] = source[i];
+                }
+                for (unsigned long long int i = 0; i < hkdf::hash_size; ++i) {
+                    this->digest[i] = this->prk[i];
+                }
+                return;
+            }
+
+            typename gtl::hmac<hash_function_type>::key_type hmac_key = {};
+            unsigned long long int key_copy = (key && key_size) ? key_size : hkdf::hash_size;
+            const unsigned char* key_source = (key && key_size) ? key : hkdf::null;
+            unsigned long long int hmac_limit = (key_copy < sizeof(hmac_key.data)) ? key_copy : sizeof(hmac_key.data);
+            for (unsigned long long int i = 0; i < hmac_limit; ++i) {
+                hmac_key.data[i] = key_source[i];
+            }
+            typename hash_function_type::hash_type hash = gtl::hmac<hash_function_type>::hash(
+                reinterpret_cast<const char*>(ikm),
+                ikm_size,
+                hmac_key
+            );
+            for (unsigned long long int i = 0; i < hkdf::hash_size; ++i) {
+                this->prk[i] = hash.data[i];
+            }
+            for (unsigned long long int i = 0; i < hkdf::hash_size; ++i) {
+                this->digest[i] = hash.data[i];
+            }
+        }
+
+        /// @brief  Create a derived HKDF from an existing one (copy PRK), optionally re-extracting with new IKM.
+        /// @param  source An existing HKDF whose PRK to copy.
+        /// @param  ikm Additional input key material (optional).
+        /// @param  ikm_size The size of the additional IKM.
+        hkdf(const hkdf& source, const unsigned char* ikm, unsigned long long int ikm_size) {
+            for (unsigned long long int i = 0; i < hkdf::hash_size; ++i) {
+                this->prk[i] = source.digest[i];
+            }
+            this->info_ptr = nullptr;
+            this->info_size = 0;
+            this->block_size = 0;
+            this->counter = 0;
+
+            if (!ikm || ikm_size == 0) {
+                for (unsigned long long int i = 0; i < hkdf::hash_size; ++i) {
+                    this->digest[i] = this->prk[i];
+                }
+                return;
+            }
+
+            typename gtl::hmac<hash_function_type>::key_type hmac_key = {};
+            for (unsigned long long int i = 0; i < hkdf::hash_size; ++i) {
+                hmac_key.data[i] = this->prk[i];
+            }
+            typename hash_function_type::hash_type hash = gtl::hmac<hash_function_type>::hash(
+                reinterpret_cast<const char*>(ikm),
+                ikm_size,
+                hmac_key
+            );
+            for (unsigned long long int i = 0; i < hkdf::hash_size; ++i) {
+                this->prk[i] = hash.data[i];
+            }
+            for (unsigned long long int i = 0; i < hkdf::hash_size; ++i) {
+                this->digest[i] = hash.data[i];
+            }
+        }
+
+        /// @brief  Get the current digest.
+        /// @return Pointer to the current digest data.
+        const unsigned char* get_digest() const {
+            return this->digest;
+        }
+
+        /// @brief  Reset the internal state to zero.
+        void reset() {
+            for (unsigned long long int i = 0; i < hkdf::hash_size; ++i) {
+                this->prk[i] = 0;
+            }
+            for (unsigned long long int i = 0; i < 64; ++i) {
+                this->digest[i] = 0;
+            }
+            this->info_ptr = nullptr;
+            this->info_size = 0;
+            this->block_size = 0;
+            this->counter = 0;
+        }
+
+        /// @brief  Start the HKDF Expand step (RFC 5869 Section 2.3).
+        ///         Produces T(1) = HMAC(PRK, info || 0x01) and stores it as the current digest.
+        /// @param  info_data The info data (context) for expansion.
+        /// @param  info_data_size The size of the info data in bytes.
+        void expand(const unsigned char* info_data, unsigned long long int info_data_size) {
+            this->info_ptr = info_data;
+            this->info_size = info_data_size;
+            unsigned char counter_byte[4] = {};
+            this->counter = 0;
+            counter_byte[0] = static_cast<unsigned char>(++this->counter);
+
+            typename gtl::hmac<hash_function_type>::key_type hmac_key = {};
+            for (unsigned long long int i = 0; i < hkdf::hash_size; ++i) {
+                hmac_key.data[i] = this->prk[i];
+            }
+            gtl::hmac<hash_function_type> h(hmac_key);
+            h.consume(reinterpret_cast<const char*>(info_data), info_data_size);
+            h.consume(reinterpret_cast<const char*>(counter_byte), 1);
+            h.finalise();
+            typename hash_function_type::hash_type hash = h.get_hash();
+            for (unsigned long long int i = 0; i < hkdf::hash_size; ++i) {
+                this->digest[i] = hash.data[i];
+            }
+
+            this->block_size = hkdf::hash_size;
+        }
+
+        /// @brief  Output bytes from the expanded state (RFC 5869 Section 2.3).
+        ///         Generates further blocks T(n+1) = HMAC(PRK, T(n) || info || n+1) as needed.
+        /// @param  out Buffer to receive the output bytes.
+        /// @param  out_size Number of bytes to output.
+        void output(unsigned char* out, unsigned long long int out_size) {
+            while (out_size > 0) {
+                while (this->block_size > 0) {
+                    *out++ = this->digest[hkdf::hash_size - (this->block_size--)];
+                    if (--out_size == 0) {
+                        return;
+                    }
+                }
+
+                unsigned char counter_byte[4] = {};
+                counter_byte[0] = static_cast<unsigned char>(++this->counter);
+
+                typename gtl::hmac<hash_function_type>::key_type hmac_key = {};
+                for (unsigned long long int i = 0; i < hkdf::hash_size; ++i) {
+                    hmac_key.data[i] = this->prk[i];
+                }
+                gtl::hmac<hash_function_type> h(hmac_key);
+                h.consume(reinterpret_cast<const char*>(this->digest), hkdf::hash_size);
+                h.consume(reinterpret_cast<const char*>(this->info_ptr), this->info_size);
+                h.consume(reinterpret_cast<const char*>(counter_byte), 1);
+                h.finalise();
+                typename hash_function_type::hash_type hash = h.get_hash();
+                for (unsigned long long int i = 0; i < hkdf::hash_size; ++i) {
+                    this->digest[i] = hash.data[i];
+                }
+
+                this->block_size += hkdf::hash_size;
+            }
+        }
+
+        /// @brief  TLS 1.3 ExpandLabel: builds the label message per RFC 8446 Section 7.1
+        ///         and starts expansion.
+        /// @param  label The label string (without "tls13 " prefix).
+        /// @param  context The context data.
+        /// @param  context_size The size of the context data in bytes.
+        /// @param  output_length The desired output length in bytes (0 defaults to hash_size).
+        void expand_label(const char* label, const unsigned char* context, unsigned long long int context_size, unsigned long long int output_length = 0) {
+            unsigned long long int i = 0;
+            unsigned long long int hashed_context = 0;
+            unsigned char label_message[64] = {};
+
+            if (output_length == 0) {
+                output_length = hkdf::hash_size;
+                hashed_context = hkdf::hash_size;
+            }
+
+            label_message[0] = static_cast<unsigned char>(output_length >> 8);
+            label_message[1] = static_cast<unsigned char>(output_length);
+            label_message[2] = 0x00;
+            label_message[3] = 't';
+            label_message[4] = 'l';
+            label_message[5] = 's';
+            label_message[6] = '1';
+            label_message[7] = '3';
+            label_message[8] = ' ';
+            for (i = 9; (*label);) {
+                label_message[i++] = static_cast<unsigned char>(*label++);
+            }
+            label_message[2] = static_cast<unsigned char>(i - 3);
+
+            if (hashed_context) {
+                label_message[i++] = static_cast<unsigned char>(hkdf::hash_size);
+                typename hash_function_type::hash_type hash = hash_function_type::hash(
+                    reinterpret_cast<const char*>(context),
+                    context_size
+                );
+                for (unsigned long long int j = 0; j < hkdf::hash_size; ++j) {
+                    label_message[i + j] = hash.data[j];
+                }
+                i += hkdf::hash_size;
+            }
+            else {
+                label_message[i++] = static_cast<unsigned char>(context_size);
+                for (unsigned long long int j = 0; j < context_size; ++j) {
+                    label_message[i + j] = context[j];
+                }
+                i += context_size;
+            }
+
+            this->expand(label_message, i);
+        }
+
+        /// @brief  TLS 1.3 ExpandLabel with immediate output.
+        /// @param  label The label string (without "tls13 " prefix).
+        /// @param  context The context data.
+        /// @param  context_size The size of the context data in bytes.
+        /// @param  output_length The desired output length in bytes (0 defaults to hash_size).
+        /// @param  out Buffer to receive the output bytes.
+        /// @param  out_size Number of bytes to output.
+        void expand_label(const char* label, const unsigned char* context, unsigned long long int context_size, unsigned long long int output_length, unsigned char* out, unsigned long long int out_size) {
+            this->expand_label(label, context, context_size, output_length);
+            this->output(out, out_size);
+        }
+
+    public:
+        /// @brief  Convert a hash into its string representation.
+        /// @param  hash The hash to convert.
+        /// @return The string representation of the hash, with null termination.
+        constexpr static hash_string_type hash_to_string(const hash_type& hash) {
+            hash_string_type output;
+            constexpr const char* hex_characters = "0123456789ABCDEF";
+            for (unsigned int index = 0; index < (hkdf::hash_size * 2); ++index) {
+                output.hash[index] = hex_characters[(hash.data[index / 2] >> ((1 - (index % 2)) * 4)) & 0xF];
+            }
+            output.hash[hkdf::hash_size * 2] = 0;
+            return output;
+        }
+    };
+}
+
+#undef GTL_HKDF_ASSERT
+
+#endif // GTL_CRYPTO_KDF_HKDF_HPP

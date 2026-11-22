@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_CRYPTO_BLOCK_CIPHER_HPP
-#define GTL_CRYPTO_BLOCK_CIPHER_HPP
+#ifndef GTL_CRYPTO_SYMMETRIC_BLOCK_CIPHER_HPP
+#define GTL_CRYPTO_SYMMETRIC_BLOCK_CIPHER_HPP
 
 // Summary: An implementation of many block cipher modes to be used with block ciphers like aes<128>.
 
@@ -927,4 +927,4 @@ namespace gtl {
     };
 }
 
-#endif // GTL_CRYPTO_BLOCK_CIPHER_HPP
+#endif // GTL_CRYPTO_SYMMETRIC_BLOCK_CIPHER_HPP

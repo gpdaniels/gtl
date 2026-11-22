@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <testbench/require.tests.hpp>
 #include <testbench/template.tests.hpp>
 
-#include <crypto/chacha>
+#include <crypto/symmetric/chacha>
 
 #if defined(_MSC_VER)
 #pragma warning(push, 0)

@@ -1,0 +1,174 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_CRYPTO_MAC_HMAC_HPP
+#define GTL_CRYPTO_MAC_HMAC_HPP
+
+// Summary: An implementation of the HMAC message authentication code.
+
+#ifndef NDEBUG
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
+/// @brief A simple assert macro to break the program if the hmac is misused.
+#define GTL_HMAC_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#define GTL_HMAC_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+namespace gtl {
+    /// @brief  The hmac class computes an HMAC authentication tag of a sequence of data.
+    /// @tparam hash_function_type The hash function type (e.g. gtl::sha2<256>, gtl::sha1, gtl::md5).
+    template <typename hash_function_type>
+    class hmac final {
+        static_assert(hash_function_type::hash_size > 0, "Hash type must have a hash_size member.");
+
+    public:
+        /// @brief  Size of the hash in bytes.
+        constexpr static const unsigned long long int hash_size = hash_function_type::hash_size;
+
+        /// @brief  Internal size of each processed block of data in bytes.
+        constexpr static const unsigned long long int block_size = hash_function_type::block_size;
+
+    public:
+        /// @brief  Simple type to hold the hash data (same as the underlying hash's hash_type).
+        using hash_type = typename hash_function_type::hash_type;
+
+        /// @brief  Simple type to hold the key data (padded to block_size).
+        struct key_type final {
+            unsigned char data[hmac::block_size] = {};
+        };
+
+        /// @brief  Simple type to hold the string representation of the hash.
+        struct hash_string_type final {
+            char hash[(hmac::hash_size * 2) + 1] = {};
+        };
+
+    private:
+        /// @brief  Inner hash context (ipad).
+        hash_function_type context_inner;
+
+        /// @brief  Outer hash context (opad).
+        hash_function_type context_outer;
+
+        /// @brief  The ipad key material (key XOR 0x36).
+        char block_inner[hmac::block_size] = {};
+
+        /// @brief  The opad key material (key XOR 0x5C).
+        char block_outer[hmac::block_size] = {};
+
+        /// @brief  The current hash (tag).
+        hash_type current_hash = {};
+
+        /// @brief  Flag showing whether the hash has been finalised.
+        bool finalised = false;
+
+    public:
+        /// @brief  Construct an hmac with a given key.
+        /// @param  key The key for the hmac computation (padded to block_size).
+        hmac(const key_type& key) {
+            for (unsigned long long int i = 0; i < hmac::block_size; ++i) {
+                block_inner[i] = static_cast<char>(key.data[i] ^ 0x36);
+                block_outer[i] = static_cast<char>(key.data[i] ^ 0x5C);
+            }
+            context_inner.reset();
+            context_inner.consume(block_inner, hmac::block_size);
+            context_outer.reset();
+            context_outer.consume(block_outer, hmac::block_size);
+        }
+
+    public:
+        /// @brief  Reset the internal state, reinitialising hash contexts with the original key material.
+        constexpr void reset() {
+            context_inner.reset();
+            context_inner.consume(block_inner, hmac::block_size);
+            context_outer.reset();
+            context_outer.consume(block_outer, hmac::block_size);
+            current_hash = {};
+            finalised = false;
+        }
+
+        /// @brief  Consume data, feeding it into the inner hash.
+        /// @param  data Input data pointer.
+        /// @param  length Valid length of the input data pointer.
+        constexpr void consume(const char* data, unsigned long long int length) {
+            GTL_HMAC_ASSERT(this->finalised == false, "Finalise must not be called before consume().");
+            this->context_inner.consume(data, length);
+        }
+
+        /// @brief  Finishes processing any remaining buffered data and produces the tag.
+        constexpr void finalise() {
+            GTL_HMAC_ASSERT(this->finalised == false, "Finalise must not be called before finalise().");
+
+            this->context_inner.finalise();
+            typename hash_function_type::hash_type inner_hash = this->context_inner.get_hash();
+
+            char inner_bytes[hmac::hash_size] = {};
+            for (unsigned long long int i = 0; i < hmac::hash_size; ++i) {
+                inner_bytes[i] = static_cast<char>(inner_hash.data[i]);
+            }
+
+            this->context_outer.consume(inner_bytes, hmac::hash_size);
+            this->context_outer.finalise();
+            typename hash_function_type::hash_type outer_hash = this->context_outer.get_hash();
+
+            for (unsigned long long int i = 0; i < hmac::hash_size; ++i) {
+                this->current_hash.data[i] = outer_hash.data[i];
+            }
+
+            this->finalised = true;
+        }
+
+        /// @brief  Calculate the final tag from the state and return it.
+        /// @return The resultant tag.
+        constexpr const hash_type& get_hash() const {
+            GTL_HMAC_ASSERT(this->finalised == true, "Finalise must be called before get_hash().");
+            return this->current_hash;
+        }
+
+    public:
+        /// @brief  Convert a hash into its string representation.
+        /// @param  hash The hash to convert.
+        /// @return The string representation of the hash, with null termination.
+        constexpr static hash_string_type hash_to_string(const hash_type& hash) {
+            hash_string_type output;
+            constexpr const char* hex_characters = "0123456789ABCDEF";
+            for (unsigned int index = 0; index < (hmac::hash_size * 2); ++index) {
+                output.hash[index] = hex_characters[(hash.data[index / 2] >> ((1 - (index % 2)) * 4)) & 0xF];
+            }
+            output.hash[hmac::hash_size * 2] = 0;
+            return output;
+        }
+
+    public:
+        /// @brief  Compute an HMAC tag for a buffer of data.
+        /// @param  data Input data pointer.
+        /// @param  length Valid length of the input data pointer.
+        /// @param  key The key for the hmac computation.
+        static hash_type hash(const char* data, const unsigned long long int length, const key_type& key) {
+            hmac hash_function(key);
+            hash_function.consume(data, length);
+            hash_function.finalise();
+            return hash_function.get_hash();
+        }
+    };
+}
+
+#undef GTL_HMAC_ASSERT
+
+#endif // GTL_CRYPTO_MAC_HMAC_HPP

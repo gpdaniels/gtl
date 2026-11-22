@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_CRYPTO_CHACHA_HPP
-#define GTL_CRYPTO_CHACHA_HPP
+#ifndef GTL_CRYPTO_SYMMETRIC_CHACHA_HPP
+#define GTL_CRYPTO_SYMMETRIC_CHACHA_HPP
 
 // Summary: An implementation of the chacha encryption algorithm.
 
@@ -364,4 +364,4 @@ namespace gtl {
     };
 }
 
-#endif // GTL_CRYPTO_CHACHA_HPP
+#endif // GTL_CRYPTO_SYMMETRIC_CHACHA_HPP

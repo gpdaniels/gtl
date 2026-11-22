@@ -1,0 +1,364 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_CRYPTO_MAC_POLY1305_HPP
+#define GTL_CRYPTO_MAC_POLY1305_HPP
+
+// Summary: An implementation of the poly1305 message authentication code.
+
+#ifndef NDEBUG
+#if defined(_MSC_VER)
+#define __builtin_trap() __debugbreak()
+#endif
+/// @brief A simple assert macro to break the program if the poly1305 is misused.
+#define GTL_POLY1305_ASSERT(ASSERTION, MESSAGE) static_cast<void>((ASSERTION) || (__builtin_trap(), 0))
+#else
+/// @brief At release time the assert macro is implemented as a nop.
+#define GTL_POLY1305_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
+#endif
+
+namespace gtl {
+    /// @brief  The poly1305 class computes a Poly1305 authentication tag of a sequence of data.
+    class poly1305 final {
+    public:
+        /// @brief  Handy variable for accessing the size in bits.
+        constexpr static const unsigned long long int size = 128;
+
+        /// @brief  Size of the hash in bytes.
+        constexpr static const unsigned long long int hash_size = poly1305::size / 8;
+
+        /// @brief  Internal size of each processed block of data in bytes.
+        constexpr static const unsigned long long int block_size = 16;
+
+        /// @brief  Size of the key in bytes.
+        constexpr static const unsigned long long int key_size = 32;
+
+    public:
+        /// @brief  Simple type to hold the hash data.
+        struct hash_type final {
+            unsigned char data[poly1305::hash_size] = {};
+        };
+
+        /// @brief  Simple type to hold the key data.
+        struct key_type final {
+            unsigned char data[poly1305::key_size] = {};
+        };
+
+    private:
+        /// @brief  Internal type used to construct blocks of data for processing.
+        struct block_type final {
+            unsigned long long int length_bytes = 0;
+            unsigned char data[poly1305::block_size] = {};
+        };
+
+    private:
+        /// @brief  The number of bytes of data that have been hashed.
+        unsigned long long int hashed_length = 0;
+
+        /// @brief  The current block of data being filled.
+        block_type current_block = {};
+
+        /// @brief  The current hash (tag).
+        hash_type current_hash = {};
+
+        /// @brief  Flag showing whether the hash has been finalised.
+        bool finalised = false;
+
+        /// @brief  Poly1305 key part r (clamped).
+        unsigned int key_part_r[4] = {};
+
+        /// @brief  Poly1305 key part s.
+        unsigned int key_part_s[4] = {};
+
+        /// @brief  Poly1305 accumulator.
+        unsigned int accumulator[5] = {};
+
+    private:
+        /// @brief  Packs four bytes into an unsigned int in little-endian byte order.
+        /// @param  bytes The bytes to convert.
+        /// @return The bytes packed into an unsigned int.
+        constexpr static unsigned int pack_little_endian(const unsigned char bytes[4]) {
+            return (static_cast<unsigned int>(bytes[0]) << 0) | (static_cast<unsigned int>(bytes[1]) << 8) | (static_cast<unsigned int>(bytes[2]) << 16) | (static_cast<unsigned int>(bytes[3]) << 24);
+        }
+
+        /// @brief  Unpacks four bytes from an unsigned int in little-endian byte order.
+        /// @param  value The value to unpack.
+        /// @param  bytes The bytes to receive the unpacked data.
+        constexpr static void unpack_little_endian(unsigned int value, unsigned char bytes[4]) {
+            bytes[0] = static_cast<unsigned char>((value >> 0) & 0xFF);
+            bytes[1] = static_cast<unsigned char>((value >> 8) & 0xFF);
+            bytes[2] = static_cast<unsigned char>((value >> 16) & 0xFF);
+            bytes[3] = static_cast<unsigned char>((value >> 24) & 0xFF);
+        }
+
+    private:
+        /// @brief  Perform the Poly1305 block processing on a single 16-byte block.
+        /// @param  block_data A 16-byte block of data (padded to 20 bytes internally with 0x01).
+        /// @param  length The number of valid bytes in the block (1-16).
+        constexpr void process_block(const unsigned char block_data[poly1305::block_size], unsigned long long int length) {
+            unsigned int block_accumulator[5] = {};
+            unsigned int partials[10] = {};
+
+            for (unsigned int limb = 0; limb < 5; ++limb) {
+                unsigned int value = 0;
+                for (unsigned int byte = 0; byte < 4; ++byte) {
+                    unsigned int byte_index = limb * 4 + byte;
+                    unsigned char character = 0;
+                    if (byte_index < length) {
+                        character = block_data[byte_index];
+                    }
+                    else if (byte_index == static_cast<unsigned int>(length)) {
+                        character = 0x01;
+                    }
+                    value |= static_cast<unsigned int>(character) << (byte * 8);
+                }
+                block_accumulator[limb] = value;
+            }
+
+            for (unsigned int i = 0; i <= 4; ++i) {
+                if ((this->accumulator[i] += block_accumulator[i]) < block_accumulator[i]) {
+                    if (++this->accumulator[i + 1] == 0) {
+                        if (++this->accumulator[i + 2] == 0) {
+                            if (++this->accumulator[i + 3] == 0) {
+                                ++this->accumulator[i + 4];
+                            }
+                        }
+                    }
+                }
+                for (unsigned int j = 0; j < 4; ++j) {
+                    unsigned long long int product = static_cast<unsigned long long int>(this->accumulator[i]) * static_cast<unsigned long long int>(this->key_part_r[j]);
+                    unsigned int low = static_cast<unsigned int>(product & 0xFFFFFFFF);
+                    unsigned int high = static_cast<unsigned int>(product >> 32);
+                    high += ((partials[i + j] += low) < low);
+                    if ((partials[i + j + 1] += high) < high) {
+                        ++partials[i + j + 2];
+                    }
+                }
+            }
+
+            block_accumulator[0] = partials[4] & 0xFFFFFFFC;
+            partials[4] &= 3;
+            block_accumulator[1] = partials[5];
+            partials[5] = 0;
+            block_accumulator[2] = partials[6];
+            partials[6] = 0;
+            block_accumulator[3] = partials[7];
+            partials[7] = 0;
+            block_accumulator[4] = 0;
+            if ((partials[0] += block_accumulator[0]) < block_accumulator[0]) {
+                if (++partials[1] == 0) {
+                    if (++partials[2] == 0) {
+                        if (++partials[3] == 0) {
+                            ++partials[4];
+                        }
+                    }
+                }
+            }
+            block_accumulator[0] = (block_accumulator[0] >> 2) | (block_accumulator[1] << 30);
+            if ((partials[0] += block_accumulator[0]) < block_accumulator[0]) {
+                if (++partials[1] == 0) {
+                    if (++partials[2] == 0) {
+                        if (++partials[3] == 0) {
+                            ++partials[4];
+                        }
+                    }
+                }
+            }
+            if ((partials[1] += block_accumulator[1]) < block_accumulator[1]) {
+                if (++partials[2] == 0) {
+                    if (++partials[3] == 0) {
+                        ++partials[4];
+                    }
+                }
+            }
+            block_accumulator[1] = (block_accumulator[1] >> 2) | (block_accumulator[2] << 30);
+            if ((partials[1] += block_accumulator[1]) < block_accumulator[1]) {
+                if (++partials[2] == 0) {
+                    if (++partials[3] == 0) {
+                        ++partials[4];
+                    }
+                }
+            }
+            if ((partials[2] += block_accumulator[2]) < block_accumulator[2]) {
+                if (++partials[3] == 0) {
+                    ++partials[4];
+                }
+            }
+            block_accumulator[2] = (block_accumulator[2] >> 2) | (block_accumulator[3] << 30);
+            if ((partials[2] += block_accumulator[2]) < block_accumulator[2]) {
+                if (++partials[3] == 0) {
+                    ++partials[4];
+                }
+            }
+            if ((partials[3] += block_accumulator[3]) < block_accumulator[3]) {
+                ++partials[4];
+            }
+            block_accumulator[3] = (block_accumulator[3] >> 2);
+            if ((partials[3] += block_accumulator[3]) < block_accumulator[3]) {
+                ++partials[4];
+            }
+            if (partials[4] >= 4) {
+                partials[4] -= 4;
+                if ((partials[0] += 5) < 5) {
+                    if (++partials[1] == 0) {
+                        if (++partials[2] == 0) {
+                            if (++partials[3] == 0) {
+                                ++partials[4];
+                            }
+                        }
+                    }
+                }
+            }
+            this->accumulator[0] = partials[0];
+            this->accumulator[1] = partials[1];
+            this->accumulator[2] = partials[2];
+            this->accumulator[3] = partials[3];
+            this->accumulator[4] = partials[4];
+        }
+
+    public:
+        /// @brief  Construct a poly1305 with a given key.
+        /// @param  key The 32-byte key for the poly1305 computation.
+        poly1305(const key_type& key) {
+            this->key_part_r[0] = poly1305::pack_little_endian(&key.data[0 * 4]) & 0x0FFFFFFF;
+            this->key_part_r[1] = poly1305::pack_little_endian(&key.data[1 * 4]) & 0x0FFFFFFC;
+            this->key_part_r[2] = poly1305::pack_little_endian(&key.data[2 * 4]) & 0x0FFFFFFC;
+            this->key_part_r[3] = poly1305::pack_little_endian(&key.data[3 * 4]) & 0x0FFFFFFC;
+            this->key_part_s[0] = poly1305::pack_little_endian(&key.data[4 * 4]);
+            this->key_part_s[1] = poly1305::pack_little_endian(&key.data[5 * 4]);
+            this->key_part_s[2] = poly1305::pack_little_endian(&key.data[6 * 4]);
+            this->key_part_s[3] = poly1305::pack_little_endian(&key.data[7 * 4]);
+        }
+
+    public:
+        /// @brief  Reset the internal state.
+        constexpr void reset() {
+            this->hashed_length = 0;
+            this->current_block = {};
+            this->current_hash = {};
+            this->finalised = false;
+            for (unsigned int i = 0; i < 5; ++i) {
+                this->accumulator[i] = 0;
+            }
+        }
+
+        /// @brief  Consume data, constructing blocks and processing as needed.
+        /// @param  data Input data pointer.
+        /// @param  length Valid length of the input data pointer.
+        constexpr void consume(const char* data, unsigned long long int length) {
+            GTL_POLY1305_ASSERT(this->finalised == false, "Finalise must not be called before consume().");
+            GTL_POLY1305_ASSERT(this->hashed_length <= this->hashed_length + length, "Total hashed data must be less than 2^64 bytes.");
+
+            this->hashed_length += length;
+
+            while (length--) {
+                this->current_block.data[this->current_block.length_bytes++] = static_cast<unsigned char>(*data++);
+                if (this->current_block.length_bytes == poly1305::block_size) {
+                    this->process_block(this->current_block.data, poly1305::block_size);
+                    this->current_block = {};
+                }
+            }
+        }
+
+        /// @brief  Finishes processing any remaining buffered data and produces the tag.
+        constexpr void finalise() {
+            GTL_POLY1305_ASSERT(this->finalised == false, "Finalise must not be called before finalise().");
+
+            if (this->current_block.length_bytes > 0) {
+                unsigned char padded_block[poly1305::block_size] = {};
+                for (unsigned long long int i = 0; i < this->current_block.length_bytes; ++i) {
+                    padded_block[i] = this->current_block.data[i];
+                }
+                this->process_block(padded_block, this->current_block.length_bytes);
+            }
+
+            if ((this->accumulator[0] += this->key_part_s[0]) < this->key_part_s[0]) {
+                if (++this->accumulator[1] == 0) {
+                    if (++this->accumulator[2] == 0) {
+                        if (++this->accumulator[3] == 0) {
+                            ++this->accumulator[4];
+                        }
+                    }
+                }
+            }
+            if ((this->accumulator[1] += this->key_part_s[1]) < this->key_part_s[1]) {
+                if (++this->accumulator[2] == 0) {
+                    if (++this->accumulator[3] == 0) {
+                        ++this->accumulator[4];
+                    }
+                }
+            }
+            if ((this->accumulator[2] += this->key_part_s[2]) < this->key_part_s[2]) {
+                if (++this->accumulator[3] == 0) {
+                    ++this->accumulator[4];
+                }
+            }
+            if ((this->accumulator[3] += this->key_part_s[3]) < this->key_part_s[3]) {
+                ++this->accumulator[4];
+            }
+
+            for (unsigned int byte_offset = 0; byte_offset < 16; byte_offset += 4) {
+                poly1305::unpack_little_endian(this->accumulator[byte_offset / 4], &this->current_hash.data[byte_offset]);
+            }
+
+            this->finalised = true;
+        }
+
+        /// @brief  Calculate the final tag from the state and return it.
+        /// @return The resultant tag.
+        constexpr const hash_type& get_hash() const {
+            GTL_POLY1305_ASSERT(this->finalised == true, "Finalise must be called before get_hash().");
+            return this->current_hash;
+        }
+
+    public:
+        /// @brief  Simple type to hold the string representation of the hash.
+        struct hash_string_type final {
+            char hash[(poly1305::hash_size * 2) + 1] = {};
+        };
+
+        /// @brief  Convert a hash into its string representation.
+        /// @param  hash The hash to convert.
+        /// @return The string representation of the hash, with null termination.
+        constexpr static hash_string_type hash_to_string(const hash_type& hash) {
+            hash_string_type output;
+            constexpr const char* hex_characters = "0123456789ABCDEF";
+            for (unsigned int index = 0; index < (poly1305::hash_size * 2); ++index) {
+                output.hash[index] = hex_characters[(hash.data[index / 2] >> ((1 - (index % 2)) * 4)) & 0xF];
+            }
+            output.hash[poly1305::hash_size * 2] = 0;
+            return output;
+        }
+
+    public:
+        /// @brief  Compute a Poly1305 tag for a buffer of data.
+        /// @param  data Input data pointer.
+        /// @param  length Valid length of the input data pointer.
+        /// @param  key The 32-byte key for the poly1305 computation.
+        static hash_type hash(const char* data, const unsigned long long int length, const key_type& key) {
+            poly1305 hash_function(key);
+            hash_function.reset();
+            hash_function.consume(data, length);
+            hash_function.finalise();
+            return hash_function.get_hash();
+        }
+    };
+}
+
+#undef GTL_POLY1305_ASSERT
+
+#endif // GTL_CRYPTO_MAC_POLY1305_HPP

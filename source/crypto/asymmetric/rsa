@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_CRYPTO_RSA_HPP
-#define GTL_CRYPTO_RSA_HPP
+#ifndef GTL_CRYPTO_ASYMMETRIC_RSA_HPP
+#define GTL_CRYPTO_ASYMMETRIC_RSA_HPP
 
 // Summary: An implementation of the RSA (Rivest-Shamir-Adleman) asymmetric encryption algorithm.
 
@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define GTL_RSA_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
-#include <hash/sha2>
+#include <crypto/hash/sha2>
 #include <math/big_unsigned>
 
 #if defined(_MSC_VER)
@@ -869,4 +869,4 @@ namespace gtl {
 
 #undef GTL_RSA_ASSERT
 
-#endif // GTL_CRYPTO_RSA_HPP
+#endif // GTL_CRYPTO_ASYMMETRIC_RSA_HPP

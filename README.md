@@ -30,11 +30,20 @@ The current classes are as described below:
 | [container](source/container) | [static_ring_buffer](source/container/static_ring_buffer) | Statically sized thread\-safe multi\-producer multi\-consumer ring\-buffer. | :heavy_check_mark: |
 | [container](source/container) | [static_variant](source/container/static_variant) | A static\_variant class that can contain any one of its listed template types. | :construction: |
 | [container](source/container) | [static_view](source/container/static_view) | A non\-owning static\_view into multi\-dimensional memory. | :construction: |
-| [crypto](source/crypto) | [aes](source/crypto/aes) | An implementation of the aes encryption algorithm for 128, 192, and 256 bits. | :heavy_check_mark: |
-| [crypto](source/crypto) | [block_cipher](source/crypto/block_cipher) | An implementation of many block cipher modes to be used with block ciphers like aes<128>. | :heavy_check_mark: |
-| [crypto](source/crypto) | [chacha](source/crypto/chacha) | An implementation of the chacha encryption algorithm. | :heavy_check_mark: |
-| [crypto](source/crypto) | [rc4](source/crypto/rc4) | An implementation of the rc4 or arc4 encryption algorithm. | :construction: |
-| [crypto](source/crypto) | [rsa](source/crypto/rsa) | An implementation of the RSA (Rivest\-Shamir\-Adleman) asymmetric encryption algorithm. | :heavy_check_mark: |
+| [crypto/asymmetric](source/crypto/asymmetric) | [rsa](source/crypto/asymmetric/rsa) | An implementation of the RSA (Rivest\-Shamir\-Adleman) asymmetric encryption algorithm. | :heavy_check_mark: |
+| [crypto/hash](source/crypto/hash) | [crc](source/crypto/hash/crc) | An implementation of the crc hashing function for 8, 16, 32, and 64 bits. | :heavy_check_mark: |
+| [crypto/hash](source/crypto/hash) | [md5](source/crypto/hash/md5) | An implementation of the md5 hashing function. | :heavy_check_mark: |
+| [crypto/hash](source/crypto/hash) | [sha0](source/crypto/hash/sha0) | An implementation of the sha0 hashing function. | :heavy_check_mark: |
+| [crypto/hash](source/crypto/hash) | [sha1](source/crypto/hash/sha1) | An implementation of the sha1 hashing function. | :heavy_check_mark: |
+| [crypto/hash](source/crypto/hash) | [sha2](source/crypto/hash/sha2) | An implementation of the sha2 hashing function for 224, 256, 384, and 512 bits. | :heavy_check_mark: |
+| [crypto/hash](source/crypto/hash) | [sha3](source/crypto/hash/sha3) | An implementation of the sha3 hashing function for 224, 256, 384, and 512 bits. | :heavy_check_mark: |
+| [crypto/kdf](source/crypto/kdf) | [hkdf](source/crypto/kdf/hkdf) | An implementation of the HMAC\-based Extract\-and\-Expand Key Derivation Function (HKDF) as per RFC 5869. | :heavy_check_mark: |
+| [crypto/mac](source/crypto/mac) | [hmac](source/crypto/mac/hmac) | An implementation of the HMAC message authentication code. | :heavy_check_mark: |
+| [crypto/mac](source/crypto/mac) | [poly1305](source/crypto/mac/poly1305) | An implementation of the poly1305 message authentication code. | :heavy_check_mark: |
+| [crypto/symmetric](source/crypto/symmetric) | [aes](source/crypto/symmetric/aes) | An implementation of the aes encryption algorithm for 128, 192, and 256 bits. | :heavy_check_mark: |
+| [crypto/symmetric](source/crypto/symmetric) | [block_cipher](source/crypto/symmetric/block_cipher) | An implementation of many block cipher modes to be used with block ciphers like aes<128>. | :heavy_check_mark: |
+| [crypto/symmetric](source/crypto/symmetric) | [chacha](source/crypto/symmetric/chacha) | An implementation of the chacha encryption algorithm. | :heavy_check_mark: |
+| [crypto/symmetric](source/crypto/symmetric) | [rc4](source/crypto/symmetric/rc4) | An implementation of the rc4 or arc4 encryption algorithm. | :construction: |
 | [debug](source/debug) | [access](source/debug/access) | Classes and macros for accessing class private members. | :heavy_check_mark: |
 | [debug](source/debug) | [assert](source/debug/assert) | Macros that define an assert macro that optionally takes a format string and parameters. | :heavy_check_mark: |
 | [debug](source/debug) | [assume](source/debug/assume) | Macro that hints to the compiler when a statement should be assumed true. | :heavy_check_mark: |
@@ -56,12 +65,6 @@ The current classes are as described below:
 | [game](source/game) | [puzzle_cube](source/game/puzzle_cube) | Solver for 3x3 puzzle cubes. | :construction: |
 | [game](source/game) | [sudoku](source/game/sudoku) | A sudoku solver for standard 9x9 grids. | :construction: |
 | [game](source/game) | [tic_tac_toe](source/game/tic_tac_toe) | Solver for the game tic\-tac\-toe on a 3x3 board. | :construction: |
-| [hash](source/hash) | [crc](source/hash/crc) | An implementation of the crc hashing function for 8, 16, 32, and 64 bits. | :heavy_check_mark: |
-| [hash](source/hash) | [md5](source/hash/md5) | An implementation of the md5 hashing function. | :heavy_check_mark: |
-| [hash](source/hash) | [sha0](source/hash/sha0) | An implementation of the sha0 hashing function. | :heavy_check_mark: |
-| [hash](source/hash) | [sha1](source/hash/sha1) | An implementation of the sha1 hashing function. | :heavy_check_mark: |
-| [hash](source/hash) | [sha2](source/hash/sha2) | An implementation of the sha2 hashing function for 224, 256, 384, and 512 bits. | :heavy_check_mark: |
-| [hash](source/hash) | [sha3](source/hash/sha3) | An implementation of the sha3 hashing function for 224, 256, 384, and 512 bits. | :heavy_check_mark: |
 | [io](source/io) | [file](source/io/file) | An RAII file handle that wraps file operation functions. | :construction: |
 | [io](source/io) | [paths](source/io/paths) | Collection of cross platform functions to provide useful paths. | :heavy_check_mark: |
 | [io](source/io) | [socket](source/io/socket) | Cross platform socket class, supporting tcp (server and client) and udp protocols. | :construction: |

@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <testbench/optimise.tests.hpp>
 #include <testbench/require.tests.hpp>
 
-#include <hash/md5>
+#include <crypto/hash/md5>
 
 #if defined(_MSC_VER)
 #pragma warning(push, 0)

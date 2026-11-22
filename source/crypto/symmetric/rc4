@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifndef GTL_CRYPTO_RC4_HPP
-#define GTL_CRYPTO_RC4_HPP
+#ifndef GTL_CRYPTO_SYMMETRIC_RC4_HPP
+#define GTL_CRYPTO_SYMMETRIC_RC4_HPP
 
 // Summary: An implementation of the rc4 or arc4 encryption algorithm. [wip]
 
@@ -111,4 +111,4 @@ namespace gtl {
     };
 }
 
-#endif // GTL_CRYPTO_RC4_HPP
+#endif // GTL_CRYPTO_SYMMETRIC_RC4_HPP
