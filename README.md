@@ -30,6 +30,7 @@ The current classes are as described below:
 | [container](source/container) | [static_ring_buffer](source/container/static_ring_buffer) | Statically sized thread\-safe multi\-producer multi\-consumer ring\-buffer. | :heavy_check_mark: |
 | [container](source/container) | [static_variant](source/container/static_variant) | A static\_variant class that can contain any one of its listed template types. | :construction: |
 | [container](source/container) | [static_view](source/container/static_view) | A non\-owning static\_view into multi\-dimensional memory. | :construction: |
+| [crypto/asymmetric](source/crypto/asymmetric) | [ed25519](source/crypto/asymmetric/ed25519) | An implementation of the ed25519 elliptic curve digital signature algorithm as per RFC 8032. | :heavy_check_mark: |
 | [crypto/asymmetric](source/crypto/asymmetric) | [elliptic_curve](source/crypto/asymmetric/elliptic_curve) | An implementation of key agreement and digital signatures using the NIST P\-256 and P\-384 elliptic curves. | :heavy_check_mark: |
 | [crypto/asymmetric](source/crypto/asymmetric) | [rsa](source/crypto/asymmetric/rsa) | An implementation of the RSA (Rivest\-Shamir\-Adleman) asymmetric encryption algorithm. | :heavy_check_mark: |
 | [crypto/asymmetric](source/crypto/asymmetric) | [x25519](source/crypto/asymmetric/x25519) | An implementation of the x25519 elliptic curve Diffie\-Hellman key agreement function as per RFC 7748. | :heavy_check_mark: |

@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <testbench/comparison.tests.hpp>
 #include <testbench/optimise.tests.hpp>
+#include <testbench/print.tests.hpp>
 #include <testbench/require.tests.hpp>
 
 #include <protocol/http>
@@ -27,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 #include <atomic>
+#include <chrono>
 #include <string>
 #include <thread>
 #include <type_traits>
@@ -517,4 +519,74 @@ TEST(http, evaluate, client_and_server) {
     // Nothing is listening once the server has stopped.
     listener.close();
     REQUIRE(gtl::http::send_request(gtl::socket::ip_loopback, port, request, response, 1000) == false);
+}
+
+namespace {
+    // The sample server and client below show how to use the http class, and can be tried against each other or against other programs.
+    // By default the server only serves a client that is already trying to connect, and the client only tries to connect once, so that the tests do not wait.
+    // Set this to true to make the server wait for a client, and the client wait for a server.
+    // Then run this test, and while the server is waiting either run this test again, so that the client of the second run connects, or use:
+    //     curl http://127.0.0.1:48080/hello
+    constexpr const bool sample_wait = false;
+
+    // The longest time that the sample server and client wait for each other.
+    constexpr const unsigned int sample_wait_seconds = 60;
+
+    // The port of the sample server.
+    constexpr const unsigned short sample_port = 48080;
+}
+
+TEST(http, sample, server) {
+    gtl::socket listener;
+    if (!listener.open(gtl::socket::tcp_server{ gtl::socket::ip_loopback, sample_port })) {
+        PRINT("The sample server could not listen on port %u, which may be in use by another run of this test.\n", static_cast<unsigned int>(sample_port));
+        return;
+    }
+
+    // Wait for a client to connect, accepting a connection blocks so only do so once there is one.
+    const std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::now() + std::chrono::seconds(sample_wait ? sample_wait_seconds : 0);
+    if (sample_wait) {
+        PRINT("The sample server is waiting for a client on port %u.\n", static_cast<unsigned int>(sample_port));
+    }
+    while (!listener.is_data_available() && (std::chrono::steady_clock::now() < deadline)) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    if (!listener.is_data_available()) {
+        return;
+    }
+    gtl::socket connection;
+    REQUIRE(listener.accept(connection) == true);
+
+    // Answer every request that the client sends on the connection.
+    const unsigned int served = gtl::http::serve(connection, [](const gtl::http::request_type& request) -> gtl::http::response_type {
+        gtl::http::response_type response;
+        response.headers.push_back(gtl::http::header_type{ "Content-Type", "text/plain" });
+        response.body = "Hello from the gtl http server, you asked for " + request.target + "\n";
+        return response;
+    });
+    PRINT("The sample server answered %u requests.\n", served);
+}
+
+TEST(http, sample, client) {
+    gtl::http::request_type request;
+    request.target = "/hello";
+    request.headers.push_back(gtl::http::header_type{ "Host", "localhost" });
+
+    // Send the request, trying again until there is a server to send it to.
+    gtl::http::response_type response;
+    bool received = false;
+    const std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::now() + std::chrono::seconds(sample_wait ? sample_wait_seconds : 0);
+    do {
+        received = gtl::http::send_request(gtl::socket::ip_loopback, sample_port, request, response, 5000);
+        if (!received && sample_wait) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    } while (!received && (std::chrono::steady_clock::now() < deadline));
+    if (!received) {
+        // There is only a server when one is waiting in another run of this test.
+        return;
+    }
+    PRINT("The sample client received: %u %s\n%s", response.status, response.reason.c_str(), response.body.c_str());
+    REQUIRE(response.status == 200);
+    REQUIRE(response.body == "Hello from the gtl http server, you asked for /hello\n");
 }

@@ -1,0 +1,629 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_CRYPTO_ASYMMETRIC_ED25519_HPP
+#define GTL_CRYPTO_ASYMMETRIC_ED25519_HPP
+
+// Summary: An implementation of the ed25519 elliptic curve digital signature algorithm as per RFC 8032.
+
+#include <crypto/hash/sha2>
+
+namespace gtl {
+    /// @brief  The ed25519 class implements digital signatures using the twisted edwards form of curve25519.
+    /// @note   Signing takes the same sequence of steps whatever the values of the key and the message, so the time taken does not depend on them.
+    /// @note   Signatures are deterministic, so no random numbers are needed and signing the same message twice gives the same signature.
+    class ed25519 final {
+    public:
+        /// @brief  Size of a private key in bytes, a private key is thirty two random bytes that are sometimes called the seed.
+        constexpr static const unsigned int private_key_size = 32;
+
+        /// @brief  Size of a public key in bytes.
+        constexpr static const unsigned int public_key_size = 32;
+
+        /// @brief  Size of a signature in bytes.
+        constexpr static const unsigned int signature_size = 64;
+
+    private:
+        /// @brief  The hash function used by the algorithm.
+        using hash_function_type = gtl::sha2<512>;
+
+        /// @brief  The size of the output of the hash function.
+        constexpr static const unsigned int hash_size = 64;
+
+        /// @brief  The number of limbs used to hold an element of the field.
+        constexpr static const unsigned int limb_count = 16;
+
+        /// @brief  An element of the field of integers modulo 2^255 - 19, held as sixteen limbs of sixteen bits each, least significant first.
+        /// @note   The limbs are signed and wider than sixteen bits so that additions and subtractions can be made without carrying.
+        struct element_type final {
+            long long int limbs[ed25519::limb_count] = {};
+        };
+
+        /// @brief  A point on the curve in extended coordinates, representing the affine point (x / z, y / z), with t equal to x * y / z.
+        struct point_type final {
+            element_type x;
+            element_type y;
+            element_type z;
+            element_type t;
+        };
+
+    private:
+        /// @brief  Overwrite an object with zeros in a way that is not optimised away.
+        /// @param  object The object to overwrite.
+        template <typename type>
+        static void wipe(type& object) {
+            volatile unsigned char* bytes = reinterpret_cast<unsigned char*>(&object);
+            for (unsigned long long int index = 0; index < sizeof(type); ++index) {
+                bytes[index] = 0;
+            }
+        }
+
+        /// @brief  Divide a value by a power of two, rounding towards negative infinity, without relying on how negative values are shifted.
+        /// @param  value The value to divide.
+        /// @param  divisor The divisor, must be a power of two.
+        /// @return The quotient.
+        constexpr static long long int floor_divide(const long long int value, const long long int divisor) {
+            // Removing the low bits first makes the division exact, even when the value is negative.
+            return (value - (value & (divisor - 1))) / divisor;
+        }
+
+        /// @brief  Make an element from its limbs.
+        static element_type make_element(const long long int (&limbs)[ed25519::limb_count]) {
+            element_type element;
+            for (unsigned int i = 0; i < ed25519::limb_count; ++i) {
+                element.limbs[i] = limbs[i];
+            }
+            return element;
+        }
+
+        /// @brief  Get the curve constant d.
+        static element_type get_d() {
+            constexpr const long long int limbs[ed25519::limb_count] = { 0x78A3, 0x1359, 0x4DCA, 0x75EB, 0xD8AB, 0x4141, 0x0A4D, 0x0070, 0xE898, 0x7779, 0x4079, 0x8CC7, 0xFE73, 0x2B6F, 0x6CEE, 0x5203 };
+            return ed25519::make_element(limbs);
+        }
+
+        /// @brief  Get twice the curve constant d.
+        static element_type get_d2() {
+            constexpr const long long int limbs[ed25519::limb_count] = { 0xF159, 0x26B2, 0x9B94, 0xEBD6, 0xB156, 0x8283, 0x149A, 0x00E0, 0xD130, 0xEEF3, 0x80F2, 0x198E, 0xFCE7, 0x56DF, 0xD9DC, 0x2406 };
+            return ed25519::make_element(limbs);
+        }
+
+        /// @brief  Get a square root of minus one.
+        static element_type get_root_minus_one() {
+            constexpr const long long int limbs[ed25519::limb_count] = { 0xA0B0, 0x4A0E, 0x1B27, 0xC4EE, 0xE478, 0xAD2F, 0x1806, 0x2F43, 0xD7A7, 0x3DFB, 0x0099, 0x2B4D, 0xDF0B, 0x4FC1, 0x2480, 0x2B83 };
+            return ed25519::make_element(limbs);
+        }
+
+        /// @brief  Get the base point of the curve.
+        static point_type get_base_point() {
+            constexpr const long long int x[ed25519::limb_count] = { 0xD51A, 0x8F25, 0x2D60, 0xC956, 0xA7B2, 0x9525, 0xC760, 0x692C, 0xDC5C, 0xFDD6, 0xE231, 0xC0A4, 0x53FE, 0xCD6E, 0x36D3, 0x2169 };
+            constexpr const long long int y[ed25519::limb_count] = { 0x6658, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666 };
+            point_type point;
+            point.x = ed25519::make_element(x);
+            point.y = ed25519::make_element(y);
+            point.z.limbs[0] = 1;
+            point.t = ed25519::multiply(point.x, point.y);
+            return point;
+        }
+
+    private:
+        /// @brief  Carry the excess of each limb into the next, leaving every limb but the first in the range of sixteen bits.
+        /// @param  element The element to carry.
+        /// @note   The excess of the last limb wraps around to the first multiplied by 38, as 2^256 is 38 modulo 2^255 - 19.
+        static void carry(element_type& element) {
+            for (unsigned int i = 0; i < ed25519::limb_count; ++i) {
+                const long long int high = ed25519::floor_divide(element.limbs[i], 0x10000);
+                element.limbs[i] -= high * 0x10000;
+                if (i < (ed25519::limb_count - 1)) {
+                    element.limbs[i + 1] += high;
+                }
+                else {
+                    element.limbs[0] += 38 * high;
+                }
+            }
+        }
+
+        /// @brief  Swap two elements if a bit is set, without branching on the bit.
+        /// @param  lhs The first element.
+        /// @param  rhs The second element.
+        /// @param  bit The bit that selects if the elements are swapped, must be zero or one.
+        static void conditional_swap(element_type& lhs, element_type& rhs, const long long int bit) {
+            const long long int mask = -bit;
+            for (unsigned int i = 0; i < ed25519::limb_count; ++i) {
+                const long long int difference = mask & (lhs.limbs[i] ^ rhs.limbs[i]);
+                lhs.limbs[i] ^= difference;
+                rhs.limbs[i] ^= difference;
+            }
+        }
+
+        /// @brief  Convert little endian bytes into an element, ignoring the most significant bit.
+        /// @param  bytes The bytes to convert, must be thirty two bytes long.
+        /// @return The element.
+        static element_type unpack(const unsigned char* bytes) {
+            element_type element;
+            for (unsigned int i = 0; i < ed25519::limb_count; ++i) {
+                element.limbs[i] = static_cast<long long int>(bytes[2 * i]) + (static_cast<long long int>(bytes[(2 * i) + 1]) * 0x100);
+            }
+            element.limbs[ed25519::limb_count - 1] &= 0x7FFF;
+            return element;
+        }
+
+        /// @brief  Convert an element into little endian bytes, fully reducing it modulo 2^255 - 19.
+        /// @param  element The element to convert.
+        /// @param  bytes The buffer that receives the bytes, must be thirty two bytes long.
+        static void pack(const element_type& element, unsigned char* bytes) {
+            element_type reduced = element;
+            ed25519::carry(reduced);
+            ed25519::carry(reduced);
+            ed25519::carry(reduced);
+            // The element is now less than 2^256, so conditionally subtracting the modulus twice leaves it fully reduced.
+            for (unsigned int iteration = 0; iteration < 2; ++iteration) {
+                element_type subtracted;
+                long long int borrow = 0;
+                for (unsigned int i = 0; i < ed25519::limb_count; ++i) {
+                    const long long int modulus_limb = (i == 0) ? 0xFFED : ((i == (ed25519::limb_count - 1)) ? 0x7FFF : 0xFFFF);
+                    const long long int difference = reduced.limbs[i] - modulus_limb - borrow;
+                    // The borrow is the sign bit of the difference.
+                    borrow = static_cast<long long int>(static_cast<unsigned long long int>(difference) >> 63);
+                    subtracted.limbs[i] = difference & 0xFFFF;
+                }
+                // Keep the subtracted value only if the subtraction did not borrow.
+                ed25519::conditional_swap(reduced, subtracted, 1 - borrow);
+                ed25519::wipe(subtracted);
+            }
+            for (unsigned int i = 0; i < ed25519::limb_count; ++i) {
+                bytes[2 * i] = static_cast<unsigned char>(reduced.limbs[i] & 0xFF);
+                bytes[(2 * i) + 1] = static_cast<unsigned char>((reduced.limbs[i] / 0x100) & 0xFF);
+            }
+            ed25519::wipe(reduced);
+        }
+
+        /// @brief  Add two elements, without carrying.
+        static element_type add(const element_type& lhs, const element_type& rhs) {
+            element_type result;
+            for (unsigned int i = 0; i < ed25519::limb_count; ++i) {
+                result.limbs[i] = lhs.limbs[i] + rhs.limbs[i];
+            }
+            return result;
+        }
+
+        /// @brief  Subtract two elements, without carrying.
+        static element_type subtract(const element_type& lhs, const element_type& rhs) {
+            element_type result;
+            for (unsigned int i = 0; i < ed25519::limb_count; ++i) {
+                result.limbs[i] = lhs.limbs[i] - rhs.limbs[i];
+            }
+            return result;
+        }
+
+        /// @brief  Multiply two elements.
+        /// @return The product of the elements, carried.
+        static element_type multiply(const element_type& lhs, const element_type& rhs) {
+            long long int product[(2 * ed25519::limb_count) - 1] = {};
+            for (unsigned int i = 0; i < ed25519::limb_count; ++i) {
+                for (unsigned int j = 0; j < ed25519::limb_count; ++j) {
+                    product[i + j] += lhs.limbs[i] * rhs.limbs[j];
+                }
+            }
+            // The limbs above 2^256 wrap around multiplied by 38, as 2^256 is 38 modulo 2^255 - 19.
+            for (unsigned int i = 0; i < (ed25519::limb_count - 1); ++i) {
+                product[i] += 38 * product[i + ed25519::limb_count];
+            }
+            element_type result;
+            for (unsigned int i = 0; i < ed25519::limb_count; ++i) {
+                result.limbs[i] = product[i];
+            }
+            ed25519::carry(result);
+            ed25519::carry(result);
+            ed25519::wipe(product);
+            return result;
+        }
+
+        /// @brief  Square an element.
+        static element_type square(const element_type& value) {
+            return ed25519::multiply(value, value);
+        }
+
+        /// @brief  Compute the multiplicative inverse of an element.
+        /// @return The inverse of the element, or zero if the element is zero.
+        static element_type invert(const element_type& value) {
+            // The inverse is the element raised to the power of the modulus minus two, which is 2^255 - 21.
+            // Every bit of that exponent is set other than bits two and four.
+            element_type result = value;
+            for (int bit = 253; bit >= 0; --bit) {
+                result = ed25519::square(result);
+                if ((bit != 2) && (bit != 4)) {
+                    result = ed25519::multiply(result, value);
+                }
+            }
+            return result;
+        }
+
+        /// @brief  Raise an element to the power of (modulus - 5) / 8, which is 2^252 - 3, the power used to compute square roots.
+        static element_type power_for_root(const element_type& value) {
+            // Every bit of that exponent is set other than bit one.
+            element_type result = value;
+            for (int bit = 250; bit >= 0; --bit) {
+                result = ed25519::square(result);
+                if (bit != 1) {
+                    result = ed25519::multiply(result, value);
+                }
+            }
+            return result;
+        }
+
+        /// @brief  Check if two elements are equal modulo 2^255 - 19.
+        static bool is_equal(const element_type& lhs, const element_type& rhs) {
+            unsigned char lhs_bytes[32] = {};
+            unsigned char rhs_bytes[32] = {};
+            ed25519::pack(lhs, lhs_bytes);
+            ed25519::pack(rhs, rhs_bytes);
+            unsigned int difference = 0;
+            for (unsigned int i = 0; i < 32; ++i) {
+                difference |= static_cast<unsigned int>(lhs_bytes[i] ^ rhs_bytes[i]);
+            }
+            return (difference == 0);
+        }
+
+        /// @brief  Get the least significant bit of an element once it is fully reduced, which is what tells an x coordinate from its negative.
+        static unsigned char get_parity(const element_type& value) {
+            unsigned char bytes[32] = {};
+            ed25519::pack(value, bytes);
+            return static_cast<unsigned char>(bytes[0] & 1);
+        }
+
+    private:
+        /// @brief  Add two points on the curve.
+        /// @param  lhs The left hand side of the addition.
+        /// @param  rhs The right hand side of the addition.
+        /// @return The sum of the points.
+        /// @note   The same steps give the correct result for every pair of points, including equal points.
+        static point_type point_add(const point_type& lhs, const point_type& rhs) {
+            element_type a = ed25519::multiply(ed25519::subtract(lhs.y, lhs.x), ed25519::subtract(rhs.y, rhs.x));
+            element_type b = ed25519::multiply(ed25519::add(lhs.x, lhs.y), ed25519::add(rhs.x, rhs.y));
+            element_type c = ed25519::multiply(ed25519::multiply(lhs.t, rhs.t), ed25519::get_d2());
+            element_type d = ed25519::multiply(lhs.z, rhs.z);
+            d = ed25519::add(d, d);
+            element_type e = ed25519::subtract(b, a);
+            element_type f = ed25519::subtract(d, c);
+            element_type g = ed25519::add(d, c);
+            element_type h = ed25519::add(b, a);
+            point_type result;
+            result.x = ed25519::multiply(e, f);
+            result.y = ed25519::multiply(h, g);
+            result.z = ed25519::multiply(g, f);
+            result.t = ed25519::multiply(e, h);
+            ed25519::wipe(a);
+            ed25519::wipe(b);
+            ed25519::wipe(c);
+            ed25519::wipe(d);
+            ed25519::wipe(e);
+            ed25519::wipe(f);
+            ed25519::wipe(g);
+            ed25519::wipe(h);
+            return result;
+        }
+
+        /// @brief  Swap two points if a bit is set, without branching on the bit.
+        static void point_conditional_swap(point_type& lhs, point_type& rhs, const long long int bit) {
+            ed25519::conditional_swap(lhs.x, rhs.x, bit);
+            ed25519::conditional_swap(lhs.y, rhs.y, bit);
+            ed25519::conditional_swap(lhs.z, rhs.z, bit);
+            ed25519::conditional_swap(lhs.t, rhs.t, bit);
+        }
+
+        /// @brief  Multiply a point on the curve by a scalar.
+        /// @param  point The point to multiply.
+        /// @param  scalar The little endian scalar, must be thirty two bytes long.
+        /// @return The product.
+        /// @note   Every bit of the scalar is processed with the same steps, so the time taken does not depend on the scalar.
+        static point_type point_multiply(const point_type& point, const unsigned char* scalar) {
+            // Start from the neutral point, which is (0, 1).
+            point_type result;
+            result.y.limbs[0] = 1;
+            result.z.limbs[0] = 1;
+            point_type other = point;
+            for (int bit = 255; bit >= 0; --bit) {
+                const long long int swap = (scalar[bit / 8] >> (bit % 8)) & 1;
+                ed25519::point_conditional_swap(result, other, swap);
+                other = ed25519::point_add(other, result);
+                result = ed25519::point_add(result, result);
+                ed25519::point_conditional_swap(result, other, swap);
+            }
+            ed25519::wipe(other);
+            return result;
+        }
+
+        /// @brief  Encode a point as thirty two bytes: its y coordinate, with the parity of its x coordinate in the most significant bit.
+        static void point_pack(const point_type& point, unsigned char* bytes) {
+            element_type inverse = ed25519::invert(point.z);
+            element_type x = ed25519::multiply(point.x, inverse);
+            element_type y = ed25519::multiply(point.y, inverse);
+            ed25519::pack(y, bytes);
+            bytes[31] = static_cast<unsigned char>(bytes[31] ^ (ed25519::get_parity(x) << 7));
+            ed25519::wipe(inverse);
+            ed25519::wipe(x);
+            ed25519::wipe(y);
+        }
+
+        /// @brief  Decode a point from thirty two bytes, giving its negative, which is what verifying a signature needs.
+        /// @param  bytes The encoded point.
+        /// @param  point Receives the negative of the point.
+        /// @return true if the bytes are the canonical encoding of a point on the curve.
+        static bool point_unpack_negative(const unsigned char* bytes, point_type& point) {
+            point.z = element_type();
+            point.z.limbs[0] = 1;
+            point.y = ed25519::unpack(bytes);
+            // The y coordinate must be fully reduced, which it is if encoding it again gives the same bytes.
+            unsigned char canonical[32] = {};
+            ed25519::pack(point.y, canonical);
+            unsigned int difference = static_cast<unsigned int>((canonical[31] ^ bytes[31]) & 0x7F);
+            for (unsigned int i = 0; i < 31; ++i) {
+                difference |= static_cast<unsigned int>(canonical[i] ^ bytes[i]);
+            }
+            if (difference != 0) {
+                return false;
+            }
+            // The curve equation gives x^2 = (y^2 - 1) / (d * y^2 + 1), so x is a square root of that fraction.
+            const element_type y_squared = ed25519::square(point.y);
+            const element_type numerator = ed25519::subtract(y_squared, point.z);
+            const element_type denominator = ed25519::add(point.z, ed25519::multiply(y_squared, ed25519::get_d()));
+            const element_type denominator_2 = ed25519::square(denominator);
+            const element_type denominator_4 = ed25519::square(denominator_2);
+            const element_type denominator_6 = ed25519::multiply(denominator_4, denominator_2);
+            element_type candidate = ed25519::multiply(ed25519::multiply(denominator_6, numerator), denominator);
+            candidate = ed25519::power_for_root(candidate);
+            candidate = ed25519::multiply(candidate, numerator);
+            candidate = ed25519::multiply(candidate, denominator);
+            candidate = ed25519::multiply(candidate, denominator);
+            point.x = ed25519::multiply(candidate, denominator);
+            // The candidate is either a root, a root once multiplied by the square root of minus one, or there is no root.
+            element_type check = ed25519::multiply(ed25519::square(point.x), denominator);
+            if (!ed25519::is_equal(check, numerator)) {
+                point.x = ed25519::multiply(point.x, ed25519::get_root_minus_one());
+            }
+            check = ed25519::multiply(ed25519::square(point.x), denominator);
+            if (!ed25519::is_equal(check, numerator)) {
+                return false;
+            }
+            // Choose the root with the encoded parity, then negate it.
+            if (ed25519::get_parity(point.x) == (bytes[31] >> 7)) {
+                point.x = ed25519::subtract(element_type(), point.x);
+            }
+            point.t = ed25519::multiply(point.x, point.y);
+            return true;
+        }
+
+    private:
+        /// @brief  Get a byte of the order of the base point, which is 2^252 + 27742317777372353535851937790883648493, little endian.
+        constexpr static long long int get_order_byte(const unsigned int index) {
+            constexpr const unsigned char order[32] = {
+                0xED,
+                0xD3,
+                0xF5,
+                0x5C,
+                0x1A,
+                0x63,
+                0x12,
+                0x58,
+                0xD6,
+                0x9C,
+                0xF7,
+                0xA2,
+                0xDE,
+                0xF9,
+                0xDE,
+                0x14,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x10
+            };
+            return order[index];
+        }
+
+        /// @brief  Reduce a number of up to sixty four bytes modulo the order of the base point.
+        /// @param  value The number as sixty four values of one byte each, little endian, which are used as working space.
+        /// @param  output Receives the thirty two byte little endian result.
+        static void reduce_scalar(long long int (&value)[64], unsigned char* output) {
+            // Remove the high bytes one at a time by subtracting multiples of the order.
+            for (unsigned int i = 63; i >= 32; --i) {
+                long long int carry = 0;
+                unsigned int j = i - 32;
+                for (; j < (i - 12); ++j) {
+                    value[j] += carry - (16 * value[i] * ed25519::get_order_byte(j - (i - 32)));
+                    carry = ed25519::floor_divide(value[j] + 128, 256);
+                    value[j] -= carry * 256;
+                }
+                value[j] += carry;
+                value[i] = 0;
+            }
+            // Remove what is left above the order, then correct for having removed one multiple too many.
+            long long int carry = 0;
+            const long long int top = ed25519::floor_divide(value[31], 16);
+            for (unsigned int j = 0; j < 32; ++j) {
+                value[j] += carry - (top * ed25519::get_order_byte(j));
+                carry = ed25519::floor_divide(value[j], 256);
+                value[j] &= 255;
+            }
+            for (unsigned int j = 0; j < 32; ++j) {
+                value[j] -= carry * ed25519::get_order_byte(j);
+            }
+            for (unsigned int i = 0; i < 32; ++i) {
+                value[i + 1] += ed25519::floor_divide(value[i], 256);
+                output[i] = static_cast<unsigned char>(value[i] & 255);
+            }
+        }
+
+        /// @brief  Reduce a hash modulo the order of the base point.
+        /// @param  hash The sixty four byte little endian hash.
+        /// @param  output Receives the thirty two byte little endian result.
+        static void reduce_hash(const unsigned char* hash, unsigned char* output) {
+            long long int value[64] = {};
+            for (unsigned int i = 0; i < 64; ++i) {
+                value[i] = hash[i];
+            }
+            ed25519::reduce_scalar(value, output);
+            ed25519::wipe(value);
+        }
+
+        /// @brief  Hash the concatenation of up to three buffers.
+        static void hash_parts(const unsigned char* first, const unsigned long long int first_length, const unsigned char* second, const unsigned long long int second_length, const unsigned char* third, const unsigned long long int third_length, unsigned char* output) {
+            hash_function_type hash_function;
+            hash_function.reset();
+            if (first_length != 0) {
+                hash_function.consume(reinterpret_cast<const char*>(first), first_length);
+            }
+            if (second_length != 0) {
+                hash_function.consume(reinterpret_cast<const char*>(second), second_length);
+            }
+            if (third_length != 0) {
+                hash_function.consume(reinterpret_cast<const char*>(third), third_length);
+            }
+            hash_function.finalise();
+            for (unsigned int i = 0; i < ed25519::hash_size; ++i) {
+                output[i] = hash_function.get_hash().data[i];
+            }
+            ed25519::wipe(hash_function);
+        }
+
+        /// @brief  Expand a private key into the scalar that multiplies the base point and the prefix that makes signatures deterministic.
+        /// @param  private_key The private key.
+        /// @param  expanded Receives sixty four bytes, the clamped scalar followed by the prefix.
+        static void expand_private_key(const unsigned char* private_key, unsigned char* expanded) {
+            ed25519::hash_parts(private_key, ed25519::private_key_size, nullptr, 0, nullptr, 0, expanded);
+            // Clamp the scalar, clearing the cofactor bits and setting the top bit.
+            expanded[0] &= 248;
+            expanded[31] &= 127;
+            expanded[31] |= 64;
+        }
+
+    public:
+        /// @brief  Generate the public key that corresponds to a private key.
+        /// @param  private_key The private key, private_key_size bytes that must be random and kept secret.
+        /// @param  public_key The buffer that receives the public key, must be public_key_size bytes long.
+        static void generate_public_key(const unsigned char* private_key, unsigned char* public_key) {
+            unsigned char expanded[ed25519::hash_size] = {};
+            ed25519::expand_private_key(private_key, expanded);
+            point_type point = ed25519::point_multiply(ed25519::get_base_point(), expanded);
+            ed25519::point_pack(point, public_key);
+            ed25519::wipe(expanded);
+            ed25519::wipe(point);
+        }
+
+        /// @brief  Sign a message.
+        /// @param  private_key The private key, must be private_key_size bytes long.
+        /// @param  message The message to sign.
+        /// @param  message_length The length of the message, which may be zero.
+        /// @param  signature The buffer that receives the signature, must be signature_size bytes long.
+        /// @note   The whole message is signed, not a digest of it, and it is read twice.
+        static void sign(const unsigned char* private_key, const unsigned char* message, const unsigned long long int message_length, unsigned char* signature) {
+            unsigned char expanded[ed25519::hash_size] = {};
+            unsigned char public_key[ed25519::public_key_size] = {};
+            ed25519::expand_private_key(private_key, expanded);
+            point_type point = ed25519::point_multiply(ed25519::get_base_point(), expanded);
+            ed25519::point_pack(point, public_key);
+
+            // The nonce is the hash of the prefix and the message, so it is different for every message and never needs random numbers.
+            unsigned char hash[ed25519::hash_size] = {};
+            unsigned char nonce[32] = {};
+            ed25519::hash_parts(&expanded[32], 32, message, message_length, nullptr, 0, hash);
+            ed25519::reduce_hash(hash, nonce);
+            // The first half of the signature is the base point multiplied by the nonce.
+            point = ed25519::point_multiply(ed25519::get_base_point(), nonce);
+            unsigned char encoded_point[32] = {};
+            ed25519::point_pack(point, encoded_point);
+
+            // The second half is nonce + hash(first half, public key, message) * scalar, modulo the order.
+            unsigned char challenge[32] = {};
+            ed25519::hash_parts(encoded_point, 32, public_key, ed25519::public_key_size, message, message_length, hash);
+            ed25519::reduce_hash(hash, challenge);
+            long long int value[64] = {};
+            for (unsigned int i = 0; i < 32; ++i) {
+                value[i] = nonce[i];
+            }
+            for (unsigned int i = 0; i < 32; ++i) {
+                for (unsigned int j = 0; j < 32; ++j) {
+                    value[i + j] += static_cast<long long int>(challenge[i]) * static_cast<long long int>(expanded[j]);
+                }
+            }
+            for (unsigned int i = 0; i < 32; ++i) {
+                signature[i] = encoded_point[i];
+            }
+            ed25519::reduce_scalar(value, &signature[32]);
+
+            ed25519::wipe(expanded);
+            ed25519::wipe(point);
+            ed25519::wipe(hash);
+            ed25519::wipe(nonce);
+            ed25519::wipe(value);
+        }
+
+        /// @brief  Verify a signature of a message.
+        /// @param  public_key The public key, must be public_key_size bytes long.
+        /// @param  message The message that was signed.
+        /// @param  message_length The length of the message.
+        /// @param  signature The signature to verify, must be signature_size bytes long.
+        /// @return true if the signature is valid for the message and the public key, false otherwise.
+        /// @note   A public key or signature that is not in its canonical encoding is not valid, so each message has only one valid signature for a key.
+        static bool verify(const unsigned char* public_key, const unsigned char* message, const unsigned long long int message_length, const unsigned char* signature) {
+            if ((public_key == nullptr) || (signature == nullptr) || ((message == nullptr) && (message_length != 0))) {
+                return false;
+            }
+            // The second half of the signature must be less than the order of the base point.
+            long long int borrow = 0;
+            for (unsigned int i = 0; i < 32; ++i) {
+                const long long int difference = static_cast<long long int>(signature[32 + i]) - ed25519::get_order_byte(i) - borrow;
+                borrow = (difference < 0) ? 1 : 0;
+            }
+            if (borrow == 0) {
+                return false;
+            }
+            point_type negative_key;
+            if (!ed25519::point_unpack_negative(public_key, negative_key)) {
+                return false;
+            }
+            // The first half of the signature must be the base point multiplied by the second half, minus the public key multiplied by the challenge.
+            unsigned char hash[ed25519::hash_size] = {};
+            unsigned char challenge[32] = {};
+            ed25519::hash_parts(signature, 32, public_key, ed25519::public_key_size, message, message_length, hash);
+            ed25519::reduce_hash(hash, challenge);
+            const point_type expected = ed25519::point_add(ed25519::point_multiply(negative_key, challenge), ed25519::point_multiply(ed25519::get_base_point(), &signature[32]));
+            unsigned char encoded_point[32] = {};
+            ed25519::point_pack(expected, encoded_point);
+            unsigned int difference = 0;
+            for (unsigned int i = 0; i < 32; ++i) {
+                difference |= static_cast<unsigned int>(encoded_point[i] ^ signature[i]);
+            }
+            return (difference == 0);
+        }
+    };
+}
+
+#endif // GTL_CRYPTO_ASYMMETRIC_ED25519_HPP

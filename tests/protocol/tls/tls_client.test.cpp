@@ -18,8 +18,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <testbench/comparison.tests.hpp>
 #include <testbench/optimise.tests.hpp>
+#include <testbench/print.tests.hpp>
 #include <testbench/require.tests.hpp>
 
+#include <crypto/certificate/pem>
+#include <crypto/certificate/x509>
+#include <io/socket>
+#include <protocol/http>
 #include <protocol/tls/tls_client>
 #include <protocol/tls/tls_server>
 
@@ -27,8 +32,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma warning(push, 0)
 #endif
 
+#include <chrono>
+#include <ctime>
+#include <fstream>
 #include <functional>
+#include <random>
 #include <string>
+#include <thread>
 #include <type_traits>
 #include <vector>
 
@@ -438,4 +448,171 @@ TEST(tls_client, evaluate, exchange) {
     static_cast<void>(pump(server, client));
     REQUIRE(read_all(client) == request);
     REQUIRE(client.get_state() == gtl::tls_client::state_type::closed);
+}
+
+namespace {
+    // The sample client below shows how to use the tls_client class with a socket and the http class, which together make an https client.
+    // It can be tried against the sample server in the tests of the tls_server class, or against other programs.
+    // By default the server only serves a client that is already trying to connect, and the client only tries to connect once, so that the tests do not wait.
+    // Set this to true, here and in the tests of the tls_server class, to make the server wait for a client, and the client wait for a server.
+    // The server then also writes its certificate to a file, so that other programs can be told to trust it:
+    //     curl --cacert gtl_sample_certificate.pem https://localhost:48443/hello
+    constexpr const bool sample_wait = false;
+
+    // The longest time that the sample server and client wait for each other.
+    constexpr const unsigned int sample_wait_seconds = 60;
+
+    // The port of the sample server.
+    constexpr const unsigned short sample_port = 48443;
+
+    /// @brief  The private key and certificate of the sample server, which are made here rather than loaded from files.
+    /// @note   The private key is fixed so that the sample client can make the same certificate and trust it.
+    /// @note   A real server must make its private key from an unpredictable source of random numbers, and keep it secret.
+    class sample_identity final {
+    public:
+        gtl::x509::private_key_type private_key;
+        std::vector<unsigned char> certificate;
+
+    public:
+        sample_identity() {
+            // An elliptic curve private key is just a number, here one whose bytes count up in sevens.
+            this->private_key.algorithm = gtl::x509::key_algorithm::secp256r1;
+            for (unsigned int i = 0; i < 32; ++i) {
+                this->private_key.scalar[i] = static_cast<unsigned char>((i * 7) + 1);
+            }
+            gtl::x509::public_key_type public_key;
+            REQUIRE(gtl::x509::get_public_key(this->private_key, public_key) == true);
+
+            // A certificate for the names that clients use to reach the server, valid from the start of 2026 to the start of 2036, signed with its own key.
+            const unsigned char serial_number[1] = { 0x01 };
+            const char* hosts[2] = { "localhost", "127.0.0.1" };
+            gtl::x509::description_type description;
+            description.subject.organisation = "gtl";
+            description.subject.common_name = "localhost";
+            description.serial_number = serial_number;
+            description.serial_number_length = sizeof(serial_number);
+            description.not_before = 1767225600ll;
+            description.not_after = 2082758400ll;
+            description.hosts = hosts;
+            description.hosts_length = 2;
+            this->certificate.resize(1024);
+            unsigned long long int length = 0;
+            // An elliptic curve key needs no random numbers to sign, so no random generator is given.
+            REQUIRE(gtl::x509::generate_certificate(description, public_key, this->private_key, gtl::x509::signature_scheme::ecdsa_sha2_256, std::function<unsigned int()>(), this->certificate.data(), this->certificate.size(), length) == true);
+            this->certificate.resize(length);
+        }
+
+        sample_identity(const sample_identity&) = delete;
+        sample_identity& operator=(const sample_identity&) = delete;
+    };
+
+    /// @brief  Move bytes between a socket and a tls_client or tls_server, once in each direction.
+    /// @return false when the socket has closed.
+    template <typename tls_type>
+    bool sample_pump(const gtl::socket& socket, tls_type& tls) {
+        unsigned char buffer[4096];
+        while (tls.get_output_length() != 0) {
+            const unsigned long long int length = tls.get_output(buffer, sizeof(buffer));
+            for (unsigned long long int sent = 0; sent < length;) {
+                const long long int count = socket.tcp_send(buffer + sent, length - sent);
+                if (count < 0) {
+                    return false;
+                }
+                sent += static_cast<unsigned long long int>(count);
+            }
+        }
+        const long long int count = socket.tcp_receive(buffer, sizeof(buffer));
+        if (count < 0) {
+            return false;
+        }
+        if (count == 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        static_cast<void>(tls.process_input(buffer, static_cast<unsigned long long int>(count)));
+        return true;
+    }
+
+    /// @brief  Read the application data that is waiting on a tls_client or tls_server, adding it to a string.
+    template <typename tls_type>
+    void sample_read(tls_type& tls, std::string& data) {
+        unsigned char buffer[4096];
+        for (unsigned long long int length = tls.read(buffer, sizeof(buffer)); length != 0; length = tls.read(buffer, sizeof(buffer))) {
+            data.append(reinterpret_cast<const char*>(buffer), length);
+        }
+    }
+}
+
+TEST(tls_client, sample, client) {
+    // The certificate to trust, here the certificate of the sample server itself, it could instead be the certificate of the authority that issued it.
+    const sample_identity identity;
+    gtl::x509::certificate_type trusted;
+    REQUIRE(gtl::x509::parse_certificate(identity.certificate.data(), identity.certificate.size(), trusted) == true);
+
+    // The random numbers of a connection must be unpredictable.
+    std::random_device random;
+    gtl::tls_client::configuration_type configuration;
+    configuration.random_generator = [&random]() -> unsigned int {
+        return static_cast<unsigned int>(random());
+    };
+    configuration.host = "localhost";
+    configuration.trusted = &trusted;
+    configuration.trusted_length = 1;
+    configuration.time = static_cast<long long int>(std::time(nullptr));
+
+    // Connect to the server, trying again until there is one.
+    gtl::socket connection;
+    std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::now() + std::chrono::seconds(sample_wait ? sample_wait_seconds : 0);
+    bool opened = false;
+    do {
+        opened = connection.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, sample_port });
+        if (!opened && sample_wait) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    } while (!opened && (std::chrono::steady_clock::now() < deadline));
+    if (!opened) {
+        // There is only a server when one is waiting in the tests of the tls_server class.
+        return;
+    }
+
+    // The tls_client is given what arrives on the socket and gives back what to send, starting with the handshake.
+    gtl::tls_client tls;
+    REQUIRE(tls.start(configuration) == true);
+    deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+    bool is_open = true;
+    while (is_open && (tls.get_state() == gtl::tls_client::state_type::handshake) && (std::chrono::steady_clock::now() < deadline)) {
+        is_open = sample_pump(connection, tls);
+    }
+    if (tls.get_state() == gtl::tls_client::state_type::handshake) {
+        // The server went away before the handshake finished, as the sample server does when it is not waiting.
+        PRINT("The sample client lost its connection to the server during the handshake.\n");
+        return;
+    }
+    REQUIRE(tls.is_connected() == true, "The handshake of the sample client failed with alert %u.", static_cast<unsigned int>(tls.get_alert()));
+    if (!tls.is_connected()) {
+        return;
+    }
+
+    gtl::http::request_type request;
+    request.target = "/hello";
+    request.headers.push_back(gtl::http::header_type{ "Host", "localhost" });
+    request.headers.push_back(gtl::http::header_type{ "Connection", "close" });
+    std::string encoded;
+    REQUIRE(gtl::http::write_request(request, encoded) == true);
+    REQUIRE(tls.write(reinterpret_cast<const unsigned char*>(encoded.data()), encoded.size()) == true);
+
+    // Read until there is a whole response, which may be ended by the server closing the connection.
+    std::string received;
+    gtl::http::response_type response;
+    unsigned long long int response_length = 0;
+    gtl::http::result_type result = gtl::http::result_type::incomplete;
+    bool is_closed = false;
+    while ((result == gtl::http::result_type::incomplete) && !is_closed && (std::chrono::steady_clock::now() < deadline)) {
+        is_closed = !sample_pump(connection, tls) || (tls.get_state() != gtl::tls_client::state_type::connected);
+        sample_read(tls, received);
+        result = gtl::http::read_response(received.data(), received.size(), is_closed, false, response, response_length);
+    }
+    REQUIRE(result == gtl::http::result_type::complete);
+    PRINT("The sample client received, using version %04X and cipher suite %04X: %u %s\n%s", tls.get_version(), tls.get_suite(), response.status, response.reason.c_str(), response.body.c_str());
+    REQUIRE(response.status == 200);
+    REQUIRE(response.body == "Hello from the gtl https server, you asked for /hello\n");
 }

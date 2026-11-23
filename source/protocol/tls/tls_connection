@@ -281,6 +281,11 @@ namespace gtl {
                 }
                 return true;
             }
+            // Some implementations report a failed handshake with an alert that is not protected, even after the keys of the handshake are set.
+            // It is accepted so that the reason can be reported, anything else that is not protected would end the connection in any case.
+            if ((record_type == gtl::tls_record::content_alert) && (this->version == handshake::version_tls13) && (this->state == state_type::handshake) && this->receiver.is_protected() && (body_length == 2) && (body[0] == handshake::alert_level_fatal)) {
+                return this->process_alert(body, body_length);
+            }
             unsigned int length = 0;
             unsigned char content_type = 0;
             if (!this->receiver.unprotect(record_type, body, body_length, body, length, content_type)) {

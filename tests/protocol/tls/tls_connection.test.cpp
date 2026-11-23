@@ -354,6 +354,50 @@ TEST(tls_connection, evaluate, corrupted) {
     }
 }
 
+TEST(tls_connection, evaluate, unprotected_alert) {
+    // A client that gives up during a TLS 1.3 handshake may say why with an alert that is not protected, which the server reports.
+    const trusted_root root;
+    const server_identity identity(false);
+    const gtl::tls_handshake::settings_type client_settings = make_client_settings(root, identity, 400);
+    const gtl::tls_handshake::settings_type server_settings = make_server_settings(identity, 401);
+    const unsigned char fatal[7] = { gtl::tls_record::content_alert, 0x03, 0x03, 0x00, 0x02, gtl::tls_handshake::alert_level_fatal, gtl::tls_handshake::alert_unknown_authority };
+    const unsigned char warning[7] = { gtl::tls_record::content_alert, 0x03, 0x03, 0x00, 0x02, gtl::tls_handshake::alert_level_warning, gtl::tls_handshake::alert_unknown_authority };
+    {
+        gtl::tls_connection client;
+        gtl::tls_connection server;
+        REQUIRE(server.start(server_settings) == true);
+        REQUIRE(client.start(client_settings) == true);
+        REQUIRE(pump(client, server) == true);
+        REQUIRE(server.get_state() == state_type::handshake);
+        REQUIRE(server.process_input(fatal, sizeof(fatal)) == false);
+        REQUIRE(server.get_state() == state_type::failed);
+        REQUIRE(server.get_alert() == gtl::tls_handshake::alert_unknown_authority);
+        REQUIRE(server.is_alert_received() == true);
+    }
+    {
+        // Anything else that is not protected is refused, as is the same alert once the handshake is complete.
+        gtl::tls_connection client;
+        gtl::tls_connection server;
+        REQUIRE(server.start(server_settings) == true);
+        REQUIRE(client.start(client_settings) == true);
+        REQUIRE(pump(client, server) == true);
+        REQUIRE(server.process_input(warning, sizeof(warning)) == false);
+        REQUIRE(server.get_alert() == gtl::tls_handshake::alert_bad_record_mac);
+        REQUIRE(server.is_alert_received() == false);
+    }
+    {
+        gtl::tls_connection client;
+        gtl::tls_connection server;
+        REQUIRE(server.start(server_settings) == true);
+        REQUIRE(client.start(client_settings) == true);
+        exchange(client, server);
+        REQUIRE(server.is_connected() == true);
+        REQUIRE(server.process_input(fatal, sizeof(fatal)) == false);
+        REQUIRE(server.get_alert() == gtl::tls_handshake::alert_bad_record_mac);
+        REQUIRE(server.is_alert_received() == false);
+    }
+}
+
 TEST(tls_connection, evaluate, alerts) {
     const trusted_root root;
     const server_identity identity(false);
