@@ -1,0 +1,1313 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_CRYPTO_ASYMMETRIC_ELLIPTIC_CURVE_HPP
+#define GTL_CRYPTO_ASYMMETRIC_ELLIPTIC_CURVE_HPP
+
+// Summary: An implementation of key agreement and digital signatures using the NIST P-256 and P-384 elliptic curves.
+
+#include <crypto/hash/sha2>
+#include <crypto/mac/hmac>
+
+namespace gtl {
+    /// @brief  The curves available for the elliptic_curve class.
+    enum class elliptic_curve_type {
+        secp256r1, // NIST P-256, also known as prime256v1.
+        secp384r1, // NIST P-384.
+    };
+
+    /// @brief  The elliptic_curve class implements Diffie-Hellman key agreement (ECDH) and digital signatures (ECDSA) over a prime order curve.
+    /// @tparam curve_type The curve to use.
+    /// @note   The functions that use a private key take the same sequence of steps whatever its value, so the time taken does not depend on it.
+    /// @note   Numbers are passed as big endian byte arrays of coordinate_size bytes.
+    template <elliptic_curve_type curve_type>
+    class elliptic_curve final {
+    private:
+        /// @brief  Internal traits class holding the parameters of each curve, as big endian bytes.
+        /// @tparam type The curve.
+        /// @tparam inexplicit_specialisation Dummy template param so specialisation is partial and can be done inside the elliptic_curve class.
+        template <elliptic_curve_type type, typename inexplicit_specialisation = void>
+        struct traits;
+
+        /// @brief  Internal traits class for secp256r1.
+        template <typename inexplicit_specialisation>
+        struct traits<elliptic_curve_type::secp256r1, inexplicit_specialisation> final {
+            /// @brief  The size of the field in bits.
+            constexpr static const unsigned int bits = 256;
+
+            /// @brief  The hash function used to generate signature nonces.
+            using hash_function_type = gtl::sha2<256>;
+
+            /// @brief  The prime modulus of the field.
+            constexpr static const unsigned char prime[bits / 8] = {
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF
+            };
+
+            /// @brief  The constant b of the curve equation y^2 = x^3 - 3x + b.
+            constexpr static const unsigned char b[bits / 8] = {
+                0x5A,
+                0xC6,
+                0x35,
+                0xD8,
+                0xAA,
+                0x3A,
+                0x93,
+                0xE7,
+                0xB3,
+                0xEB,
+                0xBD,
+                0x55,
+                0x76,
+                0x98,
+                0x86,
+                0xBC,
+                0x65,
+                0x1D,
+                0x06,
+                0xB0,
+                0xCC,
+                0x53,
+                0xB0,
+                0xF6,
+                0x3B,
+                0xCE,
+                0x3C,
+                0x3E,
+                0x27,
+                0xD2,
+                0x60,
+                0x4B
+            };
+
+            /// @brief  The x coordinate of the generator point.
+            constexpr static const unsigned char generator_x[bits / 8] = {
+                0x6B,
+                0x17,
+                0xD1,
+                0xF2,
+                0xE1,
+                0x2C,
+                0x42,
+                0x47,
+                0xF8,
+                0xBC,
+                0xE6,
+                0xE5,
+                0x63,
+                0xA4,
+                0x40,
+                0xF2,
+                0x77,
+                0x03,
+                0x7D,
+                0x81,
+                0x2D,
+                0xEB,
+                0x33,
+                0xA0,
+                0xF4,
+                0xA1,
+                0x39,
+                0x45,
+                0xD8,
+                0x98,
+                0xC2,
+                0x96
+            };
+
+            /// @brief  The y coordinate of the generator point.
+            constexpr static const unsigned char generator_y[bits / 8] = {
+                0x4F,
+                0xE3,
+                0x42,
+                0xE2,
+                0xFE,
+                0x1A,
+                0x7F,
+                0x9B,
+                0x8E,
+                0xE7,
+                0xEB,
+                0x4A,
+                0x7C,
+                0x0F,
+                0x9E,
+                0x16,
+                0x2B,
+                0xCE,
+                0x33,
+                0x57,
+                0x6B,
+                0x31,
+                0x5E,
+                0xCE,
+                0xCB,
+                0xB6,
+                0x40,
+                0x68,
+                0x37,
+                0xBF,
+                0x51,
+                0xF5
+            };
+
+            /// @brief  The order of the generator point, which is the number of points on the curve.
+            constexpr static const unsigned char order[bits / 8] = {
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xBC,
+                0xE6,
+                0xFA,
+                0xAD,
+                0xA7,
+                0x17,
+                0x9E,
+                0x84,
+                0xF3,
+                0xB9,
+                0xCA,
+                0xC2,
+                0xFC,
+                0x63,
+                0x25,
+                0x51
+            };
+        };
+
+        /// @brief  Internal traits class for secp384r1.
+        template <typename inexplicit_specialisation>
+        struct traits<elliptic_curve_type::secp384r1, inexplicit_specialisation> final {
+            /// @brief  The size of the field in bits.
+            constexpr static const unsigned int bits = 384;
+
+            /// @brief  The hash function used to generate signature nonces.
+            using hash_function_type = gtl::sha2<384>;
+
+            /// @brief  The prime modulus of the field.
+            constexpr static const unsigned char prime[bits / 8] = {
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFE,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF
+            };
+
+            /// @brief  The constant b of the curve equation y^2 = x^3 - 3x + b.
+            constexpr static const unsigned char b[bits / 8] = {
+                0xB3,
+                0x31,
+                0x2F,
+                0xA7,
+                0xE2,
+                0x3E,
+                0xE7,
+                0xE4,
+                0x98,
+                0x8E,
+                0x05,
+                0x6B,
+                0xE3,
+                0xF8,
+                0x2D,
+                0x19,
+                0x18,
+                0x1D,
+                0x9C,
+                0x6E,
+                0xFE,
+                0x81,
+                0x41,
+                0x12,
+                0x03,
+                0x14,
+                0x08,
+                0x8F,
+                0x50,
+                0x13,
+                0x87,
+                0x5A,
+                0xC6,
+                0x56,
+                0x39,
+                0x8D,
+                0x8A,
+                0x2E,
+                0xD1,
+                0x9D,
+                0x2A,
+                0x85,
+                0xC8,
+                0xED,
+                0xD3,
+                0xEC,
+                0x2A,
+                0xEF
+            };
+
+            /// @brief  The x coordinate of the generator point.
+            constexpr static const unsigned char generator_x[bits / 8] = {
+                0xAA,
+                0x87,
+                0xCA,
+                0x22,
+                0xBE,
+                0x8B,
+                0x05,
+                0x37,
+                0x8E,
+                0xB1,
+                0xC7,
+                0x1E,
+                0xF3,
+                0x20,
+                0xAD,
+                0x74,
+                0x6E,
+                0x1D,
+                0x3B,
+                0x62,
+                0x8B,
+                0xA7,
+                0x9B,
+                0x98,
+                0x59,
+                0xF7,
+                0x41,
+                0xE0,
+                0x82,
+                0x54,
+                0x2A,
+                0x38,
+                0x55,
+                0x02,
+                0xF2,
+                0x5D,
+                0xBF,
+                0x55,
+                0x29,
+                0x6C,
+                0x3A,
+                0x54,
+                0x5E,
+                0x38,
+                0x72,
+                0x76,
+                0x0A,
+                0xB7
+            };
+
+            /// @brief  The y coordinate of the generator point.
+            constexpr static const unsigned char generator_y[bits / 8] = {
+                0x36,
+                0x17,
+                0xDE,
+                0x4A,
+                0x96,
+                0x26,
+                0x2C,
+                0x6F,
+                0x5D,
+                0x9E,
+                0x98,
+                0xBF,
+                0x92,
+                0x92,
+                0xDC,
+                0x29,
+                0xF8,
+                0xF4,
+                0x1D,
+                0xBD,
+                0x28,
+                0x9A,
+                0x14,
+                0x7C,
+                0xE9,
+                0xDA,
+                0x31,
+                0x13,
+                0xB5,
+                0xF0,
+                0xB8,
+                0xC0,
+                0x0A,
+                0x60,
+                0xB1,
+                0xCE,
+                0x1D,
+                0x7E,
+                0x81,
+                0x9D,
+                0x7A,
+                0x43,
+                0x1D,
+                0x7C,
+                0x90,
+                0xEA,
+                0x0E,
+                0x5F
+            };
+
+            /// @brief  The order of the generator point, which is the number of points on the curve.
+            constexpr static const unsigned char order[bits / 8] = {
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xC7,
+                0x63,
+                0x4D,
+                0x81,
+                0xF4,
+                0x37,
+                0x2D,
+                0xDF,
+                0x58,
+                0x1A,
+                0x0D,
+                0xB2,
+                0x48,
+                0xB0,
+                0xA7,
+                0x7A,
+                0xEC,
+                0xEC,
+                0x19,
+                0x6A,
+                0xCC,
+                0xC5,
+                0x29,
+                0x73
+            };
+        };
+
+        /// @brief  The parameters of the selected curve.
+        using curve = traits<curve_type>;
+
+        /// @brief  The hash function used to generate signature nonces.
+        using hash_function_type = typename curve::hash_function_type;
+
+    public:
+        /// @brief  Handy variable for accessing the curve type.
+        constexpr static const elliptic_curve_type type = curve_type;
+
+        /// @brief  Size of the field in bits.
+        constexpr static const unsigned int size = curve::bits;
+
+        /// @brief  Size of a coordinate or a scalar in bytes.
+        constexpr static const unsigned int coordinate_size = elliptic_curve::size / 8;
+
+        /// @brief  Size of a private key in bytes, a private key is a big endian scalar.
+        constexpr static const unsigned int private_key_size = elliptic_curve::coordinate_size;
+
+        /// @brief  Size of a public key in bytes, a public key is the big endian x coordinate followed by the big endian y coordinate of a point.
+        constexpr static const unsigned int public_key_size = 2 * elliptic_curve::coordinate_size;
+
+        /// @brief  Size of a shared secret in bytes, a shared secret is the big endian x coordinate of a point.
+        constexpr static const unsigned int shared_secret_size = elliptic_curve::coordinate_size;
+
+        /// @brief  Size of a signature in bytes, a signature is the big endian value r followed by the big endian value s.
+        constexpr static const unsigned int signature_size = 2 * elliptic_curve::coordinate_size;
+
+    private:
+        /// @brief  The number of 32 bit limbs used to hold a number.
+        constexpr static const unsigned int limb_count = elliptic_curve::size / 32;
+
+        /// @brief  A number as wide as the field, held as 32 bit limbs, least significant first.
+        struct number_type final {
+            unsigned int limbs[elliptic_curve::limb_count] = {};
+        };
+
+        /// @brief  A modulus, with the constants needed to do montgomery arithmetic with it.
+        /// @note   The montgomery form of a value is the value multiplied by 2^size, modulo the modulus.
+        struct modulus_type final {
+            /// @brief  The modulus, which must be odd.
+            number_type value;
+
+            /// @brief  The modulus minus two, which is the exponent that inverts a value when the modulus is prime.
+            number_type value_minus_two;
+
+            /// @brief  The montgomery form of one.
+            number_type one;
+
+            /// @brief  The montgomery form of 2^size, used to convert a value to montgomery form.
+            number_type conversion;
+
+            /// @brief  The negated inverse of the least significant limb of the modulus, modulo 2^32.
+            unsigned int inverse = 0;
+        };
+
+        /// @brief  A point on the curve in projective coordinates, representing the affine point (x / z, y / z), with every coordinate in montgomery form.
+        /// @note   The point at infinity, which is the identity of point addition, has a z of zero.
+        struct point_type final {
+            number_type x;
+            number_type y;
+            number_type z;
+        };
+
+        /// @brief  The constants of the curve prepared for arithmetic.
+        struct constants_type final {
+            /// @brief  The modulus of the field that the coordinates of points belong to.
+            modulus_type field;
+
+            /// @brief  The modulus of the scalars that multiply points, which is the order of the generator point.
+            modulus_type scalar;
+
+            /// @brief  The constant b of the curve equation, in montgomery form.
+            number_type b;
+
+            /// @brief  The generator point.
+            point_type generator;
+        };
+
+    private:
+        /// @brief  Overwrite an object with zeros in a way that is not optimised away.
+        /// @param  object The object to overwrite.
+        template <typename type>
+        static void wipe(type& object) {
+            volatile unsigned char* bytes = reinterpret_cast<unsigned char*>(&object);
+            for (unsigned long long int index = 0; index < sizeof(type); ++index) {
+                bytes[index] = 0;
+            }
+        }
+
+        /// @brief  Convert big endian bytes into a number.
+        /// @param  bytes The bytes to convert, must be coordinate_size bytes long.
+        /// @return The number.
+        static number_type from_bytes(const unsigned char* bytes) {
+            number_type number;
+            for (unsigned int i = 0; i < elliptic_curve::limb_count; ++i) {
+                const unsigned char* limb_bytes = &bytes[elliptic_curve::coordinate_size - (4 * (i + 1))];
+                number.limbs[i] =
+                    (static_cast<unsigned int>(limb_bytes[0]) << 24) |
+                    (static_cast<unsigned int>(limb_bytes[1]) << 16) |
+                    (static_cast<unsigned int>(limb_bytes[2]) << 8) |
+                    (static_cast<unsigned int>(limb_bytes[3]) << 0);
+            }
+            return number;
+        }
+
+        /// @brief  Convert a number into big endian bytes.
+        /// @param  number The number to convert.
+        /// @param  bytes The buffer that receives the bytes, must be coordinate_size bytes long.
+        static void to_bytes(const number_type& number, unsigned char* bytes) {
+            for (unsigned int i = 0; i < elliptic_curve::limb_count; ++i) {
+                unsigned char* limb_bytes = &bytes[elliptic_curve::coordinate_size - (4 * (i + 1))];
+                limb_bytes[0] = static_cast<unsigned char>((number.limbs[i] >> 24) & 0xFF);
+                limb_bytes[1] = static_cast<unsigned char>((number.limbs[i] >> 16) & 0xFF);
+                limb_bytes[2] = static_cast<unsigned char>((number.limbs[i] >> 8) & 0xFF);
+                limb_bytes[3] = static_cast<unsigned char>((number.limbs[i] >> 0) & 0xFF);
+            }
+        }
+
+        /// @brief  Add two numbers.
+        /// @param  lhs The left hand side of the addition.
+        /// @param  rhs The right hand side of the addition.
+        /// @param  result Receives the sum, modulo 2^size.
+        /// @return The carry out of the addition, zero or one.
+        static unsigned int add(const number_type& lhs, const number_type& rhs, number_type& result) {
+            unsigned long long int carry = 0;
+            for (unsigned int i = 0; i < elliptic_curve::limb_count; ++i) {
+                const unsigned long long int sum = static_cast<unsigned long long int>(lhs.limbs[i]) + rhs.limbs[i] + carry;
+                result.limbs[i] = static_cast<unsigned int>(sum & 0xFFFFFFFFu);
+                carry = sum >> 32;
+            }
+            return static_cast<unsigned int>(carry);
+        }
+
+        /// @brief  Subtract two numbers.
+        /// @param  lhs The left hand side of the subtraction.
+        /// @param  rhs The right hand side of the subtraction.
+        /// @param  result Receives the difference, modulo 2^size.
+        /// @return The borrow out of the subtraction, zero or one, which is one when the left hand side is less than the right hand side.
+        static unsigned int subtract(const number_type& lhs, const number_type& rhs, number_type& result) {
+            unsigned long long int borrow = 0;
+            for (unsigned int i = 0; i < elliptic_curve::limb_count; ++i) {
+                const unsigned long long int difference = static_cast<unsigned long long int>(lhs.limbs[i]) - rhs.limbs[i] - borrow;
+                result.limbs[i] = static_cast<unsigned int>(difference & 0xFFFFFFFFu);
+                borrow = (difference >> 32) & 1;
+            }
+            return static_cast<unsigned int>(borrow);
+        }
+
+        /// @brief  Select one of two numbers, without branching on the selection.
+        /// @param  if_zero The number to return if the selection is zero.
+        /// @param  if_one The number to return if the selection is one.
+        /// @param  selection The selection, must be zero or one.
+        /// @return The selected number.
+        static number_type select(const number_type& if_zero, const number_type& if_one, const unsigned int selection) {
+            const unsigned int mask = 0u - selection;
+            number_type result;
+            for (unsigned int i = 0; i < elliptic_curve::limb_count; ++i) {
+                result.limbs[i] = if_zero.limbs[i] ^ (mask & (if_zero.limbs[i] ^ if_one.limbs[i]));
+            }
+            return result;
+        }
+
+        /// @brief  Check if a number is zero, without branching on its value.
+        /// @param  number The number to check.
+        /// @return One if the number is zero, zero otherwise.
+        static unsigned int is_zero(const number_type& number) {
+            unsigned int combined = 0;
+            for (unsigned int i = 0; i < elliptic_curve::limb_count; ++i) {
+                combined |= number.limbs[i];
+            }
+            // The top bit of (combined | -combined) is set only when combined is not zero.
+            return 1u - ((combined | (0u - combined)) >> 31);
+        }
+
+        /// @brief  Check if two numbers are equal, without branching on their values.
+        /// @param  lhs The left hand side of the comparison.
+        /// @param  rhs The right hand side of the comparison.
+        /// @return One if the numbers are equal, zero otherwise.
+        static unsigned int is_equal(const number_type& lhs, const number_type& rhs) {
+            number_type difference;
+            for (unsigned int i = 0; i < elliptic_curve::limb_count; ++i) {
+                difference.limbs[i] = lhs.limbs[i] ^ rhs.limbs[i];
+            }
+            return elliptic_curve::is_zero(difference);
+        }
+
+        /// @brief  Check if a number is less than another, without branching on their values.
+        /// @param  lhs The left hand side of the comparison.
+        /// @param  rhs The right hand side of the comparison.
+        /// @return One if the left hand side is less than the right hand side, zero otherwise.
+        static unsigned int is_less(const number_type& lhs, const number_type& rhs) {
+            number_type difference;
+            return elliptic_curve::subtract(lhs, rhs, difference);
+        }
+
+        /// @brief  Add two numbers that are less than a modulus, modulo that modulus.
+        /// @param  lhs The left hand side of the addition.
+        /// @param  rhs The right hand side of the addition.
+        /// @param  modulus The modulus.
+        /// @return The sum, less than the modulus.
+        static number_type modular_add(const number_type& lhs, const number_type& rhs, const modulus_type& modulus) {
+            number_type sum;
+            const unsigned int carry = elliptic_curve::add(lhs, rhs, sum);
+            number_type reduced;
+            const unsigned int borrow = elliptic_curve::subtract(sum, modulus.value, reduced);
+            // The sum needs reducing if it overflowed, or if it is not less than the modulus.
+            return elliptic_curve::select(sum, reduced, carry | (1u - borrow));
+        }
+
+        /// @brief  Subtract two numbers that are less than a modulus, modulo that modulus.
+        /// @param  lhs The left hand side of the subtraction.
+        /// @param  rhs The right hand side of the subtraction.
+        /// @param  modulus The modulus.
+        /// @return The difference, less than the modulus.
+        static number_type modular_subtract(const number_type& lhs, const number_type& rhs, const modulus_type& modulus) {
+            number_type difference;
+            const unsigned int borrow = elliptic_curve::subtract(lhs, rhs, difference);
+            number_type corrected;
+            elliptic_curve::add(difference, modulus.value, corrected);
+            return elliptic_curve::select(difference, corrected, borrow);
+        }
+
+        /// @brief  Multiply two numbers that are less than a modulus using montgomery multiplication.
+        /// @param  lhs The left hand side of the multiplication.
+        /// @param  rhs The right hand side of the multiplication.
+        /// @param  modulus The modulus.
+        /// @return The product divided by 2^size, modulo the modulus, which for two values in montgomery form is the montgomery form of their product.
+        static number_type modular_multiply(const number_type& lhs, const number_type& rhs, const modulus_type& modulus) {
+            // Each step adds a multiple of the left hand side, then a multiple of the modulus that makes the low limb zero so that it can be shifted out.
+            unsigned int accumulator[elliptic_curve::limb_count + 2] = {};
+            for (unsigned int i = 0; i < elliptic_curve::limb_count; ++i) {
+                unsigned long long int carry = 0;
+                for (unsigned int j = 0; j < elliptic_curve::limb_count; ++j) {
+                    const unsigned long long int sum = static_cast<unsigned long long int>(lhs.limbs[j]) * rhs.limbs[i] + accumulator[j] + carry;
+                    accumulator[j] = static_cast<unsigned int>(sum & 0xFFFFFFFFu);
+                    carry = sum >> 32;
+                }
+                unsigned long long int top = static_cast<unsigned long long int>(accumulator[elliptic_curve::limb_count]) + carry;
+                accumulator[elliptic_curve::limb_count] = static_cast<unsigned int>(top & 0xFFFFFFFFu);
+                accumulator[elliptic_curve::limb_count + 1] = static_cast<unsigned int>(top >> 32);
+
+                const unsigned int factor = accumulator[0] * modulus.inverse;
+                carry = (static_cast<unsigned long long int>(factor) * modulus.value.limbs[0] + accumulator[0]) >> 32;
+                for (unsigned int j = 1; j < elliptic_curve::limb_count; ++j) {
+                    const unsigned long long int sum = static_cast<unsigned long long int>(factor) * modulus.value.limbs[j] + accumulator[j] + carry;
+                    accumulator[j - 1] = static_cast<unsigned int>(sum & 0xFFFFFFFFu);
+                    carry = sum >> 32;
+                }
+                top = static_cast<unsigned long long int>(accumulator[elliptic_curve::limb_count]) + carry;
+                accumulator[elliptic_curve::limb_count - 1] = static_cast<unsigned int>(top & 0xFFFFFFFFu);
+                accumulator[elliptic_curve::limb_count] = accumulator[elliptic_curve::limb_count + 1] + static_cast<unsigned int>(top >> 32);
+            }
+            // The result is less than twice the modulus, so one conditional subtraction reduces it.
+            number_type result;
+            for (unsigned int i = 0; i < elliptic_curve::limb_count; ++i) {
+                result.limbs[i] = accumulator[i];
+            }
+            number_type reduced;
+            const unsigned int borrow = elliptic_curve::subtract(result, modulus.value, reduced);
+            result = elliptic_curve::select(result, reduced, accumulator[elliptic_curve::limb_count] | (1u - borrow));
+            elliptic_curve::wipe(accumulator);
+            return result;
+        }
+
+        /// @brief  Convert a number that is less than a modulus into montgomery form.
+        /// @param  number The number to convert.
+        /// @param  modulus The modulus.
+        /// @return The montgomery form of the number.
+        static number_type to_montgomery(const number_type& number, const modulus_type& modulus) {
+            return elliptic_curve::modular_multiply(number, modulus.conversion, modulus);
+        }
+
+        /// @brief  Convert a number out of montgomery form.
+        /// @param  number The montgomery form of a number.
+        /// @param  modulus The modulus.
+        /// @return The number.
+        static number_type from_montgomery(const number_type& number, const modulus_type& modulus) {
+            number_type one;
+            one.limbs[0] = 1;
+            return elliptic_curve::modular_multiply(number, one, modulus);
+        }
+
+        /// @brief  Compute the multiplicative inverse of a number in montgomery form, for a prime modulus.
+        /// @param  number The montgomery form of the number to invert.
+        /// @param  modulus The modulus, which must be prime.
+        /// @return The montgomery form of the inverse, or zero if the number is zero.
+        /// @note   The sequence of steps depends only on the modulus, which is not secret.
+        static number_type modular_invert(const number_type& number, const modulus_type& modulus) {
+            // The inverse is the number raised to the power of the modulus minus two.
+            number_type result = modulus.one;
+            for (unsigned int bit = elliptic_curve::size; bit-- > 0;) {
+                result = elliptic_curve::modular_multiply(result, result, modulus);
+                if (((modulus.value_minus_two.limbs[bit / 32] >> (bit % 32)) & 1) != 0) {
+                    result = elliptic_curve::modular_multiply(result, number, modulus);
+                }
+            }
+            return result;
+        }
+
+        /// @brief  Prepare a modulus for montgomery arithmetic.
+        /// @param  bytes The big endian bytes of the modulus, which must be odd and have its most significant bit set.
+        /// @return The modulus with its constants computed.
+        static modulus_type make_modulus(const unsigned char* bytes) {
+            modulus_type modulus;
+            modulus.value = elliptic_curve::from_bytes(bytes);
+
+            number_type two;
+            two.limbs[0] = 2;
+            elliptic_curve::subtract(modulus.value, two, modulus.value_minus_two);
+
+            // Each step of this iteration doubles the number of correct low bits of the inverse of the low limb.
+            unsigned int inverse = 1;
+            for (unsigned int i = 0; i < 5; ++i) {
+                inverse *= 2u - (modulus.value.limbs[0] * inverse);
+            }
+            modulus.inverse = 0u - inverse;
+
+            // Doubling one size times gives the montgomery form of one, and doubling it again size times gives the conversion constant.
+            number_type power;
+            power.limbs[0] = 1;
+            for (unsigned int i = 0; i < elliptic_curve::size; ++i) {
+                power = elliptic_curve::modular_add(power, power, modulus);
+            }
+            modulus.one = power;
+            for (unsigned int i = 0; i < elliptic_curve::size; ++i) {
+                power = elliptic_curve::modular_add(power, power, modulus);
+            }
+            modulus.conversion = power;
+            return modulus;
+        }
+
+        /// @brief  Get the constants of the curve prepared for arithmetic.
+        /// @return The constants, which are computed the first time they are needed.
+        static const constants_type& get_constants() {
+            static const constants_type constants = []() -> constants_type {
+                constants_type values;
+                values.field = elliptic_curve::make_modulus(curve::prime);
+                values.scalar = elliptic_curve::make_modulus(curve::order);
+                values.b = elliptic_curve::to_montgomery(elliptic_curve::from_bytes(curve::b), values.field);
+                values.generator.x = elliptic_curve::to_montgomery(elliptic_curve::from_bytes(curve::generator_x), values.field);
+                values.generator.y = elliptic_curve::to_montgomery(elliptic_curve::from_bytes(curve::generator_y), values.field);
+                values.generator.z = values.field.one;
+                return values;
+            }();
+            return constants;
+        }
+
+    private:
+        /// @brief  Add two points on the curve.
+        /// @param  lhs The left hand side of the addition.
+        /// @param  rhs The right hand side of the addition.
+        /// @return The sum of the points.
+        /// @note   This is the complete addition formula for curves with a = -3 from "Complete addition formulas for prime order elliptic curves" by Renes, Costello, and Batina, algorithm 4.
+        /// @note   The same steps give the correct result for every pair of points, including equal points, opposite points, and the point at infinity.
+        static point_type point_add(const point_type& lhs, const point_type& rhs) {
+            const constants_type& constants = elliptic_curve::get_constants();
+            const modulus_type& field = constants.field;
+            const auto add = [&field](const number_type& a, const number_type& b) -> number_type {
+                return elliptic_curve::modular_add(a, b, field);
+            };
+            const auto sub = [&field](const number_type& a, const number_type& b) -> number_type {
+                return elliptic_curve::modular_subtract(a, b, field);
+            };
+            const auto mul = [&field](const number_type& a, const number_type& b) -> number_type {
+                return elliptic_curve::modular_multiply(a, b, field);
+            };
+            number_type t0 = mul(lhs.x, rhs.x);
+            number_type t1 = mul(lhs.y, rhs.y);
+            number_type t2 = mul(lhs.z, rhs.z);
+            number_type t3 = add(lhs.x, lhs.y);
+            number_type t4 = add(rhs.x, rhs.y);
+            t3 = mul(t3, t4);
+            t4 = add(t0, t1);
+            t3 = sub(t3, t4);
+            t4 = add(lhs.y, lhs.z);
+            number_type x3 = add(rhs.y, rhs.z);
+            t4 = mul(t4, x3);
+            x3 = add(t1, t2);
+            t4 = sub(t4, x3);
+            x3 = add(lhs.x, lhs.z);
+            number_type y3 = add(rhs.x, rhs.z);
+            x3 = mul(x3, y3);
+            y3 = add(t0, t2);
+            y3 = sub(x3, y3);
+            number_type z3 = mul(constants.b, t2);
+            x3 = sub(y3, z3);
+            z3 = add(x3, x3);
+            x3 = add(x3, z3);
+            z3 = sub(t1, x3);
+            x3 = add(t1, x3);
+            y3 = mul(constants.b, y3);
+            t1 = add(t2, t2);
+            t2 = add(t1, t2);
+            y3 = sub(y3, t2);
+            y3 = sub(y3, t0);
+            t1 = add(y3, y3);
+            y3 = add(t1, y3);
+            t1 = add(t0, t0);
+            t0 = add(t1, t0);
+            t0 = sub(t0, t2);
+            t1 = mul(t4, y3);
+            t2 = mul(t0, y3);
+            y3 = mul(x3, z3);
+            y3 = add(y3, t2);
+            x3 = mul(t3, x3);
+            x3 = sub(x3, t1);
+            z3 = mul(t4, z3);
+            t1 = mul(t3, t0);
+            z3 = add(z3, t1);
+            point_type result;
+            result.x = x3;
+            result.y = y3;
+            result.z = z3;
+            elliptic_curve::wipe(t0);
+            elliptic_curve::wipe(t1);
+            elliptic_curve::wipe(t2);
+            elliptic_curve::wipe(t3);
+            elliptic_curve::wipe(t4);
+            elliptic_curve::wipe(x3);
+            elliptic_curve::wipe(y3);
+            elliptic_curve::wipe(z3);
+            return result;
+        }
+
+        /// @brief  Multiply a point on the curve by a scalar.
+        /// @param  point The point to multiply.
+        /// @param  scalar The scalar, not in montgomery form.
+        /// @return The product.
+        /// @note   Every bit of the scalar is processed with the same steps, so the time taken does not depend on the scalar.
+        static point_type point_multiply(const point_type& point, const number_type& scalar) {
+            // Start from the point at infinity.
+            point_type result;
+            result.y = elliptic_curve::get_constants().field.one;
+            for (unsigned int bit = elliptic_curve::size; bit-- > 0;) {
+                result = elliptic_curve::point_add(result, result);
+                point_type sum = elliptic_curve::point_add(result, point);
+                const unsigned int selection = (scalar.limbs[bit / 32] >> (bit % 32)) & 1;
+                result.x = elliptic_curve::select(result.x, sum.x, selection);
+                result.y = elliptic_curve::select(result.y, sum.y, selection);
+                result.z = elliptic_curve::select(result.z, sum.z, selection);
+                elliptic_curve::wipe(sum);
+            }
+            return result;
+        }
+
+        /// @brief  Compute the sum of two points each multiplied by a scalar, for values that are not secret.
+        /// @param  lhs_point The first point.
+        /// @param  lhs_scalar The scalar that multiplies the first point, not in montgomery form.
+        /// @param  rhs_point The second point.
+        /// @param  rhs_scalar The scalar that multiplies the second point, not in montgomery form.
+        /// @return The sum of the products.
+        /// @note   The steps taken depend on the scalars, which makes this faster but only suitable for verifying signatures, where every value is public.
+        static point_type point_multiply_sum(const point_type& lhs_point, const number_type& lhs_scalar, const point_type& rhs_point, const number_type& rhs_scalar) {
+            // Both products share the doublings, and the sum of the two points is added where both scalars have a bit set.
+            const point_type both = elliptic_curve::point_add(lhs_point, rhs_point);
+            point_type result;
+            result.y = elliptic_curve::get_constants().field.one;
+            bool started = false;
+            for (unsigned int bit = elliptic_curve::size; bit-- > 0;) {
+                if (started) {
+                    result = elliptic_curve::point_add(result, result);
+                }
+                const unsigned int lhs_bit = (lhs_scalar.limbs[bit / 32] >> (bit % 32)) & 1;
+                const unsigned int rhs_bit = (rhs_scalar.limbs[bit / 32] >> (bit % 32)) & 1;
+                if ((lhs_bit | rhs_bit) != 0) {
+                    result = elliptic_curve::point_add(result, ((lhs_bit & rhs_bit) != 0) ? both : ((lhs_bit != 0) ? lhs_point : rhs_point));
+                    started = true;
+                }
+            }
+            return result;
+        }
+
+        /// @brief  Convert a point into affine coordinates.
+        /// @param  point The point to convert.
+        /// @param  x Receives the x coordinate, not in montgomery form.
+        /// @param  y Receives the y coordinate, not in montgomery form.
+        /// @return One if the point was converted, zero if it is the point at infinity which has no affine coordinates.
+        static unsigned int point_to_affine(const point_type& point, number_type& x, number_type& y) {
+            const modulus_type& field = elliptic_curve::get_constants().field;
+            number_type inverse = elliptic_curve::modular_invert(point.z, field);
+            x = elliptic_curve::from_montgomery(elliptic_curve::modular_multiply(point.x, inverse, field), field);
+            y = elliptic_curve::from_montgomery(elliptic_curve::modular_multiply(point.y, inverse, field), field);
+            elliptic_curve::wipe(inverse);
+            return 1u - elliptic_curve::is_zero(point.z);
+        }
+
+        /// @brief  Convert the bytes of a public key into a point, checking that it is a valid point on the curve.
+        /// @param  public_key The public key, must be public_key_size bytes long.
+        /// @param  point Receives the point.
+        /// @return true if the public key is a point on the curve, false otherwise.
+        static bool point_from_public_key(const unsigned char* public_key, point_type& point) {
+            const constants_type& constants = elliptic_curve::get_constants();
+            const modulus_type& field = constants.field;
+            const number_type x = elliptic_curve::from_bytes(&public_key[0]);
+            const number_type y = elliptic_curve::from_bytes(&public_key[elliptic_curve::coordinate_size]);
+            // The coordinates must be elements of the field.
+            if ((elliptic_curve::is_less(x, field.value) == 0) || (elliptic_curve::is_less(y, field.value) == 0)) {
+                return false;
+            }
+            point.x = elliptic_curve::to_montgomery(x, field);
+            point.y = elliptic_curve::to_montgomery(y, field);
+            point.z = field.one;
+            // The coordinates must satisfy the curve equation y^2 = x^3 - 3x + b.
+            const number_type y_squared = elliptic_curve::modular_multiply(point.y, point.y, field);
+            const number_type x_squared = elliptic_curve::modular_multiply(point.x, point.x, field);
+            const number_type x_cubed = elliptic_curve::modular_multiply(x_squared, point.x, field);
+            const number_type three_x = elliptic_curve::modular_add(elliptic_curve::modular_add(point.x, point.x, field), point.x, field);
+            const number_type expected = elliptic_curve::modular_add(elliptic_curve::modular_subtract(x_cubed, three_x, field), constants.b, field);
+            // The curve has a prime number of points, so every point on it other than infinity is a valid public key.
+            return (elliptic_curve::is_equal(y_squared, expected) == 1);
+        }
+
+        /// @brief  Convert the bytes of a scalar into a number, checking that it is a valid private key or signature value.
+        /// @param  bytes The bytes of the scalar, must be coordinate_size bytes long.
+        /// @param  scalar Receives the scalar.
+        /// @return One if the scalar is greater than zero and less than the order of the generator, zero otherwise.
+        static unsigned int scalar_from_bytes(const unsigned char* bytes, number_type& scalar) {
+            scalar = elliptic_curve::from_bytes(bytes);
+            return (1u - elliptic_curve::is_zero(scalar)) & elliptic_curve::is_less(scalar, elliptic_curve::get_constants().scalar.value);
+        }
+
+        /// @brief  Convert a message digest into a scalar, as defined for signatures.
+        /// @param  digest The digest.
+        /// @param  digest_length The length of the digest.
+        /// @return The leftmost bits of the digest as a number, reduced modulo the order of the generator.
+        static number_type scalar_from_digest(const unsigned char* digest, const unsigned int digest_length) {
+            // Use at most as many bytes as a scalar holds, padding a shorter digest with leading zeros.
+            unsigned char bytes[elliptic_curve::coordinate_size] = {};
+            const unsigned int used_length = (digest_length < elliptic_curve::coordinate_size) ? digest_length : elliptic_curve::coordinate_size;
+            for (unsigned int i = 0; i < used_length; ++i) {
+                bytes[elliptic_curve::coordinate_size - used_length + i] = digest[i];
+            }
+            const number_type number = elliptic_curve::from_bytes(bytes);
+            // The number is less than twice the order, so one conditional subtraction reduces it.
+            const modulus_type& scalar = elliptic_curve::get_constants().scalar;
+            number_type reduced;
+            const unsigned int borrow = elliptic_curve::subtract(number, scalar.value, reduced);
+            return elliptic_curve::select(number, reduced, 1u - borrow);
+        }
+
+        /// @brief  The deterministic generator of signature nonces of RFC 6979.
+        class nonce_generator final {
+        private:
+            /// @brief  The message authentication code that the generator is built from.
+            using hmac_type = gtl::hmac<hash_function_type>;
+
+            /// @brief  The size of the output of the message authentication code.
+            constexpr static const unsigned int hash_size = static_cast<unsigned int>(hash_function_type::hash_size);
+
+            static_assert(nonce_generator::hash_size == elliptic_curve::coordinate_size, "The nonce hash function must produce hashes as long as a scalar.");
+
+        private:
+            /// @brief  The current key.
+            typename hmac_type::key_type key;
+
+            /// @brief  The current value.
+            unsigned char value[nonce_generator::hash_size] = {};
+
+        private:
+            /// @brief  Replace the value with its authentication code.
+            void update_value() {
+                const typename hmac_type::hash_type hash = hmac_type::hash(reinterpret_cast<const char*>(this->value), nonce_generator::hash_size, this->key);
+                for (unsigned int i = 0; i < nonce_generator::hash_size; ++i) {
+                    this->value[i] = hash.data[i];
+                }
+            }
+
+            /// @brief  Replace the key with the authentication code of the value, a marker byte, and optional seed data, then update the value.
+            /// @param  marker The marker byte.
+            /// @param  private_key The private key bytes, or null.
+            /// @param  digest The reduced digest bytes, or null.
+            void update_key(const unsigned char marker, const unsigned char* private_key, const unsigned char* digest) {
+                hmac_type authenticator(this->key);
+                authenticator.consume(reinterpret_cast<const char*>(this->value), nonce_generator::hash_size);
+                authenticator.consume(reinterpret_cast<const char*>(&marker), 1);
+                if (private_key != nullptr) {
+                    authenticator.consume(reinterpret_cast<const char*>(private_key), elliptic_curve::coordinate_size);
+                }
+                if (digest != nullptr) {
+                    authenticator.consume(reinterpret_cast<const char*>(digest), elliptic_curve::coordinate_size);
+                }
+                authenticator.finalise();
+                for (unsigned int i = 0; i < nonce_generator::hash_size; ++i) {
+                    this->key.data[i] = authenticator.get_hash().data[i];
+                }
+                elliptic_curve::wipe(authenticator);
+                this->update_value();
+            }
+
+        public:
+            /// @brief  Wipe the state of the generator.
+            ~nonce_generator() {
+                elliptic_curve::wipe(this->key);
+                elliptic_curve::wipe(this->value);
+            }
+
+            /// @brief  Seed the generator from a private key and a digest.
+            /// @param  private_key The big endian private key, must be coordinate_size bytes long.
+            /// @param  digest The big endian digest reduced modulo the order of the generator, must be coordinate_size bytes long.
+            nonce_generator(const unsigned char* private_key, const unsigned char* digest) {
+                for (unsigned int i = 0; i < nonce_generator::hash_size; ++i) {
+                    this->value[i] = 0x01;
+                }
+                this->update_key(0x00, private_key, digest);
+                this->update_key(0x01, private_key, digest);
+            }
+
+            /// @brief  Generate the next candidate nonce.
+            /// @param  nonce The buffer that receives the candidate, must be coordinate_size bytes long.
+            void generate(unsigned char* nonce) {
+                // The hash is as long as a scalar, so each candidate is a single value.
+                this->update_value();
+                for (unsigned int i = 0; i < nonce_generator::hash_size; ++i) {
+                    nonce[i] = this->value[i];
+                }
+                // Prepare for another candidate in case this one is rejected.
+                this->update_key(0x00, nullptr, nullptr);
+            }
+        };
+
+    public:
+        /// @brief  Check if a private key is valid.
+        /// @param  private_key The private key, must be private_key_size bytes long.
+        /// @return true if the private key is greater than zero and less than the order of the generator point.
+        static bool is_valid_private_key(const unsigned char* private_key) {
+            number_type scalar;
+            const bool valid = (elliptic_curve::scalar_from_bytes(private_key, scalar) == 1);
+            elliptic_curve::wipe(scalar);
+            return valid;
+        }
+
+        /// @brief  Check if a public key is valid.
+        /// @param  public_key The public key, must be public_key_size bytes long.
+        /// @return true if the public key is a point on the curve.
+        static bool is_valid_public_key(const unsigned char* public_key) {
+            point_type point;
+            return elliptic_curve::point_from_public_key(public_key, point);
+        }
+
+        /// @brief  Generate the public key that corresponds to a private key.
+        /// @param  private_key The private key, private_key_size bytes that must be random and kept secret.
+        /// @param  public_key The buffer that receives the public key, must be public_key_size bytes long.
+        /// @return true if the public key was generated, false if the private key is not valid in which case the public key is not written.
+        /// @note   Almost every random value is a valid private key, if one is not then generate another.
+        static bool generate_public_key(const unsigned char* private_key, unsigned char* public_key) {
+            number_type scalar;
+            if (elliptic_curve::scalar_from_bytes(private_key, scalar) == 0) {
+                return false;
+            }
+            point_type point = elliptic_curve::point_multiply(elliptic_curve::get_constants().generator, scalar);
+            number_type x;
+            number_type y;
+            // A valid private key never gives the point at infinity.
+            const unsigned int valid = elliptic_curve::point_to_affine(point, x, y);
+            elliptic_curve::wipe(scalar);
+            elliptic_curve::wipe(point);
+            if (valid == 0) {
+                return false;
+            }
+            elliptic_curve::to_bytes(x, &public_key[0]);
+            elliptic_curve::to_bytes(y, &public_key[elliptic_curve::coordinate_size]);
+            return true;
+        }
+
+        /// @brief  Generate the secret shared between a private key and the public key of a peer.
+        /// @param  private_key The private key, must be private_key_size bytes long.
+        /// @param  peer_public_key The public key of the peer, must be public_key_size bytes long.
+        /// @param  shared_secret The buffer that receives the shared secret, must be shared_secret_size bytes long.
+        /// @return true if the shared secret was generated, false if either key is not valid in which case the shared secret is not written.
+        /// @note   The shared secret should be passed through a key derivation function before it is used as a key.
+        static bool generate_shared_secret(const unsigned char* private_key, const unsigned char* peer_public_key, unsigned char* shared_secret) {
+            number_type scalar;
+            point_type peer_point;
+            if ((elliptic_curve::scalar_from_bytes(private_key, scalar) == 0) || (!elliptic_curve::point_from_public_key(peer_public_key, peer_point))) {
+                elliptic_curve::wipe(scalar);
+                return false;
+            }
+            point_type point = elliptic_curve::point_multiply(peer_point, scalar);
+            number_type x;
+            number_type y;
+            const unsigned int valid = elliptic_curve::point_to_affine(point, x, y);
+            if (valid == 1) {
+                elliptic_curve::to_bytes(x, shared_secret);
+            }
+            elliptic_curve::wipe(scalar);
+            elliptic_curve::wipe(point);
+            elliptic_curve::wipe(x);
+            elliptic_curve::wipe(y);
+            return (valid == 1);
+        }
+
+    public:
+        /// @brief  Sign the digest of a message using the elliptic curve digital signature algorithm.
+        /// @param  private_key The private key, must be private_key_size bytes long.
+        /// @param  digest The digest of the message to sign.
+        /// @param  digest_length The length of the digest, if it is longer than a scalar only its leftmost bytes are used.
+        /// @param  signature The buffer that receives the signature, must be signature_size bytes long.
+        /// @return true if the digest was signed, false if the private key is not valid in which case the signature is not written.
+        /// @note   The nonce is generated from the private key and the digest as described by RFC 6979, so no random numbers are needed and signing the same digest twice gives the same signature.
+        /// @note   The nonce generator uses sha2-256 for secp256r1 and sha2-384 for secp384r1.
+        static bool sign(const unsigned char* private_key, const unsigned char* digest, const unsigned int digest_length, unsigned char* signature) {
+            const constants_type& constants = elliptic_curve::get_constants();
+            const modulus_type& scalar_modulus = constants.scalar;
+            number_type private_scalar;
+            if ((digest == nullptr) || (elliptic_curve::scalar_from_bytes(private_key, private_scalar) == 0)) {
+                elliptic_curve::wipe(private_scalar);
+                return false;
+            }
+            const number_type digest_scalar = elliptic_curve::scalar_from_digest(digest, digest_length);
+            unsigned char digest_bytes[elliptic_curve::coordinate_size] = {};
+            elliptic_curve::to_bytes(digest_scalar, digest_bytes);
+
+            nonce_generator generator(private_key, digest_bytes);
+            number_type r;
+            number_type s;
+            for (;;) {
+                // Generate a nonce that is a valid scalar, almost every candidate is.
+                unsigned char nonce_bytes[elliptic_curve::coordinate_size] = {};
+                generator.generate(nonce_bytes);
+                number_type nonce;
+                const unsigned int nonce_valid = elliptic_curve::scalar_from_bytes(nonce_bytes, nonce);
+                elliptic_curve::wipe(nonce_bytes);
+                if (nonce_valid == 0) {
+                    continue;
+                }
+
+                // The value r is the x coordinate of the generator multiplied by the nonce, modulo the order.
+                point_type point = elliptic_curve::point_multiply(constants.generator, nonce);
+                number_type x;
+                number_type y;
+                elliptic_curve::point_to_affine(point, x, y);
+                number_type x_reduced;
+                const unsigned int borrow = elliptic_curve::subtract(x, scalar_modulus.value, x_reduced);
+                r = elliptic_curve::select(x, x_reduced, 1u - borrow);
+
+                // The value s is (digest + r * private_key) / nonce, modulo the order.
+                number_type nonce_montgomery = elliptic_curve::to_montgomery(nonce, scalar_modulus);
+                number_type nonce_inverse = elliptic_curve::modular_invert(nonce_montgomery, scalar_modulus);
+                number_type r_montgomery = elliptic_curve::to_montgomery(r, scalar_modulus);
+                number_type private_montgomery = elliptic_curve::to_montgomery(private_scalar, scalar_modulus);
+                number_type sum = elliptic_curve::modular_add(elliptic_curve::to_montgomery(digest_scalar, scalar_modulus), elliptic_curve::modular_multiply(r_montgomery, private_montgomery, scalar_modulus), scalar_modulus);
+                s = elliptic_curve::from_montgomery(elliptic_curve::modular_multiply(sum, nonce_inverse, scalar_modulus), scalar_modulus);
+
+                elliptic_curve::wipe(nonce);
+                elliptic_curve::wipe(point);
+                elliptic_curve::wipe(x);
+                elliptic_curve::wipe(y);
+                elliptic_curve::wipe(nonce_montgomery);
+                elliptic_curve::wipe(nonce_inverse);
+                elliptic_curve::wipe(private_montgomery);
+                elliptic_curve::wipe(sum);
+
+                // Both values must be non zero, which they almost always are.
+                if ((elliptic_curve::is_zero(r) == 0) && (elliptic_curve::is_zero(s) == 0)) {
+                    break;
+                }
+            }
+            elliptic_curve::to_bytes(r, &signature[0]);
+            elliptic_curve::to_bytes(s, &signature[elliptic_curve::coordinate_size]);
+            elliptic_curve::wipe(private_scalar);
+            return true;
+        }
+
+        /// @brief  Verify a signature of the digest of a message made using the elliptic curve digital signature algorithm.
+        /// @param  public_key The public key, must be public_key_size bytes long.
+        /// @param  digest The digest of the message that was signed.
+        /// @param  digest_length The length of the digest, if it is longer than a scalar only its leftmost bytes are used.
+        /// @param  signature The signature to verify, must be signature_size bytes long.
+        /// @return true if the signature is valid for the digest and the public key, false otherwise.
+        static bool verify(const unsigned char* public_key, const unsigned char* digest, const unsigned int digest_length, const unsigned char* signature) {
+            const constants_type& constants = elliptic_curve::get_constants();
+            const modulus_type& scalar_modulus = constants.scalar;
+            if ((public_key == nullptr) || (digest == nullptr) || (signature == nullptr)) {
+                return false;
+            }
+            point_type public_point;
+            if (!elliptic_curve::point_from_public_key(public_key, public_point)) {
+                return false;
+            }
+            number_type r;
+            number_type s;
+            if ((elliptic_curve::scalar_from_bytes(&signature[0], r) == 0) || (elliptic_curve::scalar_from_bytes(&signature[elliptic_curve::coordinate_size], s) == 0)) {
+                return false;
+            }
+            const number_type digest_scalar = elliptic_curve::scalar_from_digest(digest, digest_length);
+
+            // Compute the point (digest / s) * generator + (r / s) * public_key.
+            const number_type s_inverse = elliptic_curve::modular_invert(elliptic_curve::to_montgomery(s, scalar_modulus), scalar_modulus);
+            const number_type u1 = elliptic_curve::modular_multiply(digest_scalar, s_inverse, scalar_modulus);
+            const number_type u2 = elliptic_curve::modular_multiply(r, s_inverse, scalar_modulus);
+            const point_type point = elliptic_curve::point_multiply_sum(constants.generator, u1, public_point, u2);
+            number_type x;
+            number_type y;
+            if (elliptic_curve::point_to_affine(point, x, y) == 0) {
+                return false;
+            }
+
+            // The signature is valid if the x coordinate of the point, modulo the order, is r.
+            number_type x_reduced;
+            const unsigned int borrow = elliptic_curve::subtract(x, scalar_modulus.value, x_reduced);
+            x = elliptic_curve::select(x, x_reduced, 1u - borrow);
+            return (elliptic_curve::is_equal(x, r) == 1);
+        }
+    };
+}
+
+#endif // GTL_CRYPTO_ASYMMETRIC_ELLIPTIC_CURVE_HPP

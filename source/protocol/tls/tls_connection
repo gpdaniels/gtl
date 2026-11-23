@@ -1,0 +1,558 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_PROTOCOL_TLS_TLS_CONNECTION_HPP
+#define GTL_PROTOCOL_TLS_TLS_CONNECTION_HPP
+
+// Summary: One end of a transport layer security connection, which turns application data into protected records and back without doing any input or output itself.
+
+#include <protocol/tls/tls12>
+#include <protocol/tls/tls13>
+#include <protocol/tls/tls_handshake>
+#include <protocol/tls/tls_record>
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <vector>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace gtl {
+    /// @brief  The tls_connection class is one end, client or server, of a TLS 1.2 or TLS 1.3 connection.
+    /// @note   It does no input or output: bytes received from the peer are passed to process_input, and the bytes to send to the peer are collected with get_output.
+    /// @note   Once connected, application data is sent with write and received with read.
+    /// @note   The version is agreed in the hello messages, after which the handshake is performed by the tls12 or tls13 class.
+    class tls_connection final {
+    public:
+        /// @brief  The states of a connection.
+        enum class state_type {
+            /// @brief  The connection has not been started.
+            idle,
+            /// @brief  The handshake is in progress.
+            handshake,
+            /// @brief  The handshake is complete and application data can be exchanged.
+            connected,
+            /// @brief  The connection was closed cleanly, by either end.
+            closed,
+            /// @brief  The connection failed, get_alert describes why.
+            failed
+        };
+
+    private:
+        /// @brief  Shorter names for the shared definitions.
+        using handshake = gtl::tls_handshake;
+
+    private:
+        /// @brief  The settings of this end of the connection.
+        handshake::settings_type settings;
+
+        /// @brief  Flags selecting the versions of the protocol that may be used.
+        bool allow_tls12 = true;
+        bool allow_tls13 = true;
+
+        /// @brief  The state of the connection.
+        state_type state = state_type::idle;
+
+        /// @brief  The alert that ended the connection, and whether it was received from the peer or sent to it.
+        unsigned char alert = 0;
+        bool alert_received = false;
+
+        /// @brief  The version of the protocol that was agreed, or zero before it is.
+        unsigned int version = 0;
+
+        /// @brief  The means of sending records, with the records that are waiting to be sent.
+        handshake::sender_type sender;
+
+        /// @brief  The record layer that receives records.
+        gtl::tls_record receiver;
+
+        /// @brief  The bytes received from the peer that are not yet a whole record.
+        std::vector<unsigned char> input;
+
+        /// @brief  The handshake data received from the peer that is not yet a whole message.
+        std::vector<unsigned char> messages;
+
+        /// @brief  The application data received from the peer that has not been read yet.
+        std::vector<unsigned char> application;
+
+        /// @brief  The handshakes of each version, only the one for the agreed version is used.
+        gtl::tls12 handshake_tls12;
+        gtl::tls13 handshake_tls13;
+
+        /// @brief  For a client, the hello message that was sent and the values in it that the handshake needs.
+        std::vector<unsigned char> client_hello;
+        unsigned char random[handshake::random_size] = {};
+        unsigned char session_id[handshake::session_id_size_max] = {};
+        unsigned int session_id_length = 0;
+        gtl::tls13::share_type shares[gtl::tls13::shares_length_max];
+        unsigned int shares_length = 0;
+
+        /// @brief  Flag showing whether the alert that closes the connection has been sent.
+        bool close_sent = false;
+
+    private:
+        /// @brief  Fail the connection, telling the peer why.
+        /// @param  description The alert that describes the failure.
+        /// @return false, so that it can be returned by the caller.
+        bool fail(const unsigned char description) {
+            if ((this->state == state_type::handshake) || (this->state == state_type::connected)) {
+                const unsigned char content[2] = { handshake::alert_level_fatal, description };
+                static_cast<void>(this->sender.send(gtl::tls_record::content_alert, content, 2));
+            }
+            this->state = state_type::failed;
+            this->alert = description;
+            this->alert_received = false;
+            return false;
+        }
+
+        /// @brief  Send the alert that closes the connection, once.
+        void send_close() {
+            if (!this->close_sent) {
+                const unsigned char content[2] = { handshake::alert_level_warning, handshake::alert_close_notify };
+                static_cast<void>(this->sender.send(gtl::tls_record::content_alert, content, 2));
+                this->close_sent = true;
+            }
+        }
+
+        /// @brief  Check if the handshake of the agreed version has completed.
+        bool is_handshake_connected() const {
+            return (this->version == handshake::version_tls13) ? this->handshake_tls13.is_connected() : ((this->version == handshake::version_tls12) && this->handshake_tls12.is_connected());
+        }
+
+        /// @brief  Process the first message of a server, which decides the version of the protocol.
+        bool process_server_hello(const unsigned char* message, const unsigned long long int length) {
+            handshake::server_hello_type hello;
+            if (message[0] != handshake::message_server_hello) {
+                return this->fail(handshake::alert_unexpected_message);
+            }
+            if (!handshake::parse_server_hello(message + 4, length - 4, hello)) {
+                return this->fail(handshake::alert_decode_error);
+            }
+            if ((hello.selected_version == handshake::version_tls13) && this->allow_tls13) {
+                this->version = handshake::version_tls13;
+                return this->handshake_tls13.start_client(this->settings, this->sender, this->receiver, this->client_hello.data(), this->client_hello.size(), this->session_id, this->session_id_length, this->shares, this->shares_length);
+            }
+            if ((hello.selected_version == 0) && (hello.legacy_version == handshake::version_tls12) && this->allow_tls12) {
+                this->version = handshake::version_tls12;
+                return this->handshake_tls12.start_client(this->settings, this->sender, this->receiver, this->client_hello.data(), this->client_hello.size(), this->random, this->session_id, this->session_id_length, this->allow_tls13);
+            }
+            return this->fail(handshake::alert_protocol_version);
+        }
+
+        /// @brief  Process the first message of a client, which decides the version of the protocol and starts the handshake.
+        bool process_client_hello(const unsigned char* message, const unsigned long long int length) {
+            handshake::client_hello_type hello;
+            if (message[0] != handshake::message_client_hello) {
+                return this->fail(handshake::alert_unexpected_message);
+            }
+            if (!handshake::parse_client_hello(message + 4, length - 4, hello)) {
+                return this->fail(handshake::alert_decode_error);
+            }
+            // A client that supports TLS 1.3 lists its versions, any other client gives only the highest.
+            const bool offers_tls13 = (hello.versions != nullptr) && handshake::has_value(hello.versions, hello.versions_length, handshake::version_tls13);
+            const bool offers_tls12 = (hello.versions != nullptr) ? handshake::has_value(hello.versions, hello.versions_length, handshake::version_tls12) : (hello.legacy_version >= handshake::version_tls12);
+            if (offers_tls13 && this->allow_tls13) {
+                this->version = handshake::version_tls13;
+                return this->handshake_tls13.start_server(this->settings, this->sender, this->receiver, hello, message, length);
+            }
+            if (offers_tls12 && this->allow_tls12) {
+                this->version = handshake::version_tls12;
+                return this->handshake_tls12.start_server(this->settings, this->sender, this->receiver, hello, message, length, this->allow_tls13);
+            }
+            return this->fail(handshake::alert_protocol_version);
+        }
+
+        /// @brief  Process a whole handshake message.
+        /// @param  message The message, including its handshake header.
+        /// @param  length The length of the message.
+        /// @param  is_last Flag showing whether no more handshake data has been received after the message.
+        bool process_message(const unsigned char* message, const unsigned long long int length, const bool is_last) {
+            bool accepted = true;
+            if (this->version == 0) {
+                // The hello of a client starts its handshake, the hello of a server is then processed by the handshake that was chosen.
+                if (!this->settings.is_client) {
+                    accepted = this->process_client_hello(message, length);
+                    message = nullptr;
+                }
+                else {
+                    accepted = this->process_server_hello(message, length);
+                }
+                if (this->state == state_type::failed) {
+                    return false;
+                }
+            }
+            if (this->version == handshake::version_tls13) {
+                accepted = accepted && ((message == nullptr) || this->handshake_tls13.process_message(message, length, is_last));
+                if (!accepted) {
+                    return this->fail(this->handshake_tls13.get_alert());
+                }
+            }
+            else {
+                accepted = accepted && ((message == nullptr) || this->handshake_tls12.process_message(message, length, is_last));
+                if (!accepted) {
+                    return this->fail(this->handshake_tls12.get_alert());
+                }
+            }
+            if ((this->state == state_type::handshake) && this->is_handshake_connected()) {
+                this->state = state_type::connected;
+                this->client_hello.clear();
+                this->client_hello.shrink_to_fit();
+                for (gtl::tls13::share_type& share : this->shares) {
+                    share = gtl::tls13::share_type();
+                }
+            }
+            return true;
+        }
+
+        /// @brief  Process handshake data, which may hold part of a message, or several.
+        bool process_handshake(const unsigned char* fragment, const unsigned int length) {
+            if (length == 0) {
+                return this->fail(handshake::alert_unexpected_message);
+            }
+            this->messages.insert(this->messages.end(), fragment, fragment + length);
+            unsigned long long int offset = 0;
+            while ((this->messages.size() - offset) >= 4) {
+                const unsigned char* message = &this->messages[offset];
+                const unsigned long long int message_length = 4 + ((static_cast<unsigned long long int>(message[1]) << 16) | (static_cast<unsigned long long int>(message[2]) << 8) | static_cast<unsigned long long int>(message[3]));
+                if (message_length > handshake::message_size_max) {
+                    return this->fail(handshake::alert_decode_error);
+                }
+                if ((this->messages.size() - offset) < message_length) {
+                    break;
+                }
+                const bool is_last = ((this->messages.size() - offset) == message_length);
+                if (!this->process_message(message, message_length, is_last)) {
+                    return false;
+                }
+                offset += message_length;
+            }
+            this->messages.erase(this->messages.begin(), this->messages.begin() + static_cast<long long int>(offset));
+            return true;
+        }
+
+        /// @brief  Process an alert.
+        bool process_alert(const unsigned char* fragment, const unsigned int length) {
+            if (length != 2) {
+                return this->fail(handshake::alert_decode_error);
+            }
+            if (fragment[1] == handshake::alert_close_notify) {
+                // The peer has finished sending, so reply in kind and stop.
+                this->send_close();
+                this->state = state_type::closed;
+                return true;
+            }
+            // Warnings are only harmless in the older version, apart from a cancellation which is followed by a close.
+            if ((fragment[0] == handshake::alert_level_warning) && ((this->version == handshake::version_tls12) || (fragment[1] == handshake::alert_user_canceled))) {
+                return true;
+            }
+            this->state = state_type::failed;
+            this->alert = fragment[1];
+            this->alert_received = true;
+            return false;
+        }
+
+        /// @brief  Process the body of a record.
+        /// @param  record_type The content type from the header of the record.
+        /// @param  body The body of the record, which is overwritten with its decrypted contents.
+        /// @param  body_length The length of the body.
+        bool process_record(const unsigned char record_type, unsigned char* body, const unsigned int body_length) {
+            // In TLS 1.3 the record that older versions use to change keys is sent unprotected during the handshake and means nothing.
+            if ((record_type == gtl::tls_record::content_change_cipher_spec) && (this->version == handshake::version_tls13)) {
+                if ((this->state != state_type::handshake) || (body_length != 1) || (body[0] != 0x01)) {
+                    return this->fail(handshake::alert_unexpected_message);
+                }
+                return true;
+            }
+            unsigned int length = 0;
+            unsigned char content_type = 0;
+            if (!this->receiver.unprotect(record_type, body, body_length, body, length, content_type)) {
+                return this->fail(this->receiver.is_protected() ? handshake::alert_bad_record_mac : handshake::alert_record_overflow);
+            }
+            switch (content_type) {
+                case gtl::tls_record::content_handshake:
+                    return this->process_handshake(body, length);
+                case gtl::tls_record::content_alert:
+                    return this->process_alert(body, length);
+                case gtl::tls_record::content_application_data: {
+                    // Application data is only valid once connected, protected, and between handshake messages.
+                    if ((this->state != state_type::connected) || !this->receiver.is_protected() || !this->messages.empty()) {
+                        return this->fail(handshake::alert_unexpected_message);
+                    }
+                    this->application.insert(this->application.end(), body, body + length);
+                    return true;
+                }
+                case gtl::tls_record::content_change_cipher_spec: {
+                    if ((this->version != handshake::version_tls12) || (length != 1) || (body[0] != 0x01) || !this->messages.empty()) {
+                        return this->fail(handshake::alert_unexpected_message);
+                    }
+                    if (!this->handshake_tls12.process_change_cipher_spec()) {
+                        return this->fail(this->handshake_tls12.get_alert());
+                    }
+                    return true;
+                }
+                default:
+                    break;
+            }
+            return this->fail(handshake::alert_unexpected_message);
+        }
+
+    public:
+        /// @brief  Wipe the data that was exchanged.
+        ~tls_connection() {
+            if (!this->application.empty()) {
+                handshake::wipe(this->application.data(), this->application.size());
+            }
+            if (!this->input.empty()) {
+                handshake::wipe(this->input.data(), this->input.size());
+            }
+        }
+
+        /// @brief  Construct a connection that has not been started.
+        tls_connection() = default;
+
+        tls_connection(const tls_connection&) = delete;
+        tls_connection& operator=(const tls_connection&) = delete;
+
+    public:
+        /// @brief  Get the state of the connection.
+        state_type get_state() const {
+            return this->state;
+        }
+
+        /// @brief  Check if the handshake is complete and application data can be exchanged.
+        bool is_connected() const {
+            return (this->state == state_type::connected);
+        }
+
+        /// @brief  Get the alert that ended the connection.
+        /// @return The description of the alert, which is only meaningful when the connection has failed.
+        unsigned char get_alert() const {
+            return this->alert;
+        }
+
+        /// @brief  Check if the alert that ended the connection was received from the peer, rather than sent to it.
+        bool is_alert_received() const {
+            return this->alert_received;
+        }
+
+        /// @brief  Get the version of the protocol that was agreed.
+        /// @return The encoded version, 0x0303 for TLS 1.2 or 0x0304 for TLS 1.3, or zero before it is agreed.
+        unsigned int get_version() const {
+            return this->version;
+        }
+
+        /// @brief  Get the cipher suite that was agreed.
+        /// @return The encoded cipher suite, or zero before it is agreed.
+        unsigned int get_suite() const {
+            return (this->version == handshake::version_tls13) ? this->handshake_tls13.get_suite() : this->handshake_tls12.get_suite();
+        }
+
+        /// @brief  Get the encoded certificates that the peer sent, the first is its own.
+        const std::vector<std::vector<unsigned char>>& get_peer_certificates() const {
+            return (this->version == handshake::version_tls13) ? this->handshake_tls13.get_peer_certificates() : this->handshake_tls12.get_peer_certificates();
+        }
+
+    public:
+        /// @brief  Start the connection, for a client this makes the hello message that begins the handshake.
+        /// @param  new_settings The settings of this end of the connection, everything they point to must outlive the connection.
+        /// @param  new_allow_tls12 Flag selecting whether TLS 1.2 may be used.
+        /// @param  new_allow_tls13 Flag selecting whether TLS 1.3 may be used.
+        /// @return true if the connection was started, false if the settings are not valid or it was already started.
+        bool start(const handshake::settings_type& new_settings, const bool new_allow_tls12 = true, const bool new_allow_tls13 = true) {
+            if ((this->state != state_type::idle) || !new_settings.random_generator || (!new_allow_tls12 && !new_allow_tls13)) {
+                return false;
+            }
+            if (!new_settings.is_client && ((new_settings.private_key == nullptr) || (new_settings.certificates == nullptr) || (new_settings.certificate_lengths == nullptr) || (new_settings.certificates_length == 0))) {
+                return false;
+            }
+            this->settings = new_settings;
+            this->allow_tls12 = new_allow_tls12;
+            this->allow_tls13 = new_allow_tls13;
+            this->state = state_type::handshake;
+            if (!this->settings.is_client) {
+                return true;
+            }
+
+            handshake::client_hello_options_type options;
+            options.offer_tls12 = this->allow_tls12;
+            options.offer_tls13 = this->allow_tls13;
+            handshake::fill_random(this->settings.random_generator, this->random, handshake::random_size);
+            options.random = this->random;
+            options.host = this->settings.host;
+            unsigned int share_groups[gtl::tls13::shares_length_max] = {};
+            unsigned char share_values[gtl::tls13::shares_length_max][handshake::exchange_public_size_max] = {};
+            const unsigned char* share_pointers[gtl::tls13::shares_length_max] = {};
+            unsigned int share_lengths[gtl::tls13::shares_length_max] = {};
+            if (this->allow_tls13) {
+                // A session identifier makes the connection look like one of an older version, which some network devices require.
+                handshake::fill_random(this->settings.random_generator, this->session_id, handshake::session_id_size_max);
+                this->session_id_length = handshake::session_id_size_max;
+                // A key share for each of the two most widely supported groups, so that a server never needs to ask for another.
+                const unsigned int groups[gtl::tls13::shares_length_max] = { handshake::group_x25519, handshake::group_secp256r1 };
+                for (unsigned int i = 0; i < gtl::tls13::shares_length_max; ++i) {
+                    this->shares[i].group = groups[i];
+                    share_groups[i] = groups[i];
+                    share_pointers[i] = share_values[i];
+                    if (!handshake::generate_exchange(groups[i], this->settings.random_generator, this->shares[i].private_value, share_values[i], share_lengths[i])) {
+                        this->state = state_type::failed;
+                        this->alert = handshake::alert_internal_error;
+                        return false;
+                    }
+                }
+                this->shares_length = gtl::tls13::shares_length_max;
+                options.share_groups = share_groups;
+                options.shares = share_pointers;
+                options.share_lengths = share_lengths;
+                options.shares_length = this->shares_length;
+            }
+            options.session_id = this->session_id;
+            options.session_id_length = this->session_id_length;
+            handshake::write_client_hello(options, this->client_hello);
+            if (!this->sender.send(gtl::tls_record::content_handshake, this->client_hello.data(), this->client_hello.size())) {
+                this->state = state_type::failed;
+                this->alert = handshake::alert_internal_error;
+                return false;
+            }
+            return true;
+        }
+
+        /// @brief  Process bytes that were received from the peer.
+        /// @param  data The bytes, in the order they were received, split in any way.
+        /// @param  length The number of bytes.
+        /// @return true if the connection is still usable, false if it has failed or was not started, a closed connection ignores the bytes.
+        /// @note   This may complete the handshake, make application data available to read, and make output that must be sent to the peer.
+        bool process_input(const unsigned char* data, const unsigned long long int length) {
+            if ((this->state == state_type::idle) || (this->state == state_type::failed)) {
+                return false;
+            }
+            if ((data == nullptr) || (length == 0)) {
+                return true;
+            }
+            this->input.insert(this->input.end(), data, data + length);
+            unsigned long long int offset = 0;
+            while (((this->state == state_type::handshake) || (this->state == state_type::connected)) && ((this->input.size() - offset) >= gtl::tls_record::header_size)) {
+                unsigned char record_type = 0;
+                unsigned int body_length = 0;
+                if (!gtl::tls_record::parse_header(&this->input[offset], record_type, body_length)) {
+                    this->fail(handshake::alert_record_overflow);
+                    break;
+                }
+                if ((this->input.size() - offset) < (gtl::tls_record::header_size + static_cast<unsigned long long int>(body_length))) {
+                    break;
+                }
+                unsigned char* body = &this->input[offset + gtl::tls_record::header_size];
+                offset += gtl::tls_record::header_size + static_cast<unsigned long long int>(body_length);
+                if (!this->process_record(record_type, body, body_length)) {
+                    break;
+                }
+            }
+            if ((this->state == state_type::handshake) || (this->state == state_type::connected)) {
+                handshake::wipe(this->input.data(), offset);
+                this->input.erase(this->input.begin(), this->input.begin() + static_cast<long long int>(offset));
+            }
+            else {
+                // Nothing more is processed once the connection has ended.
+                handshake::wipe(this->input.data(), this->input.size());
+                this->input.clear();
+            }
+            return (this->state != state_type::failed);
+        }
+
+        /// @brief  Get the number of bytes that are waiting to be sent to the peer.
+        unsigned long long int get_output_length() const {
+            return this->sender.buffer.size();
+        }
+
+        /// @brief  Take bytes that must be sent to the peer.
+        /// @param  buffer Receives the bytes.
+        /// @param  capacity The size of the buffer.
+        /// @return The number of bytes taken, which must all be sent, in order.
+        unsigned long long int get_output(unsigned char* buffer, const unsigned long long int capacity) {
+            const unsigned long long int length = (this->sender.buffer.size() < capacity) ? this->sender.buffer.size() : capacity;
+            if ((buffer == nullptr) || (length == 0)) {
+                return 0;
+            }
+            for (unsigned long long int i = 0; i < length; ++i) {
+                buffer[i] = this->sender.buffer[i];
+            }
+            this->sender.buffer.erase(this->sender.buffer.begin(), this->sender.buffer.begin() + static_cast<long long int>(length));
+            return length;
+        }
+
+    public:
+        /// @brief  Send application data to the peer, which is added to the output.
+        /// @param  data The data.
+        /// @param  length The length of the data.
+        /// @return true if the data was added to the output, false if the connection is not connected.
+        bool write(const unsigned char* data, const unsigned long long int length) {
+            if ((this->state != state_type::connected) || this->close_sent || ((data == nullptr) && (length != 0))) {
+                return false;
+            }
+            if (length == 0) {
+                return true;
+            }
+            return this->sender.send(gtl::tls_record::content_application_data, data, length);
+        }
+
+        /// @brief  Get the number of bytes of application data from the peer that are waiting to be read.
+        unsigned long long int get_read_length() const {
+            return this->application.size();
+        }
+
+        /// @brief  Read application data that was received from the peer.
+        /// @param  buffer Receives the data.
+        /// @param  capacity The size of the buffer.
+        /// @return The number of bytes read, which is zero if there is none waiting.
+        unsigned long long int read(unsigned char* buffer, const unsigned long long int capacity) {
+            const unsigned long long int length = (this->application.size() < capacity) ? this->application.size() : capacity;
+            if ((buffer == nullptr) || (length == 0)) {
+                return 0;
+            }
+            for (unsigned long long int i = 0; i < length; ++i) {
+                buffer[i] = this->application[i];
+            }
+            handshake::wipe(this->application.data(), length);
+            this->application.erase(this->application.begin(), this->application.begin() + static_cast<long long int>(length));
+            return length;
+        }
+
+        /// @brief  Change the keys that protect the data that is sent, which limits how much data any one key protects.
+        /// @param  request_peer Flag selecting whether the peer is asked to also change the keys that protect the data it sends.
+        /// @return true if the keys were changed, false if the connection is not connected or is not using TLS 1.3, which is the only version that can change keys.
+        bool update_keys(const bool request_peer = true) {
+            if ((this->state != state_type::connected) || (this->version != handshake::version_tls13) || this->close_sent) {
+                return false;
+            }
+            return this->handshake_tls13.update_keys(request_peer);
+        }
+
+        /// @brief  Close the connection, telling the peer that no more data will be sent.
+        /// @note   The output this makes must still be sent to the peer, and data that was already received can still be read.
+        void close() {
+            if ((this->state == state_type::handshake) || (this->state == state_type::connected)) {
+                this->send_close();
+                this->state = state_type::closed;
+            }
+        }
+    };
+}
+
+#endif // GTL_PROTOCOL_TLS_TLS_CONNECTION_HPP

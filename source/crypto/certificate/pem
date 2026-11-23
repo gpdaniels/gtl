@@ -1,0 +1,278 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_CRYPTO_CERTIFICATE_PEM_HPP
+#define GTL_CRYPTO_CERTIFICATE_PEM_HPP
+
+// Summary: An encoder and decoder for the privacy enhanced mail (PEM) text format used to store certificates and keys.
+
+namespace gtl {
+    /// @brief  The pem class converts between binary data and labelled blocks of base64 text.
+    /// @note   A block is a line of "-----BEGIN label-----", lines of base64 text, then a line of "-----END label-----".
+    class pem final {
+    public:
+        /// @brief  The number of base64 characters written on each line of a block.
+        constexpr static const unsigned long long int line_length = 64;
+
+    private:
+        /// @brief  The start of the line that begins a block.
+        constexpr static const char* const begin_marker = "-----BEGIN ";
+
+        /// @brief  The start of the line that ends a block.
+        constexpr static const char* const end_marker = "-----END ";
+
+        /// @brief  The end of the lines that begin and end a block.
+        constexpr static const char* const marker_tail = "-----";
+
+        /// @brief  The base64 characters in order of their values.
+        constexpr static const char* const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+    private:
+        /// @brief  Get the length of a null terminated string.
+        /// @param  string The string.
+        /// @return The number of characters before the null termination.
+        constexpr static unsigned long long int get_string_length(const char* string) {
+            unsigned long long int length = 0;
+            while (string[length] != 0) {
+                ++length;
+            }
+            return length;
+        }
+
+        /// @brief  Check if text continues with a null terminated string at an offset.
+        /// @param  text The text.
+        /// @param  text_length The length of the text.
+        /// @param  offset The offset to check at.
+        /// @param  string The string to check for.
+        /// @return true if the string is in the text at the offset.
+        constexpr static bool is_at(const char* text, const unsigned long long int text_length, const unsigned long long int offset, const char* string) {
+            const unsigned long long int string_length = pem::get_string_length(string);
+            if ((offset > text_length) || (string_length > (text_length - offset))) {
+                return false;
+            }
+            for (unsigned long long int i = 0; i < string_length; ++i) {
+                if (text[offset + i] != string[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// @brief  Check if text continues with a marker line for a label at an offset.
+        /// @param  text The text.
+        /// @param  text_length The length of the text.
+        /// @param  offset The offset to check at.
+        /// @param  marker The start of the marker line.
+        /// @param  label The label.
+        /// @return The length of the marker if it is in the text at the offset, zero otherwise.
+        constexpr static unsigned long long int get_marker_length(const char* text, const unsigned long long int text_length, const unsigned long long int offset, const char* marker, const char* label) {
+            const unsigned long long int marker_length = pem::get_string_length(marker);
+            const unsigned long long int label_length = pem::get_string_length(label);
+            if (pem::is_at(text, text_length, offset, marker) && pem::is_at(text, text_length, offset + marker_length, label) && pem::is_at(text, text_length, offset + marker_length + label_length, pem::marker_tail)) {
+                return marker_length + label_length + pem::get_string_length(pem::marker_tail);
+            }
+            return 0;
+        }
+
+        /// @brief  Get the value of a base64 character.
+        /// @param  character The character.
+        /// @return The value from zero to sixty three, or sixty four if the character is not a base64 character.
+        constexpr static unsigned int get_value(const char character) {
+            if ((character >= 'A') && (character <= 'Z')) {
+                return static_cast<unsigned int>(character - 'A');
+            }
+            if ((character >= 'a') && (character <= 'z')) {
+                return static_cast<unsigned int>(character - 'a') + 26;
+            }
+            if ((character >= '0') && (character <= '9')) {
+                return static_cast<unsigned int>(character - '0') + 52;
+            }
+            if (character == '+') {
+                return 62;
+            }
+            if (character == '/') {
+                return 63;
+            }
+            return 64;
+        }
+
+    public:
+        /// @brief  Get the size of the buffer needed to encode data.
+        /// @param  length The length of the data.
+        /// @param  label The label of the block.
+        /// @return The number of characters that encode writes for the data, not including any null termination.
+        constexpr static unsigned long long int get_encoded_length(const unsigned long long int length, const char* label) {
+            const unsigned long long int characters = ((length + 2) / 3) * 4;
+            const unsigned long long int lines = (characters + pem::line_length - 1) / pem::line_length;
+            const unsigned long long int label_length = pem::get_string_length(label);
+            return pem::get_string_length(pem::begin_marker) + label_length + pem::get_string_length(pem::marker_tail) + 1 +
+                   characters + lines +
+                   pem::get_string_length(pem::end_marker) + label_length + pem::get_string_length(pem::marker_tail) + 1;
+        }
+
+        /// @brief  Encode data as a block of text.
+        /// @param  data The data to encode.
+        /// @param  length The length of the data.
+        /// @param  label The label of the block, for example "CERTIFICATE".
+        /// @param  output The buffer that receives the text, which is not null terminated.
+        /// @param  output_capacity The size of the buffer.
+        /// @param  output_length Receives the length of the text.
+        /// @return true if the data was encoded, false if the buffer is too small in which case nothing is written.
+        constexpr static bool encode(const unsigned char* data, const unsigned long long int length, const char* label, char* output, const unsigned long long int output_capacity, unsigned long long int& output_length) {
+            if ((label == nullptr) || (output == nullptr) || ((data == nullptr) && (length != 0)) || (pem::get_encoded_length(length, label) > output_capacity)) {
+                return false;
+            }
+            unsigned long long int offset = 0;
+            const auto append = [&output, &offset](const char* string) constexpr -> void {
+                while (*string != 0) {
+                    output[offset++] = *string++;
+                }
+            };
+            append(pem::begin_marker);
+            append(label);
+            append(pem::marker_tail);
+            output[offset++] = '\n';
+            unsigned long long int line_characters = 0;
+            for (unsigned long long int i = 0; i < length; i += 3) {
+                // Each group of three bytes becomes four characters, with padding characters in place of missing bytes.
+                const unsigned long long int remaining = length - i;
+                const unsigned int group =
+                    (static_cast<unsigned int>(data[i]) << 16) |
+                    ((remaining > 1) ? (static_cast<unsigned int>(data[i + 1]) << 8) : 0u) |
+                    ((remaining > 2) ? static_cast<unsigned int>(data[i + 2]) : 0u);
+                output[offset++] = pem::alphabet[(group >> 18) & 0x3F];
+                output[offset++] = pem::alphabet[(group >> 12) & 0x3F];
+                output[offset++] = (remaining > 1) ? pem::alphabet[(group >> 6) & 0x3F] : '=';
+                output[offset++] = (remaining > 2) ? pem::alphabet[group & 0x3F] : '=';
+                line_characters += 4;
+                if (line_characters == pem::line_length) {
+                    output[offset++] = '\n';
+                    line_characters = 0;
+                }
+            }
+            if (line_characters != 0) {
+                output[offset++] = '\n';
+            }
+            append(pem::end_marker);
+            append(label);
+            append(pem::marker_tail);
+            output[offset++] = '\n';
+            output_length = offset;
+            return true;
+        }
+
+        /// @brief  Decode the first block of text with a label, at or after an offset.
+        /// @param  text The text, which may hold other blocks and other text.
+        /// @param  text_length The length of the text.
+        /// @param  label The label of the block to decode, for example "CERTIFICATE".
+        /// @param  output The buffer that receives the data.
+        /// @param  output_capacity The size of the buffer.
+        /// @param  output_length Receives the length of the data.
+        /// @param  offset The offset in the text to search from, on success it is moved past the end of the block so that the next block can be decoded.
+        /// @return true if a block was found and decoded, false if there is no block with the label, the block is not valid, or the buffer is too small.
+        constexpr static bool decode(const char* text, const unsigned long long int text_length, const char* label, unsigned char* output, const unsigned long long int output_capacity, unsigned long long int& output_length, unsigned long long int& offset) {
+            if ((text == nullptr) || (label == nullptr) || (output == nullptr)) {
+                return false;
+            }
+            // Find the line that begins the block.
+            unsigned long long int position = offset;
+            unsigned long long int marker_length = 0;
+            for (; position < text_length; ++position) {
+                marker_length = pem::get_marker_length(text, text_length, position, pem::begin_marker, label);
+                if (marker_length != 0) {
+                    break;
+                }
+            }
+            if (marker_length == 0) {
+                return false;
+            }
+            position += marker_length;
+
+            // Decode groups of four characters into three bytes until the line that ends the block.
+            unsigned long long int length = 0;
+            unsigned int group = 0;
+            unsigned int group_characters = 0;
+            unsigned int padding_characters = 0;
+            for (; position < text_length; ++position) {
+                const char character = text[position];
+                if ((character == ' ') || (character == '\t') || (character == '\r') || (character == '\n')) {
+                    continue;
+                }
+                if (character == '-') {
+                    break;
+                }
+                unsigned int value = pem::get_value(character);
+                if (character == '=') {
+                    // Padding is only valid as the last one or two characters of the last group.
+                    ++padding_characters;
+                    value = 0;
+                    if ((padding_characters > 2) || (group_characters < 2)) {
+                        return false;
+                    }
+                }
+                else if ((value > 63) || (padding_characters != 0)) {
+                    return false;
+                }
+                group = (group << 6) | value;
+                if (++group_characters == 4) {
+                    const unsigned int group_bytes = 3 - padding_characters;
+                    if (group_bytes > (output_capacity - length)) {
+                        return false;
+                    }
+                    // The bits that are not part of a byte must be zero.
+                    if (((padding_characters == 1) && ((group & 0xFF) != 0)) || ((padding_characters == 2) && ((group & 0xFFFF) != 0))) {
+                        return false;
+                    }
+                    for (unsigned int i = 0; i < group_bytes; ++i) {
+                        output[length++] = static_cast<unsigned char>((group >> (16 - (8 * i))) & 0xFF);
+                    }
+                    group = 0;
+                    group_characters = 0;
+                    if (padding_characters != 0) {
+                        // Nothing but the end of the block may follow the padding.
+                        padding_characters = 3;
+                    }
+                }
+            }
+            if (group_characters != 0) {
+                return false;
+            }
+            marker_length = pem::get_marker_length(text, text_length, position, pem::end_marker, label);
+            if (marker_length == 0) {
+                return false;
+            }
+            output_length = length;
+            offset = position + marker_length;
+            return true;
+        }
+
+        /// @brief  Decode the first block of text with a label.
+        /// @param  text The text, which may hold other blocks and other text.
+        /// @param  text_length The length of the text.
+        /// @param  label The label of the block to decode, for example "CERTIFICATE".
+        /// @param  output The buffer that receives the data.
+        /// @param  output_capacity The size of the buffer.
+        /// @param  output_length Receives the length of the data.
+        /// @return true if a block was found and decoded, false if there is no block with the label, the block is not valid, or the buffer is too small.
+        constexpr static bool decode(const char* text, const unsigned long long int text_length, const char* label, unsigned char* output, const unsigned long long int output_capacity, unsigned long long int& output_length) {
+            unsigned long long int offset = 0;
+            return pem::decode(text, text_length, label, output, output_capacity, output_length, offset);
+        }
+    };
+}
+
+#endif // GTL_CRYPTO_CERTIFICATE_PEM_HPP

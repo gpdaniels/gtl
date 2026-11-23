@@ -1,0 +1,296 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_CRYPTO_ASYMMETRIC_X25519_HPP
+#define GTL_CRYPTO_ASYMMETRIC_X25519_HPP
+
+// Summary: An implementation of the x25519 elliptic curve Diffie-Hellman key agreement function as per RFC 7748.
+
+namespace gtl {
+    /// @brief  The x25519 class implements key agreement using the montgomery form of curve25519.
+    /// @note   Every operation takes the same sequence of steps whatever the values of the keys, so the time taken does not depend on them.
+    class x25519 final {
+    public:
+        /// @brief  Size of the private keys, public keys, and shared secrets in bytes.
+        constexpr static const unsigned int key_size = 32;
+
+    private:
+        /// @brief  The number of limbs used to hold an element of the field.
+        constexpr static const unsigned int limb_count = 16;
+
+        /// @brief  An element of the field of integers modulo 2^255 - 19, held as sixteen limbs of sixteen bits each, least significant first.
+        /// @note   The limbs are signed and wider than sixteen bits so that additions and subtractions can be made without carrying.
+        struct element_type final {
+            long long int limbs[x25519::limb_count] = {};
+        };
+
+    private:
+        /// @brief  Overwrite an object with zeros in a way that is not optimised away.
+        /// @param  object The object to overwrite.
+        template <typename type>
+        static void wipe(type& object) {
+            volatile unsigned char* bytes = reinterpret_cast<unsigned char*>(&object);
+            for (unsigned long long int index = 0; index < sizeof(type); ++index) {
+                bytes[index] = 0;
+            }
+        }
+
+        /// @brief  Carry the excess of each limb into the next, leaving every limb but the first in the range of sixteen bits.
+        /// @param  element The element to carry.
+        /// @note   The excess of the last limb wraps around to the first multiplied by 38, as 2^256 is 38 modulo 2^255 - 19.
+        static void carry(element_type& element) {
+            for (unsigned int i = 0; i < x25519::limb_count; ++i) {
+                // Split the limb into its low sixteen bits and the remainder, which is exactly divisible even when the limb is negative.
+                const long long int low = element.limbs[i] & 0xFFFF;
+                const long long int high = (element.limbs[i] - low) / 0x10000;
+                element.limbs[i] = low;
+                if (i < (x25519::limb_count - 1)) {
+                    element.limbs[i + 1] += high;
+                }
+                else {
+                    element.limbs[0] += 38 * high;
+                }
+            }
+        }
+
+        /// @brief  Swap two elements if a bit is set, without branching on the bit.
+        /// @param  lhs The first element.
+        /// @param  rhs The second element.
+        /// @param  bit The bit that selects if the elements are swapped, must be zero or one.
+        static void conditional_swap(element_type& lhs, element_type& rhs, const long long int bit) {
+            const long long int mask = -bit;
+            for (unsigned int i = 0; i < x25519::limb_count; ++i) {
+                const long long int difference = mask & (lhs.limbs[i] ^ rhs.limbs[i]);
+                lhs.limbs[i] ^= difference;
+                rhs.limbs[i] ^= difference;
+            }
+        }
+
+        /// @brief  Convert little endian bytes into an element, ignoring the most significant bit.
+        /// @param  bytes The bytes to convert, must be key_size bytes long.
+        /// @return The element.
+        static element_type unpack(const unsigned char* bytes) {
+            element_type element;
+            for (unsigned int i = 0; i < x25519::limb_count; ++i) {
+                element.limbs[i] = static_cast<long long int>(bytes[2 * i]) + (static_cast<long long int>(bytes[(2 * i) + 1]) * 0x100);
+            }
+            element.limbs[x25519::limb_count - 1] &= 0x7FFF;
+            return element;
+        }
+
+        /// @brief  Convert an element into little endian bytes, fully reducing it modulo 2^255 - 19.
+        /// @param  element The element to convert.
+        /// @param  bytes The buffer that receives the bytes, must be key_size bytes long.
+        static void pack(const element_type& element, unsigned char* bytes) {
+            element_type reduced = element;
+            x25519::carry(reduced);
+            x25519::carry(reduced);
+            x25519::carry(reduced);
+            // The element is now less than 2^256, so conditionally subtracting the modulus twice leaves it fully reduced.
+            for (unsigned int iteration = 0; iteration < 2; ++iteration) {
+                element_type subtracted;
+                long long int borrow = 0;
+                for (unsigned int i = 0; i < x25519::limb_count; ++i) {
+                    const long long int modulus_limb = (i == 0) ? 0xFFED : ((i == (x25519::limb_count - 1)) ? 0x7FFF : 0xFFFF);
+                    const long long int difference = reduced.limbs[i] - modulus_limb - borrow;
+                    // The borrow is the sign bit of the difference.
+                    borrow = static_cast<long long int>(static_cast<unsigned long long int>(difference) >> 63);
+                    subtracted.limbs[i] = difference & 0xFFFF;
+                }
+                // Keep the subtracted value only if the subtraction did not borrow.
+                x25519::conditional_swap(reduced, subtracted, 1 - borrow);
+                x25519::wipe(subtracted);
+            }
+            for (unsigned int i = 0; i < x25519::limb_count; ++i) {
+                bytes[2 * i] = static_cast<unsigned char>(reduced.limbs[i] & 0xFF);
+                bytes[(2 * i) + 1] = static_cast<unsigned char>((reduced.limbs[i] / 0x100) & 0xFF);
+            }
+            x25519::wipe(reduced);
+        }
+
+        /// @brief  Add two elements, without carrying.
+        /// @param  lhs The left hand side of the addition.
+        /// @param  rhs The right hand side of the addition.
+        /// @return The sum of the elements.
+        static element_type add(const element_type& lhs, const element_type& rhs) {
+            element_type result;
+            for (unsigned int i = 0; i < x25519::limb_count; ++i) {
+                result.limbs[i] = lhs.limbs[i] + rhs.limbs[i];
+            }
+            return result;
+        }
+
+        /// @brief  Subtract two elements, without carrying.
+        /// @param  lhs The left hand side of the subtraction.
+        /// @param  rhs The right hand side of the subtraction.
+        /// @return The difference of the elements.
+        static element_type subtract(const element_type& lhs, const element_type& rhs) {
+            element_type result;
+            for (unsigned int i = 0; i < x25519::limb_count; ++i) {
+                result.limbs[i] = lhs.limbs[i] - rhs.limbs[i];
+            }
+            return result;
+        }
+
+        /// @brief  Multiply two elements.
+        /// @param  lhs The left hand side of the multiplication.
+        /// @param  rhs The right hand side of the multiplication.
+        /// @return The product of the elements, carried.
+        static element_type multiply(const element_type& lhs, const element_type& rhs) {
+            long long int product[(2 * x25519::limb_count) - 1] = {};
+            for (unsigned int i = 0; i < x25519::limb_count; ++i) {
+                for (unsigned int j = 0; j < x25519::limb_count; ++j) {
+                    product[i + j] += lhs.limbs[i] * rhs.limbs[j];
+                }
+            }
+            // The limbs above 2^256 wrap around multiplied by 38, as 2^256 is 38 modulo 2^255 - 19.
+            for (unsigned int i = 0; i < (x25519::limb_count - 1); ++i) {
+                product[i] += 38 * product[i + x25519::limb_count];
+            }
+            element_type result;
+            for (unsigned int i = 0; i < x25519::limb_count; ++i) {
+                result.limbs[i] = product[i];
+            }
+            x25519::carry(result);
+            x25519::carry(result);
+            x25519::wipe(product);
+            return result;
+        }
+
+        /// @brief  Square an element.
+        /// @param  value The element to square.
+        /// @return The square of the element, carried.
+        static element_type square(const element_type& value) {
+            return x25519::multiply(value, value);
+        }
+
+        /// @brief  Compute the multiplicative inverse of an element.
+        /// @param  value The element to invert.
+        /// @return The inverse of the element, or zero if the element is zero.
+        static element_type invert(const element_type& value) {
+            // The inverse is the element raised to the power of the modulus minus two, which is 2^255 - 21.
+            // Every bit of that exponent is set other than bits two and four.
+            element_type result = value;
+            for (int bit = 253; bit >= 0; --bit) {
+                result = x25519::square(result);
+                if ((bit != 2) && (bit != 4)) {
+                    result = x25519::multiply(result, value);
+                }
+            }
+            return result;
+        }
+
+    public:
+        /// @brief  The x25519 function, multiplying a point on the curve by a scalar.
+        /// @param  scalar The scalar, must be key_size bytes long, it is clamped as required by RFC 7748 before it is used.
+        /// @param  point The little endian u coordinate of the point to multiply, must be key_size bytes long, its most significant bit is ignored.
+        /// @param  output The buffer that receives the little endian u coordinate of the product, must be key_size bytes long, and may be either input.
+        static void scalar_multiply(const unsigned char* scalar, const unsigned char* point, unsigned char* output) {
+            // Clamp the scalar, clearing the cofactor bits and setting the top bit.
+            unsigned char clamped[x25519::key_size] = {};
+            for (unsigned int i = 0; i < x25519::key_size; ++i) {
+                clamped[i] = scalar[i];
+            }
+            clamped[0] &= 248;
+            clamped[31] &= 127;
+            clamped[31] |= 64;
+
+            // The curve constant (486662 - 2) / 4.
+            element_type a24;
+            a24.limbs[0] = 0xDB41;
+            a24.limbs[1] = 0x0001;
+
+            // The montgomery ladder, tracking the projective u coordinates of two points that differ by the input point.
+            const element_type x1 = x25519::unpack(point);
+            element_type x2;
+            x2.limbs[0] = 1;
+            element_type z2;
+            element_type x3 = x1;
+            element_type z3;
+            z3.limbs[0] = 1;
+            for (int bit = 254; bit >= 0; --bit) {
+                const long long int swap = (clamped[bit / 8] >> (bit % 8)) & 1;
+                x25519::conditional_swap(x2, x3, swap);
+                x25519::conditional_swap(z2, z3, swap);
+                element_type a = x25519::add(x2, z2);
+                element_type b = x25519::subtract(x2, z2);
+                element_type c = x25519::add(x3, z3);
+                element_type d = x25519::subtract(x3, z3);
+                element_type da = x25519::multiply(d, a);
+                element_type cb = x25519::multiply(c, b);
+                element_type aa = x25519::square(a);
+                element_type bb = x25519::square(b);
+                element_type e = x25519::subtract(aa, bb);
+                x3 = x25519::square(x25519::add(da, cb));
+                z3 = x25519::multiply(x1, x25519::square(x25519::subtract(da, cb)));
+                x2 = x25519::multiply(aa, bb);
+                z2 = x25519::multiply(e, x25519::add(aa, x25519::multiply(a24, e)));
+                x25519::conditional_swap(x2, x3, swap);
+                x25519::conditional_swap(z2, z3, swap);
+                x25519::wipe(a);
+                x25519::wipe(b);
+                x25519::wipe(c);
+                x25519::wipe(d);
+                x25519::wipe(da);
+                x25519::wipe(cb);
+                x25519::wipe(aa);
+                x25519::wipe(bb);
+                x25519::wipe(e);
+            }
+
+            // Convert the projective coordinate back to an affine coordinate.
+            element_type result = x25519::multiply(x2, x25519::invert(z2));
+            x25519::pack(result, output);
+
+            // The scalar and the intermediate values must not be left on the stack.
+            x25519::wipe(clamped);
+            x25519::wipe(x2);
+            x25519::wipe(z2);
+            x25519::wipe(x3);
+            x25519::wipe(z3);
+            x25519::wipe(result);
+        }
+
+    public:
+        /// @brief  Generate the public key that corresponds to a private key.
+        /// @param  private_key The private key, key_size bytes that must be random and kept secret.
+        /// @param  public_key The buffer that receives the public key, must be key_size bytes long.
+        static void generate_public_key(const unsigned char* private_key, unsigned char* public_key) {
+            // The public key is the base point, which has a u coordinate of nine, multiplied by the private key.
+            const unsigned char base_point[x25519::key_size] = { 9 };
+            x25519::scalar_multiply(private_key, base_point, public_key);
+        }
+
+        /// @brief  Generate the secret shared between a private key and the public key of a peer.
+        /// @param  private_key The private key, must be key_size bytes long.
+        /// @param  peer_public_key The public key of the peer, must be key_size bytes long.
+        /// @param  shared_secret The buffer that receives the shared secret, must be key_size bytes long.
+        /// @return true if the shared secret is usable, false if it is all zeros which means the public key of the peer was not valid.
+        /// @note   The shared secret should be passed through a key derivation function before it is used as a key.
+        static bool generate_shared_secret(const unsigned char* private_key, const unsigned char* peer_public_key, unsigned char* shared_secret) {
+            x25519::scalar_multiply(private_key, peer_public_key, shared_secret);
+            // A point of small order gives a shared secret of zero whatever the private key is.
+            unsigned int combined = 0;
+            for (unsigned int i = 0; i < x25519::key_size; ++i) {
+                combined |= shared_secret[i];
+            }
+            return (combined != 0);
+        }
+    };
+}
+
+#endif // GTL_CRYPTO_ASYMMETRIC_X25519_HPP

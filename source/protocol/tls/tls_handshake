@@ -1,0 +1,1158 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_PROTOCOL_TLS_TLS_HANDSHAKE_HPP
+#define GTL_PROTOCOL_TLS_TLS_HANDSHAKE_HPP
+
+// Summary: The definitions, message encodings, and cryptographic helpers shared by the handshakes of the transport layer security protocol.
+
+#include <crypto/asymmetric/elliptic_curve>
+#include <crypto/asymmetric/x25519>
+#include <crypto/certificate/x509>
+#include <crypto/hash/sha2>
+#include <crypto/mac/hmac>
+#include <protocol/tls/tls_record>
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <functional>
+#include <vector>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace gtl {
+    /// @brief  The tls_handshake class holds what the handshakes of TLS 1.2 and TLS 1.3 have in common.
+    /// @note   This is the constants of the protocol, readers and writers of its encoding, the hello messages that start every handshake, and the key exchange and hashing that both versions use.
+    class tls_handshake final {
+    public:
+        /// @brief  The versions of the protocol as they are encoded.
+        constexpr static const unsigned int version_tls12 = 0x0303;
+        constexpr static const unsigned int version_tls13 = 0x0304;
+
+        /// @brief  The types of handshake message.
+        constexpr static const unsigned char message_hello_request = 0;
+        constexpr static const unsigned char message_client_hello = 1;
+        constexpr static const unsigned char message_server_hello = 2;
+        constexpr static const unsigned char message_new_session_ticket = 4;
+        constexpr static const unsigned char message_encrypted_extensions = 8;
+        constexpr static const unsigned char message_certificate = 11;
+        constexpr static const unsigned char message_server_key_exchange = 12;
+        constexpr static const unsigned char message_certificate_request = 13;
+        constexpr static const unsigned char message_server_hello_done = 14;
+        constexpr static const unsigned char message_certificate_verify = 15;
+        constexpr static const unsigned char message_client_key_exchange = 16;
+        constexpr static const unsigned char message_finished = 20;
+        constexpr static const unsigned char message_key_update = 24;
+
+        /// @brief  The descriptions of alerts.
+        constexpr static const unsigned char alert_close_notify = 0;
+        constexpr static const unsigned char alert_unexpected_message = 10;
+        constexpr static const unsigned char alert_bad_record_mac = 20;
+        constexpr static const unsigned char alert_record_overflow = 22;
+        constexpr static const unsigned char alert_handshake_failure = 40;
+        constexpr static const unsigned char alert_bad_certificate = 42;
+        constexpr static const unsigned char alert_unsupported_certificate = 43;
+        constexpr static const unsigned char alert_certificate_expired = 45;
+        constexpr static const unsigned char alert_certificate_unknown = 46;
+        constexpr static const unsigned char alert_illegal_parameter = 47;
+        constexpr static const unsigned char alert_unknown_authority = 48;
+        constexpr static const unsigned char alert_decode_error = 50;
+        constexpr static const unsigned char alert_decrypt_error = 51;
+        constexpr static const unsigned char alert_protocol_version = 70;
+        constexpr static const unsigned char alert_internal_error = 80;
+        constexpr static const unsigned char alert_user_canceled = 90;
+        constexpr static const unsigned char alert_no_renegotiation = 100;
+        constexpr static const unsigned char alert_missing_extension = 109;
+        constexpr static const unsigned char alert_unsupported_extension = 110;
+
+        /// @brief  The levels of alerts.
+        constexpr static const unsigned char alert_level_warning = 1;
+        constexpr static const unsigned char alert_level_fatal = 2;
+
+        /// @brief  The types of extension.
+        constexpr static const unsigned int extension_server_name = 0;
+        constexpr static const unsigned int extension_supported_groups = 10;
+        constexpr static const unsigned int extension_point_formats = 11;
+        constexpr static const unsigned int extension_signature_algorithms = 13;
+        constexpr static const unsigned int extension_extended_master_secret = 23;
+        constexpr static const unsigned int extension_supported_versions = 43;
+        constexpr static const unsigned int extension_key_share = 51;
+        constexpr static const unsigned int extension_renegotiation_info = 0xFF01;
+
+        /// @brief  The cipher suites of TLS 1.3, which name a cipher and a hash function.
+        constexpr static const unsigned int suite_aes_128_gcm_sha256 = 0x1301;
+        constexpr static const unsigned int suite_aes_256_gcm_sha384 = 0x1302;
+        constexpr static const unsigned int suite_chacha20_poly1305_sha256 = 0x1303;
+
+        /// @brief  The cipher suites of TLS 1.2, which also name the key exchange and the kind of key that signs it.
+        constexpr static const unsigned int suite_ecdhe_ecdsa_aes_128_gcm_sha256 = 0xC02B;
+        constexpr static const unsigned int suite_ecdhe_ecdsa_aes_256_gcm_sha384 = 0xC02C;
+        constexpr static const unsigned int suite_ecdhe_rsa_aes_128_gcm_sha256 = 0xC02F;
+        constexpr static const unsigned int suite_ecdhe_rsa_aes_256_gcm_sha384 = 0xC030;
+        constexpr static const unsigned int suite_ecdhe_rsa_chacha20_poly1305_sha256 = 0xCCA8;
+        constexpr static const unsigned int suite_ecdhe_ecdsa_chacha20_poly1305_sha256 = 0xCCA9;
+
+        /// @brief  The value sent in place of a cipher suite to say that secure renegotiation is supported.
+        constexpr static const unsigned int suite_renegotiation_info = 0x00FF;
+
+        /// @brief  The groups that keys can be exchanged with.
+        constexpr static const unsigned int group_secp256r1 = 23;
+        constexpr static const unsigned int group_secp384r1 = 24;
+        constexpr static const unsigned int group_x25519 = 29;
+
+        /// @brief  The signature schemes as they are encoded.
+        constexpr static const unsigned int signature_rsa_pkcs1_sha256 = 0x0401;
+        constexpr static const unsigned int signature_rsa_pkcs1_sha384 = 0x0501;
+        constexpr static const unsigned int signature_rsa_pkcs1_sha512 = 0x0601;
+        constexpr static const unsigned int signature_ecdsa_sha256 = 0x0403;
+        constexpr static const unsigned int signature_ecdsa_sha384 = 0x0503;
+        constexpr static const unsigned int signature_ecdsa_sha512 = 0x0603;
+        constexpr static const unsigned int signature_rsa_pss_sha256 = 0x0804;
+        constexpr static const unsigned int signature_rsa_pss_sha384 = 0x0805;
+        constexpr static const unsigned int signature_rsa_pss_sha512 = 0x0806;
+
+        /// @brief  The size of the random value in a hello message.
+        constexpr static const unsigned int random_size = 32;
+
+        /// @brief  The largest size of a session identifier.
+        constexpr static const unsigned int session_id_size_max = 32;
+
+        /// @brief  The largest size of a hash.
+        constexpr static const unsigned int hash_size_max = 48;
+
+        /// @brief  The largest size of the private value of a key exchange.
+        constexpr static const unsigned int exchange_private_size_max = 48;
+
+        /// @brief  The largest size of the public value of a key exchange.
+        constexpr static const unsigned int exchange_public_size_max = 97;
+
+        /// @brief  The largest size of the shared secret of a key exchange.
+        constexpr static const unsigned int exchange_secret_size_max = 48;
+
+        /// @brief  The largest handshake message that is accepted.
+        constexpr static const unsigned int message_size_max = 1 << 17;
+
+        /// @brief  The hash functions used by the cipher suites.
+        enum class hash_type {
+            sha2_256,
+            sha2_384
+        };
+
+    public:
+        /// @brief  A reader of the encoding used by the protocol: big endian integers, and vectors that are prefixed by their length.
+        /// @note   Reading past the end of the data returns zeros and makes the reader invalid, so validity can be checked once after reading a whole structure.
+        class reader final {
+        private:
+            /// @brief  The data that has not been read yet.
+            const unsigned char* data = nullptr;
+
+            /// @brief  The length of the data that has not been read yet.
+            unsigned long long int length = 0;
+
+            /// @brief  Flag showing whether every read so far was inside the data.
+            bool valid = true;
+
+        public:
+            /// @brief  Construct a reader with nothing to read.
+            reader() = default;
+
+            /// @brief  Construct a reader of a buffer.
+            reader(const unsigned char* buffer, const unsigned long long int buffer_length)
+                : data(buffer)
+                , length((buffer != nullptr) ? buffer_length : 0) {
+            }
+
+        public:
+            /// @brief  Check if every read so far was inside the data.
+            bool is_valid() const {
+                return this->valid;
+            }
+
+            /// @brief  Check if everything has been read, and every read was inside the data.
+            bool is_end() const {
+                return this->valid && (this->length == 0);
+            }
+
+            /// @brief  Get the data that has not been read yet.
+            const unsigned char* get_data() const {
+                return this->data;
+            }
+
+            /// @brief  Get the length of the data that has not been read yet.
+            unsigned long long int get_length() const {
+                return this->length;
+            }
+
+            /// @brief  Read a number of bytes.
+            /// @return A pointer to the bytes, or null if there are not that many left.
+            const unsigned char* read_bytes(const unsigned long long int count) {
+                if ((!this->valid) || (count > this->length)) {
+                    this->valid = false;
+                    this->length = 0;
+                    return nullptr;
+                }
+                const unsigned char* bytes = this->data;
+                this->data += count;
+                this->length -= count;
+                return bytes;
+            }
+
+            /// @brief  Read a big endian integer of a number of bytes, from one to four.
+            unsigned int read_integer(const unsigned int size) {
+                const unsigned char* bytes = this->read_bytes(size);
+                unsigned int value = 0;
+                for (unsigned int i = 0; (bytes != nullptr) && (i < size); ++i) {
+                    value = (value << 8) | bytes[i];
+                }
+                return value;
+            }
+
+            /// @brief  Read a vector, which is a length of a number of bytes followed by that many bytes of contents.
+            /// @param  length_size The size of the length, from one to three bytes.
+            /// @return A reader of the contents, which is invalid if the vector is not all inside the data.
+            reader read_vector(const unsigned int length_size) {
+                const unsigned int vector_length = this->read_integer(length_size);
+                const unsigned char* bytes = this->read_bytes(vector_length);
+                reader contents(bytes, vector_length);
+                contents.valid = this->valid;
+                return contents;
+            }
+        };
+
+        /// @brief  A writer of the encoding used by the protocol, which appends to a buffer.
+        class writer final {
+        private:
+            /// @brief  The buffer that is appended to.
+            std::vector<unsigned char>& buffer;
+
+        public:
+            /// @brief  Construct a writer that appends to a buffer.
+            explicit writer(std::vector<unsigned char>& output)
+                : buffer(output) {
+            }
+
+        public:
+            /// @brief  Write bytes.
+            void write_bytes(const unsigned char* bytes, const unsigned long long int count) {
+                if (count != 0) {
+                    this->buffer.insert(this->buffer.end(), bytes, bytes + count);
+                }
+            }
+
+            /// @brief  Write a big endian integer of a number of bytes, from one to four.
+            void write_integer(const unsigned int value, const unsigned int size) {
+                for (unsigned int i = size; i-- > 0;) {
+                    this->buffer.push_back(static_cast<unsigned char>((value >> (8 * i)) & 0xFF));
+                }
+            }
+
+            /// @brief  Start a vector, which will hold whatever is written until the matching call to end_vector.
+            /// @param  length_size The size of the length of the vector, from one to three bytes.
+            /// @return A marker to pass to the matching call to end_vector.
+            unsigned long long int begin_vector(const unsigned int length_size) {
+                const unsigned long long int marker = this->buffer.size();
+                this->write_integer(0, length_size);
+                return marker;
+            }
+
+            /// @brief  Finish a vector, filling in its length.
+            /// @param  marker The marker returned by the matching call to begin_vector.
+            /// @param  length_size The size of the length of the vector, as passed to begin_vector.
+            void end_vector(const unsigned long long int marker, const unsigned int length_size) {
+                const unsigned long long int vector_length = this->buffer.size() - marker - length_size;
+                for (unsigned int i = 0; i < length_size; ++i) {
+                    this->buffer[marker + i] = static_cast<unsigned char>((vector_length >> (8 * (length_size - 1 - i))) & 0xFF);
+                }
+            }
+
+            /// @brief  Start a handshake message, which is a type followed by a three byte length.
+            /// @return A marker to pass to end_message.
+            unsigned long long int begin_message(const unsigned char type) {
+                this->write_integer(type, 1);
+                return this->begin_vector(3);
+            }
+
+            /// @brief  Finish a handshake message.
+            void end_message(const unsigned long long int marker) {
+                this->end_vector(marker, 3);
+            }
+        };
+
+    public:
+        /// @brief  Overwrite a buffer with zeros in a way that is not optimised away.
+        static void wipe(unsigned char* buffer, const unsigned long long int length) {
+            volatile unsigned char* bytes = buffer;
+            for (unsigned long long int index = 0; index < length; ++index) {
+                bytes[index] = 0;
+            }
+        }
+
+        /// @brief  Compare two buffers of the same length without stopping at the first difference.
+        /// @return true if the buffers hold the same bytes.
+        static bool is_equal(const unsigned char* lhs, const unsigned char* rhs, const unsigned long long int length) {
+            unsigned int difference = 0;
+            for (unsigned long long int i = 0; i < length; ++i) {
+                difference |= static_cast<unsigned int>(lhs[i] ^ rhs[i]);
+            }
+            return (difference == 0);
+        }
+
+        /// @brief  Fill a buffer with random bytes.
+        /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called.
+        static void fill_random(const std::function<unsigned int()>& random_generator, unsigned char* buffer, const unsigned int length) {
+            for (unsigned int i = 0; i < length; i += 4) {
+                const unsigned int random = random_generator();
+                for (unsigned int j = 0; (j < 4) && ((i + j) < length); ++j) {
+                    buffer[i + j] = static_cast<unsigned char>((random >> (8 * j)) & 0xFF);
+                }
+            }
+        }
+
+    public:
+        /// @brief  Get the size of the output of a hash function.
+        constexpr static unsigned int get_hash_size(const hash_type hash) {
+            return (hash == hash_type::sha2_256) ? 32 : 48;
+        }
+
+    private:
+        /// @brief  Compute a message authentication code of the concatenation of a number of buffers.
+        template <typename hash_function_type>
+        static void authenticate_using(const unsigned char* key, const unsigned int key_length, const unsigned char* const* parts, const unsigned long long int* lengths, const unsigned int count, unsigned char* output) {
+            typename gtl::hmac<hash_function_type>::key_type hmac_key;
+            for (unsigned int i = 0; i < key_length; ++i) {
+                hmac_key.data[i] = key[i];
+            }
+            gtl::hmac<hash_function_type> authenticator(hmac_key);
+            for (unsigned int i = 0; i < count; ++i) {
+                if (lengths[i] != 0) {
+                    authenticator.consume(reinterpret_cast<const char*>(parts[i]), lengths[i]);
+                }
+            }
+            authenticator.finalise();
+            for (unsigned int i = 0; i < hash_function_type::hash_size; ++i) {
+                output[i] = authenticator.get_hash().data[i];
+            }
+            tls_handshake::wipe(hmac_key.data, sizeof(hmac_key.data));
+            tls_handshake::wipe(reinterpret_cast<unsigned char*>(&authenticator), sizeof(authenticator));
+        }
+
+    public:
+        /// @brief  Compute a message authentication code of the concatenation of a number of buffers.
+        /// @param  hash The hash function.
+        /// @param  key The key, must be no longer than the output of the hash function.
+        /// @param  key_length The length of the key.
+        /// @param  parts The buffers.
+        /// @param  lengths The length of each buffer.
+        /// @param  count The number of buffers.
+        /// @param  output Receives the code, which is as long as the output of the hash function.
+        static void authenticate(const hash_type hash, const unsigned char* key, const unsigned int key_length, const unsigned char* const* parts, const unsigned long long int* lengths, const unsigned int count, unsigned char* output) {
+            if (hash == hash_type::sha2_256) {
+                tls_handshake::authenticate_using<gtl::sha2<256>>(key, key_length, parts, lengths, count, output);
+            }
+            else {
+                tls_handshake::authenticate_using<gtl::sha2<384>>(key, key_length, parts, lengths, count, output);
+            }
+        }
+
+        /// @brief  The hash of every handshake message sent and received so far.
+        /// @note   The hash function is not known until the cipher suite is chosen, so every supported hash function is computed.
+        class transcript final {
+        private:
+            gtl::sha2<256> hash_sha2_256;
+            gtl::sha2<384> hash_sha2_384;
+
+        public:
+            /// @brief  Construct an empty transcript.
+            transcript() {
+                this->reset();
+            }
+
+            /// @brief  Empty the transcript.
+            void reset() {
+                this->hash_sha2_256.reset();
+                this->hash_sha2_384.reset();
+            }
+
+            /// @brief  Add data to the transcript.
+            void update(const unsigned char* data, const unsigned long long int length) {
+                if (length != 0) {
+                    this->hash_sha2_256.consume(reinterpret_cast<const char*>(data), length);
+                    this->hash_sha2_384.consume(reinterpret_cast<const char*>(data), length);
+                }
+            }
+
+            /// @brief  Get the hash of the transcript so far, without ending it.
+            /// @param  hash The hash function.
+            /// @param  output Receives the hash.
+            void get_hash(const hash_type hash, unsigned char* output) const {
+                if (hash == hash_type::sha2_256) {
+                    gtl::sha2<256> copy = this->hash_sha2_256;
+                    copy.finalise();
+                    for (unsigned int i = 0; i < 32; ++i) {
+                        output[i] = copy.get_hash().data[i];
+                    }
+                }
+                else {
+                    gtl::sha2<384> copy = this->hash_sha2_384;
+                    copy.finalise();
+                    for (unsigned int i = 0; i < 48; ++i) {
+                        output[i] = copy.get_hash().data[i];
+                    }
+                }
+            }
+        };
+
+    public:
+        /// @brief  Check if a group can be used to exchange keys.
+        constexpr static bool is_supported_group(const unsigned int group) {
+            return (group == tls_handshake::group_x25519) || (group == tls_handshake::group_secp256r1) || (group == tls_handshake::group_secp384r1);
+        }
+
+        /// @brief  Generate the private and public values of a key exchange.
+        /// @param  group The group.
+        /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called.
+        /// @param  private_value Receives the private value, must be exchange_private_size_max bytes long.
+        /// @param  public_value Receives the public value as it is sent, must be exchange_public_size_max bytes long.
+        /// @param  public_length Receives the length of the public value.
+        /// @return true if the values were generated, false if the group is not supported.
+        static bool generate_exchange(const unsigned int group, const std::function<unsigned int()>& random_generator, unsigned char* private_value, unsigned char* public_value, unsigned int& public_length) {
+            if (!random_generator) {
+                return false;
+            }
+            if (group == tls_handshake::group_x25519) {
+                tls_handshake::fill_random(random_generator, private_value, gtl::x25519::key_size);
+                gtl::x25519::generate_public_key(private_value, public_value);
+                public_length = gtl::x25519::key_size;
+                return true;
+            }
+            if ((group != tls_handshake::group_secp256r1) && (group != tls_handshake::group_secp384r1)) {
+                return false;
+            }
+            // The public value is a point in its uncompressed form, a byte of 0x04 followed by the two coordinates.
+            const unsigned int coordinate_size = (group == tls_handshake::group_secp256r1) ? 32 : 48;
+            public_value[0] = 0x04;
+            // Almost every random value is a valid private value, so this very rarely repeats.
+            for (unsigned int attempt = 0; attempt < 64; ++attempt) {
+                tls_handshake::fill_random(random_generator, private_value, coordinate_size);
+                const bool generated = (group == tls_handshake::group_secp256r1) ? gtl::elliptic_curve<gtl::elliptic_curve_type::secp256r1>::generate_public_key(private_value, &public_value[1]) : gtl::elliptic_curve<gtl::elliptic_curve_type::secp384r1>::generate_public_key(private_value, &public_value[1]);
+                if (generated) {
+                    public_length = 1 + (2 * coordinate_size);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// @brief  Compute the shared secret of a key exchange.
+        /// @param  group The group.
+        /// @param  private_value The private value, as generated by generate_exchange.
+        /// @param  peer_public The public value of the peer, as it was sent.
+        /// @param  peer_public_length The length of the public value of the peer.
+        /// @param  secret Receives the shared secret, must be exchange_secret_size_max bytes long.
+        /// @param  secret_length Receives the length of the shared secret.
+        /// @return true if the secret was computed, false if the group is not supported or the public value of the peer is not valid.
+        static bool compute_exchange(const unsigned int group, const unsigned char* private_value, const unsigned char* peer_public, const unsigned long long int peer_public_length, unsigned char* secret, unsigned int& secret_length) {
+            if (peer_public == nullptr) {
+                return false;
+            }
+            if (group == tls_handshake::group_x25519) {
+                if ((peer_public_length != gtl::x25519::key_size) || !gtl::x25519::generate_shared_secret(private_value, peer_public, secret)) {
+                    return false;
+                }
+                secret_length = gtl::x25519::key_size;
+                return true;
+            }
+            if ((group != tls_handshake::group_secp256r1) && (group != tls_handshake::group_secp384r1)) {
+                return false;
+            }
+            const unsigned int coordinate_size = (group == tls_handshake::group_secp256r1) ? 32 : 48;
+            if ((peer_public_length != (1 + (2ull * coordinate_size))) || (peer_public[0] != 0x04)) {
+                return false;
+            }
+            const bool computed = (group == tls_handshake::group_secp256r1) ? gtl::elliptic_curve<gtl::elliptic_curve_type::secp256r1>::generate_shared_secret(private_value, &peer_public[1], secret) : gtl::elliptic_curve<gtl::elliptic_curve_type::secp384r1>::generate_shared_secret(private_value, &peer_public[1], secret);
+            if (!computed) {
+                return false;
+            }
+            secret_length = coordinate_size;
+            return true;
+        }
+
+    public:
+        /// @brief  Get the signature scheme that an encoded signature scheme stands for.
+        /// @param  code The encoded signature scheme.
+        /// @return The signature scheme, or unknown if it is not supported.
+        constexpr static gtl::x509::signature_scheme get_signature_scheme(const unsigned int code) {
+            switch (code) {
+                case tls_handshake::signature_rsa_pkcs1_sha256:
+                    return gtl::x509::signature_scheme::rsa_pkcs1_sha2_256;
+                case tls_handshake::signature_rsa_pkcs1_sha384:
+                    return gtl::x509::signature_scheme::rsa_pkcs1_sha2_384;
+                case tls_handshake::signature_rsa_pkcs1_sha512:
+                    return gtl::x509::signature_scheme::rsa_pkcs1_sha2_512;
+                case tls_handshake::signature_ecdsa_sha256:
+                    return gtl::x509::signature_scheme::ecdsa_sha2_256;
+                case tls_handshake::signature_ecdsa_sha384:
+                    return gtl::x509::signature_scheme::ecdsa_sha2_384;
+                case tls_handshake::signature_ecdsa_sha512:
+                    return gtl::x509::signature_scheme::ecdsa_sha2_512;
+                case tls_handshake::signature_rsa_pss_sha256:
+                    return gtl::x509::signature_scheme::rsa_pss_sha2_256;
+                case tls_handshake::signature_rsa_pss_sha384:
+                    return gtl::x509::signature_scheme::rsa_pss_sha2_384;
+                case tls_handshake::signature_rsa_pss_sha512:
+                    return gtl::x509::signature_scheme::rsa_pss_sha2_512;
+                default:
+                    break;
+            }
+            return gtl::x509::signature_scheme::unknown;
+        }
+
+        /// @brief  Check if an encoded signature scheme may be used with a kind of key in a version of the protocol.
+        /// @param  code The encoded signature scheme.
+        /// @param  key The kind of key.
+        /// @param  is_tls13 Flag selecting the rules of TLS 1.3, where each elliptic curve scheme is tied to one curve and the older rsa padding is not allowed.
+        /// @return true if the scheme may be used.
+        constexpr static bool is_signature_allowed(const unsigned int code, const gtl::x509::key_algorithm key, const bool is_tls13) {
+            switch (code) {
+                case tls_handshake::signature_rsa_pkcs1_sha256:
+                case tls_handshake::signature_rsa_pkcs1_sha384:
+                case tls_handshake::signature_rsa_pkcs1_sha512:
+                    return (key == gtl::x509::key_algorithm::rsa) && !is_tls13;
+                case tls_handshake::signature_rsa_pss_sha256:
+                case tls_handshake::signature_rsa_pss_sha384:
+                case tls_handshake::signature_rsa_pss_sha512:
+                    return (key == gtl::x509::key_algorithm::rsa);
+                case tls_handshake::signature_ecdsa_sha256:
+                    return (key == gtl::x509::key_algorithm::secp256r1) || (!is_tls13 && (key == gtl::x509::key_algorithm::secp384r1));
+                case tls_handshake::signature_ecdsa_sha384:
+                    return (key == gtl::x509::key_algorithm::secp384r1) || (!is_tls13 && (key == gtl::x509::key_algorithm::secp256r1));
+                case tls_handshake::signature_ecdsa_sha512:
+                    return !is_tls13 && ((key == gtl::x509::key_algorithm::secp256r1) || (key == gtl::x509::key_algorithm::secp384r1));
+                default:
+                    break;
+            }
+            return false;
+        }
+
+        /// @brief  Choose the signature scheme to sign with, from those that the peer supports.
+        /// @param  key The kind of key that will sign.
+        /// @param  schemes The encoded signature schemes that the peer supports, two bytes each.
+        /// @param  schemes_length The length of the encoded signature schemes in bytes.
+        /// @param  is_tls13 Flag selecting the rules of TLS 1.3.
+        /// @return The encoded signature scheme, or zero if the peer supports none that the key can use.
+        static unsigned int choose_signature(const gtl::x509::key_algorithm key, const unsigned char* schemes, const unsigned long long int schemes_length, const bool is_tls13) {
+            // In order of preference: the probabilistic rsa padding before the older one, and each curve with the hash function of its own size first.
+            const unsigned int preferences[9] = {
+                tls_handshake::signature_rsa_pss_sha256,
+                tls_handshake::signature_rsa_pss_sha384,
+                tls_handshake::signature_rsa_pss_sha512,
+                tls_handshake::signature_rsa_pkcs1_sha256,
+                tls_handshake::signature_rsa_pkcs1_sha384,
+                tls_handshake::signature_rsa_pkcs1_sha512,
+                (key == gtl::x509::key_algorithm::secp384r1) ? tls_handshake::signature_ecdsa_sha384 : tls_handshake::signature_ecdsa_sha256,
+                (key == gtl::x509::key_algorithm::secp384r1) ? tls_handshake::signature_ecdsa_sha256 : tls_handshake::signature_ecdsa_sha384,
+                tls_handshake::signature_ecdsa_sha512
+            };
+            for (const unsigned int preference : preferences) {
+                if (!tls_handshake::is_signature_allowed(preference, key, is_tls13)) {
+                    continue;
+                }
+                for (unsigned long long int i = 0; (i + 1) < schemes_length; i += 2) {
+                    if (((static_cast<unsigned int>(schemes[i]) << 8) | schemes[i + 1]) == preference) {
+                        return preference;
+                    }
+                }
+            }
+            return 0;
+        }
+
+        /// @brief  Check if a list of two byte values holds a value.
+        static bool has_value(const unsigned char* list, const unsigned long long int list_length, const unsigned int value) {
+            for (unsigned long long int i = 0; (i + 1) < list_length; i += 2) {
+                if (((static_cast<unsigned int>(list[i]) << 8) | list[i + 1]) == value) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// @brief  Convert the result of verifying a chain of certificates into the alert that reports it.
+        constexpr static unsigned char get_alert(const gtl::x509::status status) {
+            switch (status) {
+                case gtl::x509::status::valid:
+                    break;
+                case gtl::x509::status::expired:
+                case gtl::x509::status::not_yet_valid:
+                    return tls_handshake::alert_certificate_expired;
+                case gtl::x509::status::unknown_issuer:
+                    return tls_handshake::alert_unknown_authority;
+                case gtl::x509::status::invalid_chain:
+                case gtl::x509::status::invalid_signature:
+                case gtl::x509::status::weak_signature:
+                case gtl::x509::status::invalid_issuer:
+                case gtl::x509::status::host_mismatch:
+                    return tls_handshake::alert_bad_certificate;
+                case gtl::x509::status::unsupported_extension:
+                case gtl::x509::status::invalid_purpose:
+                    return tls_handshake::alert_unsupported_certificate;
+            }
+            return tls_handshake::alert_internal_error;
+        }
+
+    public:
+        /// @brief  The settings of one end of a connection that the handshakes need.
+        class settings_type final {
+        public:
+            /// @brief  Flag selecting the client side of the handshake.
+            bool is_client = true;
+
+            /// @brief  A function that returns 32 uniformly distributed random bits each time it is called, which must be unpredictable for the connection to be secure.
+            std::function<unsigned int()> random_generator;
+
+            /// @brief  For a client, flag selecting whether the certificate of the server is verified, without which a connection is not secure.
+            bool verify_certificate = true;
+
+            /// @brief  For a client, the name of the server, which its certificate must be for, or null to not check the name.
+            const char* host = nullptr;
+
+            /// @brief  For a client, the certificates that are trusted to identify servers or to issue the certificates that do.
+            const gtl::x509::certificate_type* trusted = nullptr;
+            unsigned int trusted_length = 0;
+
+            /// @brief  For a client, the current time in seconds since the start of 1970, used to check that certificates are valid.
+            long long int time = 0;
+
+            /// @brief  For a server, the encoded certificates to send: the certificate of the server followed by the certificates that issued it and each other, in order.
+            const unsigned char* const* certificates = nullptr;
+            const unsigned long long int* certificate_lengths = nullptr;
+            unsigned int certificates_length = 0;
+
+            /// @brief  For a server, the private key of its certificate.
+            const gtl::x509::private_key_type* private_key = nullptr;
+        };
+
+        /// @brief  The means of sending records, shared by a connection and its handshake.
+        class sender_type final {
+        public:
+            /// @brief  The record layer that protects what is sent.
+            gtl::tls_record record;
+
+            /// @brief  The records that are waiting to be sent to the peer.
+            std::vector<unsigned char> buffer;
+
+        public:
+            /// @brief  Send data as one or more records.
+            /// @param  content_type The content type of the data.
+            /// @param  data The data.
+            /// @param  length The length of the data.
+            /// @return true if the records were made.
+            bool send(const unsigned char content_type, const unsigned char* data, unsigned long long int length) {
+                // Data that is longer than a record can hold is split, and an empty record is only sent for application data.
+                do {
+                    const unsigned int fragment_length = (length > gtl::tls_record::fragment_size_max) ? gtl::tls_record::fragment_size_max : static_cast<unsigned int>(length);
+                    const unsigned long long int offset = this->buffer.size();
+                    this->buffer.resize(offset + this->record.get_record_size(fragment_length));
+                    unsigned long long int record_length = 0;
+                    if (!this->record.protect(content_type, data, fragment_length, &this->buffer[offset], this->buffer.size() - offset, record_length)) {
+                        this->buffer.resize(offset);
+                        return false;
+                    }
+                    data += fragment_length;
+                    length -= fragment_length;
+                } while (length != 0);
+                return true;
+            }
+        };
+
+    public:
+        /// @brief  A parsed client hello message, every pointer is a view into the message it was parsed from and is null if that part is absent.
+        class client_hello_type final {
+        public:
+            /// @brief  The version in the body of the message, which is the highest version offered only when the supported versions extension is absent.
+            unsigned int legacy_version = 0;
+
+            /// @brief  The random value of the client.
+            const unsigned char* random = nullptr;
+
+            /// @brief  The session identifier.
+            const unsigned char* session_id = nullptr;
+            unsigned int session_id_length = 0;
+
+            /// @brief  The cipher suites the client supports, two bytes each.
+            const unsigned char* suites = nullptr;
+            unsigned long long int suites_length = 0;
+
+            /// @brief  The versions the client supports, two bytes each.
+            const unsigned char* versions = nullptr;
+            unsigned long long int versions_length = 0;
+
+            /// @brief  The groups the client supports, two bytes each.
+            const unsigned char* groups = nullptr;
+            unsigned long long int groups_length = 0;
+
+            /// @brief  The signature schemes the client supports, two bytes each.
+            const unsigned char* signatures = nullptr;
+            unsigned long long int signatures_length = 0;
+
+            /// @brief  The key shares of the client, each is a two byte group and a two byte length followed by a public value.
+            const unsigned char* shares = nullptr;
+            unsigned long long int shares_length = 0;
+
+            /// @brief  The name of the server that the client wants, which is not null terminated.
+            const unsigned char* host = nullptr;
+            unsigned long long int host_length = 0;
+
+            /// @brief  Flag showing whether the client supports the extended master secret of TLS 1.2.
+            bool has_extended_master_secret = false;
+
+            /// @brief  Flag showing whether the client supports secure renegotiation.
+            bool has_renegotiation_info = false;
+        };
+
+        /// @brief  A parsed server hello message, every pointer is a view into the message it was parsed from and is null if that part is absent.
+        class server_hello_type final {
+        public:
+            /// @brief  The version in the body of the message.
+            unsigned int legacy_version = 0;
+
+            /// @brief  The random value of the server.
+            const unsigned char* random = nullptr;
+
+            /// @brief  The session identifier.
+            const unsigned char* session_id = nullptr;
+            unsigned int session_id_length = 0;
+
+            /// @brief  The cipher suite the server chose.
+            unsigned int suite = 0;
+
+            /// @brief  The version from the supported versions extension, or zero if it is absent.
+            unsigned int selected_version = 0;
+
+            /// @brief  The group of the key share of the server, or zero if it is absent.
+            unsigned int share_group = 0;
+
+            /// @brief  The public value of the key share of the server.
+            const unsigned char* share = nullptr;
+            unsigned long long int share_length = 0;
+
+            /// @brief  Flag showing whether the server will use the extended master secret of TLS 1.2.
+            bool has_extended_master_secret = false;
+
+            /// @brief  Flag showing whether the server supports secure renegotiation.
+            bool has_renegotiation_info = false;
+
+            /// @brief  Flag showing whether the message is a request for the client to retry with different parameters, which is not supported.
+            bool is_retry_request = false;
+
+            /// @brief  Flag showing whether the server sent an extension that is not one of those above, or the acknowledgements of the server name and point formats.
+            bool has_unexpected_extension = false;
+        };
+
+        /// @brief  The contents of a client hello message to write.
+        class client_hello_options_type final {
+        public:
+            /// @brief  Flags selecting the versions to offer.
+            bool offer_tls12 = true;
+            bool offer_tls13 = true;
+
+            /// @brief  The random value, random_size bytes.
+            const unsigned char* random = nullptr;
+
+            /// @brief  The session identifier.
+            const unsigned char* session_id = nullptr;
+            unsigned int session_id_length = 0;
+
+            /// @brief  The name of the server, or null to leave it out.
+            const char* host = nullptr;
+
+            /// @brief  The key shares, for TLS 1.3, as the groups and the public values that are sent.
+            const unsigned int* share_groups = nullptr;
+            const unsigned char* const* shares = nullptr;
+            const unsigned int* share_lengths = nullptr;
+            unsigned int shares_length = 0;
+        };
+
+    public:
+        /// @brief  Write a client hello message.
+        /// @param  options The contents of the message.
+        /// @param  message The buffer the message is appended to, including its handshake header.
+        static void write_client_hello(const client_hello_options_type& options, std::vector<unsigned char>& message) {
+            writer output(message);
+            const unsigned long long int body = output.begin_message(tls_handshake::message_client_hello);
+            // The version here is fixed, the versions that are really offered are in an extension.
+            output.write_integer(tls_handshake::version_tls12, 2);
+            output.write_bytes(options.random, tls_handshake::random_size);
+            const unsigned long long int session_id = output.begin_vector(1);
+            output.write_bytes(options.session_id, options.session_id_length);
+            output.end_vector(session_id, 1);
+            {
+                const unsigned long long int suites = output.begin_vector(2);
+                if (options.offer_tls13) {
+                    output.write_integer(tls_handshake::suite_aes_128_gcm_sha256, 2);
+                    output.write_integer(tls_handshake::suite_chacha20_poly1305_sha256, 2);
+                    output.write_integer(tls_handshake::suite_aes_256_gcm_sha384, 2);
+                }
+                if (options.offer_tls12) {
+                    output.write_integer(tls_handshake::suite_ecdhe_ecdsa_aes_128_gcm_sha256, 2);
+                    output.write_integer(tls_handshake::suite_ecdhe_rsa_aes_128_gcm_sha256, 2);
+                    output.write_integer(tls_handshake::suite_ecdhe_ecdsa_chacha20_poly1305_sha256, 2);
+                    output.write_integer(tls_handshake::suite_ecdhe_rsa_chacha20_poly1305_sha256, 2);
+                    output.write_integer(tls_handshake::suite_ecdhe_ecdsa_aes_256_gcm_sha384, 2);
+                    output.write_integer(tls_handshake::suite_ecdhe_rsa_aes_256_gcm_sha384, 2);
+                    output.write_integer(tls_handshake::suite_renegotiation_info, 2);
+                }
+                output.end_vector(suites, 2);
+            }
+            // No compression.
+            output.write_integer(1, 1);
+            output.write_integer(0, 1);
+
+            const unsigned long long int extensions = output.begin_vector(2);
+            if (options.host != nullptr) {
+                unsigned long long int host_length = 0;
+                while (options.host[host_length] != 0) {
+                    ++host_length;
+                }
+                output.write_integer(tls_handshake::extension_server_name, 2);
+                const unsigned long long int extension = output.begin_vector(2);
+                const unsigned long long int list = output.begin_vector(2);
+                // A name of the type that is a host name.
+                output.write_integer(0, 1);
+                const unsigned long long int name = output.begin_vector(2);
+                output.write_bytes(reinterpret_cast<const unsigned char*>(options.host), host_length);
+                output.end_vector(name, 2);
+                output.end_vector(list, 2);
+                output.end_vector(extension, 2);
+            }
+            if (options.offer_tls12) {
+                // Only the uncompressed form of points is supported.
+                output.write_integer(tls_handshake::extension_point_formats, 2);
+                output.write_integer(2, 2);
+                output.write_integer(1, 1);
+                output.write_integer(0, 1);
+                output.write_integer(tls_handshake::extension_extended_master_secret, 2);
+                output.write_integer(0, 2);
+            }
+            {
+                output.write_integer(tls_handshake::extension_supported_groups, 2);
+                const unsigned long long int extension = output.begin_vector(2);
+                const unsigned long long int list = output.begin_vector(2);
+                output.write_integer(tls_handshake::group_x25519, 2);
+                output.write_integer(tls_handshake::group_secp256r1, 2);
+                output.write_integer(tls_handshake::group_secp384r1, 2);
+                output.end_vector(list, 2);
+                output.end_vector(extension, 2);
+            }
+            {
+                output.write_integer(tls_handshake::extension_signature_algorithms, 2);
+                const unsigned long long int extension = output.begin_vector(2);
+                const unsigned long long int list = output.begin_vector(2);
+                output.write_integer(tls_handshake::signature_ecdsa_sha256, 2);
+                output.write_integer(tls_handshake::signature_ecdsa_sha384, 2);
+                output.write_integer(tls_handshake::signature_rsa_pss_sha256, 2);
+                output.write_integer(tls_handshake::signature_rsa_pss_sha384, 2);
+                output.write_integer(tls_handshake::signature_rsa_pss_sha512, 2);
+                output.write_integer(tls_handshake::signature_rsa_pkcs1_sha256, 2);
+                output.write_integer(tls_handshake::signature_rsa_pkcs1_sha384, 2);
+                output.write_integer(tls_handshake::signature_rsa_pkcs1_sha512, 2);
+                if (options.offer_tls12) {
+                    output.write_integer(tls_handshake::signature_ecdsa_sha512, 2);
+                }
+                output.end_vector(list, 2);
+                output.end_vector(extension, 2);
+            }
+            if (options.offer_tls13) {
+                output.write_integer(tls_handshake::extension_supported_versions, 2);
+                const unsigned long long int extension = output.begin_vector(2);
+                const unsigned long long int list = output.begin_vector(1);
+                output.write_integer(tls_handshake::version_tls13, 2);
+                if (options.offer_tls12) {
+                    output.write_integer(tls_handshake::version_tls12, 2);
+                }
+                output.end_vector(list, 1);
+                output.end_vector(extension, 2);
+
+                output.write_integer(tls_handshake::extension_key_share, 2);
+                const unsigned long long int share_extension = output.begin_vector(2);
+                const unsigned long long int shares = output.begin_vector(2);
+                for (unsigned int i = 0; i < options.shares_length; ++i) {
+                    output.write_integer(options.share_groups[i], 2);
+                    const unsigned long long int share = output.begin_vector(2);
+                    output.write_bytes(options.shares[i], options.share_lengths[i]);
+                    output.end_vector(share, 2);
+                }
+                output.end_vector(shares, 2);
+                output.end_vector(share_extension, 2);
+            }
+            output.end_vector(extensions, 2);
+            output.end_message(body);
+        }
+
+        /// @brief  Parse the body of a client hello message.
+        /// @param  body The body of the message, which follows its handshake header.
+        /// @param  length The length of the body.
+        /// @param  hello Receives the parsed message.
+        /// @return true if the message is well formed.
+        static bool parse_client_hello(const unsigned char* body, const unsigned long long int length, client_hello_type& hello) {
+            client_hello_type parsed;
+            reader input(body, length);
+            parsed.legacy_version = input.read_integer(2);
+            parsed.random = input.read_bytes(tls_handshake::random_size);
+            reader session_id = input.read_vector(1);
+            reader suites = input.read_vector(2);
+            reader compressions = input.read_vector(1);
+            if (!input.is_valid() || (session_id.get_length() > tls_handshake::session_id_size_max) || (suites.get_length() < 2) || ((suites.get_length() % 2) != 0)) {
+                return false;
+            }
+            parsed.session_id = session_id.get_data();
+            parsed.session_id_length = static_cast<unsigned int>(session_id.get_length());
+            parsed.suites = suites.get_data();
+            parsed.suites_length = suites.get_length();
+            parsed.has_renegotiation_info = tls_handshake::has_value(parsed.suites, parsed.suites_length, tls_handshake::suite_renegotiation_info);
+            // The client must offer to not compress, which is the only method supported.
+            bool has_null_compression = false;
+            while (!compressions.is_end() && compressions.is_valid()) {
+                has_null_compression |= (compressions.read_integer(1) == 0);
+            }
+            if (!has_null_compression) {
+                return false;
+            }
+            // The extensions may be left out entirely by clients that only support TLS 1.2.
+            if (!input.is_end()) {
+                reader extensions = input.read_vector(2);
+                if (!input.is_end()) {
+                    return false;
+                }
+                while (!extensions.is_end()) {
+                    const unsigned int type = extensions.read_integer(2);
+                    reader extension = extensions.read_vector(2);
+                    if (!extensions.is_valid()) {
+                        return false;
+                    }
+                    switch (type) {
+                        case tls_handshake::extension_server_name: {
+                            reader names = extension.read_vector(2);
+                            if (!extension.is_end() || (parsed.host != nullptr)) {
+                                return false;
+                            }
+                            while (!names.is_end()) {
+                                const unsigned int name_type = names.read_integer(1);
+                                reader name = names.read_vector(2);
+                                if (!names.is_valid() || (name.get_length() == 0)) {
+                                    return false;
+                                }
+                                if ((name_type == 0) && (parsed.host == nullptr)) {
+                                    parsed.host = name.get_data();
+                                    parsed.host_length = name.get_length();
+                                }
+                            }
+                            if (parsed.host == nullptr) {
+                                return false;
+                            }
+                        } break;
+                        case tls_handshake::extension_supported_versions: {
+                            reader list = extension.read_vector(1);
+                            if (!extension.is_end() || (parsed.versions != nullptr) || (list.get_length() < 2) || ((list.get_length() % 2) != 0)) {
+                                return false;
+                            }
+                            parsed.versions = list.get_data();
+                            parsed.versions_length = list.get_length();
+                        } break;
+                        case tls_handshake::extension_supported_groups: {
+                            reader list = extension.read_vector(2);
+                            if (!extension.is_end() || (parsed.groups != nullptr) || (list.get_length() < 2) || ((list.get_length() % 2) != 0)) {
+                                return false;
+                            }
+                            parsed.groups = list.get_data();
+                            parsed.groups_length = list.get_length();
+                        } break;
+                        case tls_handshake::extension_signature_algorithms: {
+                            reader list = extension.read_vector(2);
+                            if (!extension.is_end() || (parsed.signatures != nullptr) || (list.get_length() < 2) || ((list.get_length() % 2) != 0)) {
+                                return false;
+                            }
+                            parsed.signatures = list.get_data();
+                            parsed.signatures_length = list.get_length();
+                        } break;
+                        case tls_handshake::extension_key_share: {
+                            reader list = extension.read_vector(2);
+                            if (!extension.is_end() || (parsed.shares != nullptr)) {
+                                return false;
+                            }
+                            // Check that the list is well formed, it is read again when a share is chosen.
+                            reader shares = list;
+                            while (!shares.is_end()) {
+                                shares.read_integer(2);
+                                reader share = shares.read_vector(2);
+                                if (!shares.is_valid() || (share.get_length() == 0)) {
+                                    return false;
+                                }
+                            }
+                            // An empty list is valid, and is told apart from an absent one by its pointer not being null.
+                            parsed.shares = list.get_data();
+                            parsed.shares_length = list.get_length();
+                        } break;
+                        case tls_handshake::extension_extended_master_secret: {
+                            if (!extension.is_end()) {
+                                return false;
+                            }
+                            parsed.has_extended_master_secret = true;
+                        } break;
+                        case tls_handshake::extension_renegotiation_info: {
+                            // A first handshake has no previous handshake to refer to.
+                            reader previous = extension.read_vector(1);
+                            if (!extension.is_end() || (previous.get_length() != 0)) {
+                                return false;
+                            }
+                            parsed.has_renegotiation_info = true;
+                        } break;
+                        default:
+                            break;
+                    }
+                }
+                if (!extensions.is_valid()) {
+                    return false;
+                }
+            }
+            hello = parsed;
+            return true;
+        }
+
+        /// @brief  Parse the body of a server hello message.
+        /// @param  body The body of the message, which follows its handshake header.
+        /// @param  length The length of the body.
+        /// @param  hello Receives the parsed message.
+        /// @return true if the message is well formed.
+        static bool parse_server_hello(const unsigned char* body, const unsigned long long int length, server_hello_type& hello) {
+            // The random value that marks a request to retry, which is the sha2-256 hash of "HelloRetryRequest".
+            constexpr const unsigned char retry_random[tls_handshake::random_size] = {
+                0xCF,
+                0x21,
+                0xAD,
+                0x74,
+                0xE5,
+                0x9A,
+                0x61,
+                0x11,
+                0xBE,
+                0x1D,
+                0x8C,
+                0x02,
+                0x1E,
+                0x65,
+                0xB8,
+                0x91,
+                0xC2,
+                0xA2,
+                0x11,
+                0x16,
+                0x7A,
+                0xBB,
+                0x8C,
+                0x5E,
+                0x07,
+                0x9E,
+                0x09,
+                0xE2,
+                0xC8,
+                0xA8,
+                0x33,
+                0x9C
+            };
+            server_hello_type parsed;
+            reader input(body, length);
+            parsed.legacy_version = input.read_integer(2);
+            parsed.random = input.read_bytes(tls_handshake::random_size);
+            reader session_id = input.read_vector(1);
+            parsed.suite = input.read_integer(2);
+            const unsigned int compression = input.read_integer(1);
+            if (!input.is_valid() || (session_id.get_length() > tls_handshake::session_id_size_max) || (compression != 0)) {
+                return false;
+            }
+            parsed.session_id = session_id.get_data();
+            parsed.session_id_length = static_cast<unsigned int>(session_id.get_length());
+            parsed.is_retry_request = tls_handshake::is_equal(parsed.random, retry_random, tls_handshake::random_size);
+            if (!input.is_end()) {
+                reader extensions = input.read_vector(2);
+                if (!input.is_end()) {
+                    return false;
+                }
+                while (!extensions.is_end()) {
+                    const unsigned int type = extensions.read_integer(2);
+                    reader extension = extensions.read_vector(2);
+                    if (!extensions.is_valid()) {
+                        return false;
+                    }
+                    switch (type) {
+                        case tls_handshake::extension_supported_versions: {
+                            const unsigned int version = extension.read_integer(2);
+                            if (!extension.is_end() || (parsed.selected_version != 0) || (version == 0)) {
+                                return false;
+                            }
+                            parsed.selected_version = version;
+                        } break;
+                        case tls_handshake::extension_key_share: {
+                            if (parsed.share_group != 0) {
+                                return false;
+                            }
+                            parsed.share_group = extension.read_integer(2);
+                            // A request to retry names a group without a public value.
+                            if (!parsed.is_retry_request) {
+                                reader share = extension.read_vector(2);
+                                parsed.share = share.get_data();
+                                parsed.share_length = share.get_length();
+                            }
+                            if (!extension.is_end() || (parsed.share_group == 0)) {
+                                return false;
+                            }
+                        } break;
+                        case tls_handshake::extension_extended_master_secret: {
+                            if (!extension.is_end() || parsed.has_extended_master_secret) {
+                                return false;
+                            }
+                            parsed.has_extended_master_secret = true;
+                        } break;
+                        case tls_handshake::extension_renegotiation_info: {
+                            reader previous = extension.read_vector(1);
+                            if (!extension.is_end() || (previous.get_length() != 0) || parsed.has_renegotiation_info) {
+                                return false;
+                            }
+                            parsed.has_renegotiation_info = true;
+                        } break;
+                        case tls_handshake::extension_server_name:
+                        case tls_handshake::extension_point_formats:
+                            break;
+                        default: {
+                            parsed.has_unexpected_extension = true;
+                        } break;
+                    }
+                }
+                if (!extensions.is_valid()) {
+                    return false;
+                }
+            }
+            hello = parsed;
+            return true;
+        }
+    };
+}
+
+#endif // GTL_PROTOCOL_TLS_TLS_HANDSHAKE_HPP

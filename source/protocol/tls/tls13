@@ -1,0 +1,927 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_PROTOCOL_TLS_TLS13_HPP
+#define GTL_PROTOCOL_TLS_TLS13_HPP
+
+// Summary: The handshake state machine of version 1.3 of the transport layer security protocol, for clients and servers.
+
+#include <crypto/certificate/x509>
+#include <protocol/tls/tls_handshake>
+#include <protocol/tls/tls_record>
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <vector>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace gtl {
+    /// @brief  The tls13 class performs the handshake of TLS 1.3 (RFC 8446) from the hello messages onwards, and then handles the messages that may follow it.
+    /// @note   It is given whole handshake messages by a connection, sends its own through the sender of the connection, and sets the keys of the record layers as they are agreed.
+    /// @note   The key exchange is always ephemeral Diffie-Hellman authenticated by the certificate of the server, resumption and early data are not supported.
+    /// @note   A request to retry the hello with other parameters is not supported, which is avoided by the client offering a key share for each of its most common groups.
+    class tls13 final {
+    public:
+        /// @brief  The states of the handshake.
+        enum class state_type {
+            idle,
+            wait_server_hello,
+            wait_encrypted_extensions,
+            wait_certificate_or_request,
+            wait_certificate,
+            wait_certificate_verify,
+            wait_server_finished,
+            wait_client_finished,
+            connected,
+            failed
+        };
+
+        /// @brief  The private value of a key share that a client offers.
+        class share_type final {
+        public:
+            /// @brief  The group of the key share.
+            unsigned int group = 0;
+
+            /// @brief  The private value.
+            unsigned char private_value[gtl::tls_handshake::exchange_private_size_max] = {};
+
+        public:
+            /// @brief  Wipe the private value.
+            ~share_type() {
+                gtl::tls_handshake::wipe(this->private_value, sizeof(this->private_value));
+            }
+
+            share_type() = default;
+            share_type(const share_type&) = default;
+            share_type& operator=(const share_type&) = default;
+        };
+
+        /// @brief  The largest number of key shares that a client can offer.
+        constexpr static const unsigned int shares_length_max = 2;
+
+    private:
+        /// @brief  Shorter names for the shared definitions.
+        using handshake = gtl::tls_handshake;
+        using hash_type = gtl::tls_handshake::hash_type;
+
+        /// @brief  The largest size of a secret, which is the size of the output of the largest hash function.
+        constexpr static const unsigned int secret_size_max = gtl::tls_handshake::hash_size_max;
+
+    private:
+        /// @brief  The settings of this end of the connection.
+        const handshake::settings_type* settings = nullptr;
+
+        /// @brief  The means of sending records.
+        handshake::sender_type* sender = nullptr;
+
+        /// @brief  The record layer that receives records.
+        gtl::tls_record* receiver = nullptr;
+
+        /// @brief  The state of the handshake.
+        state_type state = state_type::idle;
+
+        /// @brief  The alert that describes why the handshake failed.
+        unsigned char alert = 0;
+
+        /// @brief  The hash of the handshake messages so far.
+        handshake::transcript transcript;
+
+        /// @brief  The cipher suite, and the hash function and cipher that it names.
+        unsigned int suite = 0;
+        hash_type hash = hash_type::sha2_256;
+        gtl::tls_record::cipher_type cipher = gtl::tls_record::cipher_type::none;
+
+        /// @brief  The secrets that the traffic keys are derived from.
+        unsigned char handshake_secret[tls13::secret_size_max] = {};
+        unsigned char master_secret[tls13::secret_size_max] = {};
+        unsigned char client_secret[tls13::secret_size_max] = {};
+        unsigned char server_secret[tls13::secret_size_max] = {};
+
+        /// @brief  For a client, the key shares that were offered.
+        share_type shares[tls13::shares_length_max];
+        unsigned int shares_length = 0;
+
+        /// @brief  For a client, the session identifier that was sent, which the server must send back.
+        unsigned char session_id[handshake::session_id_size_max] = {};
+        unsigned int session_id_length = 0;
+
+        /// @brief  For a client, flag showing whether the server asked for a certificate.
+        bool certificate_requested = false;
+
+        /// @brief  The encoded certificates of the peer, the first is its own.
+        std::vector<std::vector<unsigned char>> peer_certificates;
+
+    private:
+        /// @brief  Fail the handshake.
+        /// @param  description The alert that describes the failure.
+        /// @return false, so that it can be returned by the caller.
+        bool fail(const unsigned char description) {
+            this->state = state_type::failed;
+            this->alert = description;
+            return false;
+        }
+
+        /// @brief  Get the size of the output of the hash function.
+        unsigned int get_hash_size() const {
+            return handshake::get_hash_size(this->hash);
+        }
+
+        /// @brief  The extract step of the key derivation function, which combines a salt and a new secret.
+        void extract(const unsigned char* salt, const unsigned char* input, unsigned char* output) const {
+            const unsigned char* const parts[1] = { input };
+            const unsigned long long int lengths[1] = { this->get_hash_size() };
+            handshake::authenticate(this->hash, salt, this->get_hash_size(), parts, lengths, 1, output);
+        }
+
+        /// @brief  The expand step of the key derivation function with the label format of the protocol.
+        /// @param  secret The secret to derive from, as long as the output of the hash function.
+        /// @param  label The label, without the prefix that is added to every label.
+        /// @param  context The context.
+        /// @param  context_length The length of the context.
+        /// @param  output Receives the derived value.
+        /// @param  output_length The length of the derived value, must be no more than the size of the output of the hash function.
+        void expand_label(const unsigned char* secret, const char* label, const unsigned char* context, const unsigned int context_length, unsigned char* output, const unsigned int output_length) const {
+            // The information is the output length, the prefixed label, and the context, followed by the block counter which is always one.
+            unsigned char information[2 + 1 + 6 + 32 + 1 + handshake::hash_size_max + 1] = {};
+            unsigned int length = 0;
+            information[length++] = static_cast<unsigned char>((output_length >> 8) & 0xFF);
+            information[length++] = static_cast<unsigned char>(output_length & 0xFF);
+            const char* const prefix = "tls13 ";
+            unsigned int label_length = 0;
+            while (label[label_length] != 0) {
+                ++label_length;
+            }
+            information[length++] = static_cast<unsigned char>(6 + label_length);
+            for (unsigned int i = 0; i < 6; ++i) {
+                information[length++] = static_cast<unsigned char>(prefix[i]);
+            }
+            for (unsigned int i = 0; i < label_length; ++i) {
+                information[length++] = static_cast<unsigned char>(label[i]);
+            }
+            information[length++] = static_cast<unsigned char>(context_length);
+            for (unsigned int i = 0; i < context_length; ++i) {
+                information[length++] = context[i];
+            }
+            information[length++] = 0x01;
+            unsigned char block[handshake::hash_size_max] = {};
+            const unsigned char* const parts[1] = { information };
+            const unsigned long long int lengths[1] = { length };
+            handshake::authenticate(this->hash, secret, this->get_hash_size(), parts, lengths, 1, block);
+            for (unsigned int i = 0; i < output_length; ++i) {
+                output[i] = block[i];
+            }
+            handshake::wipe(block, sizeof(block));
+        }
+
+        /// @brief  Derive a secret from another, a label, and the hash of the handshake so far.
+        void derive_secret(const unsigned char* secret, const char* label, unsigned char* output) const {
+            unsigned char transcript_hash[handshake::hash_size_max] = {};
+            this->transcript.get_hash(this->hash, transcript_hash);
+            this->expand_label(secret, label, transcript_hash, this->get_hash_size(), output, this->get_hash_size());
+        }
+
+        /// @brief  Set the keys of a record layer from a traffic secret.
+        bool set_keys(gtl::tls_record& record, const unsigned char* secret) const {
+            unsigned char key[gtl::tls_record::key_size_max] = {};
+            unsigned char iv[gtl::tls_record::iv_size_max] = {};
+            this->expand_label(secret, "key", nullptr, 0, key, gtl::tls_record::get_key_size(this->cipher));
+            this->expand_label(secret, "iv", nullptr, 0, iv, gtl::tls_record::get_iv_size(gtl::tls_record::version_type::tls13, this->cipher));
+            const bool set = record.set_keys(gtl::tls_record::version_type::tls13, this->cipher, key, iv);
+            handshake::wipe(key, sizeof(key));
+            handshake::wipe(iv, sizeof(iv));
+            return set;
+        }
+
+        /// @brief  Set the keys that this end sends with, or receives with, from the secrets of the client and the server.
+        bool set_send_keys() {
+            return this->set_keys(this->sender->record, this->settings->is_client ? this->client_secret : this->server_secret);
+        }
+
+        bool set_receive_keys() {
+            return this->set_keys(*this->receiver, this->settings->is_client ? this->server_secret : this->client_secret);
+        }
+
+        /// @brief  Compute the contents of a finished message, which authenticates the handshake so far with a traffic secret.
+        void compute_finished(const unsigned char* secret, unsigned char* output) const {
+            unsigned char finished_key[handshake::hash_size_max] = {};
+            unsigned char transcript_hash[handshake::hash_size_max] = {};
+            this->expand_label(secret, "finished", nullptr, 0, finished_key, this->get_hash_size());
+            this->transcript.get_hash(this->hash, transcript_hash);
+            const unsigned char* const parts[1] = { transcript_hash };
+            const unsigned long long int lengths[1] = { this->get_hash_size() };
+            handshake::authenticate(this->hash, finished_key, this->get_hash_size(), parts, lengths, 1, output);
+            handshake::wipe(finished_key, sizeof(finished_key));
+        }
+
+        /// @brief  Set the cipher suite, and the hash function and cipher that it names.
+        /// @return true if the cipher suite is supported.
+        bool set_suite(const unsigned int new_suite) {
+            switch (new_suite) {
+                case handshake::suite_aes_128_gcm_sha256: {
+                    this->hash = hash_type::sha2_256;
+                    this->cipher = gtl::tls_record::cipher_type::aes_128_gcm;
+                } break;
+                case handshake::suite_aes_256_gcm_sha384: {
+                    this->hash = hash_type::sha2_384;
+                    this->cipher = gtl::tls_record::cipher_type::aes_256_gcm;
+                } break;
+                case handshake::suite_chacha20_poly1305_sha256: {
+                    this->hash = hash_type::sha2_256;
+                    this->cipher = gtl::tls_record::cipher_type::chacha20_poly1305;
+                } break;
+                default:
+                    return false;
+            }
+            this->suite = new_suite;
+            return true;
+        }
+
+        /// @brief  Compute the secrets of the handshake from the shared secret of the key exchange, once the hello messages are in the transcript.
+        void compute_handshake_secrets(const unsigned char* shared_secret, const unsigned int shared_secret_length) {
+            const unsigned int hash_size = this->get_hash_size();
+            const unsigned char zeros[handshake::hash_size_max] = {};
+            unsigned char early_secret[handshake::hash_size_max] = {};
+            unsigned char derived[handshake::hash_size_max] = {};
+            unsigned char empty_hash[handshake::hash_size_max] = {};
+            handshake::transcript empty;
+            empty.get_hash(this->hash, empty_hash);
+            // There is no pre-shared key, so the early secret is derived from zeros.
+            this->extract(zeros, zeros, early_secret);
+            this->expand_label(early_secret, "derived", empty_hash, hash_size, derived, hash_size);
+            {
+                const unsigned char* const parts[1] = { shared_secret };
+                const unsigned long long int lengths[1] = { shared_secret_length };
+                handshake::authenticate(this->hash, derived, hash_size, parts, lengths, 1, this->handshake_secret);
+            }
+            this->derive_secret(this->handshake_secret, "c hs traffic", this->client_secret);
+            this->derive_secret(this->handshake_secret, "s hs traffic", this->server_secret);
+            this->expand_label(this->handshake_secret, "derived", empty_hash, hash_size, derived, hash_size);
+            this->extract(derived, zeros, this->master_secret);
+            handshake::wipe(early_secret, sizeof(early_secret));
+            handshake::wipe(derived, sizeof(derived));
+        }
+
+        /// @brief  Send handshake messages, adding them to the transcript.
+        bool send_messages(const std::vector<unsigned char>& messages) {
+            this->transcript.update(messages.data(), messages.size());
+            return this->sender->send(gtl::tls_record::content_handshake, messages.data(), messages.size());
+        }
+
+        /// @brief  Send the record that older versions use to change keys, which is only sent so that the connection looks like one of an older version.
+        bool send_change_cipher_spec() {
+            const unsigned char change[1] = { 0x01 };
+            return this->sender->send(gtl::tls_record::content_change_cipher_spec, change, 1);
+        }
+
+        /// @brief  Build the data that a certificate verify message signs.
+        void build_signed_content(const bool is_server, std::vector<unsigned char>& content) const {
+            const char* const label = is_server ? "TLS 1.3, server CertificateVerify" : "TLS 1.3, client CertificateVerify";
+            content.assign(64, 0x20);
+            for (unsigned int i = 0; label[i] != 0; ++i) {
+                content.push_back(static_cast<unsigned char>(label[i]));
+            }
+            content.push_back(0x00);
+            unsigned char transcript_hash[handshake::hash_size_max] = {};
+            this->transcript.get_hash(this->hash, transcript_hash);
+            content.insert(content.end(), transcript_hash, transcript_hash + this->get_hash_size());
+        }
+
+    private:
+        /// @brief  For a client, process the hello of the server.
+        bool process_server_hello(const unsigned char* message, const unsigned long long int length, const bool is_last) {
+            handshake::server_hello_type hello;
+            if (!handshake::parse_server_hello(message + 4, length - 4, hello)) {
+                return this->fail(handshake::alert_decode_error);
+            }
+            if (hello.is_retry_request) {
+                return this->fail(handshake::alert_handshake_failure);
+            }
+            if ((hello.legacy_version != handshake::version_tls12) || (hello.selected_version != handshake::version_tls13) || hello.has_extended_master_secret || hello.has_renegotiation_info || hello.has_unexpected_extension) {
+                return this->fail(handshake::alert_illegal_parameter);
+            }
+            // The server must send back the session identifier, and choose a cipher suite of this version.
+            if ((hello.session_id_length != this->session_id_length) || !handshake::is_equal(hello.session_id, this->session_id, this->session_id_length) || !this->set_suite(hello.suite)) {
+                return this->fail(handshake::alert_illegal_parameter);
+            }
+            // The server must send a key share for one of the groups that a key share was offered for.
+            const share_type* share = nullptr;
+            for (unsigned int i = 0; i < this->shares_length; ++i) {
+                if (this->shares[i].group == hello.share_group) {
+                    share = &this->shares[i];
+                }
+            }
+            if (share == nullptr) {
+                return this->fail((hello.share_group == 0) ? handshake::alert_missing_extension : handshake::alert_illegal_parameter);
+            }
+            unsigned char shared_secret[handshake::exchange_secret_size_max] = {};
+            unsigned int shared_secret_length = 0;
+            if (!handshake::compute_exchange(share->group, share->private_value, hello.share, hello.share_length, shared_secret, shared_secret_length)) {
+                return this->fail(handshake::alert_illegal_parameter);
+            }
+            // The keys change after this message, so nothing may follow it in the same record.
+            if (!is_last) {
+                return this->fail(handshake::alert_unexpected_message);
+            }
+            this->transcript.update(message, length);
+            this->compute_handshake_secrets(shared_secret, shared_secret_length);
+            handshake::wipe(shared_secret, sizeof(shared_secret));
+            for (share_type& offered : this->shares) {
+                offered = share_type();
+            }
+            // Everything the client sends from now on is protected, including an alert if the handshake fails.
+            // The record that makes the connection look like one of an older version must be sent before the keys are set.
+            if (!this->send_change_cipher_spec() || !this->set_send_keys() || !this->set_receive_keys()) {
+                return this->fail(handshake::alert_internal_error);
+            }
+            this->state = state_type::wait_encrypted_extensions;
+            return true;
+        }
+
+        /// @brief  For a client, process the extensions that the server sends encrypted.
+        bool process_encrypted_extensions(const unsigned char* message, const unsigned long long int length) {
+            handshake::reader input(message + 4, length - 4);
+            handshake::reader extensions = input.read_vector(2);
+            if (!input.is_end()) {
+                return this->fail(handshake::alert_decode_error);
+            }
+            while (!extensions.is_end()) {
+                const unsigned int type = extensions.read_integer(2);
+                extensions.read_vector(2);
+                if (!extensions.is_valid()) {
+                    return this->fail(handshake::alert_decode_error);
+                }
+                // The server may only reply to extensions that were sent, and of those only these are replied to here.
+                if ((type != handshake::extension_server_name) && (type != handshake::extension_supported_groups)) {
+                    return this->fail(handshake::alert_unsupported_extension);
+                }
+            }
+            if (!extensions.is_valid()) {
+                return this->fail(handshake::alert_decode_error);
+            }
+            this->transcript.update(message, length);
+            this->state = state_type::wait_certificate_or_request;
+            return true;
+        }
+
+        /// @brief  For a client, process a request for a certificate, which is answered by saying there is none.
+        bool process_certificate_request(const unsigned char* message, const unsigned long long int length) {
+            handshake::reader input(message + 4, length - 4);
+            handshake::reader context = input.read_vector(1);
+            input.read_vector(2);
+            // The context is only used for requests after the handshake.
+            if (!input.is_end() || (context.get_length() != 0)) {
+                return this->fail(handshake::alert_decode_error);
+            }
+            this->certificate_requested = true;
+            this->transcript.update(message, length);
+            this->state = state_type::wait_certificate;
+            return true;
+        }
+
+        /// @brief  For a client, process the certificates of the server.
+        bool process_certificate(const unsigned char* message, const unsigned long long int length) {
+            handshake::reader input(message + 4, length - 4);
+            handshake::reader context = input.read_vector(1);
+            handshake::reader list = input.read_vector(3);
+            if (!input.is_end() || (context.get_length() != 0)) {
+                return this->fail(handshake::alert_decode_error);
+            }
+            this->peer_certificates.clear();
+            std::vector<gtl::x509::certificate_type> chain;
+            while (!list.is_end()) {
+                handshake::reader certificate = list.read_vector(3);
+                list.read_vector(2);
+                if (!list.is_valid() || (certificate.get_length() == 0)) {
+                    return this->fail(handshake::alert_decode_error);
+                }
+                if (this->peer_certificates.size() == gtl::x509::chain_length_max) {
+                    return this->fail(handshake::alert_bad_certificate);
+                }
+                this->peer_certificates.emplace_back(certificate.get_data(), certificate.get_data() + certificate.get_length());
+            }
+            if (!list.is_valid()) {
+                return this->fail(handshake::alert_decode_error);
+            }
+            // A server must always send a certificate.
+            if (this->peer_certificates.empty()) {
+                return this->fail(handshake::alert_decode_error);
+            }
+            for (const std::vector<unsigned char>& encoded : this->peer_certificates) {
+                gtl::x509::certificate_type parsed;
+                if (!gtl::x509::parse_certificate(encoded.data(), encoded.size(), parsed)) {
+                    return this->fail(handshake::alert_bad_certificate);
+                }
+                chain.push_back(parsed);
+            }
+            if (this->settings->verify_certificate) {
+                const gtl::x509::status status = gtl::x509::verify_chain(chain.data(), static_cast<unsigned int>(chain.size()), this->settings->trusted, this->settings->trusted_length, this->settings->time, this->settings->host);
+                if (status != gtl::x509::status::valid) {
+                    return this->fail(handshake::get_alert(status));
+                }
+            }
+            this->transcript.update(message, length);
+            this->state = state_type::wait_certificate_verify;
+            return true;
+        }
+
+        /// @brief  For a client, process the proof that the server holds the private key of its certificate.
+        bool process_certificate_verify(const unsigned char* message, const unsigned long long int length) {
+            handshake::reader input(message + 4, length - 4);
+            const unsigned int code = input.read_integer(2);
+            handshake::reader signature = input.read_vector(2);
+            if (!input.is_end()) {
+                return this->fail(handshake::alert_decode_error);
+            }
+            gtl::x509::certificate_type certificate;
+            gtl::x509::public_key_type key;
+            if (!gtl::x509::parse_certificate(this->peer_certificates[0].data(), this->peer_certificates[0].size(), certificate) || !gtl::x509::get_public_key(certificate, key)) {
+                return this->fail(handshake::alert_unsupported_certificate);
+            }
+            // The scheme must be one that was offered and that suits the key, and the key must be allowed to sign.
+            if (!handshake::is_signature_allowed(code, key.algorithm, true)) {
+                return this->fail(handshake::alert_illegal_parameter);
+            }
+            if (certificate.has_key_usage && ((certificate.key_usage & gtl::x509::key_usage_digital_signature) == 0)) {
+                return this->fail(handshake::alert_unsupported_certificate);
+            }
+            std::vector<unsigned char> content;
+            this->build_signed_content(true, content);
+            if (!gtl::x509::verify_signature(key, handshake::get_signature_scheme(code), content.data(), content.size(), signature.get_data(), signature.get_length())) {
+                return this->fail(handshake::alert_decrypt_error);
+            }
+            this->transcript.update(message, length);
+            this->state = state_type::wait_server_finished;
+            return true;
+        }
+
+        /// @brief  For a client, process the finished message of the server, then send the last messages of the handshake.
+        bool process_server_finished(const unsigned char* message, const unsigned long long int length, const bool is_last) {
+            unsigned char expected[handshake::hash_size_max] = {};
+            this->compute_finished(this->server_secret, expected);
+            if ((length != (4ull + this->get_hash_size())) || !handshake::is_equal(message + 4, expected, this->get_hash_size())) {
+                return this->fail(handshake::alert_decrypt_error);
+            }
+            if (!is_last) {
+                return this->fail(handshake::alert_unexpected_message);
+            }
+            this->transcript.update(message, length);
+
+            // The application secrets cover the handshake up to the finished message of the server.
+            unsigned char client_application_secret[handshake::hash_size_max] = {};
+            unsigned char server_application_secret[handshake::hash_size_max] = {};
+            this->derive_secret(this->master_secret, "c ap traffic", client_application_secret);
+            this->derive_secret(this->master_secret, "s ap traffic", server_application_secret);
+
+            // The rest of the handshake is sent with the handshake keys of the client, which are already set.
+            std::vector<unsigned char> messages;
+            handshake::writer output(messages);
+            if (this->certificate_requested) {
+                // A certificate message with no certificates, as a client certificate is not supported.
+                const unsigned long long int body = output.begin_message(handshake::message_certificate);
+                output.write_integer(0, 1);
+                output.write_integer(0, 3);
+                output.end_message(body);
+                this->transcript.update(messages.data(), messages.size());
+            }
+            unsigned char verify_data[handshake::hash_size_max] = {};
+            this->compute_finished(this->client_secret, verify_data);
+            const unsigned long long int finished_offset = messages.size();
+            const unsigned long long int body = output.begin_message(handshake::message_finished);
+            output.write_bytes(verify_data, this->get_hash_size());
+            output.end_message(body);
+            this->transcript.update(&messages[finished_offset], messages.size() - finished_offset);
+            if (!this->sender->send(gtl::tls_record::content_handshake, messages.data(), messages.size())) {
+                return this->fail(handshake::alert_internal_error);
+            }
+
+            for (unsigned int i = 0; i < handshake::hash_size_max; ++i) {
+                this->client_secret[i] = client_application_secret[i];
+                this->server_secret[i] = server_application_secret[i];
+            }
+            handshake::wipe(client_application_secret, sizeof(client_application_secret));
+            handshake::wipe(server_application_secret, sizeof(server_application_secret));
+            handshake::wipe(this->handshake_secret, sizeof(this->handshake_secret));
+            handshake::wipe(this->master_secret, sizeof(this->master_secret));
+            if (!this->set_send_keys() || !this->set_receive_keys()) {
+                return this->fail(handshake::alert_internal_error);
+            }
+            this->state = state_type::connected;
+            return true;
+        }
+
+        /// @brief  For a server, process the finished message of the client.
+        bool process_client_finished(const unsigned char* message, const unsigned long long int length, const bool is_last) {
+            // The secret of the client is still its handshake secret, the application secret is held in the handshake secret until now.
+            unsigned char expected[handshake::hash_size_max] = {};
+            this->compute_finished(this->client_secret, expected);
+            if ((length != (4ull + this->get_hash_size())) || !handshake::is_equal(message + 4, expected, this->get_hash_size())) {
+                return this->fail(handshake::alert_decrypt_error);
+            }
+            if (!is_last) {
+                return this->fail(handshake::alert_unexpected_message);
+            }
+            for (unsigned int i = 0; i < handshake::hash_size_max; ++i) {
+                this->client_secret[i] = this->handshake_secret[i];
+            }
+            handshake::wipe(this->handshake_secret, sizeof(this->handshake_secret));
+            if (!this->set_receive_keys()) {
+                return this->fail(handshake::alert_internal_error);
+            }
+            this->state = state_type::connected;
+            return true;
+        }
+
+        /// @brief  Process a request to change the keys that records are received with, which may ask for the keys that are sent with to change too.
+        bool process_key_update(const unsigned char* message, const unsigned long long int length, const bool is_last) {
+            if ((length != 5) || (message[4] > 1)) {
+                return this->fail(handshake::alert_decode_error);
+            }
+            if (!is_last) {
+                return this->fail(handshake::alert_unexpected_message);
+            }
+            const unsigned int hash_size = this->get_hash_size();
+            unsigned char* receive_secret = this->settings->is_client ? this->server_secret : this->client_secret;
+            unsigned char* send_secret = this->settings->is_client ? this->client_secret : this->server_secret;
+            unsigned char next[handshake::hash_size_max] = {};
+            this->expand_label(receive_secret, "traffic upd", nullptr, 0, next, hash_size);
+            for (unsigned int i = 0; i < hash_size; ++i) {
+                receive_secret[i] = next[i];
+            }
+            if (!this->set_receive_keys()) {
+                return this->fail(handshake::alert_internal_error);
+            }
+            if (message[4] == 1) {
+                // Reply with an update that does not ask for another, sent with the old keys.
+                const unsigned char reply[5] = { handshake::message_key_update, 0, 0, 1, 0 };
+                if (!this->sender->send(gtl::tls_record::content_handshake, reply, sizeof(reply))) {
+                    return this->fail(handshake::alert_internal_error);
+                }
+                this->expand_label(send_secret, "traffic upd", nullptr, 0, next, hash_size);
+                for (unsigned int i = 0; i < hash_size; ++i) {
+                    send_secret[i] = next[i];
+                }
+                if (!this->set_send_keys()) {
+                    return this->fail(handshake::alert_internal_error);
+                }
+            }
+            handshake::wipe(next, sizeof(next));
+            return true;
+        }
+
+    public:
+        /// @brief  Wipe the secrets.
+        ~tls13() {
+            handshake::wipe(this->handshake_secret, sizeof(this->handshake_secret));
+            handshake::wipe(this->master_secret, sizeof(this->master_secret));
+            handshake::wipe(this->client_secret, sizeof(this->client_secret));
+            handshake::wipe(this->server_secret, sizeof(this->server_secret));
+        }
+
+        /// @brief  Construct a handshake that has not started.
+        tls13() = default;
+
+        tls13(const tls13&) = delete;
+        tls13& operator=(const tls13&) = delete;
+
+    public:
+        /// @brief  Get the state of the handshake.
+        state_type get_state() const {
+            return this->state;
+        }
+
+        /// @brief  Check if the handshake has completed.
+        bool is_connected() const {
+            return (this->state == state_type::connected);
+        }
+
+        /// @brief  Get the alert that describes why the handshake failed.
+        unsigned char get_alert() const {
+            return this->alert;
+        }
+
+        /// @brief  Get the cipher suite that was agreed, or zero before it is.
+        unsigned int get_suite() const {
+            return this->suite;
+        }
+
+        /// @brief  Get the encoded certificates that the peer sent, the first is its own.
+        const std::vector<std::vector<unsigned char>>& get_peer_certificates() const {
+            return this->peer_certificates;
+        }
+
+    public:
+        /// @brief  Start the handshake of a client, after its hello has been sent.
+        /// @param  new_settings The settings of the client, which must outlive the handshake.
+        /// @param  new_sender The means of sending records, which must outlive the handshake.
+        /// @param  new_receiver The record layer that receives records, which must outlive the handshake.
+        /// @param  client_hello The hello message that was sent, including its handshake header.
+        /// @param  client_hello_length The length of the hello message.
+        /// @param  sent_session_id The session identifier in the hello message.
+        /// @param  sent_session_id_length The length of the session identifier.
+        /// @param  offered_shares The private values of the key shares in the hello message.
+        /// @param  offered_shares_length The number of key shares, must be no more than shares_length_max.
+        /// @return true if the handshake was started, after which the hello of the server is expected.
+        bool start_client(const handshake::settings_type& new_settings, handshake::sender_type& new_sender, gtl::tls_record& new_receiver, const unsigned char* client_hello, const unsigned long long int client_hello_length, const unsigned char* sent_session_id, const unsigned int sent_session_id_length, const share_type* offered_shares, const unsigned int offered_shares_length) {
+            if ((this->state != state_type::idle) || !new_settings.is_client || (sent_session_id_length > handshake::session_id_size_max) || (offered_shares_length > tls13::shares_length_max)) {
+                return this->fail(handshake::alert_internal_error);
+            }
+            this->settings = &new_settings;
+            this->sender = &new_sender;
+            this->receiver = &new_receiver;
+            this->transcript.update(client_hello, client_hello_length);
+            for (unsigned int i = 0; i < sent_session_id_length; ++i) {
+                this->session_id[i] = sent_session_id[i];
+            }
+            this->session_id_length = sent_session_id_length;
+            for (unsigned int i = 0; i < offered_shares_length; ++i) {
+                this->shares[i] = offered_shares[i];
+            }
+            this->shares_length = offered_shares_length;
+            this->state = state_type::wait_server_hello;
+            return true;
+        }
+
+        /// @brief  Start the handshake of a server, by replying to the hello of a client with everything up to the finished message of the server.
+        /// @param  new_settings The settings of the server, which must outlive the handshake.
+        /// @param  new_sender The means of sending records, which must outlive the handshake.
+        /// @param  new_receiver The record layer that receives records, which must outlive the handshake.
+        /// @param  hello The parsed hello of the client, which must offer this version.
+        /// @param  client_hello The hello message of the client, including its handshake header.
+        /// @param  client_hello_length The length of the hello message.
+        /// @return true if the reply was sent, after which the finished message of the client is expected, false if the handshake failed.
+        bool start_server(const handshake::settings_type& new_settings, handshake::sender_type& new_sender, gtl::tls_record& new_receiver, const handshake::client_hello_type& hello, const unsigned char* client_hello, const unsigned long long int client_hello_length) {
+            if ((this->state != state_type::idle) || new_settings.is_client || (new_settings.private_key == nullptr) || (new_settings.certificates_length == 0) || !new_settings.random_generator) {
+                return this->fail(handshake::alert_internal_error);
+            }
+            this->settings = &new_settings;
+            this->sender = &new_sender;
+            this->receiver = &new_receiver;
+
+            // Choose the first cipher suite, in order of preference, that the client supports.
+            const unsigned int suites[3] = { handshake::suite_aes_128_gcm_sha256, handshake::suite_chacha20_poly1305_sha256, handshake::suite_aes_256_gcm_sha384 };
+            unsigned int chosen_suite = 0;
+            for (const unsigned int candidate : suites) {
+                if ((chosen_suite == 0) && handshake::has_value(hello.suites, hello.suites_length, candidate)) {
+                    chosen_suite = candidate;
+                }
+            }
+            if (!this->set_suite(chosen_suite)) {
+                return this->fail(handshake::alert_handshake_failure);
+            }
+            // The extensions that this version cannot work without.
+            if ((hello.shares == nullptr) || (hello.groups == nullptr) || (hello.signatures == nullptr)) {
+                return this->fail(handshake::alert_missing_extension);
+            }
+            // Choose the signature scheme for the key of the server.
+            const unsigned int signature_code = handshake::choose_signature(new_settings.private_key->algorithm, hello.signatures, hello.signatures_length, true);
+            if (signature_code == 0) {
+                return this->fail(handshake::alert_handshake_failure);
+            }
+            // Choose the first key share of the client that is for a supported group.
+            unsigned int group = 0;
+            const unsigned char* peer_public = nullptr;
+            unsigned long long int peer_public_length = 0;
+            handshake::reader shares(hello.shares, hello.shares_length);
+            while (!shares.is_end() && (group == 0)) {
+                const unsigned int share_group = shares.read_integer(2);
+                handshake::reader share = shares.read_vector(2);
+                if (shares.is_valid() && handshake::is_supported_group(share_group)) {
+                    group = share_group;
+                    peer_public = share.get_data();
+                    peer_public_length = share.get_length();
+                }
+            }
+            if (group == 0) {
+                return this->fail(handshake::alert_handshake_failure);
+            }
+            unsigned char private_value[handshake::exchange_private_size_max] = {};
+            unsigned char public_value[handshake::exchange_public_size_max] = {};
+            unsigned int public_length = 0;
+            unsigned char shared_secret[handshake::exchange_secret_size_max] = {};
+            unsigned int shared_secret_length = 0;
+            if (!handshake::generate_exchange(group, new_settings.random_generator, private_value, public_value, public_length)) {
+                return this->fail(handshake::alert_internal_error);
+            }
+            const bool exchanged = handshake::compute_exchange(group, private_value, peer_public, peer_public_length, shared_secret, shared_secret_length);
+            handshake::wipe(private_value, sizeof(private_value));
+            if (!exchanged) {
+                return this->fail(handshake::alert_illegal_parameter);
+            }
+
+            // The hello of the server, which is sent before any keys are set.
+            this->transcript.update(client_hello, client_hello_length);
+            std::vector<unsigned char> messages;
+            handshake::writer output(messages);
+            {
+                unsigned char random[handshake::random_size] = {};
+                handshake::fill_random(new_settings.random_generator, random, handshake::random_size);
+                const unsigned long long int body = output.begin_message(handshake::message_server_hello);
+                output.write_integer(handshake::version_tls12, 2);
+                output.write_bytes(random, handshake::random_size);
+                output.write_integer(hello.session_id_length, 1);
+                output.write_bytes(hello.session_id, hello.session_id_length);
+                output.write_integer(this->suite, 2);
+                output.write_integer(0, 1);
+                const unsigned long long int extensions = output.begin_vector(2);
+                output.write_integer(handshake::extension_supported_versions, 2);
+                output.write_integer(2, 2);
+                output.write_integer(handshake::version_tls13, 2);
+                output.write_integer(handshake::extension_key_share, 2);
+                const unsigned long long int extension = output.begin_vector(2);
+                output.write_integer(group, 2);
+                const unsigned long long int share = output.begin_vector(2);
+                output.write_bytes(public_value, public_length);
+                output.end_vector(share, 2);
+                output.end_vector(extension, 2);
+                output.end_vector(extensions, 2);
+                output.end_message(body);
+            }
+            if (!this->send_messages(messages)) {
+                return this->fail(handshake::alert_internal_error);
+            }
+            // A client that sent a session identifier expects the connection to look like one of an older version.
+            if ((hello.session_id_length != 0) && !this->send_change_cipher_spec()) {
+                return this->fail(handshake::alert_internal_error);
+            }
+            this->compute_handshake_secrets(shared_secret, shared_secret_length);
+            handshake::wipe(shared_secret, sizeof(shared_secret));
+            if (!this->set_send_keys() || !this->set_receive_keys()) {
+                return this->fail(handshake::alert_internal_error);
+            }
+
+            // The encrypted extensions, of which there are none, and the certificates.
+            messages.clear();
+            {
+                const unsigned long long int body = output.begin_message(handshake::message_encrypted_extensions);
+                output.write_integer(0, 2);
+                output.end_message(body);
+            }
+            {
+                const unsigned long long int body = output.begin_message(handshake::message_certificate);
+                output.write_integer(0, 1);
+                const unsigned long long int list = output.begin_vector(3);
+                for (unsigned int i = 0; i < new_settings.certificates_length; ++i) {
+                    const unsigned long long int certificate = output.begin_vector(3);
+                    output.write_bytes(new_settings.certificates[i], new_settings.certificate_lengths[i]);
+                    output.end_vector(certificate, 3);
+                    output.write_integer(0, 2);
+                }
+                output.end_vector(list, 3);
+                output.end_message(body);
+            }
+            this->transcript.update(messages.data(), messages.size());
+            // The proof that the server holds the private key of its certificate, a signature of the handshake so far.
+            {
+                std::vector<unsigned char> content;
+                this->build_signed_content(true, content);
+                unsigned char signature[gtl::x509::signature_size_max] = {};
+                unsigned long long int signature_length = 0;
+                if (!gtl::x509::sign(*new_settings.private_key, handshake::get_signature_scheme(signature_code), content.data(), content.size(), new_settings.random_generator, signature, sizeof(signature), signature_length)) {
+                    return this->fail(handshake::alert_internal_error);
+                }
+                const unsigned long long int offset = messages.size();
+                const unsigned long long int body = output.begin_message(handshake::message_certificate_verify);
+                output.write_integer(signature_code, 2);
+                const unsigned long long int vector = output.begin_vector(2);
+                output.write_bytes(signature, signature_length);
+                output.end_vector(vector, 2);
+                output.end_message(body);
+                this->transcript.update(&messages[offset], messages.size() - offset);
+            }
+            {
+                unsigned char verify_data[handshake::hash_size_max] = {};
+                this->compute_finished(this->server_secret, verify_data);
+                const unsigned long long int offset = messages.size();
+                const unsigned long long int body = output.begin_message(handshake::message_finished);
+                output.write_bytes(verify_data, this->get_hash_size());
+                output.end_message(body);
+                this->transcript.update(&messages[offset], messages.size() - offset);
+            }
+            if (!this->sender->send(gtl::tls_record::content_handshake, messages.data(), messages.size())) {
+                return this->fail(handshake::alert_internal_error);
+            }
+
+            // The server sends with its application keys from now on, and holds those of the client until its finished message arrives.
+            this->derive_secret(this->master_secret, "c ap traffic", this->handshake_secret);
+            this->derive_secret(this->master_secret, "s ap traffic", this->server_secret);
+            handshake::wipe(this->master_secret, sizeof(this->master_secret));
+            if (!this->set_send_keys()) {
+                return this->fail(handshake::alert_internal_error);
+            }
+            this->state = state_type::wait_client_finished;
+            return true;
+        }
+
+        /// @brief  Change the keys that records are sent with, telling the peer to do the same for the keys it receives with.
+        /// @param  request_peer Flag selecting whether the peer is asked to also change the keys that it sends with.
+        /// @return true if the keys were changed, false if the handshake has not completed.
+        /// @note   Keys should be changed before they have protected too much data, which for the aes ciphers is tens of millions of records.
+        bool update_keys(const bool request_peer) {
+            if (this->state != state_type::connected) {
+                return false;
+            }
+            const unsigned char message[5] = { handshake::message_key_update, 0, 0, 1, static_cast<unsigned char>(request_peer ? 1 : 0) };
+            if (!this->sender->send(gtl::tls_record::content_handshake, message, sizeof(message))) {
+                return this->fail(handshake::alert_internal_error);
+            }
+            const unsigned int hash_size = this->get_hash_size();
+            unsigned char* send_secret = this->settings->is_client ? this->client_secret : this->server_secret;
+            unsigned char next[handshake::hash_size_max] = {};
+            this->expand_label(send_secret, "traffic upd", nullptr, 0, next, hash_size);
+            for (unsigned int i = 0; i < hash_size; ++i) {
+                send_secret[i] = next[i];
+            }
+            handshake::wipe(next, sizeof(next));
+            if (!this->set_send_keys()) {
+                return this->fail(handshake::alert_internal_error);
+            }
+            return true;
+        }
+
+        /// @brief  Process a handshake message from the peer.
+        /// @param  message The whole message, including its handshake header.
+        /// @param  length The length of the message, must be at least four and match the length in the header.
+        /// @param  is_last Flag showing whether the message is the last in its record, which it must be when the keys change after it.
+        /// @return true if the message was accepted, false if the handshake failed in which case get_alert describes why.
+        bool process_message(const unsigned char* message, const unsigned long long int length, const bool is_last) {
+            if ((message == nullptr) || (length < 4)) {
+                return this->fail(handshake::alert_decode_error);
+            }
+            const unsigned char type = message[0];
+            switch (this->state) {
+                case state_type::wait_server_hello: {
+                    if (type == handshake::message_server_hello) {
+                        return this->process_server_hello(message, length, is_last);
+                    }
+                } break;
+                case state_type::wait_encrypted_extensions: {
+                    if (type == handshake::message_encrypted_extensions) {
+                        return this->process_encrypted_extensions(message, length);
+                    }
+                } break;
+                case state_type::wait_certificate_or_request: {
+                    if (type == handshake::message_certificate_request) {
+                        return this->process_certificate_request(message, length);
+                    }
+                    if (type == handshake::message_certificate) {
+                        return this->process_certificate(message, length);
+                    }
+                } break;
+                case state_type::wait_certificate: {
+                    if (type == handshake::message_certificate) {
+                        return this->process_certificate(message, length);
+                    }
+                } break;
+                case state_type::wait_certificate_verify: {
+                    if (type == handshake::message_certificate_verify) {
+                        return this->process_certificate_verify(message, length);
+                    }
+                } break;
+                case state_type::wait_server_finished: {
+                    if (type == handshake::message_finished) {
+                        return this->process_server_finished(message, length, is_last);
+                    }
+                } break;
+                case state_type::wait_client_finished: {
+                    if (type == handshake::message_finished) {
+                        return this->process_client_finished(message, length, is_last);
+                    }
+                } break;
+                case state_type::connected: {
+                    if (type == handshake::message_key_update) {
+                        return this->process_key_update(message, length, is_last);
+                    }
+                    // Tickets for resuming the session later are not used.
+                    if ((type == handshake::message_new_session_ticket) && this->settings->is_client) {
+                        return true;
+                    }
+                } break;
+                case state_type::idle:
+                case state_type::failed:
+                    break;
+            }
+            return this->fail(handshake::alert_unexpected_message);
+        }
+    };
+}
+
+#endif // GTL_PROTOCOL_TLS_TLS13_HPP

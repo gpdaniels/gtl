@@ -1,0 +1,734 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_CRYPTO_CERTIFICATE_ASN1_HPP
+#define GTL_CRYPTO_CERTIFICATE_ASN1_HPP
+
+// Summary: A reader and writer for the distinguished encoding rules (DER) of abstract syntax notation one (ASN.1).
+
+namespace gtl {
+    /// @brief  The asn1 class reads and writes data structures encoded using the distinguished encoding rules.
+    /// @note   Encoded data is a sequence of elements, each of which is a tag, a length, and contents that may themselves be a sequence of elements.
+    /// @note   Nothing is allocated, the reader returns views of the data it is given and the writer writes into a buffer it is given.
+    class asn1 final {
+    public:
+        /// @brief  The tag of a boolean.
+        constexpr static const unsigned char tag_boolean = 0x01;
+
+        /// @brief  The tag of an integer.
+        constexpr static const unsigned char tag_integer = 0x02;
+
+        /// @brief  The tag of a string of bits.
+        constexpr static const unsigned char tag_bit_string = 0x03;
+
+        /// @brief  The tag of a string of bytes.
+        constexpr static const unsigned char tag_octet_string = 0x04;
+
+        /// @brief  The tag of a null.
+        constexpr static const unsigned char tag_null = 0x05;
+
+        /// @brief  The tag of an object identifier.
+        constexpr static const unsigned char tag_object_identifier = 0x06;
+
+        /// @brief  The tag of a string of utf8 characters.
+        constexpr static const unsigned char tag_utf8_string = 0x0C;
+
+        /// @brief  The tag of a string of the characters that are letters, digits, space, and a few punctuation marks.
+        constexpr static const unsigned char tag_printable_string = 0x13;
+
+        /// @brief  The tag of a string of teletex characters.
+        constexpr static const unsigned char tag_t61_string = 0x14;
+
+        /// @brief  The tag of a string of ascii characters.
+        constexpr static const unsigned char tag_ia5_string = 0x16;
+
+        /// @brief  The tag of a time with a two digit year.
+        constexpr static const unsigned char tag_utc_time = 0x17;
+
+        /// @brief  The tag of a time with a four digit year.
+        constexpr static const unsigned char tag_generalized_time = 0x18;
+
+        /// @brief  The tag of a string of two byte characters.
+        constexpr static const unsigned char tag_bmp_string = 0x1E;
+
+        /// @brief  The tag of an ordered collection of elements.
+        constexpr static const unsigned char tag_sequence = 0x30;
+
+        /// @brief  The tag of an unordered collection of elements.
+        constexpr static const unsigned char tag_set = 0x31;
+
+        /// @brief  Get the tag of a context specific element that holds other elements.
+        /// @param  number The number of the tag, must be less than 31.
+        /// @return The tag.
+        constexpr static unsigned char tag_context_constructed(const unsigned char number) {
+            return static_cast<unsigned char>(0xA0 | (number & 0x1F));
+        }
+
+        /// @brief  Get the tag of a context specific element that holds a value.
+        /// @param  number The number of the tag, must be less than 31.
+        /// @return The tag.
+        constexpr static unsigned char tag_context_primitive(const unsigned char number) {
+            return static_cast<unsigned char>(0x80 | (number & 0x1F));
+        }
+
+    public:
+        /// @brief  A view of one encoded element.
+        class element final {
+        public:
+            /// @brief  The tag of the element.
+            unsigned char tag = 0;
+
+            /// @brief  The whole encoded element, starting at its tag.
+            const unsigned char* encoded = nullptr;
+
+            /// @brief  The length of the whole encoded element.
+            unsigned long long int encoded_length = 0;
+
+            /// @brief  The contents of the element.
+            const unsigned char* content = nullptr;
+
+            /// @brief  The length of the contents of the element.
+            unsigned long long int content_length = 0;
+
+        public:
+            /// @brief  Check if the contents of the element are other elements.
+            /// @return true if the element is constructed.
+            constexpr bool is_constructed() const {
+                return ((this->tag & 0x20) != 0);
+            }
+
+            /// @brief  Check if the contents of the element are exactly some bytes.
+            /// @param  bytes The bytes to compare with.
+            /// @param  length The length of the bytes.
+            /// @return true if the contents are the same length as the bytes and equal to them.
+            constexpr bool is_content(const unsigned char* bytes, const unsigned long long int length) const {
+                if (this->content_length != length) {
+                    return false;
+                }
+                for (unsigned long long int i = 0; i < length; ++i) {
+                    if (this->content[i] != bytes[i]) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        };
+
+        /// @brief  A date and time in coordinated universal time.
+        class time final {
+        public:
+            /// @brief  The year, including the century.
+            unsigned int year = 1970;
+
+            /// @brief  The month of the year, from one to twelve.
+            unsigned int month = 1;
+
+            /// @brief  The day of the month, from one.
+            unsigned int day = 1;
+
+            /// @brief  The hour of the day, from zero to twenty three.
+            unsigned int hour = 0;
+
+            /// @brief  The minute of the hour, from zero to fifty nine.
+            unsigned int minute = 0;
+
+            /// @brief  The second of the minute, from zero to fifty nine.
+            unsigned int second = 0;
+
+        private:
+            /// @brief  Get the number of days in a month.
+            /// @param  year_value The year, which decides the length of february.
+            /// @param  month_value The month of the year, from one to twelve.
+            /// @return The number of days in the month.
+            constexpr static unsigned int days_in_month(const unsigned int year_value, const unsigned int month_value) {
+                constexpr const unsigned int days[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+                const bool leap = ((year_value % 4) == 0) && (((year_value % 100) != 0) || ((year_value % 400) == 0));
+                return days[month_value - 1] + (((month_value == 2) && leap) ? 1 : 0);
+            }
+
+        public:
+            /// @brief  Check if every field of the time is in range.
+            /// @return true if the time is a real date and time.
+            constexpr bool is_valid() const {
+                return (this->year >= 1) && (this->year <= 9999) &&
+                       (this->month >= 1) && (this->month <= 12) &&
+                       (this->day >= 1) && (this->day <= time::days_in_month(this->year, this->month)) &&
+                       (this->hour <= 23) &&
+                       (this->minute <= 59) &&
+                       (this->second <= 59);
+            }
+
+            /// @brief  Convert the time into the number of seconds since the start of 1970, ignoring leap seconds.
+            /// @return The number of seconds, negative for times before 1970.
+            constexpr long long int to_seconds() const {
+                // Count the days using years that start in march, so that the leap day is the last day of the year.
+                const long long int shifted_year = static_cast<long long int>(this->year) - ((this->month <= 2) ? 1 : 0);
+                const long long int era = shifted_year / 400;
+                const long long int year_of_era = shifted_year - (era * 400);
+                const long long int shifted_month = (this->month > 2) ? (static_cast<long long int>(this->month) - 3) : (static_cast<long long int>(this->month) + 9);
+                const long long int day_of_year = (((153 * shifted_month) + 2) / 5) + static_cast<long long int>(this->day) - 1;
+                const long long int day_of_era = (year_of_era * 365) + (year_of_era / 4) - (year_of_era / 100) + day_of_year;
+                const long long int days = (era * 146097) + day_of_era - 719468;
+                return (days * 86400) + (static_cast<long long int>(this->hour) * 3600) + (static_cast<long long int>(this->minute) * 60) + static_cast<long long int>(this->second);
+            }
+
+            /// @brief  Convert a number of seconds since the start of 1970 into a time.
+            /// @param  seconds The number of seconds, must not be before the year one or after the year 9999.
+            /// @return The time.
+            constexpr static time from_seconds(const long long int seconds) {
+                long long int days = seconds / 86400;
+                long long int remainder = seconds - (days * 86400);
+                if (remainder < 0) {
+                    remainder += 86400;
+                    --days;
+                }
+                // Count the days using years that start in march, so that the leap day is the last day of the year.
+                const long long int shifted_days = days + 719468;
+                const long long int era = shifted_days / 146097;
+                const long long int day_of_era = shifted_days - (era * 146097);
+                const long long int year_of_era = (day_of_era - (day_of_era / 1460) + (day_of_era / 36524) - (day_of_era / 146096)) / 365;
+                const long long int day_of_year = day_of_era - ((365 * year_of_era) + (year_of_era / 4) - (year_of_era / 100));
+                const long long int shifted_month = ((5 * day_of_year) + 2) / 153;
+                time result;
+                result.day = static_cast<unsigned int>(day_of_year - (((153 * shifted_month) + 2) / 5) + 1);
+                result.month = static_cast<unsigned int>((shifted_month < 10) ? (shifted_month + 3) : (shifted_month - 9));
+                result.year = static_cast<unsigned int>(year_of_era + (era * 400) + ((result.month <= 2) ? 1 : 0));
+                result.hour = static_cast<unsigned int>(remainder / 3600);
+                result.minute = static_cast<unsigned int>((remainder % 3600) / 60);
+                result.second = static_cast<unsigned int>(remainder % 60);
+                return result;
+            }
+        };
+
+    public:
+        /// @brief  Parse the element at the start of a buffer.
+        /// @param  data The buffer.
+        /// @param  length The length of the buffer.
+        /// @param  parsed Receives the element.
+        /// @return true if the buffer starts with a complete and correctly encoded element, false otherwise.
+        /// @note   Lengths must use the shortest encoding and must be definite, as the distinguished encoding rules require.
+        /// @note   Tags with numbers above thirty, which need more than one byte, are not supported.
+        constexpr static bool parse(const unsigned char* data, const unsigned long long int length, element& parsed) {
+            if ((data == nullptr) || (length < 2)) {
+                return false;
+            }
+            if ((data[0] & 0x1F) == 0x1F) {
+                return false;
+            }
+            unsigned long long int header_length = 2;
+            unsigned long long int content_length = data[1];
+            if (content_length >= 0x80) {
+                // The length is held in the following bytes, most significant first.
+                const unsigned long long int length_bytes = content_length & 0x7F;
+                if ((length_bytes == 0) || (length_bytes > 8) || (length < (2 + length_bytes))) {
+                    return false;
+                }
+                content_length = 0;
+                for (unsigned long long int i = 0; i < length_bytes; ++i) {
+                    content_length = (content_length << 8) | data[2 + i];
+                }
+                // The shortest encoding has no leading zero byte and is only used for lengths that do not fit in the first byte.
+                if ((data[2] == 0) || (content_length < 0x80)) {
+                    return false;
+                }
+                header_length += length_bytes;
+            }
+            if (content_length > (length - header_length)) {
+                return false;
+            }
+            parsed.tag = data[0];
+            parsed.encoded = data;
+            parsed.encoded_length = header_length + content_length;
+            parsed.content = data + header_length;
+            parsed.content_length = content_length;
+            return true;
+        }
+
+        /// @brief  A reader of a sequence of encoded elements.
+        class reader final {
+        private:
+            /// @brief  The data that has not been read yet.
+            const unsigned char* data = nullptr;
+
+            /// @brief  The length of the data that has not been read yet.
+            unsigned long long int length = 0;
+
+        public:
+            /// @brief  Construct a reader with nothing to read.
+            constexpr reader() = default;
+
+            /// @brief  Construct a reader of a buffer.
+            /// @param  buffer The buffer to read.
+            /// @param  buffer_length The length of the buffer.
+            constexpr reader(const unsigned char* buffer, const unsigned long long int buffer_length)
+                : data(buffer)
+                , length((buffer != nullptr) ? buffer_length : 0) {
+            }
+
+            /// @brief  Construct a reader of the contents of an element.
+            /// @param  parent The element to read the contents of.
+            constexpr explicit reader(const element& parent)
+                : data(parent.content)
+                , length((parent.content != nullptr) ? parent.content_length : 0) {
+            }
+
+        public:
+            /// @brief  Check if everything has been read.
+            /// @return true if there is no more data.
+            constexpr bool is_end() const {
+                return (this->length == 0);
+            }
+
+            /// @brief  Get the next element without moving past it.
+            /// @param  next Receives the element.
+            /// @return true if there is a correctly encoded next element.
+            constexpr bool peek(element& next) const {
+                return asn1::parse(this->data, this->length, next);
+            }
+
+            /// @brief  Check if the next element has a tag, without moving past it.
+            /// @param  tag The tag to check for.
+            /// @return true if there is a correctly encoded next element and it has the tag.
+            constexpr bool is_next(const unsigned char tag) const {
+                element next;
+                return this->peek(next) && (next.tag == tag);
+            }
+
+            /// @brief  Read the next element, whatever its tag.
+            /// @param  next Receives the element.
+            /// @return true if there was a correctly encoded next element, false otherwise in which case the reader does not move.
+            constexpr bool read(element& next) {
+                if (!asn1::parse(this->data, this->length, next)) {
+                    return false;
+                }
+                this->data += next.encoded_length;
+                this->length -= next.encoded_length;
+                return true;
+            }
+
+            /// @brief  Read the next element, which must have a tag.
+            /// @param  tag The tag that the element must have.
+            /// @param  next Receives the element.
+            /// @return true if there was a correctly encoded next element with the tag, false otherwise in which case the reader does not move.
+            constexpr bool read(const unsigned char tag, element& next) {
+                element candidate;
+                if ((!asn1::parse(this->data, this->length, candidate)) || (candidate.tag != tag)) {
+                    return false;
+                }
+                next = candidate;
+                this->data += next.encoded_length;
+                this->length -= next.encoded_length;
+                return true;
+            }
+        };
+
+    public:
+        /// @brief  Decode a boolean.
+        /// @param  encoded The element to decode.
+        /// @param  value Receives the boolean.
+        /// @return true if the element is a correctly encoded boolean.
+        constexpr static bool decode_boolean(const element& encoded, bool& value) {
+            if ((encoded.tag != asn1::tag_boolean) || (encoded.content_length != 1) || ((encoded.content[0] != 0x00) && (encoded.content[0] != 0xFF))) {
+                return false;
+            }
+            value = (encoded.content[0] == 0xFF);
+            return true;
+        }
+
+        /// @brief  Decode a null.
+        /// @param  encoded The element to decode.
+        /// @return true if the element is a correctly encoded null.
+        constexpr static bool decode_null(const element& encoded) {
+            return (encoded.tag == asn1::tag_null) && (encoded.content_length == 0);
+        }
+
+        /// @brief  Decode an integer that is not negative, of any size.
+        /// @param  encoded The element to decode.
+        /// @param  bytes Receives a pointer to the big endian bytes of the integer, without the leading zero byte that the encoding adds to keep some values positive.
+        /// @param  length Receives the length of the bytes, which is at least one.
+        /// @return true if the element is a correctly encoded integer that is not negative.
+        constexpr static bool decode_unsigned(const element& encoded, const unsigned char*& bytes, unsigned long long int& length) {
+            if ((encoded.tag != asn1::tag_integer) || (encoded.content_length == 0)) {
+                return false;
+            }
+            // A set top bit means the integer is negative.
+            if ((encoded.content[0] & 0x80) != 0) {
+                return false;
+            }
+            if (encoded.content_length > 1) {
+                // A leading zero byte is only allowed when it is needed to keep the integer positive.
+                if ((encoded.content[0] == 0x00) && ((encoded.content[1] & 0x80) == 0)) {
+                    return false;
+                }
+                if (encoded.content[0] == 0x00) {
+                    bytes = encoded.content + 1;
+                    length = encoded.content_length - 1;
+                    return true;
+                }
+            }
+            bytes = encoded.content;
+            length = encoded.content_length;
+            return true;
+        }
+
+        /// @brief  Decode an integer that is not negative and fits in sixty four bits.
+        /// @param  encoded The element to decode.
+        /// @param  value Receives the integer.
+        /// @return true if the element is a correctly encoded integer that is not negative and is small enough.
+        constexpr static bool decode_integer(const element& encoded, unsigned long long int& value) {
+            const unsigned char* bytes = nullptr;
+            unsigned long long int length = 0;
+            if ((!asn1::decode_unsigned(encoded, bytes, length)) || (length > 8)) {
+                return false;
+            }
+            value = 0;
+            for (unsigned long long int i = 0; i < length; ++i) {
+                value = (value << 8) | bytes[i];
+            }
+            return true;
+        }
+
+        /// @brief  Decode a string of bits.
+        /// @param  encoded The element to decode.
+        /// @param  bytes Receives a pointer to the bytes that hold the bits, most significant bit first.
+        /// @param  length Receives the length of the bytes.
+        /// @param  unused_bits Receives the number of bits at the end of the last byte that are not part of the string, from zero to seven.
+        /// @return true if the element is a correctly encoded string of bits.
+        constexpr static bool decode_bit_string(const element& encoded, const unsigned char*& bytes, unsigned long long int& length, unsigned int& unused_bits) {
+            if ((encoded.tag != asn1::tag_bit_string) || (encoded.content_length == 0) || (encoded.content[0] > 7)) {
+                return false;
+            }
+            // An empty string has no unused bits, and the unused bits must be zero.
+            if ((encoded.content_length == 1) && (encoded.content[0] != 0)) {
+                return false;
+            }
+            if ((encoded.content_length > 1) && ((encoded.content[encoded.content_length - 1] & ((1u << encoded.content[0]) - 1)) != 0)) {
+                return false;
+            }
+            unused_bits = encoded.content[0];
+            bytes = encoded.content + 1;
+            length = encoded.content_length - 1;
+            return true;
+        }
+
+        /// @brief  Decode a time.
+        /// @param  encoded The element to decode, either a time with a two digit year or a time with a four digit year.
+        /// @param  value Receives the time.
+        /// @return true if the element is a correctly encoded time in coordinated universal time with seconds, as the distinguished encoding rules require.
+        /// @note   Two digit years below fifty are in the twenty first century, and the rest are in the twentieth.
+        constexpr static bool decode_time(const element& encoded, time& value) {
+            unsigned long long int year_digits = 0;
+            if (encoded.tag == asn1::tag_utc_time) {
+                year_digits = 2;
+            }
+            else if (encoded.tag == asn1::tag_generalized_time) {
+                year_digits = 4;
+            }
+            else {
+                return false;
+            }
+            if ((encoded.content_length != (year_digits + 11)) || (encoded.content[encoded.content_length - 1] != 'Z')) {
+                return false;
+            }
+            for (unsigned long long int i = 0; i < (encoded.content_length - 1); ++i) {
+                if ((encoded.content[i] < '0') || (encoded.content[i] > '9')) {
+                    return false;
+                }
+            }
+            const unsigned char* digits = encoded.content;
+            time result;
+            result.year = 0;
+            for (unsigned long long int i = 0; i < year_digits; ++i) {
+                result.year = (result.year * 10) + static_cast<unsigned int>(*digits++ - '0');
+            }
+            if (year_digits == 2) {
+                result.year += (result.year < 50) ? 2000 : 1900;
+            }
+            unsigned int* fields[5] = { &result.month, &result.day, &result.hour, &result.minute, &result.second };
+            for (unsigned int* field : fields) {
+                *field = (static_cast<unsigned int>(digits[0] - '0') * 10) + static_cast<unsigned int>(digits[1] - '0');
+                digits += 2;
+            }
+            if (!result.is_valid()) {
+                return false;
+            }
+            value = result;
+            return true;
+        }
+
+    public:
+        /// @brief  A writer of encoded elements into a buffer.
+        /// @note   Once the buffer is full nothing more is written and the writer becomes invalid, so the buffer can be checked once after everything is written.
+        class writer final {
+        private:
+            /// @brief  The buffer that is written into.
+            unsigned char* buffer = nullptr;
+
+            /// @brief  The size of the buffer.
+            unsigned long long int capacity = 0;
+
+            /// @brief  The length of the data that has been written.
+            unsigned long long int length = 0;
+
+            /// @brief  Flag showing whether everything that was written fitted in the buffer.
+            bool valid = true;
+
+        private:
+            /// @brief  Get the number of bytes needed to encode the length of the contents of an element.
+            /// @param  content_length The length of the contents.
+            /// @return The number of bytes.
+            constexpr static unsigned long long int get_length_size(const unsigned long long int content_length) {
+                if (content_length < 0x80) {
+                    return 1;
+                }
+                unsigned long long int size = 1;
+                for (unsigned long long int remaining = content_length; remaining != 0; remaining >>= 8) {
+                    ++size;
+                }
+                return size;
+            }
+
+            /// @brief  Write the encoded length of the contents of an element at an offset.
+            /// @param  offset The offset in the buffer to write at.
+            /// @param  content_length The length of the contents.
+            constexpr void put_length(unsigned long long int offset, const unsigned long long int content_length) {
+                if (content_length < 0x80) {
+                    this->buffer[offset] = static_cast<unsigned char>(content_length);
+                    return;
+                }
+                const unsigned long long int length_bytes = writer::get_length_size(content_length) - 1;
+                this->buffer[offset++] = static_cast<unsigned char>(0x80 | length_bytes);
+                for (unsigned long long int i = length_bytes; i-- > 0;) {
+                    this->buffer[offset++] = static_cast<unsigned char>((content_length >> (8 * i)) & 0xFF);
+                }
+            }
+
+            /// @brief  Reserve space at the end of the written data.
+            /// @param  size The number of bytes to reserve.
+            /// @return true if the space was reserved, false if the buffer is full in which case the writer becomes invalid.
+            constexpr bool reserve(const unsigned long long int size) {
+                if ((!this->valid) || (size > (this->capacity - this->length))) {
+                    this->valid = false;
+                    return false;
+                }
+                return true;
+            }
+
+        public:
+            /// @brief  Construct a writer into a buffer.
+            /// @param  output The buffer to write into.
+            /// @param  output_capacity The size of the buffer.
+            constexpr writer(unsigned char* output, const unsigned long long int output_capacity)
+                : buffer(output)
+                , capacity((output != nullptr) ? output_capacity : 0) {
+            }
+
+        public:
+            /// @brief  Check if everything that was written fitted in the buffer.
+            /// @return true if the written data is complete.
+            constexpr bool is_valid() const {
+                return this->valid;
+            }
+
+            /// @brief  Get the length of the data that has been written.
+            /// @return The length in bytes, or zero if the writer is not valid.
+            constexpr unsigned long long int get_length() const {
+                return this->valid ? this->length : 0;
+            }
+
+        public:
+            /// @brief  Start an element that will hold whatever is written until the matching call to end.
+            /// @param  tag The tag of the element.
+            /// @return A marker to pass to the matching call to end.
+            constexpr unsigned long long int begin(const unsigned char tag) {
+                const unsigned long long int marker = this->length;
+                // Space is reserved for the shortest length, and the contents are moved if it turns out to be longer.
+                if (this->reserve(2)) {
+                    this->buffer[this->length++] = tag;
+                    this->buffer[this->length++] = 0;
+                }
+                return marker;
+            }
+
+            /// @brief  Finish an element, encoding its length now that its contents are known.
+            /// @param  marker The marker returned by the matching call to begin.
+            constexpr void end(const unsigned long long int marker) {
+                if ((!this->valid) || ((marker + 2) > this->length)) {
+                    this->valid = false;
+                    return;
+                }
+                const unsigned long long int content_offset = marker + 2;
+                const unsigned long long int content_length = this->length - content_offset;
+                const unsigned long long int extra = writer::get_length_size(content_length) - 1;
+                if (!this->reserve(extra)) {
+                    return;
+                }
+                for (unsigned long long int i = content_length; i-- > 0;) {
+                    this->buffer[content_offset + extra + i] = this->buffer[content_offset + i];
+                }
+                this->put_length(marker + 1, content_length);
+                this->length += extra;
+            }
+
+            /// @brief  Write an element with a tag and contents.
+            /// @param  tag The tag of the element.
+            /// @param  content The contents of the element.
+            /// @param  content_length The length of the contents.
+            constexpr void write(const unsigned char tag, const unsigned char* content, const unsigned long long int content_length) {
+                const unsigned long long int length_size = writer::get_length_size(content_length);
+                if ((content_length > this->capacity) || (!this->reserve(1 + length_size + content_length))) {
+                    this->valid = false;
+                    return;
+                }
+                this->buffer[this->length++] = tag;
+                this->put_length(this->length, content_length);
+                this->length += length_size;
+                for (unsigned long long int i = 0; i < content_length; ++i) {
+                    this->buffer[this->length++] = content[i];
+                }
+            }
+
+            /// @brief  Write data that is already encoded.
+            /// @param  encoded The encoded data.
+            /// @param  encoded_length The length of the encoded data.
+            constexpr void write_encoded(const unsigned char* encoded, const unsigned long long int encoded_length) {
+                if (!this->reserve(encoded_length)) {
+                    return;
+                }
+                for (unsigned long long int i = 0; i < encoded_length; ++i) {
+                    this->buffer[this->length++] = encoded[i];
+                }
+            }
+
+            /// @brief  Write a boolean.
+            /// @param  value The boolean.
+            constexpr void write_boolean(const bool value) {
+                const unsigned char content[1] = { static_cast<unsigned char>(value ? 0xFF : 0x00) };
+                this->write(asn1::tag_boolean, content, 1);
+            }
+
+            /// @brief  Write a null.
+            constexpr void write_null() {
+                this->write(asn1::tag_null, nullptr, 0);
+            }
+
+            /// @brief  Write an integer that is not negative, of any size.
+            /// @param  bytes The big endian bytes of the integer, leading zero bytes are removed.
+            /// @param  bytes_length The length of the bytes.
+            constexpr void write_unsigned(const unsigned char* bytes, unsigned long long int bytes_length) {
+                while ((bytes_length > 0) && (bytes[0] == 0x00)) {
+                    ++bytes;
+                    --bytes_length;
+                }
+                // A zero byte is added when it is needed to keep the integer positive, and zero is a single zero byte.
+                const unsigned long long int padding = ((bytes_length == 0) || ((bytes[0] & 0x80) != 0)) ? 1 : 0;
+                const unsigned long long int content_length = bytes_length + padding;
+                const unsigned long long int length_size = writer::get_length_size(content_length);
+                if ((content_length > this->capacity) || (!this->reserve(1 + length_size + content_length))) {
+                    this->valid = false;
+                    return;
+                }
+                this->buffer[this->length++] = asn1::tag_integer;
+                this->put_length(this->length, content_length);
+                this->length += length_size;
+                if (padding != 0) {
+                    this->buffer[this->length++] = 0x00;
+                }
+                for (unsigned long long int i = 0; i < bytes_length; ++i) {
+                    this->buffer[this->length++] = bytes[i];
+                }
+            }
+
+            /// @brief  Write an integer that is not negative.
+            /// @param  value The integer.
+            constexpr void write_integer(const unsigned long long int value) {
+                unsigned char bytes[8] = {};
+                for (unsigned int i = 0; i < 8; ++i) {
+                    bytes[i] = static_cast<unsigned char>((value >> (8 * (7 - i))) & 0xFF);
+                }
+                this->write_unsigned(bytes, 8);
+            }
+
+            /// @brief  Write a string of bits that is a whole number of bytes long.
+            /// @param  bytes The bytes that hold the bits.
+            /// @param  bytes_length The length of the bytes.
+            constexpr void write_bit_string(const unsigned char* bytes, const unsigned long long int bytes_length) {
+                const unsigned long long int marker = this->begin(asn1::tag_bit_string);
+                const unsigned char unused_bits[1] = { 0 };
+                this->write_encoded(unused_bits, 1);
+                this->write_encoded(bytes, bytes_length);
+                this->end(marker);
+            }
+
+            /// @brief  Write a string of bytes.
+            /// @param  bytes The bytes.
+            /// @param  bytes_length The length of the bytes.
+            constexpr void write_octet_string(const unsigned char* bytes, const unsigned long long int bytes_length) {
+                this->write(asn1::tag_octet_string, bytes, bytes_length);
+            }
+
+            /// @brief  Write an object identifier.
+            /// @param  bytes The encoded contents of the object identifier.
+            /// @param  bytes_length The length of the encoded contents.
+            constexpr void write_object_identifier(const unsigned char* bytes, const unsigned long long int bytes_length) {
+                this->write(asn1::tag_object_identifier, bytes, bytes_length);
+            }
+
+            /// @brief  Write a string of characters.
+            /// @param  tag The tag of the kind of string to write, the characters are not checked against it.
+            /// @param  characters The characters of the string, with null termination.
+            constexpr void write_string(const unsigned char tag, const char* characters) {
+                unsigned long long int characters_length = 0;
+                while (characters[characters_length] != 0) {
+                    ++characters_length;
+                }
+                const unsigned long long int marker = this->begin(tag);
+                if (this->reserve(characters_length)) {
+                    for (unsigned long long int i = 0; i < characters_length; ++i) {
+                        this->buffer[this->length++] = static_cast<unsigned char>(characters[i]);
+                    }
+                }
+                this->end(marker);
+            }
+
+            /// @brief  Write a time, with a two digit year if the year is from 1950 to 2049 and a four digit year otherwise, as certificates require.
+            /// @param  value The time, which must be valid.
+            constexpr void write_time(const time& value) {
+                if (!value.is_valid()) {
+                    this->valid = false;
+                    return;
+                }
+                const bool short_year = (value.year >= 1950) && (value.year <= 2049);
+                unsigned char content[15] = {};
+                unsigned long long int content_length = 0;
+                if (!short_year) {
+                    content[content_length++] = static_cast<unsigned char>('0' + ((value.year / 1000) % 10));
+                    content[content_length++] = static_cast<unsigned char>('0' + ((value.year / 100) % 10));
+                }
+                const unsigned int fields[6] = { value.year % 100, value.month, value.day, value.hour, value.minute, value.second };
+                for (const unsigned int field : fields) {
+                    content[content_length++] = static_cast<unsigned char>('0' + (field / 10));
+                    content[content_length++] = static_cast<unsigned char>('0' + (field % 10));
+                }
+                content[content_length++] = 'Z';
+                this->write(short_year ? asn1::tag_utc_time : asn1::tag_generalized_time, content, content_length);
+            }
+        };
+    };
+}
+
+#endif // GTL_CRYPTO_CERTIFICATE_ASN1_HPP

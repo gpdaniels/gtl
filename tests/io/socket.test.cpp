@@ -401,3 +401,192 @@ TEST(socket, function, read_write_udp) {
     REQUIRE(received_length2 == sent_length2, "Mismatching lengths of sent (%llu) and receieved (%llu) data.", sent_length2, received_length2);
     REQUIRE(testbench::is_memory_same(sent_message2, received_message2, sent_length2), "Mismatching sent and receieved data. '%s' != '%s'", sent_message2, received_message2);
 }
+
+TEST(socket, function, is_connected) {
+    // A closed socket is not connected.
+    gtl::socket socket_closed;
+    REQUIRE(socket_closed.is_connected() == false);
+
+    // A udp socket has no peer.
+    gtl::socket socket_udp;
+    REQUIRE(socket_udp.open(gtl::socket::udp_client{ gtl::socket::ip_loopback, gtl::socket::port_any }) == true);
+    REQUIRE(socket_udp.is_connected() == false);
+
+    // A listening socket has no peer.
+    gtl::socket socket_listen;
+    REQUIRE(socket_listen.open(gtl::socket::tcp_server{ gtl::socket::ip_loopback, gtl::socket::port_any }) == true);
+    REQUIRE(socket_listen.is_connected() == false);
+    gtl::socket::ip address = {};
+    unsigned short port = 0;
+    REQUIRE(socket_listen.get_config(address, port) == true);
+
+    // A bound but unconnected client has no peer.
+    gtl::socket socket_unconnected;
+    REQUIRE(socket_unconnected.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, port }, false) == true);
+    REQUIRE(socket_unconnected.is_connected() == false);
+
+    // Both ends of an accepted connection are connected.
+    gtl::socket socket_client;
+    REQUIRE(socket_client.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, port }) == true);
+    REQUIRE(socket_client.is_connected() == true);
+    gtl::socket socket_accepted;
+    REQUIRE(socket_listen.accept(socket_accepted) == true);
+    REQUIRE(socket_accepted.is_connected() == true);
+
+    // Closing a socket disconnects it.
+    socket_client.close();
+    REQUIRE(socket_client.is_connected() == false);
+}
+
+TEST(socket, function, tcp_send_receive) {
+    unsigned char received_message[128] = {};
+
+    // A closed socket fails to send or receive.
+    gtl::socket socket_closed;
+    REQUIRE(socket_closed.tcp_send(received_message, 1) == -1);
+    REQUIRE(socket_closed.tcp_receive(received_message, 1) == -1);
+
+    gtl::socket socket_listen;
+    REQUIRE(socket_listen.open(gtl::socket::tcp_server{ gtl::socket::ip_loopback, gtl::socket::port_any }) == true);
+    gtl::socket::ip address = {};
+    unsigned short port = 0;
+    REQUIRE(socket_listen.get_config(address, port) == true);
+    gtl::socket socket_client;
+    REQUIRE(socket_client.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, port }) == true);
+    gtl::socket socket_server;
+    REQUIRE(socket_listen.accept(socket_server) == true);
+
+    // With nothing sent a receive returns immediately with no data.
+    REQUIRE(socket_client.tcp_receive(received_message, sizeof(received_message)) == 0);
+    REQUIRE(socket_server.tcp_receive(received_message, sizeof(received_message)) == 0);
+
+    // Zero length requests do nothing.
+    REQUIRE(socket_client.tcp_send(received_message, 0) == 0);
+    REQUIRE(socket_client.tcp_receive(received_message, 0) == 0);
+
+    // Send in both directions, reading until the whole message has arrived as tcp data can be delivered in multiple parts.
+    const char* sent_messages[2] = { "Test message from the client", "Test message from the server, which is longer" };
+    gtl::socket* senders[2] = { &socket_client, &socket_server };
+    gtl::socket* receivers[2] = { &socket_server, &socket_client };
+    for (unsigned int direction = 0; direction < 2; ++direction) {
+        const unsigned long long int sent_length = testbench::string_length(sent_messages[direction]);
+        REQUIRE(senders[direction]->tcp_send(reinterpret_cast<const unsigned char*>(sent_messages[direction]), sent_length) == static_cast<long long int>(sent_length));
+        unsigned long long int received_length = 0;
+        const std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while ((received_length < sent_length) && (std::chrono::steady_clock::now() < deadline)) {
+            const long long int length = receivers[direction]->tcp_receive(&received_message[received_length], sizeof(received_message) - received_length);
+            REQUIRE(length >= 0);
+            if (length < 0) {
+                break;
+            }
+            received_length += static_cast<unsigned long long int>(length);
+            std::this_thread::yield();
+        }
+        REQUIRE(received_length == sent_length, "Mismatching lengths of sent (%llu) and receieved (%llu) data.", sent_length, received_length);
+        REQUIRE(testbench::is_memory_same(sent_messages[direction], received_message, sent_length));
+        REQUIRE(receivers[direction]->tcp_receive(received_message, sizeof(received_message)) == 0);
+    }
+
+    // A receive is limited to the length of the buffer, leaving the rest for later.
+    REQUIRE(socket_client.tcp_send(reinterpret_cast<const unsigned char*>("abcdef"), 6) == 6);
+    long long int partial_length = 0;
+    const std::chrono::steady_clock::time_point deadline_partial = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while ((partial_length == 0) && (std::chrono::steady_clock::now() < deadline_partial)) {
+        partial_length = socket_server.tcp_receive(received_message, 4);
+        std::this_thread::yield();
+    }
+    REQUIRE(partial_length > 0);
+    REQUIRE(partial_length <= 4);
+    REQUIRE(testbench::is_memory_same("abcdef", received_message, static_cast<unsigned long long int>(partial_length)));
+
+    // Sending more than the socket buffers can hold returns a short count or zero instead of blocking.
+    static unsigned char large_message[1 << 16] = {};
+    unsigned long long int total_sent = 0;
+    bool send_stalled = false;
+    for (unsigned int i = 0; (i < 4096) && (!send_stalled); ++i) {
+        const long long int length = socket_client.tcp_send(large_message, sizeof(large_message));
+        REQUIRE(length >= 0);
+        if (length < 0) {
+            break;
+        }
+        total_sent += static_cast<unsigned long long int>(length);
+        send_stalled = (length < static_cast<long long int>(sizeof(large_message)));
+    }
+    REQUIRE(total_sent > 0);
+#if !defined(_WIN32)
+    REQUIRE(send_stalled == true);
+#endif
+
+    // Once the peer closes, a receive drains what was sent and then reports the closure.
+    socket_client.close();
+    long long int closed_length = 0;
+    const std::chrono::steady_clock::time_point deadline_closed = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while ((closed_length >= 0) && (std::chrono::steady_clock::now() < deadline_closed)) {
+        closed_length = socket_server.tcp_receive(large_message, sizeof(large_message));
+        std::this_thread::yield();
+    }
+    REQUIRE(closed_length == -1);
+}
+
+TEST(socket, function, close_delivers_written_data) {
+    // Data that was written before a tcp connection is closed is still received by the peer, even when it is more than the peer has read so far.
+    gtl::socket socket_listen;
+    REQUIRE(socket_listen.open(gtl::socket::tcp_server{ gtl::socket::ip_loopback, gtl::socket::port_any }) == true);
+    gtl::socket::ip address = {};
+    unsigned short port = 0;
+    REQUIRE(socket_listen.get_config(address, port) == true);
+    for (unsigned int repeat = 0; repeat < 5; ++repeat) {
+        gtl::socket socket_client;
+        REQUIRE(socket_client.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, gtl::socket::ip_loopback, port }) == true);
+        gtl::socket socket_server;
+        REQUIRE(socket_listen.accept(socket_server) == true);
+
+        static unsigned char sent_message[300000];
+        for (unsigned int i = 0; i < sizeof(sent_message); ++i) {
+            sent_message[i] = static_cast<unsigned char>((i * 7) + repeat);
+        }
+        unsigned long long int sent_length = 0;
+        const std::chrono::steady_clock::time_point deadline_send = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while ((sent_length < sizeof(sent_message)) && (std::chrono::steady_clock::now() < deadline_send)) {
+            const long long int length = socket_server.tcp_send(&sent_message[sent_length], sizeof(sent_message) - sent_length);
+            REQUIRE(length >= 0);
+            if (length < 0) {
+                break;
+            }
+            sent_length += static_cast<unsigned long long int>(length);
+            // The client reads nothing until everything has been written and the connection closed, unless the buffers of the connection fill up.
+            if (length == 0) {
+                break;
+            }
+        }
+        const bool sent_all = (sent_length == sizeof(sent_message));
+        if (sent_all) {
+            socket_server.close();
+        }
+
+        static unsigned char received_message[sizeof(sent_message)];
+        unsigned long long int received_length = 0;
+        long long int length = 0;
+        const std::chrono::steady_clock::time_point deadline_receive = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while ((length >= 0) && (std::chrono::steady_clock::now() < deadline_receive)) {
+            if (!sent_all && (sent_length < sizeof(sent_message))) {
+                // The buffers were full, so finish writing as the client reads, then close.
+                const long long int more = socket_server.tcp_send(&sent_message[sent_length], sizeof(sent_message) - sent_length);
+                REQUIRE(more >= 0);
+                sent_length += static_cast<unsigned long long int>((more > 0) ? more : 0);
+                if (sent_length == sizeof(sent_message)) {
+                    socket_server.close();
+                }
+            }
+            length = (received_length < sizeof(received_message)) ? socket_client.tcp_receive(&received_message[received_length], sizeof(received_message) - received_length) : socket_client.tcp_receive(received_message, 1);
+            if (length > 0) {
+                received_length += static_cast<unsigned long long int>(length);
+            }
+            std::this_thread::yield();
+        }
+        // The end of the connection is only reported after all of the data.
+        REQUIRE(length == -1);
+        REQUIRE(received_length == sizeof(sent_message), "Only %llu of %llu bytes were received.", received_length, static_cast<unsigned long long int>(sizeof(sent_message)));
+        REQUIRE(testbench::is_memory_same(sent_message, received_message, sizeof(sent_message)));
+    }
+}

@@ -1897,3 +1897,477 @@ TEST(rsa, evaluate, generate_keys_invalid) {
     // The same arguments with a valid size and exponent do generate a key.
     REQUIRE(is_empty(gtl::rsa::generate_key_pair(pcg_generator(400), 16)) == false);
 }
+
+namespace {
+    // The digests of the known message, and signatures of it made with the known key, all computed independently of this library.
+    struct known_signature_type {
+        gtl::rsa::signature_hash_type hash_type;
+        const char* digest;
+        const char* pkcs1;
+        const char* pss_reference;
+        const char* pss_fixed;
+    };
+
+    // The pss_reference signatures have a random salt as long as the hash, and the pss_fixed signatures have a salt of the bytes 0x00, 0x01, 0x02, and so on, as long as the hash.
+    // The known key is too short to make a pss signature using sha2-512 with a salt as long as the hash.
+    constexpr const known_signature_type known_signatures[] = {
+        { gtl::rsa::signature_hash_type::sha1,
+          "408D94384216F890FF7A0C3528E8BED1E0B01621",
+          "3EC4D9F16106781FE8C28E9957F0F9BA3ABB5A466CB21F9BECF72AEA2C560CD644333AA5A3D670CD5349BC475FD36727D032143327AB204ADBAE8A5CBFEB7B942A324DCF61BEC2F1FD018693707E4C9E37CCFFB3FD442AFA226F916A0FCDC0D5CE4E96F3AC7FA84060EC41AF22DF0CF3B2F07C68899EE77442B5702A0CBD47F0",
+          "763D1E15CA4491C3B175CE197A283642001A3D1338CFCD8B1C4B408930668DB630C9E6BB50B66DA61D8D6AC6C18EBBCEF7E30E683BC936B26F65BEE7A26EC3399FD65B27E7C3B3242F18364A217DC42E4C89404DAEC242371CEB5EE010502080C531B78E08B3B19F3795E2939767AD7F7E6E433BFBE465275900B5268F97DA24",
+          "3E3FD9CFA4384B326D806E0FC92AA444569274C10B03FFF6083F3595E716C3D3DA28095F97EB6BB7C1C2AF338DF88942C0B1C57942A465F0F676C34522E2F9FA493325DC7C007B73B067091540BD6BD8A27A33222F157BED559F8145390E97DE7D689E85B9337805C48ECDB1A15112ECA176104AAA65DF20B5EE9E5A6DE99CC4" },
+        { gtl::rsa::signature_hash_type::sha2_256,
+          "EF537F25C895BFA782526529A9B63D97AA631564D5D789C2B765448C8635FB6C",
+          "6686A729D0800F4F474E37DE875BFE82D26B971737D062299592E8AC468F8BE79A15ABA96BAFBA6FEE5B4DF802EAD99098DD644AA9C0BC87DE2391273097047761B1EC6DDA8CB984918F3AEA7FE06170B925848B8D10BEB5AA540D51D8342A0B94825A3682400E1D55BC3213D37C6BD00AF4BFB3A89EAE0092B8D11731E56994",
+          "A21FC38DE403674FE8A0D5A8365B5FA6F5C80AEB0AEE1883DB9EC3FACCAD46F563597A35B6AE18C9C064AB3CA31ABF84DF30966EBA43815B9B65E3B491BA63CC8B9DD2414551CBE9C3CFC22B78B43AB84497619213F0509CFE8DDFD6C3F4A4F33DD261156561AD163C47B6C2F0C542C900479F02EF1AECF3BE1D2C0A2BDA999D",
+          "419EB77BA7B503D17BA3E2968D69CC5609BCD07E859E0B8E317377E9CF16B12AF7BBCC0D3842D0ABFFD61CB40D20DBAB9A73B7AB80BE8427B2CF870FFDF044AEE4D18AC87DDED5A28C5F53C2A1CB282DE220A3C5895DAF9D458CA84F3C382D1DA9A375E8130440E50947F39F3F76E5E8FC064983591207121D707ED07E0013D6" },
+        { gtl::rsa::signature_hash_type::sha2_384,
+          "ED892481D8272CA6DF370BF706E4D7BC1B5739FA2177AAE6C50E946678718FC67A7AF2819A021C2FC34E91BDB63409D7",
+          "93E088AE6C1FB8F3DC88ACD262BFD56D00FDA6A7DEA9E52F0193A7337BB162FC06D6DC3419C5449FF3A299DDEE7C216A02FE5EC194D05068BCAEE7FC49CF639DE476F4147585C8B556AF08E8F9612F21836CD0B9F224F3A892C95515AB0EF3465C70CAF81E136AEDA8B7B30B4B12A8D4F723442ECC659D9BAE2A567D507229A5",
+          "63D9A5E7D7E816BD842E948FD8D91DE675C7AF88E0E1144785DCBD6D2F88DE3B8CA191C645D306148A8E90E78758043AB8633311205D1D341A4FEA29DEE32725624131351662BDB4C6D4CBB5B4A33B7FD8967F5548228C8E02D24B6C9DD9AF524E8CA235DE529B3DF98C92B0174CE55FF27CAC91E11A52FF529A269748856CEB",
+          "7AFAAF7C962EEF4610D82A5194F46EE4AC1680A7B94BD06DCE1E215440E7299B55314F099F00A6805E9A73F96A41D4CF90B7E596A33AE66DE3B963BB6F700795A36F9A7A56358812A369795DEF6A9689451ACFCFFC54F530A22982DE5CEB695BC67763CA520BC4A2E7FB97C90CD18A9D4B431A6080030EA546D0CFEB3110C123" },
+        { gtl::rsa::signature_hash_type::sha2_512,
+          "91EA1245F20D46AE9A037A989F54F1F790F0A47607EEB8A14D12890CEA77A1BBC6C7ED9CF205E67B7F2B8FD4C7DFD3A7A8617E45F3C463D481C7E586C39AC1ED",
+          "87345DC62C6F442BCEC2AED0E3522DE5131C7154A278C81BE4CC4F88A46529123409FCD88E3F9D125A302C11D936B27B5C1D8DFF380F41E620A9528FD58CC9F418C4D3146DA0E6AFC439433105207BB46CBCA026A607DE48ECDF5CB8CAD9EC38EB138F931E6282FF99AB6D0D339F637DB6DE2686B3D94DE2449D67E244ACCE52",
+          nullptr,
+          nullptr },
+    };
+
+    // Signatures using sha2-256 with no salt, and with a salt of the twenty bytes 0x00, 0x01, 0x02, and so on.
+    constexpr const char* known_pss_salt_0 = "04DFB046E36D5550761883F0438169638E46D0CB256A295AD9B4FDA04F07D55F86D4CE3E41B4B42CC3E182ADAA67AB9AF75CC4CEC24892A284AEB81F3035ED076B83E0E9DFFF9A9AF20173321F56506F35AFE8F44F67690DD5AC91255B914BAE6108DC0F49D909CE1C906DD709A497271D6C797B19D4C300E8B5FC52872B9AE6";
+    constexpr const char* known_pss_salt_20 = "939D2B0ECA8455D171794CB731A15D1D596D5D14B54F1FA75788A47960F8F23703940EBDB06665F9B1904517AC5739BC0A7BC8BE020C1E74015D51D721C05E74E36E146F4BDFE2509A9811469831CB2D36866996F8AF43335521BF5B2074FE82699EC19FDBA55BD11712219CA51307F53AFC30E5DBE7DE873A7B5996A8155570";
+
+    // A 1025 bit key, for which the encoded message of a pss signature is one byte shorter than the key.
+    constexpr const unsigned int odd_length = 129;
+    constexpr const char* odd_modulus = "01E61535721C2141CFA5B5FA1A1253F3FAC51E089326494E646C2E4D45A88AF19160D5B3DCAE5FB6BEDE4317863C12B3C179C792460A5790D76BDD4E955AC878FAD50DC39DB2B900CA9DA4630F92ED00E7B2244BD54E458432B5913097221E2E78ABEF2F09101E2D6A92C6022FE3D54F4E9489738E58D2FB2184423CA20D141AA7";
+    constexpr const char* odd_private_exponent = "00FD6BE14974D101F6B8767FC647F7ED23B8D147B73026D7F01356B082B8B477ED4B871F16D6F29FDC3314D796EC8AF39CD358F132030254497BBB0DD56057547A2BFAFD90D4661A48C3C82428BF203469F89566384B7F943E818418BD41FA8F6FC7B783284AFF67D2ABDBA950E0959C54BF00BD8589C9FCABB1F71E02B50CF001";
+    constexpr const char* odd_pkcs1 = "010625B90E5B0AE5D64069B71B57F6DA05B9CDD8241B8424B39211923F72A440E1C766BE3A0A2D390F39148C20BC3A5E8A57FF28ADD50E3DA63587EF4D9345837C83051063FBB8FD9CE2C630026A582177495E800EE53EA420904B5305A25277CABE9096CFEF41B14DF495E1F4ECF84030AD3355132AC57003CDF451700E4F83E2";
+    constexpr const char* odd_pss_reference = "015E833B8C836A4845DC72E832984C7491AFEF605B8AF427B96A68B8FA64100225BEEFD0D0BDF4E22E95AD2366CFDFBDD2CEE0656A70B902CE6473C2BD0F83DBF141ABAB9F5617358AC9C1CB4C755A19A53E96CF3EC7B3E61BB1A8B7A92037709C089404E4464BDD01DA8A2F53EC6432DB6413F332506B88B5D5B0B9E68AA04859";
+    constexpr const char* odd_pss_fixed = "002E73CF850684660B02707CBD6F2A1F87FD0D3D6925869DC3A9F87427D15722A5129312682882C7524A4E3191A5247D1D505C4D787D3CF89F8306301169EC63292DA7F0DDEA8F04AD2E3E5C9551D80A184935D988B6885CF25D4F6F3438F97567206F3742F094B4B81C10D3E35E2325BBFB81A1A6D9B0F8B71F13255A7512A13C";
+
+    // A 2048 bit key, which is long enough for every hash.
+    constexpr const unsigned int long_length = 256;
+    constexpr const char* long_modulus = "BF636134A68B3EE8653B1777A15E6BEEC9ED8C5DB27FE186E11FBB5D473854808F546E5925D6CA7B1C743F8D3D8A8FDCC8A0B08D2A583ECD70B8D642780338294A23A147C902CD8E671A4EAD589D41BAE41E7A6DE3B3AAA8AA8564505B896E8A9019685DD4035DFD2CDA70FB753E1073E91CB2A42907E07B1527253C9DA77507CEE892C63A7C803A70BA253C2889E011073C76B407092DD4F76B2F73521114204D095EFA5154BEF52A51C8715C4F1CFBCEA7608EE082E9804B57C0B479826308B9FD7D10CAF8A9301B69894CE18EAE5DE010778C36F9B95AB196D462E23DF4DC8034979AD89E0EFF9304F25874D74A6D9D8EF64045821216B95C29D63226C91B";
+    constexpr const char* long_private_exponent = "0E56560A592D963D5794092A8392ACB83B3549EE1CF89A7EFDAF605C5900FDC791B52BFD0EAA1C0A03F42B6C9BBF1D0ED792BE171D247633F2AD4E13B5A4DC18AFBEA28EDB9E93A286D3C0301932D2A13B04937C56F1F727627AD2AC7866FFBA6E9810AAF2BE7BD482FF2C36922E5F922754E88706B1D9DDAE947BA42255509D6F76E7281FBD26F174BF709E9F63AD56CEC82273B7481DC69DB2C2E955C9DD6099F837B3A4E2FE7EF4666477093F4C3BD02EA79F4E5EB6E35B7EC37A9793B30BA47285531931E6AD680D7C20AE316E46ED887B3E80C0A10970F44AB6470F9FD465505D389431C346A3289AE571498AE2064260D3ED10CF93B98A019DDAAA9E21";
+    constexpr const char* long_pkcs1_sha2_512 = "1AD15B3D8BBB4D29B6D06AD6868C84A96FD089B95A2A5D51A75918D8596B6F08B1A9472946B7BD4B837BD56D305582859BA7E2FA71AE05792A599C1EC05203B4BC095821D2F47BB1F267380AE0FACE0A9F515337FFB84B41CAB10B2B441EAE374F54A9839C8972DCD1874F29E3ADECBEF927E7431EEE15752F778E0D377B490C051711E6300447D4872560512006C5066F0C3A98BC50CA29466E9F209E48245F11EBCEBCC6A769D9168955F54C8DCC949687BD4A7B1F25D83FB0CE7BBDE8AB24D77BF96EBD7FA40344BB3D508522875AAD8D93B6C6CE8E41C31A603920170EB755096AF67D0BAC59935F12318FA31B8C55641616BDDCC4675390085DCE944510";
+    constexpr const char* long_pss_reference_sha2_256 = "60F34272544192E7564BDA54B4BAD53DB89E1D5F9A3DA9C258A596E125FC2AAF53229493C2E32C3D4B8497E205AAD04736F34740421BB47D2B16B470BF4A01131D810103A6B53216F5D94B22A687079C915457A7F2B162DCCE64CC37857B1DCEE6B23D3BF68A4B567D7F456D20BBA52F9EBB4F258F604C738CC8AD8F1046E314D79E496216BA0D5EA0A0BE24A73BD8B2D0EB772539E0203638D230DCE9B212F190B0EDCE39E83FC6B67FE09B73452BA5E1FD58829C8E29EA6D0B8FF84E946EE67166F50646029BA582AB4C528D962A421D01C128631C381106CFF60FFA85A7BA10386A9531509806A771CC4E7B13A02CA7A6935C1D3245D329C5464D149E8173";
+    constexpr const char* long_pss_reference_sha2_512 = "0F0A565391E91453F21A2F57999B63C80E9B85BD19FCB5BD893AFC94174F1D426808092B656BFAB9B339479B43D9465031F29FB448047BD6FE3CC4AAAFDFE31F92D39504066A8D45516C9DF9E261C2C478178D00ACE891D5FA8EB93BDDE0DB25512337B72EE8B47CAE01DE5BAB39CB7F59D936E02ED91457BC178E1F0B28FCBF0088FDF88532E527DE8A98FB2A9D8B8C19AB044C4BA68F6D02AC70152A4AE45F6E132229F3F04302795CD3D23A86065F910F646189AEE7613051888787A252CABACA55B3F2FB59738CE60FD455AC6E79543DB70379596999E564DDCB271E8BC8EECDE561AA6FE9A068E654391B509A0BC11BBCD2241E47C32B50389CC906E64E";
+    constexpr const char* long_pss_fixed_sha2_512 = "558D540C8F3FF83DEF8F6941E9A98861B700A27F433C885AB63A9323637E1EDA9CDA71A4775C089755AE24C92E504E372A36DB0A1E0686E7DD5F37E0EF8D65394CEFCB5CEFFDC91B3919523688A07D82D94E6BAC45A6CAD13A84DD3DAA1353EA34B7F8EFD6CCBCA43E7F2F664CC62F1E0EB8D29DE2D8168E8E24602E185F0762EEF0916DDD66767458BE348331D40B54636BF6F95A3FBA7A8D8AED58F58253A212552E4AEA931F7C979FC129917FF89F3A5DE5C05A70EA245851356D054A8528FF91A6F4DB11100F42E74E1BA83FD477E01032EF742E4EE95CCF798C3DE25616797BF8584D0413973AD5B0B7E02C3681CD30F4870551BBCF2CA2D4622831A0BD";
+
+    gtl::rsa::key_type simple_keys(const char* modulus, const char* private_exponent) {
+        return gtl::rsa::key_type{
+            gtl::rsa::public_key_type{
+                hex_2_big_unsigned(modulus),
+                gtl::big_unsigned(65537) },
+            gtl::rsa::private_key_type{
+                hex_2_big_unsigned(modulus),
+                gtl::big_unsigned(65537),
+                hex_2_big_unsigned(private_exponent),
+                { gtl::big_unsigned(0), gtl::big_unsigned(0) },
+                { gtl::big_unsigned(0), gtl::big_unsigned(0) },
+                gtl::big_unsigned(0) }
+        };
+    }
+}
+
+TEST(rsa, evaluate, signature_hash) {
+    REQUIRE(gtl::rsa::get_signature_hash_size(gtl::rsa::signature_hash_type::sha1) == 20);
+    REQUIRE(gtl::rsa::get_signature_hash_size(gtl::rsa::signature_hash_type::sha2_256) == 32);
+    REQUIRE(gtl::rsa::get_signature_hash_size(gtl::rsa::signature_hash_type::sha2_384) == 48);
+    REQUIRE(gtl::rsa::get_signature_hash_size(gtl::rsa::signature_hash_type::sha2_512) == 64);
+    REQUIRE(gtl::rsa::signature_hash_size_max == 64);
+
+    const std::vector<unsigned char> message = hex_2_bytes(known_message);
+    for (const known_signature_type& known : known_signatures) {
+        const std::vector<unsigned char> digest = hex_2_bytes(known.digest);
+        REQUIRE(digest.size() == gtl::rsa::get_signature_hash_size(known.hash_type));
+        unsigned char test_digest[gtl::rsa::signature_hash_size_max] = {};
+        gtl::rsa::hash_message(known.hash_type, message.data(), message.size(), test_digest);
+        REQUIRE(testbench::is_memory_same(test_digest, digest.data(), digest.size()));
+    }
+}
+
+TEST(rsa, evaluate, pkcs1_known) {
+    const gtl::rsa::key_type keys = known_keys();
+    const gtl::rsa::key_type keys_simple = simple_keys(known_modulus, known_private_exponent);
+    for (const known_signature_type& known : known_signatures) {
+        const std::vector<unsigned char> digest = hex_2_bytes(known.digest);
+        const std::vector<unsigned char> signature = hex_2_bytes(known.pkcs1);
+        const unsigned int digest_length = static_cast<unsigned int>(digest.size());
+        REQUIRE(signature.size() == known_length);
+
+        // The scheme is deterministic, so signing gives the known signature, with or without the primes or blinding.
+        unsigned char test_signature[known_length] = {};
+        REQUIRE(gtl::rsa::sign_pkcs1(known.hash_type, digest.data(), digest_length, keys.private_key, test_signature, known_length) == true);
+        REQUIRE(testbench::is_memory_same(test_signature, signature.data(), known_length));
+
+        unsigned char test_signature_simple[known_length] = {};
+        REQUIRE(gtl::rsa::sign_pkcs1(known.hash_type, digest.data(), digest_length, keys_simple.private_key, test_signature_simple, known_length) == true);
+        REQUIRE(testbench::is_memory_same(test_signature_simple, signature.data(), known_length));
+
+        unsigned char test_signature_blinded[known_length] = {};
+        REQUIRE(gtl::rsa::sign_pkcs1(pcg_generator(11), known.hash_type, digest.data(), digest_length, keys.private_key, test_signature_blinded, known_length) == true);
+        REQUIRE(testbench::is_memory_same(test_signature_blinded, signature.data(), known_length));
+
+        REQUIRE(gtl::rsa::verify_pkcs1(known.hash_type, digest.data(), digest_length, keys.public_key, signature.data(), known_length) == true);
+    }
+
+    // Keys of other lengths.
+    const std::vector<unsigned char> digest_sha2_256 = hex_2_bytes(known_signatures[1].digest);
+    const std::vector<unsigned char> digest_sha2_512 = hex_2_bytes(known_signatures[3].digest);
+    {
+        const gtl::rsa::key_type keys_odd = simple_keys(odd_modulus, odd_private_exponent);
+        const std::vector<unsigned char> signature = hex_2_bytes(odd_pkcs1);
+        unsigned char test_signature[odd_length] = {};
+        REQUIRE(gtl::rsa::sign_pkcs1(gtl::rsa::signature_hash_type::sha2_256, digest_sha2_256.data(), 32, keys_odd.private_key, test_signature, odd_length) == true);
+        REQUIRE(testbench::is_memory_same(test_signature, signature.data(), odd_length));
+        REQUIRE(gtl::rsa::verify_pkcs1(gtl::rsa::signature_hash_type::sha2_256, digest_sha2_256.data(), 32, keys_odd.public_key, signature.data(), odd_length) == true);
+    }
+    {
+        const gtl::rsa::key_type keys_long = simple_keys(long_modulus, long_private_exponent);
+        const std::vector<unsigned char> signature = hex_2_bytes(long_pkcs1_sha2_512);
+        unsigned char test_signature[long_length] = {};
+        REQUIRE(gtl::rsa::sign_pkcs1(gtl::rsa::signature_hash_type::sha2_512, digest_sha2_512.data(), 64, keys_long.private_key, test_signature, long_length) == true);
+        REQUIRE(testbench::is_memory_same(test_signature, signature.data(), long_length));
+        REQUIRE(gtl::rsa::verify_pkcs1(gtl::rsa::signature_hash_type::sha2_512, digest_sha2_512.data(), 64, keys_long.public_key, signature.data(), long_length) == true);
+    }
+}
+
+TEST(rsa, evaluate, pkcs1_invalid) {
+    const gtl::rsa::key_type keys = known_keys();
+    const gtl::rsa::signature_hash_type sha2_256 = gtl::rsa::signature_hash_type::sha2_256;
+    const std::vector<unsigned char> digest = hex_2_bytes(known_signatures[1].digest);
+    const std::vector<unsigned char> signature = hex_2_bytes(known_signatures[1].pkcs1);
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, signature.data(), known_length) == true);
+
+    // Changing any bit of the signature or the digest makes the signature invalid.
+    for (unsigned int bit = 0; bit < (known_length * 8); bit += 7) {
+        std::vector<unsigned char> signature_changed = signature;
+        signature_changed[bit / 8] ^= static_cast<unsigned char>(1 << (bit % 8));
+        REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, signature_changed.data(), known_length) == false);
+    }
+    for (unsigned int bit = 0; bit < (32 * 8); ++bit) {
+        std::vector<unsigned char> digest_changed = digest;
+        digest_changed[bit / 8] ^= static_cast<unsigned char>(1 << (bit % 8));
+        REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest_changed.data(), 32, keys.public_key, signature.data(), known_length) == false);
+    }
+
+    // A signature is only valid for the hash function it was made with, and the digest must be the size of the hash.
+    REQUIRE(gtl::rsa::verify_pkcs1(gtl::rsa::signature_hash_type::sha1, digest.data(), 20, keys.public_key, signature.data(), known_length) == false);
+    REQUIRE(gtl::rsa::verify_pkcs1(gtl::rsa::signature_hash_type::sha1, digest.data(), 32, keys.public_key, signature.data(), known_length) == false);
+    REQUIRE(gtl::rsa::verify_pkcs1(gtl::rsa::signature_hash_type::sha2_384, digest.data(), 32, keys.public_key, signature.data(), known_length) == false);
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 31, keys.public_key, signature.data(), known_length) == false);
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 33, keys.public_key, signature.data(), known_length) == false);
+
+    // The signature must be the length of the key, and less than the modulus.
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, signature.data(), known_length - 1) == false);
+    std::vector<unsigned char> signature_long(known_length + 1, 0);
+    for (unsigned int i = 0; i < known_length; ++i) {
+        signature_long[i + 1] = signature[i];
+    }
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, signature_long.data(), known_length + 1) == false);
+    const std::vector<unsigned char> modulus = hex_2_bytes(known_modulus);
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, modulus.data(), known_length) == false);
+    const std::vector<unsigned char> zeros(known_length, 0);
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, zeros.data(), known_length) == false);
+
+    // Null pointers are rejected.
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, nullptr, 32, keys.public_key, signature.data(), known_length) == false);
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, nullptr, known_length) == false);
+
+    // A different key does not verify the signature.
+    const gtl::rsa::key_type keys_other = gtl::rsa::generate_key_pair(pcg_generator(12), known_length, 65537, 8);
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys_other.public_key, signature.data(), known_length) == false);
+
+    // Blocks that hold the digest but are not exactly the expected encoding are rejected.
+    // These are made with the raw private key operation, so each one is a correctly signed block with an incorrect layout.
+    const unsigned char prefix[19] = { 0x30, 0x31, 0x30, 0x0D, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20 };
+    const auto make_block = [&](const unsigned int padding_length, const unsigned char type, const unsigned char padding, const unsigned char trailing) -> std::vector<unsigned char> {
+        std::vector<unsigned char> block;
+        block.push_back(0x00);
+        block.push_back(type);
+        for (unsigned int i = 0; i < padding_length; ++i) {
+            block.push_back(padding);
+        }
+        block.push_back(0x00);
+        for (unsigned int i = 0; i < 19; ++i) {
+            block.push_back(prefix[i]);
+        }
+        for (unsigned int i = 0; i < 32; ++i) {
+            block.push_back(digest[i]);
+        }
+        while (block.size() < known_length) {
+            block.push_back(trailing);
+        }
+        return block;
+    };
+    const auto sign_block = [&](const std::vector<unsigned char>& block) -> std::vector<unsigned char> {
+        std::vector<unsigned char> block_signature(known_length, 0);
+        REQUIRE(block.size() == known_length);
+        REQUIRE(gtl::rsa::decrypt(block.data(), known_length, keys.private_key, block_signature.data()) == true);
+        return block_signature;
+    };
+    const unsigned int padding_length = known_length - 3 - 19 - 32;
+    // The correct layout is accepted.
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, sign_block(make_block(padding_length, 0x01, 0xFF, 0x00)).data(), known_length) == true);
+    // Short padding with the digest followed by other data, the layout used to forge signatures for keys with a small exponent.
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, sign_block(make_block(8, 0x01, 0xFF, 0x00)).data(), known_length) == false);
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, sign_block(make_block(8, 0x01, 0xFF, 0xA5)).data(), known_length) == false);
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, sign_block(make_block(padding_length - 1, 0x01, 0xFF, 0x00)).data(), known_length) == false);
+    // The wrong block type or padding bytes.
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, sign_block(make_block(padding_length, 0x02, 0xFF, 0x00)).data(), known_length) == false);
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, sign_block(make_block(padding_length, 0x00, 0xFF, 0x00)).data(), known_length) == false);
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, sign_block(make_block(padding_length, 0x01, 0xFE, 0x00)).data(), known_length) == false);
+    // An algorithm identifier that leaves out the null parameters.
+    {
+        const unsigned char prefix_short[17] = { 0x30, 0x2F, 0x30, 0x0B, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x04, 0x20 };
+        std::vector<unsigned char> block;
+        block.push_back(0x00);
+        block.push_back(0x01);
+        for (unsigned int i = 0; i < (padding_length + 2); ++i) {
+            block.push_back(0xFF);
+        }
+        block.push_back(0x00);
+        for (unsigned int i = 0; i < 17; ++i) {
+            block.push_back(prefix_short[i]);
+        }
+        for (unsigned int i = 0; i < 32; ++i) {
+            block.push_back(digest[i]);
+        }
+        REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, sign_block(block).data(), known_length) == false);
+    }
+
+    // Signing fails without writing the signature when the arguments are invalid.
+    unsigned char untouched[known_length];
+    unsigned char output[known_length];
+    for (unsigned int i = 0; i < known_length; ++i) {
+        untouched[i] = 0xA5;
+        output[i] = 0xA5;
+    }
+    REQUIRE(gtl::rsa::sign_pkcs1(sha2_256, digest.data(), 31, keys.private_key, output, known_length) == false);
+    REQUIRE(gtl::rsa::sign_pkcs1(sha2_256, digest.data(), 32, keys.private_key, output, known_length - 1) == false);
+    REQUIRE(gtl::rsa::sign_pkcs1(sha2_256, digest.data(), 32, keys.private_key, output, known_length + 1) == false);
+    REQUIRE(gtl::rsa::sign_pkcs1(sha2_256, nullptr, 32, keys.private_key, output, known_length) == false);
+    REQUIRE(gtl::rsa::sign_pkcs1(sha2_256, digest.data(), 32, keys.private_key, nullptr, known_length) == false);
+    // Blinding needs a random generator and the public exponent.
+    REQUIRE(gtl::rsa::sign_pkcs1(std::function<unsigned int()>(), sha2_256, digest.data(), 32, keys.private_key, output, known_length) == false);
+    gtl::rsa::private_key_type private_key_no_exponent = keys.private_key;
+    private_key_no_exponent.public_exponent = 0;
+    REQUIRE(gtl::rsa::sign_pkcs1(pcg_generator(13), sha2_256, digest.data(), 32, private_key_no_exponent, output, known_length) == false);
+    // A key that is too short to hold the encoded digest, which needs 62 bytes for sha2-256.
+    const gtl::rsa::key_type keys_short = gtl::rsa::generate_key_pair(pcg_generator(14), 60, 65537, 8);
+    REQUIRE(keys_short.public_key.public_modulus.get_length_bytes() == 60);
+    REQUIRE(gtl::rsa::sign_pkcs1(sha2_256, digest.data(), 32, keys_short.private_key, output, 60) == false);
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys_short.public_key, signature.data(), 60) == false);
+    REQUIRE(testbench::is_memory_same(output, untouched, known_length));
+    // The shortest key that can hold the encoded digest.
+    const gtl::rsa::key_type keys_shortest = gtl::rsa::generate_key_pair(pcg_generator(15), 62, 65537, 8);
+    REQUIRE(gtl::rsa::sign_pkcs1(sha2_256, digest.data(), 32, keys_shortest.private_key, output, 62) == true);
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys_shortest.public_key, output, 62) == true);
+}
+
+TEST(rsa, evaluate, pss_known) {
+    const gtl::rsa::key_type keys = known_keys();
+    unsigned char salt[gtl::rsa::signature_hash_size_max] = {};
+    for (unsigned int i = 0; i < gtl::rsa::signature_hash_size_max; ++i) {
+        salt[i] = static_cast<unsigned char>(i);
+    }
+    for (const known_signature_type& known : known_signatures) {
+        const std::vector<unsigned char> digest = hex_2_bytes(known.digest);
+        const unsigned int digest_length = static_cast<unsigned int>(digest.size());
+        unsigned char test_signature[known_length];
+        for (unsigned int i = 0; i < known_length; ++i) {
+            test_signature[i] = 0xA5;
+        }
+        if (known.pss_reference == nullptr) {
+            // The key is too short for this hash with a salt of the same length, but not with a shorter salt.
+            REQUIRE(gtl::rsa::sign_pss(known.hash_type, digest.data(), digest_length, salt, digest_length, keys.private_key, test_signature, known_length) == false);
+            REQUIRE(gtl::rsa::sign_pss(pcg_generator(16), known.hash_type, digest.data(), digest_length, keys.private_key, test_signature, known_length) == false);
+            for (unsigned int i = 0; i < known_length; ++i) {
+                REQUIRE(test_signature[i] == 0xA5);
+            }
+            REQUIRE(gtl::rsa::verify_pss(known.hash_type, digest.data(), digest_length, keys.public_key, test_signature, known_length) == false);
+            REQUIRE(gtl::rsa::sign_pss(known.hash_type, digest.data(), digest_length, salt, known_length - digest_length - 2, keys.private_key, test_signature, known_length) == true);
+            REQUIRE(gtl::rsa::verify_pss(known.hash_type, digest.data(), digest_length, keys.public_key, test_signature, known_length, known_length - digest_length - 2) == true);
+            REQUIRE(gtl::rsa::sign_pss(known.hash_type, digest.data(), digest_length, salt, known_length - digest_length - 1, keys.private_key, test_signature, known_length) == false);
+            continue;
+        }
+        const std::vector<unsigned char> signature_reference = hex_2_bytes(known.pss_reference);
+        const std::vector<unsigned char> signature_fixed = hex_2_bytes(known.pss_fixed);
+        REQUIRE(signature_reference.size() == known_length);
+        REQUIRE(signature_fixed.size() == known_length);
+
+        // Signatures made by another implementation are valid.
+        REQUIRE(gtl::rsa::verify_pss(known.hash_type, digest.data(), digest_length, keys.public_key, signature_reference.data(), known_length) == true);
+        REQUIRE(gtl::rsa::verify_pss(known.hash_type, digest.data(), digest_length, keys.public_key, signature_reference.data(), known_length, digest_length) == true);
+        REQUIRE(gtl::rsa::verify_pss(known.hash_type, digest.data(), digest_length, keys.public_key, signature_fixed.data(), known_length) == true);
+
+        // Signing with a known salt gives the known signature.
+        REQUIRE(gtl::rsa::sign_pss(known.hash_type, digest.data(), digest_length, salt, digest_length, keys.private_key, test_signature, known_length) == true);
+        REQUIRE(testbench::is_memory_same(test_signature, signature_fixed.data(), known_length));
+
+        // The salt must be the expected length.
+        REQUIRE(gtl::rsa::verify_pss(known.hash_type, digest.data(), digest_length, keys.public_key, signature_fixed.data(), known_length, digest_length - 1) == false);
+        REQUIRE(gtl::rsa::verify_pss(known.hash_type, digest.data(), digest_length, keys.public_key, signature_fixed.data(), known_length, digest_length + 1) == false);
+        REQUIRE(gtl::rsa::verify_pss(known.hash_type, digest.data(), digest_length, keys.public_key, signature_fixed.data(), known_length, 0) == false);
+    }
+
+    // Other salt lengths, including no salt.
+    {
+        const gtl::rsa::signature_hash_type sha2_256 = gtl::rsa::signature_hash_type::sha2_256;
+        const std::vector<unsigned char> digest = hex_2_bytes(known_signatures[1].digest);
+        const std::vector<unsigned char> signature_salt_0 = hex_2_bytes(known_pss_salt_0);
+        const std::vector<unsigned char> signature_salt_20 = hex_2_bytes(known_pss_salt_20);
+        unsigned char test_signature[known_length] = {};
+        REQUIRE(gtl::rsa::sign_pss(sha2_256, digest.data(), 32, nullptr, 0, keys.private_key, test_signature, known_length) == true);
+        REQUIRE(testbench::is_memory_same(test_signature, signature_salt_0.data(), known_length));
+        REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 32, keys.public_key, signature_salt_0.data(), known_length, 0) == true);
+        REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 32, keys.public_key, signature_salt_0.data(), known_length) == false);
+        REQUIRE(gtl::rsa::sign_pss(sha2_256, digest.data(), 32, salt, 20, keys.private_key, test_signature, known_length) == true);
+        REQUIRE(testbench::is_memory_same(test_signature, signature_salt_20.data(), known_length));
+        REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 32, keys.public_key, signature_salt_20.data(), known_length, 20) == true);
+        REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 32, keys.public_key, signature_salt_20.data(), known_length, 0) == false);
+        REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 32, keys.public_key, signature_salt_20.data(), known_length) == false);
+        REQUIRE(gtl::rsa::sign_pss(sha2_256, digest.data(), 32, nullptr, 20, keys.private_key, test_signature, known_length) == false);
+    }
+
+    // Keys of other lengths.
+    const std::vector<unsigned char> digest_sha2_256 = hex_2_bytes(known_signatures[1].digest);
+    const std::vector<unsigned char> digest_sha2_512 = hex_2_bytes(known_signatures[3].digest);
+    {
+        const gtl::rsa::signature_hash_type sha2_256 = gtl::rsa::signature_hash_type::sha2_256;
+        const gtl::rsa::key_type keys_odd = simple_keys(odd_modulus, odd_private_exponent);
+        REQUIRE(keys_odd.public_key.public_modulus.get_length_bits() == 1025);
+        const std::vector<unsigned char> signature_reference = hex_2_bytes(odd_pss_reference);
+        const std::vector<unsigned char> signature_fixed = hex_2_bytes(odd_pss_fixed);
+        REQUIRE(gtl::rsa::verify_pss(sha2_256, digest_sha2_256.data(), 32, keys_odd.public_key, signature_reference.data(), odd_length) == true);
+        unsigned char test_signature[odd_length] = {};
+        REQUIRE(gtl::rsa::sign_pss(sha2_256, digest_sha2_256.data(), 32, salt, 32, keys_odd.private_key, test_signature, odd_length) == true);
+        REQUIRE(testbench::is_memory_same(test_signature, signature_fixed.data(), odd_length));
+        REQUIRE(gtl::rsa::verify_pss(sha2_256, digest_sha2_256.data(), 32, keys_odd.public_key, signature_fixed.data(), odd_length) == true);
+        for (unsigned int bit = 0; bit < (odd_length * 8); bit += 5) {
+            std::vector<unsigned char> signature_changed = signature_fixed;
+            signature_changed[bit / 8] ^= static_cast<unsigned char>(1 << (bit % 8));
+            REQUIRE(gtl::rsa::verify_pss(sha2_256, digest_sha2_256.data(), 32, keys_odd.public_key, signature_changed.data(), odd_length) == false);
+        }
+    }
+    {
+        const gtl::rsa::signature_hash_type sha2_512 = gtl::rsa::signature_hash_type::sha2_512;
+        const gtl::rsa::key_type keys_long = simple_keys(long_modulus, long_private_exponent);
+        const std::vector<unsigned char> signature_reference_sha2_256 = hex_2_bytes(long_pss_reference_sha2_256);
+        const std::vector<unsigned char> signature_reference_sha2_512 = hex_2_bytes(long_pss_reference_sha2_512);
+        const std::vector<unsigned char> signature_fixed = hex_2_bytes(long_pss_fixed_sha2_512);
+        REQUIRE(gtl::rsa::verify_pss(gtl::rsa::signature_hash_type::sha2_256, digest_sha2_256.data(), 32, keys_long.public_key, signature_reference_sha2_256.data(), long_length) == true);
+        REQUIRE(gtl::rsa::verify_pss(sha2_512, digest_sha2_512.data(), 64, keys_long.public_key, signature_reference_sha2_512.data(), long_length) == true);
+        unsigned char test_signature[long_length] = {};
+        REQUIRE(gtl::rsa::sign_pss(sha2_512, digest_sha2_512.data(), 64, salt, 64, keys_long.private_key, test_signature, long_length) == true);
+        REQUIRE(testbench::is_memory_same(test_signature, signature_fixed.data(), long_length));
+        REQUIRE(gtl::rsa::verify_pss(sha2_512, digest_sha2_512.data(), 64, keys_long.public_key, signature_fixed.data(), long_length) == true);
+        // A signature made with one hash is not valid for another.
+        REQUIRE(gtl::rsa::verify_pss(sha2_512, digest_sha2_512.data(), 64, keys_long.public_key, signature_reference_sha2_256.data(), long_length) == false);
+        REQUIRE(gtl::rsa::verify_pss(sha2_512, digest_sha2_512.data(), 64, keys_long.public_key, signature_reference_sha2_256.data(), long_length, 32) == false);
+    }
+}
+
+TEST(rsa, evaluate, pss_invalid) {
+    const gtl::rsa::key_type keys = known_keys();
+    const gtl::rsa::signature_hash_type sha2_256 = gtl::rsa::signature_hash_type::sha2_256;
+    const std::vector<unsigned char> digest = hex_2_bytes(known_signatures[1].digest);
+    const std::vector<unsigned char> signature = hex_2_bytes(known_signatures[1].pss_reference);
+    REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 32, keys.public_key, signature.data(), known_length) == true);
+
+    // Changing any bit of the signature or the digest makes the signature invalid.
+    for (unsigned int bit = 0; bit < (known_length * 8); bit += 7) {
+        std::vector<unsigned char> signature_changed = signature;
+        signature_changed[bit / 8] ^= static_cast<unsigned char>(1 << (bit % 8));
+        REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 32, keys.public_key, signature_changed.data(), known_length) == false);
+    }
+    for (unsigned int bit = 0; bit < (32 * 8); ++bit) {
+        std::vector<unsigned char> digest_changed = digest;
+        digest_changed[bit / 8] ^= static_cast<unsigned char>(1 << (bit % 8));
+        REQUIRE(gtl::rsa::verify_pss(sha2_256, digest_changed.data(), 32, keys.public_key, signature.data(), known_length) == false);
+    }
+
+    // The wrong hash, lengths, or key.
+    REQUIRE(gtl::rsa::verify_pss(gtl::rsa::signature_hash_type::sha1, digest.data(), 20, keys.public_key, signature.data(), known_length) == false);
+    REQUIRE(gtl::rsa::verify_pss(gtl::rsa::signature_hash_type::sha1, digest.data(), 20, keys.public_key, signature.data(), known_length, 32) == false);
+    REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 31, keys.public_key, signature.data(), known_length) == false);
+    REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 32, keys.public_key, signature.data(), known_length - 1) == false);
+    REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 32, keys.public_key, signature.data(), known_length, 0xFFFFFFFFu) == false);
+    REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 32, keys.public_key, signature.data(), known_length, known_length) == false);
+    REQUIRE(gtl::rsa::verify_pss(sha2_256, nullptr, 32, keys.public_key, signature.data(), known_length) == false);
+    REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 32, keys.public_key, nullptr, known_length) == false);
+    const std::vector<unsigned char> modulus = hex_2_bytes(known_modulus);
+    REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 32, keys.public_key, modulus.data(), known_length) == false);
+    const std::vector<unsigned char> zeros(known_length, 0);
+    REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 32, keys.public_key, zeros.data(), known_length) == false);
+    const gtl::rsa::key_type keys_other = gtl::rsa::generate_key_pair(pcg_generator(17), known_length, 65537, 8);
+    REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 32, keys_other.public_key, signature.data(), known_length) == false);
+
+    // A signature of the other scheme is not valid.
+    const std::vector<unsigned char> signature_pkcs1 = hex_2_bytes(known_signatures[1].pkcs1);
+    REQUIRE(gtl::rsa::verify_pss(sha2_256, digest.data(), 32, keys.public_key, signature_pkcs1.data(), known_length) == false);
+    REQUIRE(gtl::rsa::verify_pkcs1(sha2_256, digest.data(), 32, keys.public_key, signature.data(), known_length) == false);
+
+    // Signing fails without writing the signature when the arguments are invalid.
+    unsigned char untouched[known_length];
+    unsigned char output[known_length];
+    for (unsigned int i = 0; i < known_length; ++i) {
+        untouched[i] = 0xA5;
+        output[i] = 0xA5;
+    }
+    const unsigned char salt[32] = {};
+    REQUIRE(gtl::rsa::sign_pss(sha2_256, digest.data(), 31, salt, 32, keys.private_key, output, known_length) == false);
+    REQUIRE(gtl::rsa::sign_pss(sha2_256, digest.data(), 32, salt, 32, keys.private_key, output, known_length - 1) == false);
+    REQUIRE(gtl::rsa::sign_pss(sha2_256, digest.data(), 32, salt, 0xFFFFFFFFu, keys.private_key, output, known_length) == false);
+    REQUIRE(gtl::rsa::sign_pss(sha2_256, nullptr, 32, salt, 32, keys.private_key, output, known_length) == false);
+    REQUIRE(gtl::rsa::sign_pss(sha2_256, digest.data(), 32, salt, 32, keys.private_key, nullptr, known_length) == false);
+    REQUIRE(gtl::rsa::sign_pss(std::function<unsigned int()>(), sha2_256, digest.data(), 32, keys.private_key, output, known_length) == false);
+    gtl::rsa::private_key_type private_key_no_exponent = keys.private_key;
+    private_key_no_exponent.public_exponent = 0;
+    REQUIRE(gtl::rsa::sign_pss(pcg_generator(18), sha2_256, digest.data(), 32, private_key_no_exponent, output, known_length) == false);
+    REQUIRE(testbench::is_memory_same(output, untouched, known_length));
+}
+
+TEST(rsa, evaluate, pss_random) {
+    const std::function<unsigned int()> random_generator = pcg_generator(19);
+    const gtl::rsa::signature_hash_type hash_types[4] = {
+        gtl::rsa::signature_hash_type::sha1,
+        gtl::rsa::signature_hash_type::sha2_256,
+        gtl::rsa::signature_hash_type::sha2_384,
+        gtl::rsa::signature_hash_type::sha2_512
+    };
+    // Freshly generated keys of a few lengths, all long enough for the longest hash with a salt of the same length.
+    for (unsigned int length = 130; length <= 134; length += 2) {
+        const gtl::rsa::key_type keys = gtl::rsa::generate_key_pair(random_generator, length, 65537, 8);
+        REQUIRE(keys.public_key.public_modulus.get_length_bytes() == length);
+        for (const gtl::rsa::signature_hash_type hash_type : hash_types) {
+            const unsigned int hash_size = gtl::rsa::get_signature_hash_size(hash_type);
+            unsigned char message[100] = {};
+            for (unsigned int i = 0; i < 100; ++i) {
+                message[i] = static_cast<unsigned char>(random_generator());
+            }
+            unsigned char digest[gtl::rsa::signature_hash_size_max] = {};
+            gtl::rsa::hash_message(hash_type, message, 100, digest);
+
+            std::vector<unsigned char> signature_0(length, 0);
+            std::vector<unsigned char> signature_1(length, 0);
+            REQUIRE(gtl::rsa::sign_pss(random_generator, hash_type, digest, hash_size, keys.private_key, signature_0.data(), length) == true);
+            REQUIRE(gtl::rsa::sign_pss(random_generator, hash_type, digest, hash_size, keys.private_key, signature_1.data(), length) == true);
+            // The salt is random, so signing the same digest twice gives different signatures that are both valid.
+            REQUIRE(testbench::is_memory_same(signature_0.data(), signature_1.data(), length) == false);
+            REQUIRE(gtl::rsa::verify_pss(hash_type, digest, hash_size, keys.public_key, signature_0.data(), length) == true);
+            REQUIRE(gtl::rsa::verify_pss(hash_type, digest, hash_size, keys.public_key, signature_1.data(), length) == true);
+            digest[0] ^= 0x01;
+            REQUIRE(gtl::rsa::verify_pss(hash_type, digest, hash_size, keys.public_key, signature_0.data(), length) == false);
+            digest[0] ^= 0x01;
+
+            REQUIRE(gtl::rsa::sign_pkcs1(random_generator, hash_type, digest, hash_size, keys.private_key, signature_0.data(), length) == true);
+            REQUIRE(gtl::rsa::sign_pkcs1(hash_type, digest, hash_size, keys.private_key, signature_1.data(), length) == true);
+            REQUIRE(testbench::is_memory_same(signature_0.data(), signature_1.data(), length) == true);
+            REQUIRE(gtl::rsa::verify_pkcs1(hash_type, digest, hash_size, keys.public_key, signature_0.data(), length) == true);
+            digest[hash_size - 1] ^= 0x80;
+            REQUIRE(gtl::rsa::verify_pkcs1(hash_type, digest, hash_size, keys.public_key, signature_0.data(), length) == false);
+        }
+    }
+}

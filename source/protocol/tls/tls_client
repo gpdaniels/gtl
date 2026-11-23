@@ -1,0 +1,183 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_PROTOCOL_TLS_TLS_CLIENT_HPP
+#define GTL_PROTOCOL_TLS_TLS_CLIENT_HPP
+
+// Summary: The client end of a transport layer security connection, which verifies the server and protects the data exchanged with it.
+
+#include <crypto/certificate/x509>
+#include <protocol/tls/tls_connection>
+#include <protocol/tls/tls_handshake>
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <functional>
+#include <vector>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace gtl {
+    /// @brief  The tls_client class is the client end of a TLS 1.2 or TLS 1.3 connection.
+    /// @note   It does no input or output: bytes received from the server are passed to process_input, and the bytes to send to the server are collected with get_output.
+    /// @note   Once connected, application data is sent with write and received with read.
+    class tls_client final {
+    public:
+        /// @brief  The states of a connection.
+        using state_type = gtl::tls_connection::state_type;
+
+        /// @brief  The configuration of a client.
+        class configuration_type final {
+        public:
+            /// @brief  A function that returns 32 uniformly distributed random bits each time it is called, which must be unpredictable for the connection to be secure.
+            std::function<unsigned int()> random_generator;
+
+            /// @brief  The name of the server, which is sent to it and which its certificate must be for, or null to send no name and not check it.
+            const char* host = nullptr;
+
+            /// @brief  The certificates that are trusted to identify servers or to issue the certificates that do.
+            const gtl::x509::certificate_type* trusted = nullptr;
+            unsigned int trusted_length = 0;
+
+            /// @brief  The current time in seconds since the start of 1970, used to check that certificates are valid.
+            long long int time = 0;
+
+            /// @brief  Flag selecting whether the certificate of the server is verified, without which anyone can pretend to be the server.
+            bool verify_certificate = true;
+
+            /// @brief  Flags selecting the versions of the protocol that may be used.
+            bool allow_tls12 = true;
+            bool allow_tls13 = true;
+        };
+
+    private:
+        /// @brief  The connection.
+        gtl::tls_connection connection;
+
+    public:
+        /// @brief  Start the connection, which makes the first output to send to the server.
+        /// @param  configuration The configuration, everything it points to must outlive the client.
+        /// @return true if the connection was started, false if the configuration is not valid or the connection was already started.
+        bool start(const configuration_type& configuration) {
+            gtl::tls_handshake::settings_type settings;
+            settings.is_client = true;
+            settings.random_generator = configuration.random_generator;
+            settings.host = configuration.host;
+            settings.trusted = configuration.trusted;
+            settings.trusted_length = configuration.trusted_length;
+            settings.time = configuration.time;
+            settings.verify_certificate = configuration.verify_certificate;
+            return this->connection.start(settings, configuration.allow_tls12, configuration.allow_tls13);
+        }
+
+        /// @brief  Get the encoded certificates that the server sent, the first is its own.
+        const std::vector<std::vector<unsigned char>>& get_server_certificates() const {
+            return this->connection.get_peer_certificates();
+        }
+
+    public:
+        /// @brief  Get the state of the connection.
+        state_type get_state() const {
+            return this->connection.get_state();
+        }
+
+        /// @brief  Check if the handshake is complete and application data can be exchanged.
+        bool is_connected() const {
+            return this->connection.is_connected();
+        }
+
+        /// @brief  Get the alert that ended the connection.
+        /// @return The description of the alert, which is only meaningful when the connection has failed.
+        unsigned char get_alert() const {
+            return this->connection.get_alert();
+        }
+
+        /// @brief  Check if the alert that ended the connection was received from the peer, rather than sent to it.
+        bool is_alert_received() const {
+            return this->connection.is_alert_received();
+        }
+
+        /// @brief  Get the version of the protocol that was agreed.
+        /// @return The encoded version, 0x0303 for TLS 1.2 or 0x0304 for TLS 1.3, or zero before it is agreed.
+        unsigned int get_version() const {
+            return this->connection.get_version();
+        }
+
+        /// @brief  Get the cipher suite that was agreed.
+        /// @return The encoded cipher suite, or zero before it is agreed.
+        unsigned int get_suite() const {
+            return this->connection.get_suite();
+        }
+
+    public:
+        /// @brief  Process bytes that were received from the server.
+        /// @param  data The bytes, in the order they were received, split in any way.
+        /// @param  length The number of bytes.
+        /// @return true if the connection is still usable, false if it has failed or was not started.
+        /// @note   This may complete the handshake, make application data available to read, and make output that must be sent to the server.
+        bool process_input(const unsigned char* data, const unsigned long long int length) {
+            return this->connection.process_input(data, length);
+        }
+
+        /// @brief  Get the number of bytes that are waiting to be sent to the server.
+        unsigned long long int get_output_length() const {
+            return this->connection.get_output_length();
+        }
+
+        /// @brief  Take bytes that must be sent to the server.
+        /// @param  buffer Receives the bytes.
+        /// @param  capacity The size of the buffer.
+        /// @return The number of bytes taken, which must all be sent, in order.
+        unsigned long long int get_output(unsigned char* buffer, const unsigned long long int capacity) {
+            return this->connection.get_output(buffer, capacity);
+        }
+
+    public:
+        /// @brief  Send application data to the server, which is added to the output.
+        /// @param  data The data.
+        /// @param  length The length of the data.
+        /// @return true if the data was added to the output, false if the connection is not connected.
+        bool write(const unsigned char* data, const unsigned long long int length) {
+            return this->connection.write(data, length);
+        }
+
+        /// @brief  Get the number of bytes of application data from the server that are waiting to be read.
+        unsigned long long int get_read_length() const {
+            return this->connection.get_read_length();
+        }
+
+        /// @brief  Read application data that was received from the server.
+        /// @param  buffer Receives the data.
+        /// @param  capacity The size of the buffer.
+        /// @return The number of bytes read, which is zero if there is none waiting.
+        unsigned long long int read(unsigned char* buffer, const unsigned long long int capacity) {
+            return this->connection.read(buffer, capacity);
+        }
+
+        /// @brief  Close the connection, telling the server that no more data will be sent.
+        /// @note   The output this makes must still be sent to the server, and data that was already received can still be read.
+        void close() {
+            this->connection.close();
+        }
+    };
+}
+
+#endif // GTL_PROTOCOL_TLS_TLS_CLIENT_HPP

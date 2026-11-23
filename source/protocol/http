@@ -1,0 +1,667 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_PROTOCOL_HTTP_HPP
+#define GTL_PROTOCOL_HTTP_HPP
+
+// Summary: A reader and writer of hypertext transfer protocol version 1.1 messages, with a simple unencrypted client and server.
+
+#include <io/socket>
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <chrono>
+#include <functional>
+#include <string>
+#include <thread>
+#include <vector>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace gtl {
+    /// @brief  The http class reads and writes the requests and responses of HTTP/1.1 (RFC 9112), and exchanges them over unencrypted connections.
+    /// @note   The reading and writing functions do no input or output, so they can also be used over an encrypted connection.
+    /// @note   Bodies are framed by their length, by chunks, or for a response by the end of the connection, and are always read and written whole.
+    class http final {
+    public:
+        /// @brief  The largest size of the start line and headers of a message that is accepted.
+        constexpr static const unsigned long long int head_size_max = 64 * 1024;
+
+        /// @brief  The largest number of headers in a message that is accepted.
+        constexpr static const unsigned long long int headers_length_max = 128;
+
+        /// @brief  The largest size of the body of a message that is accepted by default.
+        constexpr static const unsigned long long int body_size_max = 64 * 1024 * 1024;
+
+        /// @brief  The result of reading a message.
+        enum class result_type {
+            /// @brief  More data is needed before the message is complete.
+            incomplete,
+            /// @brief  A whole message was read.
+            complete,
+            /// @brief  The data is not a valid message, or is larger than is allowed.
+            invalid
+        };
+
+        /// @brief  A header of a message.
+        class header_type final {
+        public:
+            /// @brief  The name of the header, which is compared without regard to the case of its letters.
+            std::string name;
+
+            /// @brief  The value of the header, without the white space around it.
+            std::string value;
+        };
+
+        /// @brief  A request, sent by a client.
+        class request_type final {
+        public:
+            /// @brief  The method, for example "GET" or "POST".
+            std::string method = "GET";
+
+            /// @brief  The target, which is usually a path and an optional query.
+            std::string target = "/";
+
+            /// @brief  The headers.
+            std::vector<header_type> headers;
+
+            /// @brief  The body.
+            std::string body;
+
+        public:
+            /// @brief  Get the value of the first header with a name.
+            /// @param  name The name of the header.
+            /// @return The value of the header, or null if there is no header with the name.
+            const std::string* get_header(const char* name) const {
+                return http::find_header(this->headers, name);
+            }
+        };
+
+        /// @brief  A response, sent by a server.
+        class response_type final {
+        public:
+            /// @brief  The status code, for example 200.
+            unsigned int status = 200;
+
+            /// @brief  The reason phrase that describes the status code, for example "OK".
+            std::string reason = "OK";
+
+            /// @brief  The headers.
+            std::vector<header_type> headers;
+
+            /// @brief  The body.
+            std::string body;
+
+        public:
+            /// @brief  Get the value of the first header with a name.
+            /// @param  name The name of the header.
+            /// @return The value of the header, or null if there is no header with the name.
+            const std::string* get_header(const char* name) const {
+                return http::find_header(this->headers, name);
+            }
+        };
+
+        /// @brief  The function that a server calls to make the response to each request.
+        using handler_type = std::function<response_type(const request_type&)>;
+
+    private:
+        /// @brief  Convert a letter to lower case.
+        constexpr static char to_lower(const char character) {
+            return ((character >= 'A') && (character <= 'Z')) ? static_cast<char>(character - 'A' + 'a') : character;
+        }
+
+        /// @brief  Compare two strings without regard to the case of their letters.
+        static bool is_same_name(const std::string& lhs, const char* rhs) {
+            unsigned long long int index = 0;
+            for (; (index < lhs.size()) && (rhs[index] != 0); ++index) {
+                if (http::to_lower(lhs[index]) != http::to_lower(rhs[index])) {
+                    return false;
+                }
+            }
+            return (index == lhs.size()) && (rhs[index] == 0);
+        }
+
+        /// @brief  Find the value of the first header with a name.
+        static const std::string* find_header(const std::vector<header_type>& headers, const char* name) {
+            for (const header_type& header : headers) {
+                if (http::is_same_name(header.name, name)) {
+                    return &header.value;
+                }
+            }
+            return nullptr;
+        }
+
+        /// @brief  Check if a character may be part of a method or the name of a header.
+        constexpr static bool is_token_character(const char character) {
+            if (((character >= 'a') && (character <= 'z')) || ((character >= 'A') && (character <= 'Z')) || ((character >= '0') && (character <= '9'))) {
+                return true;
+            }
+            constexpr const char* symbols = "!#$%&'*+-.^_`|~";
+            for (unsigned int i = 0; symbols[i] != 0; ++i) {
+                if (character == symbols[i]) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// @brief  Check if a string is made of one or more characters that may be part of a method or the name of a header.
+        static bool is_token(const std::string& string) {
+            for (const char character : string) {
+                if (!http::is_token_character(character)) {
+                    return false;
+                }
+            }
+            return !string.empty();
+        }
+
+        /// @brief  Check if a string may be written as a value in the head of a message, which must not hold the characters that end a line.
+        static bool is_safe_value(const std::string& string) {
+            for (const char character : string) {
+                if ((character == '\r') || (character == '\n') || (character == 0)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// @brief  Parse a number written in decimal digits, or in hexadecimal digits.
+        /// @return true if the string is a number that fits.
+        static bool parse_number(const std::string& string, const unsigned int base, unsigned long long int& number) {
+            if (string.empty() || (string.size() > 16)) {
+                return false;
+            }
+            unsigned long long int value = 0;
+            for (const char character : string) {
+                unsigned int digit = base;
+                if ((character >= '0') && (character <= '9')) {
+                    digit = static_cast<unsigned int>(character - '0');
+                }
+                else if ((http::to_lower(character) >= 'a') && (http::to_lower(character) <= 'f')) {
+                    digit = static_cast<unsigned int>(http::to_lower(character) - 'a') + 10;
+                }
+                if (digit >= base) {
+                    return false;
+                }
+                value = (value * base) + digit;
+            }
+            number = value;
+            return true;
+        }
+
+        /// @brief  Write the headers and body of a message, adding a header with the length of the body.
+        /// @return true if the headers are valid.
+        static bool write_headers_and_body(const std::vector<header_type>& headers, const std::string& body, const bool always_length, std::string& output) {
+            for (const header_type& header : headers) {
+                // The framing headers are written here, so that they always match the body.
+                if (http::is_same_name(header.name, "Content-Length") || http::is_same_name(header.name, "Transfer-Encoding")) {
+                    continue;
+                }
+                if (!http::is_token(header.name) || !http::is_safe_value(header.value)) {
+                    return false;
+                }
+                output += header.name;
+                output += ": ";
+                output += header.value;
+                output += "\r\n";
+            }
+            if (always_length || !body.empty()) {
+                output += "Content-Length: ";
+                output += std::to_string(body.size());
+                output += "\r\n";
+            }
+            output += "\r\n";
+            output += body;
+            return true;
+        }
+
+        /// @brief  Read the head of a message, which is the start line and the headers, up to the empty line that ends them.
+        /// @param  data The data.
+        /// @param  length The length of the data.
+        /// @param  start_line Receives the start line.
+        /// @param  headers Receives the headers.
+        /// @param  head_length Receives the length of the head, including the empty line.
+        static result_type read_head(const char* data, const unsigned long long int length, std::string& start_line, std::vector<header_type>& headers, unsigned long long int& head_length) {
+            // Find the empty line that ends the head.
+            unsigned long long int end = 0;
+            bool found = false;
+            for (; (end + 3) < length; ++end) {
+                if ((data[end] == '\r') && (data[end + 1] == '\n') && (data[end + 2] == '\r') && (data[end + 3] == '\n')) {
+                    found = true;
+                    break;
+                }
+                if (end >= http::head_size_max) {
+                    return result_type::invalid;
+                }
+            }
+            if (!found) {
+                return (length > http::head_size_max) ? result_type::invalid : result_type::incomplete;
+            }
+            headers.clear();
+            unsigned long long int line_start = 0;
+            bool is_start_line = true;
+            while (line_start < (end + 2)) {
+                unsigned long long int line_end = line_start;
+                while (!((data[line_end] == '\r') && (data[line_end + 1] == '\n'))) {
+                    // A line may only end with both characters together, and may not hold a null.
+                    if ((data[line_end] == '\n') || (data[line_end] == '\r') || (data[line_end] == 0)) {
+                        return result_type::invalid;
+                    }
+                    ++line_end;
+                }
+                if (is_start_line) {
+                    start_line.assign(data + line_start, line_end - line_start);
+                    is_start_line = false;
+                }
+                else {
+                    // A header is a name, a colon, and a value with optional white space around it.
+                    unsigned long long int colon = line_start;
+                    while ((colon < line_end) && (data[colon] != ':')) {
+                        ++colon;
+                    }
+                    if ((colon == line_end) || (headers.size() == http::headers_length_max)) {
+                        return result_type::invalid;
+                    }
+                    header_type header;
+                    header.name.assign(data + line_start, colon - line_start);
+                    if (!http::is_token(header.name)) {
+                        return result_type::invalid;
+                    }
+                    unsigned long long int value_start = colon + 1;
+                    unsigned long long int value_end = line_end;
+                    while ((value_start < value_end) && ((data[value_start] == ' ') || (data[value_start] == '\t'))) {
+                        ++value_start;
+                    }
+                    while ((value_end > value_start) && ((data[value_end - 1] == ' ') || (data[value_end - 1] == '\t'))) {
+                        --value_end;
+                    }
+                    header.value.assign(data + value_start, value_end - value_start);
+                    headers.push_back(header);
+                }
+                line_start = line_end + 2;
+            }
+            head_length = end + 4;
+            return result_type::complete;
+        }
+
+        /// @brief  Read the body of a message.
+        /// @param  data The data that follows the head of the message.
+        /// @param  length The length of the data.
+        /// @param  headers The headers of the message, which say how the body is framed.
+        /// @param  until_closed Flag selecting that a body with no framing headers runs to the end of the connection, as it does for a response.
+        /// @param  is_closed Flag showing whether the connection has ended, so that no more data will arrive.
+        /// @param  size_max The largest body that is accepted.
+        /// @param  body Receives the body.
+        /// @param  body_length Receives the length of the data that the body used.
+        static result_type read_body(const char* data, const unsigned long long int length, const std::vector<header_type>& headers, const bool until_closed, const bool is_closed, const unsigned long long int size_max, std::string& body, unsigned long long int& body_length) {
+            const std::string* transfer_encoding = http::find_header(headers, "Transfer-Encoding");
+            const std::string* content_length = http::find_header(headers, "Content-Length");
+            body.clear();
+            if (transfer_encoding != nullptr) {
+                // A message with both kinds of framing is ambiguous, which can be used to confuse servers, so is refused.
+                if ((content_length != nullptr) || !http::is_same_name(*transfer_encoding, "chunked")) {
+                    return result_type::invalid;
+                }
+                // Each chunk is its size in hexadecimal on a line, the data, and the end of a line, and a chunk of size zero ends the body.
+                unsigned long long int offset = 0;
+                for (;;) {
+                    unsigned long long int line_end = offset;
+                    while (((line_end + 1) < length) && !((data[line_end] == '\r') && (data[line_end + 1] == '\n'))) {
+                        ++line_end;
+                    }
+                    if ((line_end + 1) >= length) {
+                        return ((length - offset) > 32) ? result_type::invalid : result_type::incomplete;
+                    }
+                    // Anything after a semicolon on the line is an extension, which is ignored.
+                    unsigned long long int size_end = offset;
+                    while ((size_end < line_end) && (data[size_end] != ';')) {
+                        ++size_end;
+                    }
+                    unsigned long long int chunk_size = 0;
+                    if (!http::parse_number(std::string(data + offset, size_end - offset), 16, chunk_size) || (chunk_size > size_max) || ((body.size() + chunk_size) > size_max)) {
+                        return result_type::invalid;
+                    }
+                    offset = line_end + 2;
+                    if (chunk_size == 0) {
+                        // Optional trailing headers, which are ignored, then an empty line.
+                        for (;;) {
+                            unsigned long long int trailer_end = offset;
+                            while (((trailer_end + 1) < length) && !((data[trailer_end] == '\r') && (data[trailer_end + 1] == '\n'))) {
+                                ++trailer_end;
+                            }
+                            if ((trailer_end + 1) >= length) {
+                                return ((length - offset) > http::head_size_max) ? result_type::invalid : result_type::incomplete;
+                            }
+                            const bool is_empty = (trailer_end == offset);
+                            offset = trailer_end + 2;
+                            if (is_empty) {
+                                body_length = offset;
+                                return result_type::complete;
+                            }
+                        }
+                    }
+                    if ((length - offset) < (chunk_size + 2)) {
+                        return result_type::incomplete;
+                    }
+                    if ((data[offset + chunk_size] != '\r') || (data[offset + chunk_size + 1] != '\n')) {
+                        return result_type::invalid;
+                    }
+                    body.append(data + offset, chunk_size);
+                    offset += chunk_size + 2;
+                }
+            }
+            if (content_length != nullptr) {
+                // Every length header must agree.
+                unsigned long long int size = 0;
+                if (!http::parse_number(*content_length, 10, size) || (size > size_max)) {
+                    return result_type::invalid;
+                }
+                for (const header_type& header : headers) {
+                    if (http::is_same_name(header.name, "Content-Length") && (header.value != *content_length)) {
+                        return result_type::invalid;
+                    }
+                }
+                if (length < size) {
+                    return result_type::incomplete;
+                }
+                body.assign(data, size);
+                body_length = size;
+                return result_type::complete;
+            }
+            if (!until_closed) {
+                body_length = 0;
+                return result_type::complete;
+            }
+            if (length > size_max) {
+                return result_type::invalid;
+            }
+            if (!is_closed) {
+                return result_type::incomplete;
+            }
+            body.assign(data, length);
+            body_length = length;
+            return result_type::complete;
+        }
+
+    public:
+        /// @brief  Write a request.
+        /// @param  request The request, a header with the length of the body is added, and replaces any headers that frame the body.
+        /// @param  output Receives the encoded request.
+        /// @return true if the request was written, false if its method, target, or headers hold characters that are not allowed.
+        static bool write_request(const request_type& request, std::string& output) {
+            // A target with a space or the end of a line could be used to smuggle in another request.
+            if (!http::is_token(request.method) || request.target.empty() || !http::is_safe_value(request.target) || (request.target.find(' ') != std::string::npos)) {
+                return false;
+            }
+            std::string encoded = request.method + " " + request.target + " HTTP/1.1\r\n";
+            // A request with a method that usually has a body always says how long it is.
+            const bool always_length = (request.method == "POST") || (request.method == "PUT") || (request.method == "PATCH");
+            if (!http::write_headers_and_body(request.headers, request.body, always_length, encoded)) {
+                return false;
+            }
+            output = encoded;
+            return true;
+        }
+
+        /// @brief  Write a response.
+        /// @param  response The response, a header with the length of the body is added, and replaces any headers that frame the body.
+        /// @param  output Receives the encoded response.
+        /// @return true if the response was written, false if its status, reason, or headers are not valid.
+        static bool write_response(const response_type& response, std::string& output) {
+            if ((response.status < 100) || (response.status > 999) || !http::is_safe_value(response.reason)) {
+                return false;
+            }
+            std::string encoded = "HTTP/1.1 " + std::to_string(response.status) + " " + response.reason + "\r\n";
+            // The responses that never have a body do not give its length.
+            const bool has_body = (response.status >= 200) && (response.status != 204) && (response.status != 304);
+            if (!has_body && !response.body.empty()) {
+                return false;
+            }
+            if (!http::write_headers_and_body(response.headers, response.body, has_body, encoded)) {
+                return false;
+            }
+            output = encoded;
+            return true;
+        }
+
+        /// @brief  Read a request from the start of some data.
+        /// @param  data The data, which may hold part of a request, or more than one.
+        /// @param  length The length of the data.
+        /// @param  request Receives the request, when the result is complete.
+        /// @param  request_length Receives the length of the data that the request used, when the result is complete.
+        /// @param  size_max The largest body that is accepted.
+        /// @return complete if a whole request was read, incomplete if more data is needed, or invalid if the data is not a request.
+        static result_type read_request(const char* data, const unsigned long long int length, request_type& request, unsigned long long int& request_length, const unsigned long long int size_max = http::body_size_max) {
+            if (data == nullptr) {
+                return (length == 0) ? result_type::incomplete : result_type::invalid;
+            }
+            std::string start_line;
+            request_type parsed;
+            unsigned long long int head_length = 0;
+            const result_type head_result = http::read_head(data, length, start_line, parsed.headers, head_length);
+            if (head_result != result_type::complete) {
+                return head_result;
+            }
+            // The start line is the method, the target, and the version, separated by single spaces.
+            const unsigned long long int first_space = start_line.find(' ');
+            const unsigned long long int last_space = start_line.rfind(' ');
+            if ((first_space == std::string::npos) || (last_space == first_space)) {
+                return result_type::invalid;
+            }
+            parsed.method = start_line.substr(0, first_space);
+            parsed.target = start_line.substr(first_space + 1, last_space - first_space - 1);
+            const std::string version = start_line.substr(last_space + 1);
+            if (!http::is_token(parsed.method) || parsed.target.empty() || (parsed.target.find(' ') != std::string::npos) || ((version != "HTTP/1.1") && (version != "HTTP/1.0"))) {
+                return result_type::invalid;
+            }
+            unsigned long long int body_length = 0;
+            const result_type body_result = http::read_body(data + head_length, length - head_length, parsed.headers, false, false, size_max, parsed.body, body_length);
+            if (body_result != result_type::complete) {
+                return body_result;
+            }
+            request = parsed;
+            request_length = head_length + body_length;
+            return result_type::complete;
+        }
+
+        /// @brief  Read a response from the start of some data.
+        /// @param  data The data, which may hold part of a response, or more than one.
+        /// @param  length The length of the data.
+        /// @param  is_closed Flag showing whether the connection has ended, which is what ends the body of a response that does not say how long it is.
+        /// @param  is_head Flag showing whether the response is to a request with the method "HEAD", which never has a body.
+        /// @param  response Receives the response, when the result is complete.
+        /// @param  response_length Receives the length of the data that the response used, when the result is complete.
+        /// @param  size_max The largest body that is accepted.
+        /// @return complete if a whole response was read, incomplete if more data is needed, or invalid if the data is not a response.
+        static result_type read_response(const char* data, const unsigned long long int length, const bool is_closed, const bool is_head, response_type& response, unsigned long long int& response_length, const unsigned long long int size_max = http::body_size_max) {
+            if (data == nullptr) {
+                return (length == 0) ? result_type::incomplete : result_type::invalid;
+            }
+            std::string start_line;
+            response_type parsed;
+            unsigned long long int head_length = 0;
+            const result_type head_result = http::read_head(data, length, start_line, parsed.headers, head_length);
+            if (head_result != result_type::complete) {
+                return head_result;
+            }
+            // The start line is the version, a three digit status code, and a reason phrase which may be empty.
+            unsigned long long int status = 0;
+            if ((start_line.size() < 12) || ((start_line.compare(0, 9, "HTTP/1.1 ") != 0) && (start_line.compare(0, 9, "HTTP/1.0 ") != 0)) || !http::parse_number(start_line.substr(9, 3), 10, status) || (status < 100)) {
+                return result_type::invalid;
+            }
+            if ((start_line.size() > 12) && (start_line[12] != ' ')) {
+                return result_type::invalid;
+            }
+            parsed.status = static_cast<unsigned int>(status);
+            parsed.reason = (start_line.size() > 13) ? start_line.substr(13) : std::string();
+            unsigned long long int body_length = 0;
+            const bool has_body = !is_head && (parsed.status >= 200) && (parsed.status != 204) && (parsed.status != 304);
+            if (has_body) {
+                const result_type body_result = http::read_body(data + head_length, length - head_length, parsed.headers, true, is_closed, size_max, parsed.body, body_length);
+                if (body_result != result_type::complete) {
+                    return body_result;
+                }
+            }
+            response = parsed;
+            response_length = head_length + body_length;
+            return result_type::complete;
+        }
+
+    private:
+        /// @brief  Send a whole string over a connection.
+        static bool send_all(const gtl::socket& connection, const std::string& data, const std::chrono::steady_clock::time_point deadline) {
+            unsigned long long int sent = 0;
+            while (sent < data.size()) {
+                const long long int count = connection.tcp_send(reinterpret_cast<const unsigned char*>(data.data()) + sent, data.size() - sent);
+                if ((count < 0) || (std::chrono::steady_clock::now() > deadline)) {
+                    return false;
+                }
+                if (count == 0) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                }
+                sent += static_cast<unsigned long long int>(count);
+            }
+            return true;
+        }
+
+        /// @brief  Receive whatever data is waiting on a connection, waiting a moment if there is none.
+        /// @return false if the connection has ended.
+        static bool receive_some(const gtl::socket& connection, std::string& data) {
+            unsigned char buffer[4096];
+            const long long int count = connection.tcp_receive(buffer, sizeof(buffer));
+            if (count < 0) {
+                return false;
+            }
+            if (count == 0) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+            data.append(reinterpret_cast<const char*>(buffer), static_cast<unsigned long long int>(count));
+            return true;
+        }
+
+    public:
+        /// @brief  Send a request to a server over a new unencrypted connection, and wait for its response.
+        /// @param  address The address of the server.
+        /// @param  port The port of the server.
+        /// @param  request The request, to which a header that asks the server to close the connection is added.
+        /// @param  response Receives the response.
+        /// @param  timeout_milliseconds The longest time to wait for the whole response.
+        /// @return true if a response was received, false if the server could not be reached, did not reply in time, or the reply was not valid.
+        static bool send_request(const gtl::socket::ip address, const unsigned short port, const request_type& request, response_type& response, const unsigned int timeout_milliseconds = 10000) {
+            request_type closing = request;
+            if (closing.get_header("Connection") == nullptr) {
+                closing.headers.push_back(header_type{ "Connection", "close" });
+            }
+            std::string encoded;
+            if (!http::write_request(closing, encoded)) {
+                return false;
+            }
+            gtl::socket connection;
+            if (!connection.open(gtl::socket::tcp_client{ gtl::socket::ip_any, gtl::socket::port_any, address, port })) {
+                return false;
+            }
+            const std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_milliseconds);
+            if (!http::send_all(connection, encoded, deadline)) {
+                return false;
+            }
+            std::string received;
+            bool is_closed = false;
+            for (;;) {
+                unsigned long long int response_length = 0;
+                const result_type result = http::read_response(received.data(), received.size(), is_closed, request.method == "HEAD", response, response_length);
+                if (result != result_type::incomplete) {
+                    return (result == result_type::complete);
+                }
+                if (is_closed || (std::chrono::steady_clock::now() > deadline)) {
+                    return false;
+                }
+                is_closed = !http::receive_some(connection, received);
+            }
+        }
+
+        /// @brief  Serve the requests that arrive on one unencrypted connection, until the client is done or a request is not valid.
+        /// @param  connection The connection to a client, as accepted by a listening socket.
+        /// @param  handler The function that makes the response to each request.
+        /// @param  timeout_milliseconds The longest time to wait for each whole request.
+        /// @return The number of requests that were answered.
+        /// @note   A request that is not valid is answered with a response that says so, and ends the connection.
+        static unsigned int serve(const gtl::socket& connection, const handler_type& handler, const unsigned int timeout_milliseconds = 10000) {
+            unsigned int served = 0;
+            std::string received;
+            bool is_closed = false;
+            std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_milliseconds);
+            while (handler) {
+                request_type request;
+                unsigned long long int request_length = 0;
+                const result_type result = http::read_request(received.data(), received.size(), request, request_length);
+                if (result == result_type::incomplete) {
+                    if (is_closed || (std::chrono::steady_clock::now() > deadline)) {
+                        break;
+                    }
+                    is_closed = !http::receive_some(connection, received);
+                    continue;
+                }
+                response_type response;
+                if (result == result_type::complete) {
+                    response = handler(request);
+                }
+                else {
+                    response.status = 400;
+                    response.reason = "Bad Request";
+                }
+                // The connection is kept open for another request unless either end asks for it to be closed, or the client is of the older version.
+                const std::string* request_connection = request.get_header("Connection");
+                const std::string* response_connection = response.get_header("Connection");
+                const bool is_old_client = (result == result_type::complete) && (received.compare(request.method.size() + request.target.size() + 2, 8, "HTTP/1.0") == 0);
+                bool close = (result != result_type::complete) || is_old_client || ((request_connection != nullptr) && http::is_same_name(*request_connection, "close")) || ((response_connection != nullptr) && http::is_same_name(*response_connection, "close"));
+                if (close && (response_connection == nullptr)) {
+                    response.headers.push_back(header_type{ "Connection", "close" });
+                }
+                if (request.method == "HEAD") {
+                    response.body.clear();
+                }
+                std::string encoded;
+                if (!http::write_response(response, encoded)) {
+                    response = response_type();
+                    response.status = 500;
+                    response.reason = "Internal Server Error";
+                    response.headers.push_back(header_type{ "Connection", "close" });
+                    close = true;
+                    static_cast<void>(http::write_response(response, encoded));
+                }
+                if (!http::send_all(connection, encoded, std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_milliseconds))) {
+                    break;
+                }
+                if (result == result_type::complete) {
+                    ++served;
+                }
+                if (close) {
+                    break;
+                }
+                received.erase(0, request_length);
+                deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_milliseconds);
+            }
+            return served;
+        }
+    };
+}
+
+#endif // GTL_PROTOCOL_HTTP_HPP

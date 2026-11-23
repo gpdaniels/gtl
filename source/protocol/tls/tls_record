@@ -1,0 +1,456 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_PROTOCOL_TLS_TLS_RECORD_HPP
+#define GTL_PROTOCOL_TLS_TLS_RECORD_HPP
+
+// Summary: The record layer of the transport layer security protocol, which frames and protects data in one direction of a connection.
+
+#include <crypto/symmetric/aes>
+#include <crypto/symmetric/block_cipher>
+#include <crypto/symmetric/chacha20_poly1305>
+
+namespace gtl {
+    /// @brief  The tls_record class turns fragments of data into records and back, encrypting and authenticating them once keys are set.
+    /// @note   One tls_record protects one direction of a connection, so a connection has one for sending and one for receiving.
+    /// @note   Both the record format of TLS 1.2 with authenticated encryption (RFC 5246, RFC 5288, RFC 7905) and of TLS 1.3 (RFC 8446) are supported.
+    class tls_record final {
+    public:
+        /// @brief  The ciphers that can protect records.
+        enum class cipher_type {
+            none,
+            aes_128_gcm,
+            aes_256_gcm,
+            chacha20_poly1305
+        };
+
+        /// @brief  The versions of the protocol, which protect records in different ways.
+        enum class version_type {
+            tls12,
+            tls13
+        };
+
+        /// @brief  The content type of a record that tells the receiver to start using new keys, only meaningful in TLS 1.2.
+        constexpr static const unsigned char content_change_cipher_spec = 20;
+
+        /// @brief  The content type of a record that holds an alert.
+        constexpr static const unsigned char content_alert = 21;
+
+        /// @brief  The content type of a record that holds handshake messages.
+        constexpr static const unsigned char content_handshake = 22;
+
+        /// @brief  The content type of a record that holds application data.
+        constexpr static const unsigned char content_application_data = 23;
+
+        /// @brief  The size of the header of a record: the content type, the two byte version, and the two byte length.
+        constexpr static const unsigned int header_size = 5;
+
+        /// @brief  The largest fragment of data that a record can hold.
+        constexpr static const unsigned int fragment_size_max = 16384;
+
+        /// @brief  The largest number of bytes that protecting a fragment adds to it, not including the header.
+        constexpr static const unsigned int overhead_size_max = 24;
+
+        /// @brief  The largest body of a record that is accepted, which allows for the padding that other implementations may add.
+        constexpr static const unsigned int body_size_max = tls_record::fragment_size_max + 256;
+
+        /// @brief  The largest size of a key.
+        constexpr static const unsigned int key_size_max = 32;
+
+        /// @brief  The largest size of an initialisation vector.
+        constexpr static const unsigned int iv_size_max = 12;
+
+    private:
+        /// @brief  The size of the authentication tag of every cipher.
+        constexpr static const unsigned int tag_size = 16;
+
+        /// @brief  The size of the part of the nonce that is sent with each record by the aes ciphers in TLS 1.2.
+        constexpr static const unsigned int explicit_nonce_size = 8;
+
+    private:
+        /// @brief  The cipher that protects the records.
+        cipher_type cipher = cipher_type::none;
+
+        /// @brief  The version of the protocol.
+        version_type version = version_type::tls12;
+
+        /// @brief  The key.
+        unsigned char key[tls_record::key_size_max] = {};
+
+        /// @brief  The initialisation vector, which is combined with the sequence number to make the nonce of each record.
+        unsigned char iv[tls_record::iv_size_max] = {};
+
+        /// @brief  The number of records that have been protected with the key.
+        unsigned long long int sequence = 0;
+
+    private:
+        /// @brief  Overwrite a buffer with zeros in a way that is not optimised away.
+        static void wipe(unsigned char* buffer, const unsigned int length) {
+            volatile unsigned char* bytes = buffer;
+            for (unsigned int index = 0; index < length; ++index) {
+                bytes[index] = 0;
+            }
+        }
+
+        /// @brief  Check if the cipher sends part of the nonce with each record.
+        bool has_explicit_nonce() const {
+            return (this->version == version_type::tls12) && (this->cipher != cipher_type::chacha20_poly1305);
+        }
+
+        /// @brief  Build the nonce of the next record.
+        /// @param  nonce Receives the twelve byte nonce.
+        void make_nonce(unsigned char* nonce) const {
+            unsigned char sequence_bytes[8] = {};
+            for (unsigned int i = 0; i < 8; ++i) {
+                sequence_bytes[i] = static_cast<unsigned char>((this->sequence >> (8 * (7 - i))) & 0xFF);
+            }
+            if (this->has_explicit_nonce()) {
+                // The first four bytes are fixed and the rest are sent with the record, the sequence number is used as it never repeats.
+                for (unsigned int i = 0; i < 4; ++i) {
+                    nonce[i] = this->iv[i];
+                }
+                for (unsigned int i = 0; i < 8; ++i) {
+                    nonce[4 + i] = sequence_bytes[i];
+                }
+            }
+            else {
+                // The sequence number is xored into the end of the initialisation vector.
+                for (unsigned int i = 0; i < 4; ++i) {
+                    nonce[i] = this->iv[i];
+                }
+                for (unsigned int i = 0; i < 8; ++i) {
+                    nonce[4 + i] = static_cast<unsigned char>(this->iv[4 + i] ^ sequence_bytes[i]);
+                }
+            }
+        }
+
+        /// @brief  Build the additional data that is authenticated with a record.
+        /// @param  content_type The content type in the header of the record.
+        /// @param  fragment_length The length of the fragment, for TLS 1.2.
+        /// @param  body_length The length of the body of the record, for TLS 1.3.
+        /// @param  additional Receives the additional data, must be thirteen bytes long.
+        /// @return The length of the additional data.
+        unsigned int make_additional_data(const unsigned char content_type, const unsigned int fragment_length, const unsigned int body_length, unsigned char* additional) const {
+            if (this->version == version_type::tls13) {
+                // The header of the record.
+                additional[0] = content_type;
+                additional[1] = 0x03;
+                additional[2] = 0x03;
+                additional[3] = static_cast<unsigned char>((body_length >> 8) & 0xFF);
+                additional[4] = static_cast<unsigned char>(body_length & 0xFF);
+                return 5;
+            }
+            // The sequence number, the content type, the version, and the length of the fragment.
+            for (unsigned int i = 0; i < 8; ++i) {
+                additional[i] = static_cast<unsigned char>((this->sequence >> (8 * (7 - i))) & 0xFF);
+            }
+            additional[8] = content_type;
+            additional[9] = 0x03;
+            additional[10] = 0x03;
+            additional[11] = static_cast<unsigned char>((fragment_length >> 8) & 0xFF);
+            additional[12] = static_cast<unsigned char>(fragment_length & 0xFF);
+            return 13;
+        }
+
+        /// @brief  Encrypt data with the cipher.
+        void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* nonce, unsigned char* output, unsigned char* tag, const unsigned char* additional, const unsigned int additional_length) const {
+            switch (this->cipher) {
+                case cipher_type::aes_128_gcm: {
+                    gtl::block_cipher<gtl::aes<128>, gtl::block_cipher_mode::gcm>::encrypt(data, length, this->key, nonce, output, tag, additional, additional_length);
+                } break;
+                case cipher_type::aes_256_gcm: {
+                    gtl::block_cipher<gtl::aes<256>, gtl::block_cipher_mode::gcm>::encrypt(data, length, this->key, nonce, output, tag, additional, additional_length);
+                } break;
+                case cipher_type::chacha20_poly1305: {
+                    gtl::chacha20_poly1305::encrypt(data, length, this->key, nonce, output, tag, additional, additional_length);
+                } break;
+                case cipher_type::none:
+                    break;
+            }
+        }
+
+        /// @brief  Authenticate and decrypt data with the cipher.
+        bool decrypt(const unsigned char* data, const unsigned int length, const unsigned char* nonce, unsigned char* output, const unsigned char* tag, const unsigned char* additional, const unsigned int additional_length) const {
+            switch (this->cipher) {
+                case cipher_type::aes_128_gcm:
+                    return gtl::block_cipher<gtl::aes<128>, gtl::block_cipher_mode::gcm>::decrypt(data, length, this->key, nonce, output, tag, additional, additional_length);
+                case cipher_type::aes_256_gcm:
+                    return gtl::block_cipher<gtl::aes<256>, gtl::block_cipher_mode::gcm>::decrypt(data, length, this->key, nonce, output, tag, additional, additional_length);
+                case cipher_type::chacha20_poly1305:
+                    return gtl::chacha20_poly1305::decrypt(data, length, this->key, nonce, output, tag, additional, additional_length);
+                case cipher_type::none:
+                    break;
+            }
+            return false;
+        }
+
+    public:
+        /// @brief  Wipe the keys.
+        ~tls_record() {
+            this->reset();
+        }
+
+        /// @brief  Construct a record layer with no protection.
+        tls_record() = default;
+
+        tls_record(const tls_record&) = default;
+        tls_record& operator=(const tls_record&) = default;
+
+    public:
+        /// @brief  Get the size of the key of a cipher.
+        /// @param  cipher The cipher.
+        /// @return The size in bytes.
+        constexpr static unsigned int get_key_size(const cipher_type cipher) {
+            switch (cipher) {
+                case cipher_type::aes_128_gcm:
+                    return 16;
+                case cipher_type::aes_256_gcm:
+                case cipher_type::chacha20_poly1305:
+                    return 32;
+                case cipher_type::none:
+                    break;
+            }
+            return 0;
+        }
+
+        /// @brief  Get the size of the initialisation vector of a cipher.
+        /// @param  version The version of the protocol.
+        /// @param  cipher The cipher.
+        /// @return The size in bytes.
+        constexpr static unsigned int get_iv_size(const version_type version, const cipher_type cipher) {
+            if (cipher == cipher_type::none) {
+                return 0;
+            }
+            // In TLS 1.2 the aes ciphers only fix four bytes of the nonce, and send the rest with each record.
+            return ((version == version_type::tls12) && (cipher != cipher_type::chacha20_poly1305)) ? 4 : 12;
+        }
+
+        /// @brief  Read the header of a record.
+        /// @param  header The header, must be header_size bytes long.
+        /// @param  content_type Receives the content type.
+        /// @param  body_length Receives the length of the body of the record that follows the header.
+        /// @return true if the header is valid, false if it is not the header of a record or the body is longer than is allowed.
+        constexpr static bool parse_header(const unsigned char* header, unsigned char& content_type, unsigned int& body_length) {
+            const unsigned int length = (static_cast<unsigned int>(header[3]) << 8) | static_cast<unsigned int>(header[4]);
+            const bool known_type = (header[0] >= tls_record::content_change_cipher_spec) && (header[0] <= tls_record::content_application_data);
+            // Every version of the protocol has a major version of three.
+            if (!known_type || (header[1] != 0x03) || (length > tls_record::body_size_max)) {
+                return false;
+            }
+            content_type = header[0];
+            body_length = length;
+            return true;
+        }
+
+    public:
+        /// @brief  Remove the keys, so that records are no longer protected.
+        void reset() {
+            this->cipher = cipher_type::none;
+            this->sequence = 0;
+            tls_record::wipe(this->key, tls_record::key_size_max);
+            tls_record::wipe(this->iv, tls_record::iv_size_max);
+        }
+
+        /// @brief  Set the keys that protect every following record, and restart the sequence number.
+        /// @param  new_version The version of the protocol.
+        /// @param  new_cipher The cipher, which must not be none.
+        /// @param  new_key The key, must be get_key_size(new_cipher) bytes long.
+        /// @param  new_iv The initialisation vector, must be get_iv_size(new_version, new_cipher) bytes long.
+        /// @return true if the keys were set, false if the arguments are not valid.
+        bool set_keys(const version_type new_version, const cipher_type new_cipher, const unsigned char* new_key, const unsigned char* new_iv) {
+            if ((new_cipher == cipher_type::none) || (new_key == nullptr) || (new_iv == nullptr)) {
+                return false;
+            }
+            this->reset();
+            this->version = new_version;
+            this->cipher = new_cipher;
+            for (unsigned int i = 0; i < tls_record::get_key_size(new_cipher); ++i) {
+                this->key[i] = new_key[i];
+            }
+            for (unsigned int i = 0; i < tls_record::get_iv_size(new_version, new_cipher); ++i) {
+                this->iv[i] = new_iv[i];
+            }
+            return true;
+        }
+
+        /// @brief  Check if keys have been set.
+        /// @return true if records are protected.
+        bool is_protected() const {
+            return (this->cipher != cipher_type::none);
+        }
+
+        /// @brief  Get the number of records that have been protected with the current keys.
+        /// @return The sequence number of the next record.
+        unsigned long long int get_sequence() const {
+            return this->sequence;
+        }
+
+        /// @brief  Get the size of the record that holds a fragment.
+        /// @param  fragment_length The length of the fragment.
+        /// @return The size of the whole record, including its header.
+        unsigned int get_record_size(const unsigned int fragment_length) const {
+            if (this->cipher == cipher_type::none) {
+                return tls_record::header_size + fragment_length;
+            }
+            if (this->version == version_type::tls13) {
+                // The content type is encrypted along with the fragment.
+                return tls_record::header_size + fragment_length + 1 + tls_record::tag_size;
+            }
+            return tls_record::header_size + (this->has_explicit_nonce() ? tls_record::explicit_nonce_size : 0) + fragment_length + tls_record::tag_size;
+        }
+
+    public:
+        /// @brief  Make a record from a fragment of data, protecting it if keys have been set.
+        /// @param  content_type The content type of the fragment.
+        /// @param  fragment The fragment.
+        /// @param  fragment_length The length of the fragment, must be no more than fragment_size_max.
+        /// @param  output The buffer that receives the record.
+        /// @param  output_capacity The size of the buffer, get_record_size(fragment_length) is enough.
+        /// @param  output_length Receives the length of the record.
+        /// @return true if the record was made, false if the fragment is too long or the buffer is too small, in which case nothing is written.
+        bool protect(const unsigned char content_type, const unsigned char* fragment, const unsigned int fragment_length, unsigned char* output, const unsigned long long int output_capacity, unsigned long long int& output_length) {
+            if ((fragment_length > tls_record::fragment_size_max) || ((fragment == nullptr) && (fragment_length != 0)) || (output == nullptr)) {
+                return false;
+            }
+            const unsigned int record_size = this->get_record_size(fragment_length);
+            // A sequence number must never be used twice, although reaching the limit would take far more data than the keys can safely protect.
+            if ((record_size > output_capacity) || (this->sequence == 0xFFFFFFFFFFFFFFFFull)) {
+                return false;
+            }
+            const unsigned int body_length = record_size - tls_record::header_size;
+            unsigned char* body = output + tls_record::header_size;
+            output[1] = 0x03;
+            output[2] = 0x03;
+            output[3] = static_cast<unsigned char>((body_length >> 8) & 0xFF);
+            output[4] = static_cast<unsigned char>(body_length & 0xFF);
+            if (this->cipher == cipher_type::none) {
+                output[0] = content_type;
+                for (unsigned int i = 0; i < fragment_length; ++i) {
+                    body[i] = fragment[i];
+                }
+                output_length = record_size;
+                return true;
+            }
+
+            unsigned char nonce[12] = {};
+            unsigned char additional[13] = {};
+            this->make_nonce(nonce);
+            if (this->version == version_type::tls13) {
+                // The real content type follows the fragment and is encrypted with it, and the header always says application data.
+                output[0] = tls_record::content_application_data;
+                for (unsigned int i = 0; i < fragment_length; ++i) {
+                    body[i] = fragment[i];
+                }
+                body[fragment_length] = content_type;
+                const unsigned int additional_length = this->make_additional_data(output[0], fragment_length, body_length, additional);
+                this->encrypt(body, fragment_length + 1, nonce, body, body + fragment_length + 1, additional, additional_length);
+            }
+            else {
+                output[0] = content_type;
+                unsigned char* encrypted = body;
+                if (this->has_explicit_nonce()) {
+                    for (unsigned int i = 0; i < tls_record::explicit_nonce_size; ++i) {
+                        body[i] = nonce[4 + i];
+                    }
+                    encrypted += tls_record::explicit_nonce_size;
+                }
+                const unsigned int additional_length = this->make_additional_data(content_type, fragment_length, body_length, additional);
+                this->encrypt(fragment, fragment_length, nonce, encrypted, encrypted + fragment_length, additional, additional_length);
+            }
+            ++this->sequence;
+            output_length = record_size;
+            return true;
+        }
+
+        /// @brief  Recover the fragment of data from the body of a record, authenticating and decrypting it if keys have been set.
+        /// @param  record_type The content type from the header of the record.
+        /// @param  body The body of the record, which follows the header.
+        /// @param  body_length The length of the body, must be no more than body_size_max.
+        /// @param  output The buffer that receives the fragment, must be at least body_length bytes long, and may be the body.
+        /// @param  output_length Receives the length of the fragment.
+        /// @param  content_type Receives the content type of the fragment, which in TLS 1.3 is not the one in the header.
+        /// @return true if the fragment was recovered, false if the record is not authentic or is not valid, in which case the connection must be closed.
+        bool unprotect(const unsigned char record_type, const unsigned char* body, const unsigned int body_length, unsigned char* output, unsigned int& output_length, unsigned char& content_type) {
+            if ((body_length > tls_record::body_size_max) || ((body == nullptr) && (body_length != 0)) || (output == nullptr)) {
+                return false;
+            }
+            if (this->cipher == cipher_type::none) {
+                if (body_length > tls_record::fragment_size_max) {
+                    return false;
+                }
+                for (unsigned int i = 0; i < body_length; ++i) {
+                    output[i] = body[i];
+                }
+                output_length = body_length;
+                content_type = record_type;
+                return true;
+            }
+            if (this->sequence == 0xFFFFFFFFFFFFFFFFull) {
+                return false;
+            }
+
+            unsigned char nonce[12] = {};
+            unsigned char additional[13] = {};
+            this->make_nonce(nonce);
+            if (this->version == version_type::tls13) {
+                // Every protected record says it is application data, and holds at least the real content type and the tag.
+                if ((record_type != tls_record::content_application_data) || (body_length < (1 + tls_record::tag_size))) {
+                    return false;
+                }
+                const unsigned int encrypted_length = body_length - tls_record::tag_size;
+                const unsigned int additional_length = this->make_additional_data(record_type, 0, body_length, additional);
+                if (!this->decrypt(body, encrypted_length, nonce, output, body + encrypted_length, additional, additional_length)) {
+                    return false;
+                }
+                // The real content type is the last byte that is not zero, the zeros after it are padding.
+                unsigned int length = encrypted_length;
+                while ((length > 0) && (output[length - 1] == 0)) {
+                    --length;
+                }
+                if ((length == 0) || ((length - 1) > tls_record::fragment_size_max)) {
+                    return false;
+                }
+                content_type = output[length - 1];
+                output_length = length - 1;
+            }
+            else {
+                const unsigned int explicit_length = this->has_explicit_nonce() ? tls_record::explicit_nonce_size : 0;
+                if (body_length < (explicit_length + tls_record::tag_size)) {
+                    return false;
+                }
+                // The part of the nonce that was sent with the record replaces the sequence number.
+                for (unsigned int i = 0; i < explicit_length; ++i) {
+                    nonce[4 + i] = body[i];
+                }
+                const unsigned int encrypted_length = body_length - explicit_length - tls_record::tag_size;
+                if (encrypted_length > tls_record::fragment_size_max) {
+                    return false;
+                }
+                const unsigned int additional_length = this->make_additional_data(record_type, encrypted_length, body_length, additional);
+                if (!this->decrypt(body + explicit_length, encrypted_length, nonce, output, body + explicit_length + encrypted_length, additional, additional_length)) {
+                    return false;
+                }
+                content_type = record_type;
+                output_length = encrypted_length;
+            }
+            ++this->sequence;
+            return true;
+        }
+    };
+}
+
+#endif // GTL_PROTOCOL_TLS_TLS_RECORD_HPP

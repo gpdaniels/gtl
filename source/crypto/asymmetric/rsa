@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define GTL_RSA_ASSERT(ASSERTION, MESSAGE) static_cast<void>(0)
 #endif
 
+#include <crypto/hash/sha1>
 #include <crypto/hash/sha2>
 #include <math/big_unsigned>
 
@@ -49,12 +50,25 @@ namespace gtl {
     /// @brief  The rsa class implements all the routines needed to generate primes and used them to perform asymmetric encryption.
     /// @note   The encrypt, decrypt, and transform_block functions are the raw rsa operation with no padding.
     /// @note   The raw operation is deterministic and malleable, so to encrypt messages use encrypt_oaep and decrypt_oaep.
+    /// @note   To sign and verify use the sign_pss and verify_pss functions, or sign_pkcs1 and verify_pkcs1 where the older scheme is required.
     /// @note   The big number arithmetic is not constant time, use the decrypt functions that take a random generator to blind the private key operation.
     class rsa final {
     public:
         /// @brief  The number of bytes of an encrypted block that are used by the optimal asymmetric encryption padding.
         /// @note   The longest message that fits in a key is the key length in bytes minus this overhead.
         constexpr static const unsigned int oaep_overhead = (2 * (256 / 8)) + 2;
+
+    public:
+        /// @brief  The hash functions that can be used by the signature schemes.
+        enum class signature_hash_type {
+            sha1,
+            sha2_256,
+            sha2_384,
+            sha2_512
+        };
+
+        /// @brief  The size in bytes of the longest hash that can be used by the signature schemes.
+        constexpr static const unsigned int signature_hash_size_max = 512 / 8;
 
     public:
         /// @brief  The public key is used to encrypt data or verify signed data.
@@ -685,6 +699,190 @@ namespace gtl {
             return true;
         }
 
+    private:
+        /// @brief  Hash the concatenation of a number of buffers using a hash function.
+        /// @tparam hash_function_type The hash function.
+        /// @param  parts The buffers to hash.
+        /// @param  lengths The length of each buffer.
+        /// @param  count The number of buffers.
+        /// @param  output The buffer that receives the hash, must be at least as long as the hash.
+        template <typename hash_function_type>
+        static void hash_parts_using(const unsigned char* const* parts, const unsigned long long int* lengths, const unsigned int count, unsigned char* output) {
+            hash_function_type hash_function;
+            hash_function.reset();
+            for (unsigned int i = 0; i < count; ++i) {
+                hash_function.consume(reinterpret_cast<const char*>(parts[i]), lengths[i]);
+            }
+            hash_function.finalise();
+            for (unsigned int i = 0; i < hash_function_type::hash_size; ++i) {
+                output[i] = hash_function.get_hash().data[i];
+            }
+        }
+
+        /// @brief  Hash the concatenation of a number of buffers using a signature hash function.
+        /// @param  hash_type The hash function.
+        /// @param  parts The buffers to hash.
+        /// @param  lengths The length of each buffer.
+        /// @param  count The number of buffers.
+        /// @param  output The buffer that receives the hash, must be at least as long as the hash.
+        static void hash_parts(const signature_hash_type hash_type, const unsigned char* const* parts, const unsigned long long int* lengths, const unsigned int count, unsigned char* output) {
+            switch (hash_type) {
+                case signature_hash_type::sha1: {
+                    rsa::hash_parts_using<gtl::sha1>(parts, lengths, count, output);
+                } break;
+                case signature_hash_type::sha2_256: {
+                    rsa::hash_parts_using<gtl::sha2<256>>(parts, lengths, count, output);
+                } break;
+                case signature_hash_type::sha2_384: {
+                    rsa::hash_parts_using<gtl::sha2<384>>(parts, lengths, count, output);
+                } break;
+                case signature_hash_type::sha2_512: {
+                    rsa::hash_parts_using<gtl::sha2<512>>(parts, lengths, count, output);
+                } break;
+            }
+        }
+
+        /// @brief  The mask generation function MGF1 of RFC 8017 using a signature hash function, xoring the mask into a buffer.
+        /// @param  hash_type The hash function.
+        /// @param  seed The seed that the mask is generated from.
+        /// @param  seed_length The length of the seed.
+        /// @param  output The buffer that the mask is xored into.
+        /// @param  output_length The length of the buffer.
+        static void xor_mask(const signature_hash_type hash_type, const unsigned char* seed, const unsigned int seed_length, unsigned char* output, const unsigned int output_length) {
+            const unsigned int hash_size = rsa::get_signature_hash_size(hash_type);
+            unsigned int counter = 0;
+            for (unsigned int offset = 0; offset < output_length; ++counter) {
+                const unsigned char counter_bytes[4] = {
+                    static_cast<unsigned char>((counter >> 24) & 0xFF),
+                    static_cast<unsigned char>((counter >> 16) & 0xFF),
+                    static_cast<unsigned char>((counter >> 8) & 0xFF),
+                    static_cast<unsigned char>((counter >> 0) & 0xFF)
+                };
+                const unsigned char* const parts[2] = { seed, counter_bytes };
+                const unsigned long long int lengths[2] = { seed_length, 4 };
+                unsigned char mask[rsa::signature_hash_size_max] = {};
+                rsa::hash_parts(hash_type, parts, lengths, 2, mask);
+                for (unsigned int i = 0; (i < hash_size) && (offset < output_length); ++i, ++offset) {
+                    output[offset] ^= mask[i];
+                }
+            }
+        }
+
+        /// @brief  Encode a digest using the EMSA-PKCS1-v1_5 encoding of RFC 8017.
+        /// @param  hash_type The hash function that produced the digest.
+        /// @param  digest The digest to encode, must be as long as the hash.
+        /// @param  encoded The buffer that receives the encoded digest.
+        /// @param  length The length of the buffer, which is the length of the key.
+        /// @return true if the digest was encoded, false if the key is too short to hold the encoded digest.
+        static bool encode_pkcs1(const signature_hash_type hash_type, const unsigned char* digest, unsigned char* encoded, const unsigned int length) {
+            // The digest is prefixed by the fixed encoding of a structure that identifies the hash function.
+            constexpr const unsigned char prefix_sha1[] = { 0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2B, 0x0E, 0x03, 0x02, 0x1A, 0x05, 0x00, 0x04, 0x14 };
+            constexpr const unsigned char prefix_sha2_256[] = { 0x30, 0x31, 0x30, 0x0D, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20 };
+            constexpr const unsigned char prefix_sha2_384[] = { 0x30, 0x41, 0x30, 0x0D, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x02, 0x05, 0x00, 0x04, 0x30 };
+            constexpr const unsigned char prefix_sha2_512[] = { 0x30, 0x51, 0x30, 0x0D, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40 };
+            const unsigned char* prefix = nullptr;
+            unsigned int prefix_length = 0;
+            switch (hash_type) {
+                case signature_hash_type::sha1: {
+                    prefix = prefix_sha1;
+                    prefix_length = sizeof(prefix_sha1);
+                } break;
+                case signature_hash_type::sha2_256: {
+                    prefix = prefix_sha2_256;
+                    prefix_length = sizeof(prefix_sha2_256);
+                } break;
+                case signature_hash_type::sha2_384: {
+                    prefix = prefix_sha2_384;
+                    prefix_length = sizeof(prefix_sha2_384);
+                } break;
+                case signature_hash_type::sha2_512: {
+                    prefix = prefix_sha2_512;
+                    prefix_length = sizeof(prefix_sha2_512);
+                } break;
+            }
+            const unsigned int hash_size = rsa::get_signature_hash_size(hash_type);
+            // There must be room for a zero byte, a one byte, at least eight padding bytes, and another zero byte.
+            if ((prefix == nullptr) || (length < (prefix_length + hash_size + 11))) {
+                return false;
+            }
+            const unsigned int padding_length = length - prefix_length - hash_size - 3;
+            unsigned int offset = 0;
+            encoded[offset++] = 0x00;
+            encoded[offset++] = 0x01;
+            for (unsigned int i = 0; i < padding_length; ++i) {
+                encoded[offset++] = 0xFF;
+            }
+            encoded[offset++] = 0x00;
+            for (unsigned int i = 0; i < prefix_length; ++i) {
+                encoded[offset++] = prefix[i];
+            }
+            for (unsigned int i = 0; i < hash_size; ++i) {
+                encoded[offset++] = digest[i];
+            }
+            return true;
+        }
+
+        /// @brief  Sign a digest using the RSASSA-PKCS1-v1_5 scheme.
+        /// @param  random_generator Null, or a function that returns 32 uniformly distributed random bits each time it is called.
+        /// @see    sign_pkcs1
+        static bool sign_pkcs1_block(const std::function<unsigned int()>* random_generator, const signature_hash_type hash_type, const unsigned char* digest, const unsigned int digest_length, const private_key_type& private_key, unsigned char* signature, const unsigned int length) {
+            if ((digest == nullptr) || (signature == nullptr) || (digest_length != rsa::get_signature_hash_size(hash_type)) || (private_key.public_modulus.get_length_bytes() != length)) {
+                return false;
+            }
+            std::vector<unsigned char> encoded(length, 0);
+            if (!rsa::encode_pkcs1(hash_type, digest, encoded.data(), length)) {
+                return false;
+            }
+            // The leading zero byte ensures that the encoded digest is less than the modulus.
+            gtl::big_unsigned result;
+            if (!rsa::private_operation(random_generator, gtl::big_unsigned(encoded.data(), length), private_key, result)) {
+                return false;
+            }
+            result.to_bytes(signature, length, true);
+            return true;
+        }
+
+        /// @brief  Sign a digest using the RSASSA-PSS scheme.
+        /// @param  random_generator Null, or a function that returns 32 uniformly distributed random bits each time it is called.
+        /// @see    sign_pss
+        static bool sign_pss_block(const std::function<unsigned int()>* random_generator, const signature_hash_type hash_type, const unsigned char* digest, const unsigned int digest_length, const unsigned char* salt, const unsigned int salt_length, const private_key_type& private_key, unsigned char* signature, const unsigned int length) {
+            const unsigned int hash_size = rsa::get_signature_hash_size(hash_type);
+            if ((digest == nullptr) || (signature == nullptr) || ((salt == nullptr) && (salt_length != 0)) || (digest_length != hash_size) || (private_key.public_modulus.get_length_bytes() != length)) {
+                return false;
+            }
+            // The encoded message is one bit shorter than the modulus, so that it is always less than the modulus.
+            const unsigned long long int encoded_bits = private_key.public_modulus.get_length_bits() - 1;
+            const unsigned int encoded_length = static_cast<unsigned int>((encoded_bits + 7) / 8);
+            if ((salt_length > encoded_length) || (encoded_length < (hash_size + salt_length + 2))) {
+                return false;
+            }
+            // The encoded message is the masked data block, the hash, then a fixed byte.
+            std::vector<unsigned char> encoded(encoded_length, 0);
+            unsigned char* data_block = &encoded[0];
+            const unsigned int data_block_length = encoded_length - hash_size - 1;
+            unsigned char* hash = &encoded[data_block_length];
+            // The hash is of eight zero bytes, the digest, and the salt.
+            constexpr const unsigned char zeros[8] = {};
+            const unsigned char* const parts[3] = { zeros, digest, salt };
+            const unsigned long long int lengths[3] = { 8, digest_length, salt_length };
+            rsa::hash_parts(hash_type, parts, lengths, 3, hash);
+            encoded[encoded_length - 1] = 0xBC;
+            // The data block is padding zeros, a one byte, then the salt.
+            data_block[data_block_length - salt_length - 1] = 0x01;
+            for (unsigned int i = 0; i < salt_length; ++i) {
+                data_block[data_block_length - salt_length + i] = salt[i];
+            }
+            rsa::xor_mask(hash_type, hash, hash_size, data_block, data_block_length);
+            // Clear the bits of the first byte that are beyond the length of the encoded message.
+            data_block[0] &= static_cast<unsigned char>(0xFF >> ((8 * encoded_length) - encoded_bits));
+            gtl::big_unsigned result;
+            if (!rsa::private_operation(random_generator, gtl::big_unsigned(encoded.data(), encoded_length), private_key, result)) {
+                return false;
+            }
+            result.to_bytes(signature, length, true);
+            return true;
+        }
+
     public:
         /// @brief  Generate a public and private key set.
         /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called, the keys are only as unpredictable as its output.
@@ -863,6 +1061,201 @@ namespace gtl {
         /// @return true if the data was valid and decrypted, false otherwise in which case the output is not written.
         static bool decrypt_oaep(const std::function<unsigned int()>& random_generator, const unsigned char* data, const unsigned int length, const private_key_type& private_key, unsigned char* output, unsigned int& output_length, const unsigned char* label = nullptr, const unsigned int label_length = 0) {
             return rsa::decrypt_oaep_block(&random_generator, data, length, private_key, output, output_length, label, label_length);
+        }
+
+    public:
+        /// @brief  Get the size of the hash produced by a signature hash function.
+        /// @param  hash_type The hash function.
+        /// @return The size of the hash in bytes.
+        constexpr static unsigned int get_signature_hash_size(const signature_hash_type hash_type) {
+            switch (hash_type) {
+                case signature_hash_type::sha1:
+                    return 160 / 8;
+                case signature_hash_type::sha2_256:
+                    return 256 / 8;
+                case signature_hash_type::sha2_384:
+                    return 384 / 8;
+                case signature_hash_type::sha2_512:
+                    return 512 / 8;
+            }
+            return 0;
+        }
+
+        /// @brief  Hash a message with a signature hash function, producing the digest that the sign and verify functions take.
+        /// @param  hash_type The hash function.
+        /// @param  message The message to hash.
+        /// @param  message_length The length of the message.
+        /// @param  digest The buffer that receives the digest, must be at least get_signature_hash_size(hash_type) bytes long.
+        static void hash_message(const signature_hash_type hash_type, const unsigned char* message, const unsigned long long int message_length, unsigned char* digest) {
+            const unsigned char* const parts[1] = { message };
+            const unsigned long long int lengths[1] = { message_length };
+            rsa::hash_parts(hash_type, parts, lengths, 1, digest);
+        }
+
+    public:
+        /// @brief  Sign the digest of a message using the RSASSA-PKCS1-v1_5 scheme of RFC 8017, writing the signature into the output.
+        /// @param  hash_type The hash function that produced the digest.
+        /// @param  digest The digest of the message to sign.
+        /// @param  digest_length The length of the digest, must be the size of the hash.
+        /// @param  private_key The private key data used to sign the digest.
+        /// @param  signature Pointer to an output buffer that will receive the signature, must be length bytes long.
+        /// @param  length The length of the signature, must be equal to the key length.
+        /// @return true if the digest was signed, false if the arguments are invalid or the key is too short for the hash, in which case the signature is not written.
+        /// @note   The time this takes depends on the private key, use the overload with a random generator if that time can be observed.
+        static bool sign_pkcs1(const signature_hash_type hash_type, const unsigned char* digest, const unsigned int digest_length, const private_key_type& private_key, unsigned char* signature, const unsigned int length) {
+            return rsa::sign_pkcs1_block(nullptr, hash_type, digest, digest_length, private_key, signature, length);
+        }
+
+        /// @brief  Sign the digest of a message using the RSASSA-PKCS1-v1_5 scheme of RFC 8017, with the private key operation blinded.
+        /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called.
+        /// @param  hash_type The hash function that produced the digest.
+        /// @param  digest The digest of the message to sign.
+        /// @param  digest_length The length of the digest, must be the size of the hash.
+        /// @param  private_key The private key data used to sign the digest, the public exponent must be set.
+        /// @param  signature Pointer to an output buffer that will receive the signature, must be length bytes long.
+        /// @param  length The length of the signature, must be equal to the key length.
+        /// @return true if the digest was signed, false if the arguments are invalid, the key is too short for the hash, or the key has no public exponent, in which case the signature is not written.
+        static bool sign_pkcs1(const std::function<unsigned int()>& random_generator, const signature_hash_type hash_type, const unsigned char* digest, const unsigned int digest_length, const private_key_type& private_key, unsigned char* signature, const unsigned int length) {
+            return rsa::sign_pkcs1_block(&random_generator, hash_type, digest, digest_length, private_key, signature, length);
+        }
+
+        /// @brief  Verify a signature of the digest of a message made using the RSASSA-PKCS1-v1_5 scheme of RFC 8017.
+        /// @param  hash_type The hash function that produced the digest.
+        /// @param  digest The digest of the message that was signed.
+        /// @param  digest_length The length of the digest, must be the size of the hash.
+        /// @param  public_key The public key data used to verify the signature.
+        /// @param  signature The signature to verify.
+        /// @param  length The length of the signature, must be equal to the key length.
+        /// @return true if the signature is valid for the digest and the key, false otherwise.
+        /// @note   The whole of the signed block is compared with its expected value, so no part of it is left unchecked.
+        static bool verify_pkcs1(const signature_hash_type hash_type, const unsigned char* digest, const unsigned int digest_length, const public_key_type& public_key, const unsigned char* signature, const unsigned int length) {
+            if ((digest == nullptr) || (signature == nullptr) || (digest_length != rsa::get_signature_hash_size(hash_type)) || (public_key.public_modulus.get_length_bytes() != length)) {
+                return false;
+            }
+            const gtl::big_unsigned value(signature, length);
+            if (!rsa::is_transformable(value, public_key.public_modulus, length)) {
+                return false;
+            }
+            std::vector<unsigned char> expected(length, 0);
+            if (!rsa::encode_pkcs1(hash_type, digest, expected.data(), length)) {
+                return false;
+            }
+            std::vector<unsigned char> encoded(length, 0);
+            rsa::modular_exponentiation(value, public_key.public_exponent, public_key.public_modulus).to_bytes(encoded.data(), length, true);
+            unsigned int invalid = 0;
+            for (unsigned int i = 0; i < length; ++i) {
+                invalid |= static_cast<unsigned int>(encoded[i] ^ expected[i]);
+            }
+            return (invalid == 0);
+        }
+
+    public:
+        /// @brief  Sign the digest of a message using the RSASSA-PSS scheme of RFC 8017, with a random salt as long as the hash and the private key operation blinded.
+        /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called.
+        /// @param  hash_type The hash function that produced the digest, it is also used to generate the mask.
+        /// @param  digest The digest of the message to sign.
+        /// @param  digest_length The length of the digest, must be the size of the hash.
+        /// @param  private_key The private key data used to sign the digest, the public exponent must be set.
+        /// @param  signature Pointer to an output buffer that will receive the signature, must be length bytes long.
+        /// @param  length The length of the signature, must be equal to the key length.
+        /// @return true if the digest was signed, false if the arguments are invalid, the key is too short for the hash and salt, or the key has no public exponent, in which case the signature is not written.
+        static bool sign_pss(const std::function<unsigned int()>& random_generator, const signature_hash_type hash_type, const unsigned char* digest, const unsigned int digest_length, const private_key_type& private_key, unsigned char* signature, const unsigned int length) {
+            if (!random_generator) {
+                return false;
+            }
+            const unsigned int hash_size = rsa::get_signature_hash_size(hash_type);
+            unsigned char salt[rsa::signature_hash_size_max] = {};
+            for (unsigned int i = 0; i < hash_size; i += 4) {
+                const unsigned int random = random_generator();
+                salt[i + 0] = static_cast<unsigned char>((random >> 24) & 0xFF);
+                salt[i + 1] = static_cast<unsigned char>((random >> 16) & 0xFF);
+                salt[i + 2] = static_cast<unsigned char>((random >> 8) & 0xFF);
+                salt[i + 3] = static_cast<unsigned char>((random >> 0) & 0xFF);
+            }
+            return rsa::sign_pss_block(&random_generator, hash_type, digest, digest_length, salt, hash_size, private_key, signature, length);
+        }
+
+        /// @brief  Sign the digest of a message using the RSASSA-PSS scheme of RFC 8017, with a provided salt.
+        /// @param  hash_type The hash function that produced the digest, it is also used to generate the mask.
+        /// @param  digest The digest of the message to sign.
+        /// @param  digest_length The length of the digest, must be the size of the hash.
+        /// @param  salt The salt, which should be random and different for every signature.
+        /// @param  salt_length The length of the salt, which may be zero.
+        /// @param  private_key The private key data used to sign the digest.
+        /// @param  signature Pointer to an output buffer that will receive the signature, must be length bytes long.
+        /// @param  length The length of the signature, must be equal to the key length.
+        /// @return true if the digest was signed, false if the arguments are invalid or the key is too short for the hash and salt, in which case the signature is not written.
+        /// @note   The time this takes depends on the private key, use the overload with a random generator if that time can be observed.
+        static bool sign_pss(const signature_hash_type hash_type, const unsigned char* digest, const unsigned int digest_length, const unsigned char* salt, const unsigned int salt_length, const private_key_type& private_key, unsigned char* signature, const unsigned int length) {
+            return rsa::sign_pss_block(nullptr, hash_type, digest, digest_length, salt, salt_length, private_key, signature, length);
+        }
+
+        /// @brief  Verify a signature of the digest of a message made using the RSASSA-PSS scheme of RFC 8017.
+        /// @param  hash_type The hash function that produced the digest, it is also used to generate the mask.
+        /// @param  digest The digest of the message that was signed.
+        /// @param  digest_length The length of the digest, must be the size of the hash.
+        /// @param  public_key The public key data used to verify the signature.
+        /// @param  signature The signature to verify.
+        /// @param  length The length of the signature, must be equal to the key length.
+        /// @param  salt_length The length of the salt that the signature must have been made with.
+        /// @return true if the signature is valid for the digest and the key, false otherwise.
+        static bool verify_pss(const signature_hash_type hash_type, const unsigned char* digest, const unsigned int digest_length, const public_key_type& public_key, const unsigned char* signature, const unsigned int length, const unsigned int salt_length) {
+            const unsigned int hash_size = rsa::get_signature_hash_size(hash_type);
+            if ((digest == nullptr) || (signature == nullptr) || (digest_length != hash_size) || (public_key.public_modulus.get_length_bytes() != length)) {
+                return false;
+            }
+            const gtl::big_unsigned value(signature, length);
+            if (!rsa::is_transformable(value, public_key.public_modulus, length)) {
+                return false;
+            }
+            // The encoded message is one bit shorter than the modulus.
+            const unsigned long long int encoded_bits = public_key.public_modulus.get_length_bits() - 1;
+            const unsigned int encoded_length = static_cast<unsigned int>((encoded_bits + 7) / 8);
+            if ((salt_length > encoded_length) || (encoded_length < (hash_size + salt_length + 2))) {
+                return false;
+            }
+            const gtl::big_unsigned result = rsa::modular_exponentiation(value, public_key.public_exponent, public_key.public_modulus);
+            if (result.get_length_bits() > encoded_bits) {
+                return false;
+            }
+            // The encoded message is the masked data block, the hash, then a fixed byte.
+            std::vector<unsigned char> encoded(encoded_length, 0);
+            result.to_bytes(encoded.data(), encoded_length, true);
+            unsigned char* data_block = &encoded[0];
+            const unsigned int data_block_length = encoded_length - hash_size - 1;
+            const unsigned char* hash = &encoded[data_block_length];
+            unsigned int invalid = static_cast<unsigned int>(encoded[encoded_length - 1] ^ 0xBC);
+            rsa::xor_mask(hash_type, hash, hash_size, data_block, data_block_length);
+            // Ignore the bits of the first byte that are beyond the length of the encoded message.
+            data_block[0] &= static_cast<unsigned char>(0xFF >> ((8 * encoded_length) - encoded_bits));
+            // The data block is padding zeros, a one byte, then the salt.
+            const unsigned int padding_length = data_block_length - salt_length - 1;
+            for (unsigned int i = 0; i < padding_length; ++i) {
+                invalid |= static_cast<unsigned int>(data_block[i]);
+            }
+            invalid |= static_cast<unsigned int>(data_block[padding_length] ^ 0x01);
+            // The hash is of eight zero bytes, the digest, and the salt.
+            constexpr const unsigned char zeros[8] = {};
+            const unsigned char* const parts[3] = { zeros, digest, &data_block[padding_length + 1] };
+            const unsigned long long int lengths[3] = { 8, digest_length, salt_length };
+            unsigned char expected[rsa::signature_hash_size_max] = {};
+            rsa::hash_parts(hash_type, parts, lengths, 3, expected);
+            for (unsigned int i = 0; i < hash_size; ++i) {
+                invalid |= static_cast<unsigned int>(hash[i] ^ expected[i]);
+            }
+            return (invalid == 0);
+        }
+
+        /// @brief  Verify a signature of the digest of a message made using the RSASSA-PSS scheme of RFC 8017 with a salt as long as the hash.
+        /// @param  hash_type The hash function that produced the digest, it is also used to generate the mask.
+        /// @param  digest The digest of the message that was signed.
+        /// @param  digest_length The length of the digest, must be the size of the hash.
+        /// @param  public_key The public key data used to verify the signature.
+        /// @param  signature The signature to verify.
+        /// @param  length The length of the signature, must be equal to the key length.
+        /// @return true if the signature is valid for the digest and the key, false otherwise.
+        static bool verify_pss(const signature_hash_type hash_type, const unsigned char* digest, const unsigned int digest_length, const public_key_type& public_key, const unsigned char* signature, const unsigned int length) {
+            return rsa::verify_pss(hash_type, digest, digest_length, public_key, signature, length, rsa::get_signature_hash_size(hash_type));
         }
     };
 }

@@ -249,7 +249,8 @@ namespace gtl {
         void expand_label(const char* label, const unsigned char* context, unsigned long long int context_size, unsigned long long int output_length = 0) {
             unsigned long long int i = 0;
             unsigned long long int hashed_context = 0;
-            unsigned char label_message[64] = {};
+            // Large enough for the longest label and context that their one byte lengths allow.
+            unsigned char label_message[2 + 1 + 255 + 1 + 255] = {};
 
             if (output_length == 0) {
                 output_length = hkdf::hash_size;

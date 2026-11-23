@@ -391,14 +391,8 @@ namespace gtl {
                 return;
             }
 
-            sockaddr_in address_null = {};
-            address_null.sin_family = AF_UNSPEC;
-
-            // Try to disconnect
-            if (connect(this->handle, reinterpret_cast<const sockaddr*>(&address_null), sizeof(sockaddr_in)) < 0) {
-                // Failed to disconnect.
-            }
-
+            // Shut the connection down in both directions, which for tcp still delivers any data that has been written but not yet sent.
+            // Disconnecting first, by connecting to an unspecified address, would abort a tcp connection and discard that data.
             if (shutdown(this->handle, SD_BOTH) < 0) {
                 // Failed to shutdown.
             }
@@ -510,6 +504,139 @@ namespace gtl {
             }
 
             return false;
+        }
+
+        // Checks if the socket is connected to a remote peer, this is never true for listening or unconnected sockets.
+        bool is_connected() const {
+            if (!this->is_open()) {
+                return false;
+            }
+
+            // A pending error means any connection has failed.
+            int error_value = 0;
+            socklen_t error_length = sizeof(int);
+            if (getsockopt(this->handle, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&error_value), &error_length) < 0) {
+                return false;
+            }
+            if (error_value != 0) {
+                return false;
+            }
+
+            // Only a connected socket has a peer.
+            sockaddr_in address_peer = {};
+            socklen_t address_length = sizeof(sockaddr_in);
+            return (getpeername(this->handle, reinterpret_cast<sockaddr*>(&address_peer), &address_length) == 0);
+        }
+
+        // Receives up to length bytes from a connected tcp socket without blocking.
+        // Returns the number of bytes received, zero if no data is waiting, or negative one if the connection has closed or failed.
+        long long int tcp_receive(unsigned char* buffer, unsigned long long int length) const {
+            if (!this->is_open()) {
+                return -1;
+            }
+
+            if (length == 0) {
+                return 0;
+            }
+
+            // Check if the socket can be read without blocking.
+            timeval timeout{ 0, 0 };
+            fd_set rfds = {};
+            FD_ZERO(&rfds);
+            FD_SET(this->handle, &rfds);
+            const int ready = select(static_cast<int>(this->handle) + 1, &rfds, nullptr, nullptr, &timeout);
+            if (ready < 0) {
+#if !defined(_WIN32)
+                if ((errno == EINTR) || (errno == EAGAIN)) {
+                    return 0;
+                }
+#endif
+                return -1;
+            }
+            if ((ready == 0) || (!FD_ISSET(this->handle, &rfds))) {
+                return 0;
+            }
+
+            // Limit the amount requested to something the platform call can express.
+            if (length > 0x40000000ull) {
+                length = 0x40000000ull;
+            }
+
+// Get data.
+#if defined(_WIN32)
+            const long long int length_received = recv(this->handle, reinterpret_cast<char*>(buffer), static_cast<int>(length), 0);
+#else
+            const long long int length_received = recv(this->handle, buffer, length, 0);
+#endif
+
+            // A readable socket with no data has been closed by the peer.
+            if (length_received == 0) {
+                return -1;
+            }
+
+            if (length_received < 0) {
+#if !defined(_WIN32)
+                if ((errno == EINTR) || (errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+                    return 0;
+                }
+#endif
+                return -1;
+            }
+
+            return length_received;
+        }
+
+        // Sends up to length bytes to a connected tcp socket without blocking when the socket is not ready.
+        // Returns the number of bytes sent, zero if the socket cannot accept data yet, or negative one if the connection has closed or failed.
+        long long int tcp_send(const unsigned char* buffer, unsigned long long int length) const {
+            if (!this->is_open()) {
+                return -1;
+            }
+
+            if (length == 0) {
+                return 0;
+            }
+
+            // Check if the socket can be written without blocking.
+            timeval timeout{ 0, 0 };
+            fd_set wfds = {};
+            FD_ZERO(&wfds);
+            FD_SET(this->handle, &wfds);
+            const int ready = select(static_cast<int>(this->handle) + 1, nullptr, &wfds, nullptr, &timeout);
+            if (ready < 0) {
+#if !defined(_WIN32)
+                if ((errno == EINTR) || (errno == EAGAIN)) {
+                    return 0;
+                }
+#endif
+                return -1;
+            }
+            if ((ready == 0) || (!FD_ISSET(this->handle, &wfds))) {
+                return 0;
+            }
+
+            // Limit the amount sent to something the platform call can express.
+            if (length > 0x40000000ull) {
+                length = 0x40000000ull;
+            }
+
+// Send data, where the platform allows it only as much as can be sent without blocking.
+#if defined(_WIN32)
+            const long long int length_written = send(this->handle, reinterpret_cast<const char*>(buffer), static_cast<int>(length), MSG_NOSIGNAL);
+#else
+            const long long int length_written = send(this->handle, buffer, length, MSG_NOSIGNAL | MSG_DONTWAIT);
+#endif
+
+            if (length_written < 0) {
+#if !defined(_WIN32)
+                if ((errno == EINTR) || (errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+                    return 0;
+                }
+#endif
+                return -1;
+            }
+
+            return length_written;
         }
 
         bool read(unsigned char* buffer, unsigned long long int& length) const {

@@ -1,0 +1,1776 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_CRYPTO_CERTIFICATE_X509_HPP
+#define GTL_CRYPTO_CERTIFICATE_X509_HPP
+
+// Summary: A parser, verifier, and generator of x509 certificates, with the keys and signatures they use.
+
+#include <crypto/asymmetric/elliptic_curve>
+#include <crypto/asymmetric/rsa>
+#include <crypto/certificate/asn1>
+#include <math/big_unsigned>
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+
+#include <functional>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+namespace gtl {
+    /// @brief  The x509 class parses, verifies, and generates the certificates described by RFC 5280, and signs and verifies with their keys.
+    /// @note   A parsed certificate is a set of views of the encoded certificate, which must outlive it.
+    /// @note   The rsa and elliptic curve keys supported are those of the rsa and elliptic_curve classes.
+    class x509 final {
+    public:
+        /// @brief  The kinds of key that can be used.
+        enum class key_algorithm {
+            unknown,
+            rsa,
+            secp256r1,
+            secp384r1
+        };
+
+        /// @brief  The ways that a message can be signed, each is a kind of key, a padding scheme where there is a choice, and a hash function.
+        enum class signature_scheme {
+            unknown,
+            rsa_pkcs1_sha1,
+            rsa_pkcs1_sha2_256,
+            rsa_pkcs1_sha2_384,
+            rsa_pkcs1_sha2_512,
+            rsa_pss_sha2_256,
+            rsa_pss_sha2_384,
+            rsa_pss_sha2_512,
+            ecdsa_sha1,
+            ecdsa_sha2_256,
+            ecdsa_sha2_384,
+            ecdsa_sha2_512
+        };
+
+        /// @brief  The result of verifying a chain of certificates.
+        enum class status {
+            /// @brief  The chain leads to a trusted certificate and every check passed.
+            valid,
+            /// @brief  There are no certificates to verify, or too many.
+            invalid_chain,
+            /// @brief  A certificate is not valid yet at the time of verification.
+            not_yet_valid,
+            /// @brief  A certificate is no longer valid at the time of verification.
+            expired,
+            /// @brief  No trusted certificate, or certificate in the chain, issued one of the certificates.
+            unknown_issuer,
+            /// @brief  A certificate was not signed by the key of the certificate named as its issuer, or was signed in an unsupported way.
+            invalid_signature,
+            /// @brief  A certificate is signed using a hash function that is no longer safe to rely on.
+            weak_signature,
+            /// @brief  A certificate that issued another is not allowed to issue certificates, or not that many levels of them.
+            invalid_issuer,
+            /// @brief  A certificate has an extension that is marked as critical and is not supported.
+            unsupported_extension,
+            /// @brief  The first certificate is not allowed to be used to authenticate a server.
+            invalid_purpose,
+            /// @brief  The first certificate is not for the host.
+            host_mismatch
+        };
+
+        /// @brief  The key usage bit that allows a key to verify signatures other than those on certificates.
+        constexpr static const unsigned int key_usage_digital_signature = 0x80;
+
+        /// @brief  The key usage bit that allows a key to encrypt keys.
+        constexpr static const unsigned int key_usage_key_encipherment = 0x20;
+
+        /// @brief  The key usage bit that allows a key to verify the signatures on certificates.
+        constexpr static const unsigned int key_usage_certificate_sign = 0x04;
+
+        /// @brief  The key usage bit that allows a key to verify the signatures on certificate revocation lists.
+        constexpr static const unsigned int key_usage_revocation_list_sign = 0x02;
+
+        /// @brief  The longest rsa key that is accepted, in bytes.
+        constexpr static const unsigned int rsa_size_max = 8192 / 8;
+
+        /// @brief  The size of the buffer needed to hold any signature, in bytes.
+        constexpr static const unsigned int signature_size_max = x509::rsa_size_max;
+
+        /// @brief  The largest number of certificates in a chain that can be verified.
+        constexpr static const unsigned int chain_length_max = 8;
+
+    private:
+        /// @brief  The size of the largest elliptic curve coordinate, in bytes.
+        constexpr static const unsigned int coordinate_size_max = 384 / 8;
+
+    public:
+        /// @brief  A public key, used to verify signatures.
+        class public_key_type final {
+        public:
+            /// @brief  The kind of key.
+            key_algorithm algorithm = key_algorithm::unknown;
+
+            /// @brief  The key, if it is an rsa key.
+            gtl::rsa::public_key_type rsa;
+
+            /// @brief  The key, if it is an elliptic curve key, as the big endian x coordinate followed by the big endian y coordinate.
+            unsigned char point[2 * x509::coordinate_size_max] = {};
+        };
+
+        /// @brief  A private key, used to sign.
+        class private_key_type final {
+        public:
+            /// @brief  The kind of key.
+            key_algorithm algorithm = key_algorithm::unknown;
+
+            /// @brief  The key, if it is an rsa key.
+            gtl::rsa::private_key_type rsa;
+
+            /// @brief  The key, if it is an elliptic curve key, as a big endian scalar.
+            unsigned char scalar[x509::coordinate_size_max] = {};
+
+        public:
+            /// @brief  Wipe the elliptic curve key.
+            ~private_key_type() {
+                volatile unsigned char* bytes = this->scalar;
+                for (unsigned int i = 0; i < x509::coordinate_size_max; ++i) {
+                    bytes[i] = 0;
+                }
+            }
+
+            private_key_type() = default;
+            private_key_type(const private_key_type&) = default;
+            private_key_type& operator=(const private_key_type&) = default;
+        };
+
+        /// @brief  A parsed certificate, every pointer is a view into the encoded certificate it was parsed from.
+        class certificate_type final {
+        public:
+            /// @brief  The whole encoded certificate.
+            const unsigned char* encoded = nullptr;
+            unsigned long long int encoded_length = 0;
+
+            /// @brief  The encoded part of the certificate that is signed.
+            const unsigned char* signed_data = nullptr;
+            unsigned long long int signed_data_length = 0;
+
+            /// @brief  The version of the certificate format, from one to three.
+            unsigned int version = 1;
+
+            /// @brief  The serial number, as the contents of the encoded integer.
+            const unsigned char* serial_number = nullptr;
+            unsigned long long int serial_number_length = 0;
+
+            /// @brief  The way the certificate is signed, or unknown if it is not supported.
+            signature_scheme signature_algorithm = signature_scheme::unknown;
+
+            /// @brief  The signature of the signed data.
+            const unsigned char* signature = nullptr;
+            unsigned long long int signature_length = 0;
+
+            /// @brief  The encoded name of the issuer of the certificate.
+            const unsigned char* issuer = nullptr;
+            unsigned long long int issuer_length = 0;
+
+            /// @brief  The encoded name of the subject of the certificate.
+            const unsigned char* subject = nullptr;
+            unsigned long long int subject_length = 0;
+
+            /// @brief  The time the certificate becomes valid, in seconds since the start of 1970.
+            long long int not_before = 0;
+
+            /// @brief  The time the certificate stops being valid, in seconds since the start of 1970.
+            long long int not_after = 0;
+
+            /// @brief  The kind of public key the certificate holds, or unknown if it is not supported.
+            key_algorithm public_key_algorithm = key_algorithm::unknown;
+
+            /// @brief  The public key, an encoded sequence of the modulus and exponent for rsa, or a byte of 0x04 followed by the two coordinates for an elliptic curve.
+            const unsigned char* public_key = nullptr;
+            unsigned long long int public_key_length = 0;
+
+            /// @brief  The encoded public key with its algorithm.
+            const unsigned char* public_key_info = nullptr;
+            unsigned long long int public_key_info_length = 0;
+
+            /// @brief  Flag showing whether the certificate says it may issue other certificates.
+            bool is_authority = false;
+
+            /// @brief  Flag showing whether the number of levels of certificates below this one is limited.
+            bool has_path_length = false;
+
+            /// @brief  The number of certificates that may issue certificates allowed between this certificate and the last of a chain.
+            unsigned long long int path_length = 0;
+
+            /// @brief  Flag showing whether the uses of the key are restricted.
+            bool has_key_usage = false;
+
+            /// @brief  The allowed uses of the key, a combination of the key usage bits.
+            unsigned int key_usage = 0;
+
+            /// @brief  Flag showing whether the purposes of the certificate are restricted.
+            bool has_extended_key_usage = false;
+
+            /// @brief  Flag showing whether the purposes include authenticating a server.
+            bool is_server_authentication = false;
+
+            /// @brief  Flag showing whether the purposes include authenticating a client.
+            bool is_client_authentication = false;
+
+            /// @brief  The encoded alternative names of the subject, which are the host names and addresses the certificate is for.
+            const unsigned char* alternative_names = nullptr;
+            unsigned long long int alternative_names_length = 0;
+
+            /// @brief  Flag showing whether the certificate has an extension that is marked as critical and is not supported.
+            bool has_unsupported_critical_extension = false;
+        };
+
+        /// @brief  The name of the subject of a certificate to generate, parts that are null are left out.
+        class name_type final {
+        public:
+            /// @brief  The two letter code of the country.
+            const char* country = nullptr;
+
+            /// @brief  The state or province.
+            const char* state = nullptr;
+
+            /// @brief  The city or town.
+            const char* locality = nullptr;
+
+            /// @brief  The organisation.
+            const char* organisation = nullptr;
+
+            /// @brief  The part of the organisation.
+            const char* organisational_unit = nullptr;
+
+            /// @brief  The name of the subject itself.
+            const char* common_name = nullptr;
+        };
+
+        /// @brief  The description of a certificate to generate.
+        class description_type final {
+        public:
+            /// @brief  The name of the subject.
+            name_type subject;
+
+            /// @brief  The encoded name of the issuer, taken from the subject of the certificate of the issuer, or null if the certificate is signed by its own key.
+            const unsigned char* issuer = nullptr;
+            unsigned long long int issuer_length = 0;
+
+            /// @brief  The serial number, as a big endian number that should be unique for the issuer.
+            const unsigned char* serial_number = nullptr;
+            unsigned long long int serial_number_length = 0;
+
+            /// @brief  The time the certificate becomes valid, in seconds since the start of 1970.
+            long long int not_before = 0;
+
+            /// @brief  The time the certificate stops being valid, in seconds since the start of 1970.
+            long long int not_after = 0;
+
+            /// @brief  Flag selecting whether the certificate may issue other certificates.
+            bool is_authority = false;
+
+            /// @brief  Flag selecting whether the number of levels of certificates below this one is limited, only used for an authority.
+            bool has_path_length = false;
+
+            /// @brief  The number of certificates that may issue certificates allowed below this one.
+            unsigned int path_length = 0;
+
+            /// @brief  The host names the certificate is for, each is a domain name, which may start with a wildcard label, or an ip version four address.
+            const char* const* hosts = nullptr;
+            unsigned int hosts_length = 0;
+        };
+
+    private:
+        /// @brief  The encoded object identifiers that are used.
+        struct identifiers final {
+            constexpr static const unsigned char rsa_encryption[9] = { 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01 };
+            constexpr static const unsigned char rsa_pkcs1_sha1[9] = { 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x05 };
+            constexpr static const unsigned char rsa_pkcs1_sha2_256[9] = { 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0B };
+            constexpr static const unsigned char rsa_pkcs1_sha2_384[9] = { 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0C };
+            constexpr static const unsigned char rsa_pkcs1_sha2_512[9] = { 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0D };
+            constexpr static const unsigned char elliptic_curve_public_key[7] = { 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01 };
+            constexpr static const unsigned char secp256r1[8] = { 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07 };
+            constexpr static const unsigned char secp384r1[5] = { 0x2B, 0x81, 0x04, 0x00, 0x22 };
+            constexpr static const unsigned char ecdsa_sha1[7] = { 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x04, 0x01 };
+            constexpr static const unsigned char ecdsa_sha2_256[8] = { 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x04, 0x03, 0x02 };
+            constexpr static const unsigned char ecdsa_sha2_384[8] = { 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x04, 0x03, 0x03 };
+            constexpr static const unsigned char ecdsa_sha2_512[8] = { 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x04, 0x03, 0x04 };
+            constexpr static const unsigned char name_common_name[3] = { 0x55, 0x04, 0x03 };
+            constexpr static const unsigned char name_country[3] = { 0x55, 0x04, 0x06 };
+            constexpr static const unsigned char name_locality[3] = { 0x55, 0x04, 0x07 };
+            constexpr static const unsigned char name_state[3] = { 0x55, 0x04, 0x08 };
+            constexpr static const unsigned char name_organisation[3] = { 0x55, 0x04, 0x0A };
+            constexpr static const unsigned char name_organisational_unit[3] = { 0x55, 0x04, 0x0B };
+            constexpr static const unsigned char extension_subject_key_identifier[3] = { 0x55, 0x1D, 0x0E };
+            constexpr static const unsigned char extension_key_usage[3] = { 0x55, 0x1D, 0x0F };
+            constexpr static const unsigned char extension_alternative_names[3] = { 0x55, 0x1D, 0x11 };
+            constexpr static const unsigned char extension_basic_constraints[3] = { 0x55, 0x1D, 0x13 };
+            constexpr static const unsigned char extension_certificate_policies[3] = { 0x55, 0x1D, 0x20 };
+            constexpr static const unsigned char extension_authority_key_identifier[3] = { 0x55, 0x1D, 0x23 };
+            constexpr static const unsigned char extension_extended_key_usage[3] = { 0x55, 0x1D, 0x25 };
+            constexpr static const unsigned char purpose_any[4] = { 0x55, 0x1D, 0x25, 0x00 };
+            constexpr static const unsigned char purpose_server_authentication[8] = { 0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x01 };
+            constexpr static const unsigned char purpose_client_authentication[8] = { 0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x02 };
+        };
+
+        /// @brief  The tag of a domain name in a list of alternative names.
+        constexpr static const unsigned char tag_name_domain = 0x82;
+
+        /// @brief  The tag of an ip address in a list of alternative names.
+        constexpr static const unsigned char tag_name_address = 0x87;
+
+    private:
+        /// @brief  Check if an element is a particular object identifier.
+        /// @param  element The element.
+        /// @param  identifier The encoded object identifier.
+        /// @return true if the element is the object identifier.
+        template <unsigned long long int identifier_length>
+        static bool is_identifier(const gtl::asn1::element& element, const unsigned char (&identifier)[identifier_length]) {
+            return (element.tag == gtl::asn1::tag_object_identifier) && element.is_content(identifier, identifier_length);
+        }
+
+        /// @brief  Get the size of the coordinates of an elliptic curve.
+        /// @param  algorithm The kind of key.
+        /// @return The size of a coordinate in bytes, or zero if the kind of key is not an elliptic curve.
+        constexpr static unsigned int get_coordinate_size(const key_algorithm algorithm) {
+            switch (algorithm) {
+                case key_algorithm::secp256r1:
+                    return 256 / 8;
+                case key_algorithm::secp384r1:
+                    return 384 / 8;
+                case key_algorithm::unknown:
+                case key_algorithm::rsa:
+                    break;
+            }
+            return 0;
+        }
+
+        /// @brief  Get the hash function of a signature scheme.
+        /// @param  scheme The signature scheme.
+        /// @param  hash_type Receives the hash function.
+        /// @return true if the scheme is known.
+        constexpr static bool get_hash_type(const signature_scheme scheme, gtl::rsa::signature_hash_type& hash_type) {
+            switch (scheme) {
+                case signature_scheme::rsa_pkcs1_sha1:
+                case signature_scheme::ecdsa_sha1:
+                    hash_type = gtl::rsa::signature_hash_type::sha1;
+                    return true;
+                case signature_scheme::rsa_pkcs1_sha2_256:
+                case signature_scheme::rsa_pss_sha2_256:
+                case signature_scheme::ecdsa_sha2_256:
+                    hash_type = gtl::rsa::signature_hash_type::sha2_256;
+                    return true;
+                case signature_scheme::rsa_pkcs1_sha2_384:
+                case signature_scheme::rsa_pss_sha2_384:
+                case signature_scheme::ecdsa_sha2_384:
+                    hash_type = gtl::rsa::signature_hash_type::sha2_384;
+                    return true;
+                case signature_scheme::rsa_pkcs1_sha2_512:
+                case signature_scheme::rsa_pss_sha2_512:
+                case signature_scheme::ecdsa_sha2_512:
+                    hash_type = gtl::rsa::signature_hash_type::sha2_512;
+                    return true;
+                case signature_scheme::unknown:
+                    break;
+            }
+            return false;
+        }
+
+        /// @brief  Check if a signature scheme uses rsa with the older padding.
+        constexpr static bool is_rsa_pkcs1(const signature_scheme scheme) {
+            return (scheme == signature_scheme::rsa_pkcs1_sha1) || (scheme == signature_scheme::rsa_pkcs1_sha2_256) || (scheme == signature_scheme::rsa_pkcs1_sha2_384) || (scheme == signature_scheme::rsa_pkcs1_sha2_512);
+        }
+
+        /// @brief  Check if a signature scheme uses rsa with the probabilistic padding.
+        constexpr static bool is_rsa_pss(const signature_scheme scheme) {
+            return (scheme == signature_scheme::rsa_pss_sha2_256) || (scheme == signature_scheme::rsa_pss_sha2_384) || (scheme == signature_scheme::rsa_pss_sha2_512);
+        }
+
+        /// @brief  Check if a signature scheme uses an elliptic curve.
+        constexpr static bool is_ecdsa(const signature_scheme scheme) {
+            return (scheme == signature_scheme::ecdsa_sha1) || (scheme == signature_scheme::ecdsa_sha2_256) || (scheme == signature_scheme::ecdsa_sha2_384) || (scheme == signature_scheme::ecdsa_sha2_512);
+        }
+
+        /// @brief  Check if two buffers hold the same bytes.
+        constexpr static bool is_same(const unsigned char* lhs, const unsigned long long int lhs_length, const unsigned char* rhs, const unsigned long long int rhs_length) {
+            if ((lhs == nullptr) || (rhs == nullptr) || (lhs_length != rhs_length)) {
+                return false;
+            }
+            for (unsigned long long int i = 0; i < lhs_length; ++i) {
+                if (lhs[i] != rhs[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// @brief  Parse an algorithm identifier, which is a sequence of an object identifier and optional parameters.
+        /// @param  algorithm The element that holds the algorithm identifier.
+        /// @param  identifier Receives the object identifier.
+        /// @param  parameters Receives the parameters, with a tag of zero if there are none.
+        /// @return true if the algorithm identifier is well formed.
+        static bool parse_algorithm(const gtl::asn1::element& algorithm, gtl::asn1::element& identifier, gtl::asn1::element& parameters) {
+            if (algorithm.tag != gtl::asn1::tag_sequence) {
+                return false;
+            }
+            gtl::asn1::reader reader(algorithm);
+            if (!reader.read(gtl::asn1::tag_object_identifier, identifier)) {
+                return false;
+            }
+            parameters = gtl::asn1::element();
+            if (!reader.is_end() && !reader.read(parameters)) {
+                return false;
+            }
+            return reader.is_end();
+        }
+
+        /// @brief  Parse the algorithm identifier of a signature.
+        /// @param  algorithm The element that holds the algorithm identifier.
+        /// @param  scheme Receives the signature scheme, or unknown if it is not supported.
+        /// @return true if the algorithm identifier is well formed.
+        static bool parse_signature_algorithm(const gtl::asn1::element& algorithm, signature_scheme& scheme) {
+            gtl::asn1::element identifier;
+            gtl::asn1::element parameters;
+            if (!x509::parse_algorithm(algorithm, identifier, parameters)) {
+                return false;
+            }
+            scheme = signature_scheme::unknown;
+            // The rsa schemes have null parameters, which some certificates leave out, and the elliptic curve schemes have none.
+            const bool is_null_or_absent = (parameters.tag == 0) || gtl::asn1::decode_null(parameters);
+            const bool is_absent = (parameters.tag == 0);
+            if (x509::is_identifier(identifier, identifiers::rsa_pkcs1_sha1) && is_null_or_absent) {
+                scheme = signature_scheme::rsa_pkcs1_sha1;
+            }
+            else if (x509::is_identifier(identifier, identifiers::rsa_pkcs1_sha2_256) && is_null_or_absent) {
+                scheme = signature_scheme::rsa_pkcs1_sha2_256;
+            }
+            else if (x509::is_identifier(identifier, identifiers::rsa_pkcs1_sha2_384) && is_null_or_absent) {
+                scheme = signature_scheme::rsa_pkcs1_sha2_384;
+            }
+            else if (x509::is_identifier(identifier, identifiers::rsa_pkcs1_sha2_512) && is_null_or_absent) {
+                scheme = signature_scheme::rsa_pkcs1_sha2_512;
+            }
+            else if (x509::is_identifier(identifier, identifiers::ecdsa_sha1) && is_absent) {
+                scheme = signature_scheme::ecdsa_sha1;
+            }
+            else if (x509::is_identifier(identifier, identifiers::ecdsa_sha2_256) && is_absent) {
+                scheme = signature_scheme::ecdsa_sha2_256;
+            }
+            else if (x509::is_identifier(identifier, identifiers::ecdsa_sha2_384) && is_absent) {
+                scheme = signature_scheme::ecdsa_sha2_384;
+            }
+            else if (x509::is_identifier(identifier, identifiers::ecdsa_sha2_512) && is_absent) {
+                scheme = signature_scheme::ecdsa_sha2_512;
+            }
+            return true;
+        }
+
+        /// @brief  Parse the algorithm identifier of a key.
+        /// @param  algorithm The element that holds the algorithm identifier.
+        /// @param  key Receives the kind of key, or unknown if it is not supported.
+        /// @return true if the algorithm identifier is well formed.
+        static bool parse_key_algorithm(const gtl::asn1::element& algorithm, key_algorithm& key) {
+            gtl::asn1::element identifier;
+            gtl::asn1::element parameters;
+            if (!x509::parse_algorithm(algorithm, identifier, parameters)) {
+                return false;
+            }
+            key = key_algorithm::unknown;
+            if (x509::is_identifier(identifier, identifiers::rsa_encryption)) {
+                if ((parameters.tag == 0) || gtl::asn1::decode_null(parameters)) {
+                    key = key_algorithm::rsa;
+                }
+            }
+            else if (x509::is_identifier(identifier, identifiers::elliptic_curve_public_key)) {
+                if (x509::is_identifier(parameters, identifiers::secp256r1)) {
+                    key = key_algorithm::secp256r1;
+                }
+                else if (x509::is_identifier(parameters, identifiers::secp384r1)) {
+                    key = key_algorithm::secp384r1;
+                }
+            }
+            return true;
+        }
+
+        /// @brief  Parse an rsa public key, which is a sequence of the modulus and the public exponent.
+        /// @param  data The encoded key.
+        /// @param  length The length of the encoded key.
+        /// @param  key Receives the key.
+        /// @return true if the key is well formed and of an acceptable size.
+        static bool parse_rsa_public_key(const unsigned char* data, const unsigned long long int length, gtl::rsa::public_key_type& key) {
+            gtl::asn1::reader reader(data, length);
+            gtl::asn1::element sequence;
+            if (!reader.read(gtl::asn1::tag_sequence, sequence) || !reader.is_end()) {
+                return false;
+            }
+            gtl::asn1::reader reader_sequence(sequence);
+            gtl::asn1::element modulus;
+            gtl::asn1::element exponent;
+            if (!reader_sequence.read(gtl::asn1::tag_integer, modulus) || !reader_sequence.read(gtl::asn1::tag_integer, exponent) || !reader_sequence.is_end()) {
+                return false;
+            }
+            const unsigned char* modulus_bytes = nullptr;
+            unsigned long long int modulus_length = 0;
+            unsigned long long int exponent_value = 0;
+            if (!gtl::asn1::decode_unsigned(modulus, modulus_bytes, modulus_length) || !gtl::asn1::decode_integer(exponent, exponent_value)) {
+                return false;
+            }
+            // The modulus must be odd and of a reasonable size, and the exponent must be odd and greater than one.
+            if ((modulus_length < 64) || (modulus_length > x509::rsa_size_max) || ((modulus_bytes[modulus_length - 1] & 1) == 0) || (exponent_value < 3) || ((exponent_value & 1) == 0)) {
+                return false;
+            }
+            key.public_modulus = gtl::big_unsigned(modulus_bytes, modulus_length);
+            key.public_exponent = gtl::big_unsigned(exponent_value);
+            return true;
+        }
+
+        /// @brief  Parse an elliptic curve public key, which is a byte of 0x04 followed by the two coordinates.
+        /// @param  algorithm The curve of the key.
+        /// @param  data The encoded key.
+        /// @param  length The length of the encoded key.
+        /// @param  point Receives the two coordinates.
+        /// @return true if the key is the right length and is a point on the curve.
+        static bool parse_elliptic_curve_public_key(const key_algorithm algorithm, const unsigned char* data, const unsigned long long int length, unsigned char* point) {
+            const unsigned int coordinate_size = x509::get_coordinate_size(algorithm);
+            if ((coordinate_size == 0) || (data == nullptr) || (length != (1 + (2ull * coordinate_size))) || (data[0] != 0x04)) {
+                return false;
+            }
+            const bool valid = (algorithm == key_algorithm::secp256r1) ? gtl::elliptic_curve<gtl::elliptic_curve_type::secp256r1>::is_valid_public_key(&data[1]) : gtl::elliptic_curve<gtl::elliptic_curve_type::secp384r1>::is_valid_public_key(&data[1]);
+            if (!valid) {
+                return false;
+            }
+            for (unsigned int i = 0; i < (2 * coordinate_size); ++i) {
+                point[i] = data[1 + i];
+            }
+            return true;
+        }
+
+        /// @brief  Parse the extensions of a certificate.
+        /// @param  extensions The element that holds the sequence of extensions.
+        /// @param  certificate The certificate to fill in.
+        /// @return true if the extensions are well formed.
+        static bool parse_extensions(const gtl::asn1::element& extensions, certificate_type& certificate) {
+            if (extensions.tag != gtl::asn1::tag_sequence) {
+                return false;
+            }
+            bool seen_basic_constraints = false;
+            bool seen_alternative_names = false;
+            gtl::asn1::reader reader(extensions);
+            // A certificate with extensions must have at least one.
+            if (reader.is_end()) {
+                return false;
+            }
+            while (!reader.is_end()) {
+                gtl::asn1::element extension;
+                if (!reader.read(gtl::asn1::tag_sequence, extension)) {
+                    return false;
+                }
+                // Each extension is an object identifier, an optional flag that marks it as critical, and a string of bytes that holds its encoded value.
+                gtl::asn1::reader reader_extension(extension);
+                gtl::asn1::element identifier;
+                gtl::asn1::element value;
+                bool critical = false;
+                if (!reader_extension.read(gtl::asn1::tag_object_identifier, identifier)) {
+                    return false;
+                }
+                if (reader_extension.is_next(gtl::asn1::tag_boolean)) {
+                    gtl::asn1::element flag;
+                    if (!reader_extension.read(flag) || !gtl::asn1::decode_boolean(flag, critical)) {
+                        return false;
+                    }
+                }
+                if (!reader_extension.read(gtl::asn1::tag_octet_string, value) || !reader_extension.is_end()) {
+                    return false;
+                }
+                gtl::asn1::reader reader_value(value);
+
+                if (x509::is_identifier(identifier, identifiers::extension_basic_constraints)) {
+                    // A sequence of an optional flag that is set for an authority, and an optional path length.
+                    gtl::asn1::element constraints;
+                    if (seen_basic_constraints || !reader_value.read(gtl::asn1::tag_sequence, constraints) || !reader_value.is_end()) {
+                        return false;
+                    }
+                    seen_basic_constraints = true;
+                    gtl::asn1::reader reader_constraints(constraints);
+                    if (reader_constraints.is_next(gtl::asn1::tag_boolean)) {
+                        gtl::asn1::element flag;
+                        if (!reader_constraints.read(flag) || !gtl::asn1::decode_boolean(flag, certificate.is_authority)) {
+                            return false;
+                        }
+                    }
+                    if (reader_constraints.is_next(gtl::asn1::tag_integer)) {
+                        gtl::asn1::element path_length;
+                        if (!reader_constraints.read(path_length) || !gtl::asn1::decode_integer(path_length, certificate.path_length)) {
+                            return false;
+                        }
+                        certificate.has_path_length = true;
+                    }
+                    if (!reader_constraints.is_end()) {
+                        return false;
+                    }
+                }
+                else if (x509::is_identifier(identifier, identifiers::extension_key_usage)) {
+                    // A string of bits, of which only the first byte holds usages that matter here.
+                    gtl::asn1::element usage;
+                    const unsigned char* bits = nullptr;
+                    unsigned long long int bits_length = 0;
+                    unsigned int unused_bits = 0;
+                    if (certificate.has_key_usage || !reader_value.read(gtl::asn1::tag_bit_string, usage) || !reader_value.is_end() || !gtl::asn1::decode_bit_string(usage, bits, bits_length, unused_bits)) {
+                        return false;
+                    }
+                    certificate.has_key_usage = true;
+                    certificate.key_usage = (bits_length > 0) ? bits[0] : 0u;
+                }
+                else if (x509::is_identifier(identifier, identifiers::extension_extended_key_usage)) {
+                    // A sequence of object identifiers, one for each purpose.
+                    gtl::asn1::element purposes;
+                    if (certificate.has_extended_key_usage || !reader_value.read(gtl::asn1::tag_sequence, purposes) || !reader_value.is_end()) {
+                        return false;
+                    }
+                    certificate.has_extended_key_usage = true;
+                    gtl::asn1::reader reader_purposes(purposes);
+                    while (!reader_purposes.is_end()) {
+                        gtl::asn1::element purpose;
+                        if (!reader_purposes.read(gtl::asn1::tag_object_identifier, purpose)) {
+                            return false;
+                        }
+                        const bool is_any = x509::is_identifier(purpose, identifiers::purpose_any);
+                        certificate.is_server_authentication |= is_any || x509::is_identifier(purpose, identifiers::purpose_server_authentication);
+                        certificate.is_client_authentication |= is_any || x509::is_identifier(purpose, identifiers::purpose_client_authentication);
+                    }
+                }
+                else if (x509::is_identifier(identifier, identifiers::extension_alternative_names)) {
+                    // A sequence of names, each with a tag that says what kind of name it is.
+                    gtl::asn1::element names;
+                    if (seen_alternative_names || !reader_value.read(gtl::asn1::tag_sequence, names) || !reader_value.is_end()) {
+                        return false;
+                    }
+                    seen_alternative_names = true;
+                    gtl::asn1::reader reader_names(names);
+                    while (!reader_names.is_end()) {
+                        gtl::asn1::element name;
+                        if (!reader_names.read(name)) {
+                            return false;
+                        }
+                    }
+                    certificate.alternative_names = names.content;
+                    certificate.alternative_names_length = names.content_length;
+                }
+                else if (x509::is_identifier(identifier, identifiers::extension_certificate_policies) || x509::is_identifier(identifier, identifiers::extension_subject_key_identifier) || x509::is_identifier(identifier, identifiers::extension_authority_key_identifier)) {
+                    // These do not change whether a chain is valid for the checks that are made, so they are accepted and ignored.
+                }
+                else if (critical) {
+                    certificate.has_unsupported_critical_extension = true;
+                }
+            }
+            return true;
+        }
+
+        /// @brief  Convert an elliptic curve signature from its encoded form, a sequence of two integers, into two fixed size big endian values.
+        /// @param  signature The encoded signature.
+        /// @param  signature_length The length of the encoded signature.
+        /// @param  coordinate_size The size of each value in bytes.
+        /// @param  raw Receives the two values, must be twice the coordinate size.
+        /// @return true if the signature is well formed and the values fit.
+        static bool decode_ecdsa_signature(const unsigned char* signature, const unsigned long long int signature_length, const unsigned int coordinate_size, unsigned char* raw) {
+            gtl::asn1::reader reader(signature, signature_length);
+            gtl::asn1::element sequence;
+            if (!reader.read(gtl::asn1::tag_sequence, sequence) || !reader.is_end()) {
+                return false;
+            }
+            gtl::asn1::reader reader_sequence(sequence);
+            for (unsigned int value = 0; value < 2; ++value) {
+                gtl::asn1::element integer;
+                const unsigned char* bytes = nullptr;
+                unsigned long long int length = 0;
+                if (!reader_sequence.read(gtl::asn1::tag_integer, integer) || !gtl::asn1::decode_unsigned(integer, bytes, length) || (length > coordinate_size)) {
+                    return false;
+                }
+                unsigned char* output = &raw[value * coordinate_size];
+                for (unsigned int i = 0; i < coordinate_size; ++i) {
+                    output[i] = (i < (coordinate_size - length)) ? static_cast<unsigned char>(0) : bytes[i - (coordinate_size - length)];
+                }
+            }
+            return reader_sequence.is_end();
+        }
+
+        /// @brief  Compare two characters of a host name, ignoring the case of letters.
+        constexpr static bool is_same_character(const char lhs, const char rhs) {
+            const char lhs_lower = ((lhs >= 'A') && (lhs <= 'Z')) ? static_cast<char>(lhs - 'A' + 'a') : lhs;
+            const char rhs_lower = ((rhs >= 'A') && (rhs <= 'Z')) ? static_cast<char>(rhs - 'A' + 'a') : rhs;
+            return (lhs_lower == rhs_lower);
+        }
+
+        /// @brief  Check if a host name matches a domain name from a certificate.
+        /// @param  pattern The domain name from the certificate, which may start with a wildcard label.
+        /// @param  pattern_length The length of the domain name.
+        /// @param  host The host name.
+        /// @param  host_length The length of the host name.
+        /// @return true if the host name matches.
+        constexpr static bool is_domain_match(const unsigned char* pattern, unsigned long long int pattern_length, const char* host, unsigned long long int host_length) {
+            if ((pattern_length == 0) || (host_length == 0)) {
+                return false;
+            }
+            // A host name is never itself a wildcard.
+            for (unsigned long long int i = 0; i < host_length; ++i) {
+                if (host[i] == '*') {
+                    return false;
+                }
+            }
+            if ((pattern_length >= 2) && (pattern[0] == '*') && (pattern[1] == '.')) {
+                // A wildcard matches exactly one whole label, the first, and what follows it must be at least two labels.
+                bool has_dot = false;
+                for (unsigned long long int i = 2; i < pattern_length; ++i) {
+                    has_dot |= (pattern[i] == '.') && ((i + 1) < pattern_length);
+                    if (pattern[i] == '*') {
+                        return false;
+                    }
+                }
+                if (!has_dot) {
+                    return false;
+                }
+                unsigned long long int label_length = 0;
+                while ((label_length < host_length) && (host[label_length] != '.')) {
+                    ++label_length;
+                }
+                if ((label_length == 0) || (label_length == host_length)) {
+                    return false;
+                }
+                pattern += 1;
+                pattern_length -= 1;
+                host += label_length;
+                host_length -= label_length;
+            }
+            if (pattern_length != host_length) {
+                return false;
+            }
+            for (unsigned long long int i = 0; i < host_length; ++i) {
+                if ((pattern[i] == '*') || !x509::is_same_character(static_cast<char>(pattern[i]), host[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// @brief  Parse an ip version four address written as four decimal numbers separated by dots.
+        /// @param  host The text.
+        /// @param  host_length The length of the text.
+        /// @param  address Receives the four bytes of the address.
+        /// @return true if the text is an address.
+        constexpr static bool parse_address(const char* host, const unsigned long long int host_length, unsigned char* address) {
+            unsigned int part = 0;
+            unsigned int value = 0;
+            unsigned int digits = 0;
+            for (unsigned long long int i = 0; i <= host_length; ++i) {
+                if ((i == host_length) || (host[i] == '.')) {
+                    if ((digits == 0) || (part > 3)) {
+                        return false;
+                    }
+                    address[part++] = static_cast<unsigned char>(value);
+                    value = 0;
+                    digits = 0;
+                }
+                else if ((host[i] >= '0') && (host[i] <= '9')) {
+                    value = (value * 10) + static_cast<unsigned int>(host[i] - '0');
+                    if ((++digits > 3) || (value > 255)) {
+                        return false;
+                    }
+                }
+                else {
+                    return false;
+                }
+            }
+            return (part == 4);
+        }
+
+        /// @brief  Get the length of a null terminated string.
+        constexpr static unsigned long long int get_string_length(const char* string) {
+            unsigned long long int length = 0;
+            while (string[length] != 0) {
+                ++length;
+            }
+            return length;
+        }
+
+        /// @brief  Check the parts of a certificate that must be right whatever its position in a chain.
+        /// @param  certificate The certificate.
+        /// @param  time The time of verification, in seconds since the start of 1970.
+        /// @return valid if the checks pass, otherwise the reason they did not.
+        static status check_certificate(const certificate_type& certificate, const long long int time) {
+            if (certificate.encoded == nullptr) {
+                return status::invalid_chain;
+            }
+            if (time < certificate.not_before) {
+                return status::not_yet_valid;
+            }
+            if (time > certificate.not_after) {
+                return status::expired;
+            }
+            if (certificate.has_unsupported_critical_extension) {
+                return status::unsupported_extension;
+            }
+            return status::valid;
+        }
+
+        /// @brief  Check if a certificate is allowed to have issued another certificate in a chain.
+        /// @param  issuer The certificate of the issuer.
+        /// @param  is_trusted Flag showing whether the issuer is one of the trusted certificates.
+        /// @param  authorities_below The number of certificates that issue certificates between the issuer and the first certificate of the chain.
+        /// @return true if the issuer is allowed.
+        static bool is_issuer_allowed(const certificate_type& issuer, const bool is_trusted, const unsigned int authorities_below) {
+            // Old trusted certificates may be of a version that cannot say they are an authority, being trusted is enough for them.
+            if (!issuer.is_authority && !(is_trusted && (issuer.version < 3))) {
+                return false;
+            }
+            if (issuer.has_key_usage && ((issuer.key_usage & x509::key_usage_certificate_sign) == 0)) {
+                return false;
+            }
+            if (issuer.has_path_length && (issuer.path_length < authorities_below)) {
+                return false;
+            }
+            return true;
+        }
+
+    public:
+        /// @brief  Parse an encoded certificate.
+        /// @param  data The encoded certificate, which must not be changed or freed while the parsed certificate is in use.
+        /// @param  length The length of the encoded certificate, which must be exact.
+        /// @param  certificate Receives the parsed certificate.
+        /// @return true if the certificate is well formed, false otherwise.
+        /// @note   A certificate that uses an unsupported kind of key or signature is parsed, with those fields set to unknown.
+        static bool parse_certificate(const unsigned char* data, const unsigned long long int length, certificate_type& certificate) {
+            certificate_type parsed;
+            gtl::asn1::reader reader(data, length);
+            gtl::asn1::element whole;
+            if (!reader.read(gtl::asn1::tag_sequence, whole) || !reader.is_end()) {
+                return false;
+            }
+            parsed.encoded = whole.encoded;
+            parsed.encoded_length = whole.encoded_length;
+
+            // A certificate is the data that is signed, the algorithm of the signature, and the signature.
+            gtl::asn1::reader reader_whole(whole);
+            gtl::asn1::element signed_data;
+            gtl::asn1::element outer_algorithm;
+            gtl::asn1::element signature;
+            if (!reader_whole.read(gtl::asn1::tag_sequence, signed_data) || !reader_whole.read(gtl::asn1::tag_sequence, outer_algorithm) || !reader_whole.read(gtl::asn1::tag_bit_string, signature) || !reader_whole.is_end()) {
+                return false;
+            }
+            parsed.signed_data = signed_data.encoded;
+            parsed.signed_data_length = signed_data.encoded_length;
+            unsigned int unused_bits = 0;
+            if (!x509::parse_signature_algorithm(outer_algorithm, parsed.signature_algorithm) || !gtl::asn1::decode_bit_string(signature, parsed.signature, parsed.signature_length, unused_bits) || (unused_bits != 0)) {
+                return false;
+            }
+
+            gtl::asn1::reader reader_signed(signed_data);
+            // The version is optional, and when it is left out the certificate is version one.
+            if (reader_signed.is_next(gtl::asn1::tag_context_constructed(0))) {
+                gtl::asn1::element version_wrapper;
+                gtl::asn1::element version;
+                unsigned long long int version_value = 0;
+                if (!reader_signed.read(version_wrapper)) {
+                    return false;
+                }
+                gtl::asn1::reader reader_version(version_wrapper);
+                if (!reader_version.read(gtl::asn1::tag_integer, version) || !reader_version.is_end() || !gtl::asn1::decode_integer(version, version_value) || (version_value > 2)) {
+                    return false;
+                }
+                parsed.version = static_cast<unsigned int>(version_value) + 1;
+            }
+
+            gtl::asn1::element serial_number;
+            gtl::asn1::element inner_algorithm;
+            gtl::asn1::element issuer;
+            gtl::asn1::element validity;
+            gtl::asn1::element subject;
+            gtl::asn1::element public_key_info;
+            if (!reader_signed.read(gtl::asn1::tag_integer, serial_number) ||
+                !reader_signed.read(gtl::asn1::tag_sequence, inner_algorithm) ||
+                !reader_signed.read(gtl::asn1::tag_sequence, issuer) ||
+                !reader_signed.read(gtl::asn1::tag_sequence, validity) ||
+                !reader_signed.read(gtl::asn1::tag_sequence, subject) ||
+                !reader_signed.read(gtl::asn1::tag_sequence, public_key_info)) {
+                return false;
+            }
+            if (serial_number.content_length == 0) {
+                return false;
+            }
+            parsed.serial_number = serial_number.content;
+            parsed.serial_number_length = serial_number.content_length;
+            // The algorithm inside the signed data must be the same as the one outside it.
+            if (!x509::is_same(inner_algorithm.encoded, inner_algorithm.encoded_length, outer_algorithm.encoded, outer_algorithm.encoded_length)) {
+                return false;
+            }
+            parsed.issuer = issuer.encoded;
+            parsed.issuer_length = issuer.encoded_length;
+            parsed.subject = subject.encoded;
+            parsed.subject_length = subject.encoded_length;
+
+            gtl::asn1::reader reader_validity(validity);
+            gtl::asn1::element not_before;
+            gtl::asn1::element not_after;
+            gtl::asn1::time time_before;
+            gtl::asn1::time time_after;
+            if (!reader_validity.read(not_before) || !reader_validity.read(not_after) || !reader_validity.is_end() || !gtl::asn1::decode_time(not_before, time_before) || !gtl::asn1::decode_time(not_after, time_after)) {
+                return false;
+            }
+            parsed.not_before = time_before.to_seconds();
+            parsed.not_after = time_after.to_seconds();
+
+            gtl::asn1::reader reader_key(public_key_info);
+            gtl::asn1::element key_algorithm_element;
+            gtl::asn1::element key;
+            if (!reader_key.read(gtl::asn1::tag_sequence, key_algorithm_element) || !reader_key.read(gtl::asn1::tag_bit_string, key) || !reader_key.is_end()) {
+                return false;
+            }
+            if (!x509::parse_key_algorithm(key_algorithm_element, parsed.public_key_algorithm) || !gtl::asn1::decode_bit_string(key, parsed.public_key, parsed.public_key_length, unused_bits) || (unused_bits != 0)) {
+                return false;
+            }
+            parsed.public_key_info = public_key_info.encoded;
+            parsed.public_key_info_length = public_key_info.encoded_length;
+
+            // The optional unique identifiers are skipped, and the extensions are only allowed in version three.
+            if (reader_signed.is_next(gtl::asn1::tag_context_primitive(1))) {
+                gtl::asn1::element unique_identifier;
+                if ((parsed.version < 2) || !reader_signed.read(unique_identifier)) {
+                    return false;
+                }
+            }
+            if (reader_signed.is_next(gtl::asn1::tag_context_primitive(2))) {
+                gtl::asn1::element unique_identifier;
+                if ((parsed.version < 2) || !reader_signed.read(unique_identifier)) {
+                    return false;
+                }
+            }
+            if (reader_signed.is_next(gtl::asn1::tag_context_constructed(3))) {
+                gtl::asn1::element extensions_wrapper;
+                gtl::asn1::element extensions;
+                if ((parsed.version < 3) || !reader_signed.read(extensions_wrapper)) {
+                    return false;
+                }
+                gtl::asn1::reader reader_extensions(extensions_wrapper);
+                if (!reader_extensions.read(gtl::asn1::tag_sequence, extensions) || !reader_extensions.is_end() || !x509::parse_extensions(extensions, parsed)) {
+                    return false;
+                }
+            }
+            if (!reader_signed.is_end()) {
+                return false;
+            }
+            certificate = parsed;
+            return true;
+        }
+
+        /// @brief  Parse an encoded public key with its algorithm, the form that is held in a certificate.
+        /// @param  data The encoded public key.
+        /// @param  length The length of the encoded public key, which must be exact.
+        /// @param  key Receives the public key.
+        /// @return true if the key is well formed and of a supported kind, false otherwise.
+        static bool parse_public_key(const unsigned char* data, const unsigned long long int length, public_key_type& key) {
+            gtl::asn1::reader reader(data, length);
+            gtl::asn1::element public_key_info;
+            if (!reader.read(gtl::asn1::tag_sequence, public_key_info) || !reader.is_end()) {
+                return false;
+            }
+            gtl::asn1::reader reader_key(public_key_info);
+            gtl::asn1::element algorithm_element;
+            gtl::asn1::element key_element;
+            key_algorithm algorithm = key_algorithm::unknown;
+            const unsigned char* key_bytes = nullptr;
+            unsigned long long int key_length = 0;
+            unsigned int unused_bits = 0;
+            if (!reader_key.read(gtl::asn1::tag_sequence, algorithm_element) || !reader_key.read(gtl::asn1::tag_bit_string, key_element) || !reader_key.is_end()) {
+                return false;
+            }
+            if (!x509::parse_key_algorithm(algorithm_element, algorithm) || !gtl::asn1::decode_bit_string(key_element, key_bytes, key_length, unused_bits) || (unused_bits != 0)) {
+                return false;
+            }
+            public_key_type parsed;
+            parsed.algorithm = algorithm;
+            if (algorithm == key_algorithm::rsa) {
+                if (!x509::parse_rsa_public_key(key_bytes, key_length, parsed.rsa)) {
+                    return false;
+                }
+            }
+            else if (!x509::parse_elliptic_curve_public_key(algorithm, key_bytes, key_length, parsed.point)) {
+                return false;
+            }
+            key = parsed;
+            return true;
+        }
+
+        /// @brief  Get the public key of a certificate.
+        /// @param  certificate The certificate.
+        /// @param  key Receives the public key.
+        /// @return true if the key is well formed and of a supported kind, false otherwise.
+        static bool get_public_key(const certificate_type& certificate, public_key_type& key) {
+            return x509::parse_public_key(certificate.public_key_info, certificate.public_key_info_length, key);
+        }
+
+        /// @brief  Get the public key that corresponds to a private key.
+        /// @param  private_key The private key.
+        /// @param  key Receives the public key.
+        /// @return true if the private key is valid, false otherwise.
+        static bool get_public_key(const private_key_type& private_key, public_key_type& key) {
+            public_key_type derived;
+            derived.algorithm = private_key.algorithm;
+            switch (private_key.algorithm) {
+                case key_algorithm::rsa: {
+                    if ((private_key.rsa.public_modulus == 0) || (private_key.rsa.public_exponent == 0)) {
+                        return false;
+                    }
+                    derived.rsa.public_modulus = private_key.rsa.public_modulus;
+                    derived.rsa.public_exponent = private_key.rsa.public_exponent;
+                } break;
+                case key_algorithm::secp256r1: {
+                    if (!gtl::elliptic_curve<gtl::elliptic_curve_type::secp256r1>::generate_public_key(private_key.scalar, derived.point)) {
+                        return false;
+                    }
+                } break;
+                case key_algorithm::secp384r1: {
+                    if (!gtl::elliptic_curve<gtl::elliptic_curve_type::secp384r1>::generate_public_key(private_key.scalar, derived.point)) {
+                        return false;
+                    }
+                } break;
+                case key_algorithm::unknown:
+                    return false;
+            }
+            key = derived;
+            return true;
+        }
+
+        /// @brief  Parse an encoded private key.
+        /// @param  data The encoded private key, in the PKCS 8 form that holds any kind of key, the PKCS 1 form of an rsa key, or the SEC 1 form of an elliptic curve key.
+        /// @param  length The length of the encoded private key, which must be exact.
+        /// @param  key Receives the private key.
+        /// @return true if the key is well formed and of a supported kind, false otherwise.
+        /// @note   These are the forms held in the text blocks labelled "PRIVATE KEY", "RSA PRIVATE KEY", and "EC PRIVATE KEY", keys that are encrypted are not supported.
+        static bool parse_private_key(const unsigned char* data, const unsigned long long int length, private_key_type& key) {
+            gtl::asn1::reader reader(data, length);
+            gtl::asn1::element whole;
+            if (!reader.read(gtl::asn1::tag_sequence, whole) || !reader.is_end()) {
+                return false;
+            }
+            // Every form starts with a version, which along with what follows it tells them apart.
+            gtl::asn1::reader reader_whole(whole);
+            gtl::asn1::element version;
+            unsigned long long int version_value = 0;
+            if (!reader_whole.read(gtl::asn1::tag_integer, version) || !gtl::asn1::decode_integer(version, version_value)) {
+                return false;
+            }
+
+            key_algorithm algorithm = key_algorithm::unknown;
+            if ((version_value == 0) && reader_whole.is_next(gtl::asn1::tag_sequence)) {
+                // The form that holds any kind of key: an algorithm, then a string of bytes that holds one of the other forms.
+                gtl::asn1::element algorithm_element;
+                gtl::asn1::element inner;
+                if (!reader_whole.read(algorithm_element) || !reader_whole.read(gtl::asn1::tag_octet_string, inner) || !x509::parse_key_algorithm(algorithm_element, algorithm) || (algorithm == key_algorithm::unknown)) {
+                    return false;
+                }
+                gtl::asn1::reader reader_inner(inner);
+                if (!reader_inner.read(gtl::asn1::tag_sequence, whole) || !reader_inner.is_end()) {
+                    return false;
+                }
+                reader_whole = gtl::asn1::reader(whole);
+                if (!reader_whole.read(gtl::asn1::tag_integer, version) || !gtl::asn1::decode_integer(version, version_value)) {
+                    return false;
+                }
+                if ((algorithm == key_algorithm::rsa) != (version_value == 0)) {
+                    return false;
+                }
+            }
+
+            private_key_type parsed;
+            if (version_value == 0) {
+                // The rsa form: the modulus, the two exponents, the two primes, their two exponents, and the coefficient.
+                const unsigned char* bytes[8] = {};
+                unsigned long long int lengths[8] = {};
+                for (unsigned int i = 0; i < 8; ++i) {
+                    gtl::asn1::element number;
+                    if (!reader_whole.read(gtl::asn1::tag_integer, number) || !gtl::asn1::decode_unsigned(number, bytes[i], lengths[i]) || (lengths[i] > x509::rsa_size_max)) {
+                        return false;
+                    }
+                }
+                if (!reader_whole.is_end() || (lengths[0] < 64) || ((bytes[0][lengths[0] - 1] & 1) == 0)) {
+                    return false;
+                }
+                parsed.algorithm = key_algorithm::rsa;
+                parsed.rsa.public_modulus = gtl::big_unsigned(bytes[0], lengths[0]);
+                parsed.rsa.public_exponent = gtl::big_unsigned(bytes[1], lengths[1]);
+                parsed.rsa.private_exponent = gtl::big_unsigned(bytes[2], lengths[2]);
+                parsed.rsa.primes[0] = gtl::big_unsigned(bytes[3], lengths[3]);
+                parsed.rsa.primes[1] = gtl::big_unsigned(bytes[4], lengths[4]);
+                parsed.rsa.exponents[0] = gtl::big_unsigned(bytes[5], lengths[5]);
+                parsed.rsa.exponents[1] = gtl::big_unsigned(bytes[6], lengths[6]);
+                parsed.rsa.coefficient = gtl::big_unsigned(bytes[7], lengths[7]);
+                // The primes must multiply to give the modulus.
+                if ((parsed.rsa.primes[0] * parsed.rsa.primes[1]) != parsed.rsa.public_modulus) {
+                    return false;
+                }
+            }
+            else if (version_value == 1) {
+                // The elliptic curve form: the scalar as a string of bytes, then optionally the curve and the public key.
+                gtl::asn1::element scalar;
+                if (!reader_whole.read(gtl::asn1::tag_octet_string, scalar)) {
+                    return false;
+                }
+                if (reader_whole.is_next(gtl::asn1::tag_context_constructed(0))) {
+                    gtl::asn1::element curve_wrapper;
+                    gtl::asn1::element curve;
+                    if (!reader_whole.read(curve_wrapper)) {
+                        return false;
+                    }
+                    gtl::asn1::reader reader_curve(curve_wrapper);
+                    if (!reader_curve.read(gtl::asn1::tag_object_identifier, curve) || !reader_curve.is_end()) {
+                        return false;
+                    }
+                    key_algorithm curve_algorithm = key_algorithm::unknown;
+                    if (x509::is_identifier(curve, identifiers::secp256r1)) {
+                        curve_algorithm = key_algorithm::secp256r1;
+                    }
+                    else if (x509::is_identifier(curve, identifiers::secp384r1)) {
+                        curve_algorithm = key_algorithm::secp384r1;
+                    }
+                    // The curve must agree with any curve given by the outer form.
+                    if ((curve_algorithm == key_algorithm::unknown) || ((algorithm != key_algorithm::unknown) && (algorithm != curve_algorithm))) {
+                        return false;
+                    }
+                    algorithm = curve_algorithm;
+                }
+                if (reader_whole.is_next(gtl::asn1::tag_context_constructed(1))) {
+                    gtl::asn1::element public_key;
+                    if (!reader_whole.read(public_key)) {
+                        return false;
+                    }
+                }
+                const unsigned int coordinate_size = x509::get_coordinate_size(algorithm);
+                if (!reader_whole.is_end() || (coordinate_size == 0) || (scalar.content_length != coordinate_size)) {
+                    return false;
+                }
+                parsed.algorithm = algorithm;
+                for (unsigned int i = 0; i < coordinate_size; ++i) {
+                    parsed.scalar[i] = scalar.content[i];
+                }
+                const bool valid = (algorithm == key_algorithm::secp256r1) ? gtl::elliptic_curve<gtl::elliptic_curve_type::secp256r1>::is_valid_private_key(parsed.scalar) : gtl::elliptic_curve<gtl::elliptic_curve_type::secp384r1>::is_valid_private_key(parsed.scalar);
+                if (!valid) {
+                    return false;
+                }
+            }
+            else {
+                return false;
+            }
+            key = parsed;
+            return true;
+        }
+
+    public:
+        /// @brief  Get the size of the largest signature a private key can make.
+        /// @param  key The private key.
+        /// @return The size in bytes, or zero if the key is not valid.
+        static unsigned int get_signature_size(const private_key_type& key) {
+            if (key.algorithm == key_algorithm::rsa) {
+                return static_cast<unsigned int>(key.rsa.public_modulus.get_length_bytes());
+            }
+            // An encoded elliptic curve signature is two integers, each with up to three bytes of overhead, in a sequence with up to three bytes of overhead.
+            const unsigned int coordinate_size = x509::get_coordinate_size(key.algorithm);
+            return (coordinate_size == 0) ? 0 : ((2 * (coordinate_size + 3)) + 3);
+        }
+
+        /// @brief  Sign a message.
+        /// @param  key The private key to sign with.
+        /// @param  scheme The signature scheme, which must match the kind of key.
+        /// @param  message The message to sign.
+        /// @param  message_length The length of the message.
+        /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called, used by rsa keys, and may be empty for other keys.
+        /// @param  signature The buffer that receives the signature.
+        /// @param  signature_capacity The size of the buffer, get_signature_size(key) is always enough.
+        /// @param  signature_length Receives the length of the signature.
+        /// @return true if the message was signed, false otherwise in which case the signature is not written.
+        /// @note   An rsa signature is the size of the key, an elliptic curve signature is an encoded sequence of two integers.
+        static bool sign(const private_key_type& key, const signature_scheme scheme, const unsigned char* message, const unsigned long long int message_length, const std::function<unsigned int()>& random_generator, unsigned char* signature, const unsigned long long int signature_capacity, unsigned long long int& signature_length) {
+            gtl::rsa::signature_hash_type hash_type = gtl::rsa::signature_hash_type::sha2_256;
+            if ((signature == nullptr) || ((message == nullptr) && (message_length != 0)) || !x509::get_hash_type(scheme, hash_type)) {
+                return false;
+            }
+            unsigned char digest[gtl::rsa::signature_hash_size_max] = {};
+            const unsigned int digest_length = gtl::rsa::get_signature_hash_size(hash_type);
+            gtl::rsa::hash_message(hash_type, message, message_length, digest);
+
+            if (key.algorithm == key_algorithm::rsa) {
+                const unsigned long long int length = key.rsa.public_modulus.get_length_bytes();
+                if ((length > signature_capacity) || (length > x509::rsa_size_max) || !random_generator) {
+                    return false;
+                }
+                bool signed_digest = false;
+                if (x509::is_rsa_pkcs1(scheme)) {
+                    signed_digest = gtl::rsa::sign_pkcs1(random_generator, hash_type, digest, digest_length, key.rsa, signature, static_cast<unsigned int>(length));
+                }
+                else if (x509::is_rsa_pss(scheme)) {
+                    signed_digest = gtl::rsa::sign_pss(random_generator, hash_type, digest, digest_length, key.rsa, signature, static_cast<unsigned int>(length));
+                }
+                if (signed_digest) {
+                    signature_length = length;
+                }
+                return signed_digest;
+            }
+
+            const unsigned int coordinate_size = x509::get_coordinate_size(key.algorithm);
+            if ((coordinate_size == 0) || !x509::is_ecdsa(scheme)) {
+                return false;
+            }
+            unsigned char raw[2 * x509::coordinate_size_max] = {};
+            const bool signed_digest = (key.algorithm == key_algorithm::secp256r1) ? gtl::elliptic_curve<gtl::elliptic_curve_type::secp256r1>::sign(key.scalar, digest, digest_length, raw) : gtl::elliptic_curve<gtl::elliptic_curve_type::secp384r1>::sign(key.scalar, digest, digest_length, raw);
+            if (!signed_digest) {
+                return false;
+            }
+            unsigned char encoded[(2 * (x509::coordinate_size_max + 3)) + 3] = {};
+            gtl::asn1::writer writer(encoded, sizeof(encoded));
+            const unsigned long long int sequence = writer.begin(gtl::asn1::tag_sequence);
+            writer.write_unsigned(&raw[0], coordinate_size);
+            writer.write_unsigned(&raw[coordinate_size], coordinate_size);
+            writer.end(sequence);
+            if (!writer.is_valid() || (writer.get_length() > signature_capacity)) {
+                return false;
+            }
+            for (unsigned long long int i = 0; i < writer.get_length(); ++i) {
+                signature[i] = encoded[i];
+            }
+            signature_length = writer.get_length();
+            return true;
+        }
+
+        /// @brief  Verify a signature of a message.
+        /// @param  key The public key to verify with.
+        /// @param  scheme The signature scheme, which must match the kind of key.
+        /// @param  message The message that was signed.
+        /// @param  message_length The length of the message.
+        /// @param  signature The signature to verify.
+        /// @param  signature_length The length of the signature.
+        /// @return true if the signature is valid for the message, the key, and the scheme, false otherwise.
+        static bool verify_signature(const public_key_type& key, const signature_scheme scheme, const unsigned char* message, const unsigned long long int message_length, const unsigned char* signature, const unsigned long long int signature_length) {
+            gtl::rsa::signature_hash_type hash_type = gtl::rsa::signature_hash_type::sha2_256;
+            if ((signature == nullptr) || ((message == nullptr) && (message_length != 0)) || !x509::get_hash_type(scheme, hash_type)) {
+                return false;
+            }
+            unsigned char digest[gtl::rsa::signature_hash_size_max] = {};
+            const unsigned int digest_length = gtl::rsa::get_signature_hash_size(hash_type);
+            gtl::rsa::hash_message(hash_type, message, message_length, digest);
+
+            if (key.algorithm == key_algorithm::rsa) {
+                if (signature_length > x509::rsa_size_max) {
+                    return false;
+                }
+                if (x509::is_rsa_pkcs1(scheme)) {
+                    return gtl::rsa::verify_pkcs1(hash_type, digest, digest_length, key.rsa, signature, static_cast<unsigned int>(signature_length));
+                }
+                if (x509::is_rsa_pss(scheme)) {
+                    return gtl::rsa::verify_pss(hash_type, digest, digest_length, key.rsa, signature, static_cast<unsigned int>(signature_length));
+                }
+                return false;
+            }
+
+            const unsigned int coordinate_size = x509::get_coordinate_size(key.algorithm);
+            unsigned char raw[2 * x509::coordinate_size_max] = {};
+            if ((coordinate_size == 0) || !x509::is_ecdsa(scheme) || !x509::decode_ecdsa_signature(signature, signature_length, coordinate_size, raw)) {
+                return false;
+            }
+            if (key.algorithm == key_algorithm::secp256r1) {
+                return gtl::elliptic_curve<gtl::elliptic_curve_type::secp256r1>::verify(key.point, digest, digest_length, raw);
+            }
+            return gtl::elliptic_curve<gtl::elliptic_curve_type::secp384r1>::verify(key.point, digest, digest_length, raw);
+        }
+
+    public:
+        /// @brief  Verify that a certificate was issued by another, by checking the names and the signature.
+        /// @param  certificate The certificate to verify.
+        /// @param  issuer The certificate of the issuer.
+        /// @return true if the issuer of the certificate is the subject of the issuer and the certificate is signed by the key of the issuer.
+        /// @note   This does not check that the issuer is allowed to issue certificates, or anything else that verify_chain checks.
+        static bool verify_certificate(const certificate_type& certificate, const certificate_type& issuer) {
+            if (!x509::is_same(certificate.issuer, certificate.issuer_length, issuer.subject, issuer.subject_length)) {
+                return false;
+            }
+            public_key_type key;
+            if (!x509::get_public_key(issuer, key)) {
+                return false;
+            }
+            return x509::verify_signature(key, certificate.signature_algorithm, certificate.signed_data, certificate.signed_data_length, certificate.signature, certificate.signature_length);
+        }
+
+        /// @brief  Check if a certificate is for a host.
+        /// @param  certificate The certificate.
+        /// @param  host The host, either a domain name or an ip version four address, with null termination.
+        /// @return true if one of the alternative names of the certificate matches the host.
+        /// @note   A domain name in a certificate that starts with the label "*" matches any single label in its place.
+        /// @note   The common name of the subject is not used, as certificates are required to list their hosts as alternative names.
+        static bool is_host_match(const certificate_type& certificate, const char* host) {
+            if ((host == nullptr) || (certificate.alternative_names == nullptr)) {
+                return false;
+            }
+            unsigned long long int host_length = x509::get_string_length(host);
+            unsigned char address[4] = {};
+            const bool is_address = x509::parse_address(host, host_length, address);
+            // A fully qualified domain name may end with a dot, an address may not.
+            if ((host_length > 1) && (host[host_length - 1] == '.')) {
+                --host_length;
+            }
+            gtl::asn1::reader reader(certificate.alternative_names, certificate.alternative_names_length);
+            while (!reader.is_end()) {
+                gtl::asn1::element name;
+                if (!reader.read(name)) {
+                    return false;
+                }
+                if (is_address) {
+                    if ((name.tag == x509::tag_name_address) && name.is_content(address, 4)) {
+                        return true;
+                    }
+                }
+                else if ((name.tag == x509::tag_name_domain) && x509::is_domain_match(name.content, name.content_length, host, host_length)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// @brief  Verify a chain of certificates, as sent by a server, against a set of trusted certificates.
+        /// @param  chain The chain, the first certificate is the one to verify and the rest are the certificates that may have issued it and each other, in any order.
+        /// @param  chain_length The number of certificates in the chain, must be from one to chain_length_max.
+        /// @param  trusted The trusted certificates.
+        /// @param  trusted_length The number of trusted certificates.
+        /// @param  time The time of verification, in seconds since the start of 1970.
+        /// @param  host The host that the first certificate must be for, or null to not check the host or the purpose.
+        /// @return valid if a path of valid certificates leads from the first certificate to a trusted certificate, otherwise the reason it does not.
+        /// @note   The first certificate is also valid if it is itself one of the trusted certificates.
+        /// @note   Whether certificates have been revoked is not checked.
+        static status verify_chain(const certificate_type* chain, const unsigned int chain_length, const certificate_type* trusted, const unsigned int trusted_length, const long long int time, const char* host) {
+            if ((chain == nullptr) || (chain_length == 0) || (chain_length > x509::chain_length_max) || ((trusted == nullptr) && (trusted_length != 0))) {
+                return status::invalid_chain;
+            }
+            if (host != nullptr) {
+                if (!x509::is_host_match(chain[0], host)) {
+                    return status::host_mismatch;
+                }
+                if (chain[0].has_extended_key_usage && !chain[0].is_server_authentication) {
+                    return status::invalid_purpose;
+                }
+            }
+
+            bool used[x509::chain_length_max] = {};
+            used[0] = true;
+            const certificate_type* current = &chain[0];
+            for (unsigned int authorities_below = 0; authorities_below < x509::chain_length_max; ++authorities_below) {
+                const status current_status = x509::check_certificate(*current, time);
+                if (current_status != status::valid) {
+                    return current_status;
+                }
+
+                // A certificate that is itself trusted needs no issuer.
+                for (unsigned int i = 0; i < trusted_length; ++i) {
+                    if (x509::is_same(current->encoded, current->encoded_length, trusted[i].encoded, trusted[i].encoded_length)) {
+                        return status::valid;
+                    }
+                }
+
+                // Everything below a trusted certificate must be signed in a way that can be relied on.
+                if ((current->signature_algorithm == signature_scheme::rsa_pkcs1_sha1) || (current->signature_algorithm == signature_scheme::ecdsa_sha1)) {
+                    return status::weak_signature;
+                }
+
+                // Look for the issuer among the trusted certificates, which ends the chain.
+                status failure = status::unknown_issuer;
+                for (unsigned int i = 0; i < trusted_length; ++i) {
+                    if (!x509::is_same(current->issuer, current->issuer_length, trusted[i].subject, trusted[i].subject_length)) {
+                        continue;
+                    }
+                    if (!x509::verify_certificate(*current, trusted[i])) {
+                        failure = status::invalid_signature;
+                        continue;
+                    }
+                    const status trusted_status = x509::check_certificate(trusted[i], time);
+                    if (trusted_status != status::valid) {
+                        failure = trusted_status;
+                        continue;
+                    }
+                    if (!x509::is_issuer_allowed(trusted[i], true, authorities_below)) {
+                        failure = status::invalid_issuer;
+                        continue;
+                    }
+                    return status::valid;
+                }
+
+                // Look for the issuer among the rest of the chain, and continue from it.
+                const certificate_type* issuer = nullptr;
+                for (unsigned int i = 1; (i < chain_length) && (issuer == nullptr); ++i) {
+                    if (used[i] || !x509::is_same(current->issuer, current->issuer_length, chain[i].subject, chain[i].subject_length)) {
+                        continue;
+                    }
+                    // A copy of the certificate itself is not its issuer, even when it is signed by its own key.
+                    if (x509::is_same(current->encoded, current->encoded_length, chain[i].encoded, chain[i].encoded_length)) {
+                        continue;
+                    }
+                    if (!x509::verify_certificate(*current, chain[i])) {
+                        failure = status::invalid_signature;
+                        continue;
+                    }
+                    if (!x509::is_issuer_allowed(chain[i], false, authorities_below)) {
+                        failure = status::invalid_issuer;
+                        continue;
+                    }
+                    used[i] = true;
+                    issuer = &chain[i];
+                }
+                if (issuer == nullptr) {
+                    return failure;
+                }
+                current = issuer;
+            }
+            return status::invalid_chain;
+        }
+
+    private:
+        /// @brief  Write one part of a name, which is a set of a sequence of an object identifier and a string.
+        template <unsigned long long int identifier_length>
+        static void write_name_part(gtl::asn1::writer& writer, const unsigned char (&identifier)[identifier_length], const unsigned char tag, const char* value) {
+            if (value == nullptr) {
+                return;
+            }
+            const unsigned long long int set = writer.begin(gtl::asn1::tag_set);
+            const unsigned long long int sequence = writer.begin(gtl::asn1::tag_sequence);
+            writer.write_object_identifier(identifier, identifier_length);
+            writer.write_string(tag, value);
+            writer.end(sequence);
+            writer.end(set);
+        }
+
+        /// @brief  Write a name.
+        static void write_name(gtl::asn1::writer& writer, const name_type& name) {
+            const unsigned long long int sequence = writer.begin(gtl::asn1::tag_sequence);
+            x509::write_name_part(writer, identifiers::name_country, gtl::asn1::tag_printable_string, name.country);
+            x509::write_name_part(writer, identifiers::name_state, gtl::asn1::tag_utf8_string, name.state);
+            x509::write_name_part(writer, identifiers::name_locality, gtl::asn1::tag_utf8_string, name.locality);
+            x509::write_name_part(writer, identifiers::name_organisation, gtl::asn1::tag_utf8_string, name.organisation);
+            x509::write_name_part(writer, identifiers::name_organisational_unit, gtl::asn1::tag_utf8_string, name.organisational_unit);
+            x509::write_name_part(writer, identifiers::name_common_name, gtl::asn1::tag_utf8_string, name.common_name);
+            writer.end(sequence);
+        }
+
+        /// @brief  Write the algorithm identifier of a signature scheme.
+        /// @return true if the scheme can be used to sign certificates.
+        static bool write_signature_algorithm(gtl::asn1::writer& writer, const signature_scheme scheme) {
+            const unsigned long long int sequence = writer.begin(gtl::asn1::tag_sequence);
+            switch (scheme) {
+                case signature_scheme::rsa_pkcs1_sha2_256: {
+                    writer.write_object_identifier(identifiers::rsa_pkcs1_sha2_256, sizeof(identifiers::rsa_pkcs1_sha2_256));
+                    writer.write_null();
+                } break;
+                case signature_scheme::rsa_pkcs1_sha2_384: {
+                    writer.write_object_identifier(identifiers::rsa_pkcs1_sha2_384, sizeof(identifiers::rsa_pkcs1_sha2_384));
+                    writer.write_null();
+                } break;
+                case signature_scheme::rsa_pkcs1_sha2_512: {
+                    writer.write_object_identifier(identifiers::rsa_pkcs1_sha2_512, sizeof(identifiers::rsa_pkcs1_sha2_512));
+                    writer.write_null();
+                } break;
+                case signature_scheme::ecdsa_sha2_256: {
+                    writer.write_object_identifier(identifiers::ecdsa_sha2_256, sizeof(identifiers::ecdsa_sha2_256));
+                } break;
+                case signature_scheme::ecdsa_sha2_384: {
+                    writer.write_object_identifier(identifiers::ecdsa_sha2_384, sizeof(identifiers::ecdsa_sha2_384));
+                } break;
+                case signature_scheme::ecdsa_sha2_512: {
+                    writer.write_object_identifier(identifiers::ecdsa_sha2_512, sizeof(identifiers::ecdsa_sha2_512));
+                } break;
+                case signature_scheme::unknown:
+                case signature_scheme::rsa_pkcs1_sha1:
+                case signature_scheme::ecdsa_sha1:
+                case signature_scheme::rsa_pss_sha2_256:
+                case signature_scheme::rsa_pss_sha2_384:
+                case signature_scheme::rsa_pss_sha2_512:
+                    return false;
+            }
+            writer.end(sequence);
+            return true;
+        }
+
+        /// @brief  Write a public key with its algorithm.
+        /// @return true if the key is of a supported kind and size.
+        static bool write_public_key(gtl::asn1::writer& writer, const public_key_type& key) {
+            const unsigned long long int sequence = writer.begin(gtl::asn1::tag_sequence);
+            const unsigned char unused_bits[1] = { 0 };
+            if (key.algorithm == key_algorithm::rsa) {
+                unsigned char number[x509::rsa_size_max] = {};
+                const unsigned long long int modulus_length = key.rsa.public_modulus.get_length_bytes();
+                const unsigned long long int exponent_length = key.rsa.public_exponent.get_length_bytes();
+                if ((modulus_length == 0) || (modulus_length > x509::rsa_size_max) || (exponent_length == 0) || (exponent_length > x509::rsa_size_max)) {
+                    return false;
+                }
+                const unsigned long long int algorithm = writer.begin(gtl::asn1::tag_sequence);
+                writer.write_object_identifier(identifiers::rsa_encryption, sizeof(identifiers::rsa_encryption));
+                writer.write_null();
+                writer.end(algorithm);
+                const unsigned long long int bits = writer.begin(gtl::asn1::tag_bit_string);
+                writer.write_encoded(unused_bits, 1);
+                const unsigned long long int numbers = writer.begin(gtl::asn1::tag_sequence);
+                key.rsa.public_modulus.to_bytes(number, modulus_length, true);
+                writer.write_unsigned(number, modulus_length);
+                key.rsa.public_exponent.to_bytes(number, exponent_length, true);
+                writer.write_unsigned(number, exponent_length);
+                writer.end(numbers);
+                writer.end(bits);
+            }
+            else {
+                const unsigned int coordinate_size = x509::get_coordinate_size(key.algorithm);
+                if (coordinate_size == 0) {
+                    return false;
+                }
+                const unsigned long long int algorithm = writer.begin(gtl::asn1::tag_sequence);
+                writer.write_object_identifier(identifiers::elliptic_curve_public_key, sizeof(identifiers::elliptic_curve_public_key));
+                if (key.algorithm == key_algorithm::secp256r1) {
+                    writer.write_object_identifier(identifiers::secp256r1, sizeof(identifiers::secp256r1));
+                }
+                else {
+                    writer.write_object_identifier(identifiers::secp384r1, sizeof(identifiers::secp384r1));
+                }
+                writer.end(algorithm);
+                const unsigned long long int bits = writer.begin(gtl::asn1::tag_bit_string);
+                writer.write_encoded(unused_bits, 1);
+                const unsigned char uncompressed[1] = { 0x04 };
+                writer.write_encoded(uncompressed, 1);
+                writer.write_encoded(key.point, 2ull * coordinate_size);
+                writer.end(bits);
+            }
+            writer.end(sequence);
+            return true;
+        }
+
+        /// @brief  Start an extension, leaving the writer inside the string of bytes that holds its value.
+        /// @param  markers Receives the markers to pass to end_extension.
+        template <unsigned long long int identifier_length>
+        static void begin_extension(gtl::asn1::writer& writer, const unsigned char (&identifier)[identifier_length], const bool critical, unsigned long long int* markers) {
+            markers[0] = writer.begin(gtl::asn1::tag_sequence);
+            writer.write_object_identifier(identifier, identifier_length);
+            if (critical) {
+                writer.write_boolean(true);
+            }
+            markers[1] = writer.begin(gtl::asn1::tag_octet_string);
+        }
+
+        /// @brief  Finish an extension.
+        static void end_extension(gtl::asn1::writer& writer, const unsigned long long int* markers) {
+            writer.end(markers[1]);
+            writer.end(markers[0]);
+        }
+
+        /// @brief  Compute the identifier of a public key, which is the sha1 hash of the key as it is held in a certificate.
+        /// @param  key The public key.
+        /// @param  identifier Receives the identifier, must be twenty bytes long.
+        /// @return true if the key is of a supported kind and size.
+        static bool get_key_identifier(const public_key_type& key, unsigned char* identifier) {
+            unsigned char encoded[x509::rsa_size_max + 64] = {};
+            gtl::asn1::writer writer(encoded, sizeof(encoded));
+            if (!x509::write_public_key(writer, key) || !writer.is_valid()) {
+                return false;
+            }
+            // The identifier covers the contents of the string of bits that holds the key, without its count of unused bits.
+            gtl::asn1::reader reader(encoded, writer.get_length());
+            gtl::asn1::element public_key_info;
+            gtl::asn1::element algorithm;
+            gtl::asn1::element bits;
+            if (!reader.read(gtl::asn1::tag_sequence, public_key_info)) {
+                return false;
+            }
+            gtl::asn1::reader reader_key(public_key_info);
+            if (!reader_key.read(gtl::asn1::tag_sequence, algorithm) || !reader_key.read(gtl::asn1::tag_bit_string, bits) || (bits.content_length < 1)) {
+                return false;
+            }
+            gtl::rsa::hash_message(gtl::rsa::signature_hash_type::sha1, bits.content + 1, bits.content_length - 1, identifier);
+            return true;
+        }
+
+    public:
+        /// @brief  Encode a public key with its algorithm, the form that is held in a certificate.
+        /// @param  key The public key.
+        /// @param  output The buffer that receives the encoded key.
+        /// @param  output_capacity The size of the buffer.
+        /// @param  output_length Receives the length of the encoded key.
+        /// @return true if the key was encoded, false if the key is not valid or the buffer is too small.
+        static bool encode_public_key(const public_key_type& key, unsigned char* output, const unsigned long long int output_capacity, unsigned long long int& output_length) {
+            gtl::asn1::writer writer(output, output_capacity);
+            if (!x509::write_public_key(writer, key) || !writer.is_valid()) {
+                return false;
+            }
+            output_length = writer.get_length();
+            return true;
+        }
+
+        /// @brief  Generate a certificate.
+        /// @param  description The description of the certificate.
+        /// @param  subject_key The public key of the subject, which the certificate is for.
+        /// @param  issuer_key The private key of the issuer, which signs the certificate, for a certificate signed by its own key this is the private key of the subject.
+        /// @param  scheme The signature scheme, which must match the kind of key of the issuer, and cannot use sha1 or the probabilistic rsa padding.
+        /// @param  random_generator A function that returns 32 uniformly distributed random bits each time it is called, used by rsa keys, and may be empty for other keys.
+        /// @param  output The buffer that receives the encoded certificate.
+        /// @param  output_capacity The size of the buffer.
+        /// @param  output_length Receives the length of the encoded certificate.
+        /// @return true if the certificate was generated, false if the description or the keys are not valid or the buffer is too small.
+        /// @note   An authority is allowed to sign certificates, and anything else is allowed to authenticate as a server or a client.
+        static bool generate_certificate(const description_type& description, const public_key_type& subject_key, const private_key_type& issuer_key, const signature_scheme scheme, const std::function<unsigned int()>& random_generator, unsigned char* output, const unsigned long long int output_capacity, unsigned long long int& output_length) {
+            if ((description.serial_number == nullptr) || (description.serial_number_length == 0) || (description.serial_number_length > 20) || ((description.hosts == nullptr) && (description.hosts_length != 0)) || (description.not_after < description.not_before)) {
+                return false;
+            }
+            const gtl::asn1::time not_before = gtl::asn1::time::from_seconds(description.not_before);
+            const gtl::asn1::time not_after = gtl::asn1::time::from_seconds(description.not_after);
+            if (!not_before.is_valid() || !not_after.is_valid()) {
+                return false;
+            }
+            // The keys are identified in the certificate, so that the certificate of the issuer can be found by its key.
+            public_key_type issuer_public_key;
+            unsigned char subject_key_identifier[20] = {};
+            unsigned char issuer_key_identifier[20] = {};
+            if (!x509::get_public_key(issuer_key, issuer_public_key) || !x509::get_key_identifier(issuer_public_key, issuer_key_identifier) || !x509::get_key_identifier(subject_key, subject_key_identifier)) {
+                return false;
+            }
+
+            gtl::asn1::writer writer(output, output_capacity);
+            const unsigned long long int whole = writer.begin(gtl::asn1::tag_sequence);
+            const unsigned long long int signed_data_offset = writer.get_length();
+            const unsigned long long int signed_data = writer.begin(gtl::asn1::tag_sequence);
+            {
+                // Version three, which is encoded as two.
+                const unsigned long long int version = writer.begin(gtl::asn1::tag_context_constructed(0));
+                writer.write_integer(2);
+                writer.end(version);
+            }
+            writer.write_unsigned(description.serial_number, description.serial_number_length);
+            if (!x509::write_signature_algorithm(writer, scheme)) {
+                return false;
+            }
+            if (description.issuer != nullptr) {
+                writer.write_encoded(description.issuer, description.issuer_length);
+            }
+            else {
+                x509::write_name(writer, description.subject);
+            }
+            {
+                const unsigned long long int validity = writer.begin(gtl::asn1::tag_sequence);
+                writer.write_time(not_before);
+                writer.write_time(not_after);
+                writer.end(validity);
+            }
+            x509::write_name(writer, description.subject);
+            if (!x509::write_public_key(writer, subject_key)) {
+                return false;
+            }
+            {
+                const unsigned long long int extensions_wrapper = writer.begin(gtl::asn1::tag_context_constructed(3));
+                const unsigned long long int extensions = writer.begin(gtl::asn1::tag_sequence);
+                unsigned long long int markers[2] = {};
+                {
+                    // Whether the certificate is an authority, and the limit on the levels below it.
+                    x509::begin_extension(writer, identifiers::extension_basic_constraints, true, markers);
+                    const unsigned long long int constraints = writer.begin(gtl::asn1::tag_sequence);
+                    if (description.is_authority) {
+                        writer.write_boolean(true);
+                        if (description.has_path_length) {
+                            writer.write_integer(description.path_length);
+                        }
+                    }
+                    writer.end(constraints);
+                    x509::end_extension(writer, markers);
+                }
+                {
+                    // The uses of the key, as a string of bits with the unused low bits of the byte counted.
+                    x509::begin_extension(writer, identifiers::extension_key_usage, true, markers);
+                    const unsigned char usage_authority[2] = { 1, static_cast<unsigned char>(x509::key_usage_digital_signature | x509::key_usage_certificate_sign | x509::key_usage_revocation_list_sign) };
+                    const unsigned char usage_rsa[2] = { 5, static_cast<unsigned char>(x509::key_usage_digital_signature | x509::key_usage_key_encipherment) };
+                    const unsigned char usage_other[2] = { 7, static_cast<unsigned char>(x509::key_usage_digital_signature) };
+                    writer.write(gtl::asn1::tag_bit_string, description.is_authority ? usage_authority : ((subject_key.algorithm == key_algorithm::rsa) ? usage_rsa : usage_other), 2);
+                    x509::end_extension(writer, markers);
+                }
+                {
+                    // The identifier of the key of the subject.
+                    x509::begin_extension(writer, identifiers::extension_subject_key_identifier, false, markers);
+                    writer.write_octet_string(subject_key_identifier, sizeof(subject_key_identifier));
+                    x509::end_extension(writer, markers);
+                }
+                {
+                    // The identifier of the key of the issuer, in a sequence that could also hold the name and serial number of its certificate.
+                    x509::begin_extension(writer, identifiers::extension_authority_key_identifier, false, markers);
+                    const unsigned long long int identifier = writer.begin(gtl::asn1::tag_sequence);
+                    writer.write(gtl::asn1::tag_context_primitive(0), issuer_key_identifier, sizeof(issuer_key_identifier));
+                    writer.end(identifier);
+                    x509::end_extension(writer, markers);
+                }
+                if (!description.is_authority) {
+                    // The purposes of the certificate.
+                    x509::begin_extension(writer, identifiers::extension_extended_key_usage, false, markers);
+                    const unsigned long long int purposes = writer.begin(gtl::asn1::tag_sequence);
+                    writer.write_object_identifier(identifiers::purpose_server_authentication, sizeof(identifiers::purpose_server_authentication));
+                    writer.write_object_identifier(identifiers::purpose_client_authentication, sizeof(identifiers::purpose_client_authentication));
+                    writer.end(purposes);
+                    x509::end_extension(writer, markers);
+                }
+                if (description.hosts_length != 0) {
+                    // The hosts the certificate is for.
+                    x509::begin_extension(writer, identifiers::extension_alternative_names, false, markers);
+                    const unsigned long long int names = writer.begin(gtl::asn1::tag_sequence);
+                    for (unsigned int i = 0; i < description.hosts_length; ++i) {
+                        const char* host = description.hosts[i];
+                        if ((host == nullptr) || (host[0] == 0)) {
+                            return false;
+                        }
+                        const unsigned long long int host_length = x509::get_string_length(host);
+                        unsigned char address[4] = {};
+                        if (x509::parse_address(host, host_length, address)) {
+                            writer.write(x509::tag_name_address, address, 4);
+                        }
+                        else {
+                            writer.write(x509::tag_name_domain, reinterpret_cast<const unsigned char*>(host), host_length);
+                        }
+                    }
+                    writer.end(names);
+                    x509::end_extension(writer, markers);
+                }
+                writer.end(extensions);
+                writer.end(extensions_wrapper);
+            }
+            writer.end(signed_data);
+            if (!writer.is_valid()) {
+                return false;
+            }
+
+            // Sign what has been written so far, which is not changed by what follows.
+            unsigned char signature[x509::signature_size_max] = {};
+            unsigned long long int signature_length = 0;
+            if (!x509::sign(issuer_key, scheme, &output[signed_data_offset], writer.get_length() - signed_data_offset, random_generator, signature, sizeof(signature), signature_length)) {
+                return false;
+            }
+            if (!x509::write_signature_algorithm(writer, scheme)) {
+                return false;
+            }
+            writer.write_bit_string(signature, signature_length);
+            writer.end(whole);
+            if (!writer.is_valid()) {
+                return false;
+            }
+            output_length = writer.get_length();
+            return true;
+        }
+    };
+}
+
+#endif // GTL_CRYPTO_CERTIFICATE_X509_HPP

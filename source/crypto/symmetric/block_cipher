@@ -293,7 +293,7 @@ namespace gtl {
             ctr_bytes<cipher_type>(k, ctr, false, data, length, output);
         }
 
-        static void siv_dbl(const unsigned char* in, unsigned char* out) {
+        [[maybe_unused]] static void siv_dbl(const unsigned char* in, unsigned char* out) {
             unsigned char carry = 0;
             for (int i = 15; i >= 0; --i) {
                 const unsigned char next = static_cast<unsigned char>((in[i] >> 7) & 1);

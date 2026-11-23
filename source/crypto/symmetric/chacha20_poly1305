@@ -1,0 +1,177 @@
+/*
+Copyright (C) 2018-2024 Geoffrey Daniels. https://gpdaniels.com/
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License only.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+#ifndef GTL_CRYPTO_SYMMETRIC_CHACHA20_POLY1305_HPP
+#define GTL_CRYPTO_SYMMETRIC_CHACHA20_POLY1305_HPP
+
+// Summary: An implementation of the chacha20-poly1305 authenticated encryption algorithm as per RFC 8439.
+
+#include <crypto/mac/poly1305>
+#include <crypto/symmetric/chacha>
+
+namespace gtl {
+    /// @brief  The chacha20_poly1305 class encrypts data with chacha20 and authenticates it, along with any additional data, with poly1305.
+    /// @note   A nonce must never be used for more than one message with the same key.
+    class chacha20_poly1305 final {
+    public:
+        /// @brief  Size of the key in bytes.
+        constexpr static const unsigned int key_size = 32;
+
+        /// @brief  Size of the nonce in bytes.
+        constexpr static const unsigned int iv_size = 12;
+
+        /// @brief  Size of the authentication tag in bytes.
+        constexpr static const unsigned int tag_size = 16;
+
+    private:
+        /// @brief  The stream cipher, using the four byte block counter and twelve byte nonce of RFC 8439.
+        using cipher_type = gtl::chacha<gtl::chacha_mode::ctr_32, 20>;
+
+    private:
+        /// @brief  Overwrite a buffer with zeros in a way that is not optimised away.
+        /// @param  buffer The buffer to overwrite.
+        /// @param  length The length of the buffer.
+        static void wipe(unsigned char* buffer, const unsigned int length) {
+            volatile unsigned char* bytes = buffer;
+            for (unsigned int index = 0; index < length; ++index) {
+                bytes[index] = 0;
+            }
+        }
+
+        /// @brief  Build the initialisation vector of the stream cipher from a block counter and the nonce.
+        /// @param  counter The block counter.
+        /// @param  iv The nonce, must be iv_size bytes long.
+        /// @param  cipher_iv The buffer that receives the initialisation vector, must be sixteen bytes long.
+        static void make_cipher_iv(const unsigned int counter, const unsigned char* iv, unsigned char* cipher_iv) {
+            cipher_iv[0] = static_cast<unsigned char>((counter >> 0) & 0xFF);
+            cipher_iv[1] = static_cast<unsigned char>((counter >> 8) & 0xFF);
+            cipher_iv[2] = static_cast<unsigned char>((counter >> 16) & 0xFF);
+            cipher_iv[3] = static_cast<unsigned char>((counter >> 24) & 0xFF);
+            for (unsigned int i = 0; i < chacha20_poly1305::iv_size; ++i) {
+                cipher_iv[4 + i] = iv[i];
+            }
+        }
+
+        /// @brief  Compute the authentication tag of the additional data and the encrypted data.
+        /// @param  key The key, must be key_size bytes long.
+        /// @param  iv The nonce, must be iv_size bytes long.
+        /// @param  aad The additional data.
+        /// @param  aad_length The length of the additional data.
+        /// @param  encrypted The encrypted data.
+        /// @param  length The length of the encrypted data.
+        /// @param  tag The buffer that receives the tag, must be tag_size bytes long.
+        static void compute_tag(const unsigned char* key, const unsigned char* iv, const unsigned char* aad, const unsigned int aad_length, const unsigned char* encrypted, const unsigned int length, unsigned char* tag) {
+            // The one time authentication key is the start of the cipher stream of block zero.
+            unsigned char cipher_iv[cipher_type::nonce_size] = {};
+            chacha20_poly1305::make_cipher_iv(0, iv, cipher_iv);
+            gtl::poly1305::key_type authentication_key;
+            const unsigned char zeros[gtl::poly1305::key_size] = {};
+            cipher_type::encrypt(zeros, gtl::poly1305::key_size, key, cipher_iv, authentication_key.data);
+
+            // The tag covers the additional data and the encrypted data, each padded with zeros to a multiple of sixteen bytes, then their lengths.
+            gtl::poly1305 authenticator(authentication_key);
+            const char padding[16] = {};
+            if (aad_length > 0) {
+                authenticator.consume(reinterpret_cast<const char*>(aad), aad_length);
+            }
+            if ((aad_length % 16) != 0) {
+                authenticator.consume(padding, 16 - (aad_length % 16));
+            }
+            if (length > 0) {
+                authenticator.consume(reinterpret_cast<const char*>(encrypted), length);
+            }
+            if ((length % 16) != 0) {
+                authenticator.consume(padding, 16 - (length % 16));
+            }
+            const char lengths[16] = {
+                static_cast<char>((aad_length >> 0) & 0xFF),
+                static_cast<char>((aad_length >> 8) & 0xFF),
+                static_cast<char>((aad_length >> 16) & 0xFF),
+                static_cast<char>((aad_length >> 24) & 0xFF),
+                0,
+                0,
+                0,
+                0,
+                static_cast<char>((length >> 0) & 0xFF),
+                static_cast<char>((length >> 8) & 0xFF),
+                static_cast<char>((length >> 16) & 0xFF),
+                static_cast<char>((length >> 24) & 0xFF),
+                0,
+                0,
+                0,
+                0
+            };
+            authenticator.consume(lengths, 16);
+            authenticator.finalise();
+            for (unsigned int i = 0; i < chacha20_poly1305::tag_size; ++i) {
+                tag[i] = authenticator.get_hash().data[i];
+            }
+
+            // The authentication key must not be left on the stack.
+            chacha20_poly1305::wipe(authentication_key.data, gtl::poly1305::key_size);
+            chacha20_poly1305::wipe(reinterpret_cast<unsigned char*>(&authenticator), sizeof(gtl::poly1305));
+        }
+
+    public:
+        /// @brief  Encrypt a string of data writing the encrypted data into the output string, and compute its authentication tag.
+        /// @param  data The string of data to encrypt.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The encryption key, must be key_size bytes long.
+        /// @param  iv The nonce, must be iv_size bytes long and never repeated for the same key.
+        /// @param  output Pointer to an output buffer that will receive the encrypted data, must be at least the length of the data buffer, and may be the data buffer.
+        /// @param  tag Pointer to an output buffer that will receive the authentication tag, must be tag_size bytes long.
+        /// @param  aad Optional additional data that is authenticated but not encrypted.
+        /// @param  aad_length The length of the additional data.
+        static void encrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, unsigned char* tag, const unsigned char* aad = nullptr, const unsigned int aad_length = 0) {
+            // The data is encrypted with the cipher stream starting from block one.
+            unsigned char cipher_iv[cipher_type::nonce_size] = {};
+            chacha20_poly1305::make_cipher_iv(1, iv, cipher_iv);
+            cipher_type::encrypt(data, length, key, cipher_iv, output);
+            chacha20_poly1305::compute_tag(key, iv, aad, aad_length, output, length, tag);
+        }
+
+        /// @brief  Verify the authentication tag of a string of encrypted data, and if it is valid decrypt the data writing it into the output string.
+        /// @param  data The string of data to decrypt.
+        /// @param  length The length of the data, any length is valid.
+        /// @param  key The decryption key, must be key_size bytes long.
+        /// @param  iv The nonce that was used to encrypt the data, must be iv_size bytes long.
+        /// @param  output Pointer to an output buffer that will receive the decrypted data, must be at least the length of the data buffer, and may be the data buffer.
+        /// @param  tag The authentication tag that was computed when the data was encrypted, must be tag_size bytes long.
+        /// @param  aad The additional data that was provided when the data was encrypted.
+        /// @param  aad_length The length of the additional data.
+        /// @return true if the tag is valid and the data was decrypted, false otherwise in which case the output is not written.
+        static bool decrypt(const unsigned char* data, const unsigned int length, const unsigned char* key, const unsigned char* iv, unsigned char* output, const unsigned char* tag, const unsigned char* aad = nullptr, const unsigned int aad_length = 0) {
+            // The whole tag is compared before deciding if it is valid, so that the position of a difference is not revealed.
+            unsigned char expected_tag[chacha20_poly1305::tag_size] = {};
+            chacha20_poly1305::compute_tag(key, iv, aad, aad_length, data, length, expected_tag);
+            unsigned int invalid = 0;
+            for (unsigned int i = 0; i < chacha20_poly1305::tag_size; ++i) {
+                invalid |= static_cast<unsigned int>(expected_tag[i] ^ tag[i]);
+            }
+            chacha20_poly1305::wipe(expected_tag, chacha20_poly1305::tag_size);
+            if (invalid != 0) {
+                return false;
+            }
+            unsigned char cipher_iv[cipher_type::nonce_size] = {};
+            chacha20_poly1305::make_cipher_iv(1, iv, cipher_iv);
+            cipher_type::decrypt(data, length, key, cipher_iv, output);
+            return true;
+        }
+    };
+}
+
+#endif // GTL_CRYPTO_SYMMETRIC_CHACHA20_POLY1305_HPP

@@ -30,7 +30,12 @@ The current classes are as described below:
 | [container](source/container) | [static_ring_buffer](source/container/static_ring_buffer) | Statically sized thread\-safe multi\-producer multi\-consumer ring\-buffer. | :heavy_check_mark: |
 | [container](source/container) | [static_variant](source/container/static_variant) | A static\_variant class that can contain any one of its listed template types. | :construction: |
 | [container](source/container) | [static_view](source/container/static_view) | A non\-owning static\_view into multi\-dimensional memory. | :construction: |
+| [crypto/asymmetric](source/crypto/asymmetric) | [elliptic_curve](source/crypto/asymmetric/elliptic_curve) | An implementation of key agreement and digital signatures using the NIST P\-256 and P\-384 elliptic curves. | :heavy_check_mark: |
 | [crypto/asymmetric](source/crypto/asymmetric) | [rsa](source/crypto/asymmetric/rsa) | An implementation of the RSA (Rivest\-Shamir\-Adleman) asymmetric encryption algorithm. | :heavy_check_mark: |
+| [crypto/asymmetric](source/crypto/asymmetric) | [x25519](source/crypto/asymmetric/x25519) | An implementation of the x25519 elliptic curve Diffie\-Hellman key agreement function as per RFC 7748. | :heavy_check_mark: |
+| [crypto/certificate](source/crypto/certificate) | [asn1](source/crypto/certificate/asn1) | A reader and writer for the distinguished encoding rules (DER) of abstract syntax notation one (ASN.1). | :heavy_check_mark: |
+| [crypto/certificate](source/crypto/certificate) | [pem](source/crypto/certificate/pem) | An encoder and decoder for the privacy enhanced mail (PEM) text format used to store certificates and keys. | :heavy_check_mark: |
+| [crypto/certificate](source/crypto/certificate) | [x509](source/crypto/certificate/x509) | A parser, verifier, and generator of x509 certificates, with the keys and signatures they use. | :heavy_check_mark: |
 | [crypto/hash](source/crypto/hash) | [crc](source/crypto/hash/crc) | An implementation of the crc hashing function for 8, 16, 32, and 64 bits. | :heavy_check_mark: |
 | [crypto/hash](source/crypto/hash) | [md5](source/crypto/hash/md5) | An implementation of the md5 hashing function. | :heavy_check_mark: |
 | [crypto/hash](source/crypto/hash) | [sha0](source/crypto/hash/sha0) | An implementation of the sha0 hashing function. | :heavy_check_mark: |
@@ -42,6 +47,7 @@ The current classes are as described below:
 | [crypto/mac](source/crypto/mac) | [poly1305](source/crypto/mac/poly1305) | An implementation of the poly1305 message authentication code. | :heavy_check_mark: |
 | [crypto/symmetric](source/crypto/symmetric) | [aes](source/crypto/symmetric/aes) | An implementation of the aes encryption algorithm for 128, 192, and 256 bits. | :heavy_check_mark: |
 | [crypto/symmetric](source/crypto/symmetric) | [block_cipher](source/crypto/symmetric/block_cipher) | An implementation of many block cipher modes to be used with block ciphers like aes<128>. | :heavy_check_mark: |
+| [crypto/symmetric](source/crypto/symmetric) | [chacha20_poly1305](source/crypto/symmetric/chacha20_poly1305) | An implementation of the chacha20\-poly1305 authenticated encryption algorithm as per RFC 8439. | :heavy_check_mark: |
 | [crypto/symmetric](source/crypto/symmetric) | [chacha](source/crypto/symmetric/chacha) | An implementation of the chacha encryption algorithm. | :heavy_check_mark: |
 | [crypto/symmetric](source/crypto/symmetric) | [rc4](source/crypto/symmetric/rc4) | An implementation of the rc4 or arc4 encryption algorithm. | :construction: |
 | [debug](source/debug) | [access](source/debug/access) | Classes and macros for accessing class private members. | :heavy_check_mark: |
@@ -81,6 +87,14 @@ The current classes are as described below:
 | [platform](source/platform) | [timestamp](source/platform/timestamp) | Function to get a monotonically increasing timestamp. | :heavy_check_mark: |
 | [platform](source/platform) | [types](source/platform/types) | Type aliases of standard types to short names. | :heavy_check_mark: |
 | [protection](source/protection) | [virtual_machine](source/protection/virtual_machine) | A simple stack based virtual machine allowing easy creation of custom operands. | :heavy_check_mark: |
+| [protocol/tls](source/protocol/tls) | [tls12](source/protocol/tls/tls12) | The handshake state machine of version 1.2 of the transport layer security protocol, for clients and servers. | :heavy_check_mark: |
+| [protocol/tls](source/protocol/tls) | [tls13](source/protocol/tls/tls13) | The handshake state machine of version 1.3 of the transport layer security protocol, for clients and servers. | :heavy_check_mark: |
+| [protocol/tls](source/protocol/tls) | [tls_client](source/protocol/tls/tls_client) | The client end of a transport layer security connection, which verifies the server and protects the data exchanged with it. | :heavy_check_mark: |
+| [protocol/tls](source/protocol/tls) | [tls_connection](source/protocol/tls/tls_connection) | One end of a transport layer security connection, which turns application data into protected records and back without doing any input or output itself. | :heavy_check_mark: |
+| [protocol/tls](source/protocol/tls) | [tls_handshake](source/protocol/tls/tls_handshake) | The definitions, message encodings, and cryptographic helpers shared by the handshakes of the transport layer security protocol. | :heavy_check_mark: |
+| [protocol/tls](source/protocol/tls) | [tls_record](source/protocol/tls/tls_record) | The record layer of the transport layer security protocol, which frames and protects data in one direction of a connection. | :heavy_check_mark: |
+| [protocol/tls](source/protocol/tls) | [tls_server](source/protocol/tls/tls_server) | The server end of a transport layer security connection, which proves its identity with a certificate and protects the data exchanged with a client. | :heavy_check_mark: |
+| [protocol](source/protocol) | [http](source/protocol/http) | A reader and writer of hypertext transfer protocol version 1.1 messages, with a simple unencrypted client and server. | :heavy_check_mark: |
 | [random](source/random) | [random_mt](source/random/random_mt) | Mersenne twister pseudo\-random number generator. | :heavy_check_mark: |
 | [random](source/random) | [random_pcg](source/random/random_pcg) | PCG pseudo\-random number generator. | :heavy_check_mark: |
 | [random](source/random) | [random_rlcg](source/random/random_rlcg) | A reversible pseudo\-random number generator. | :heavy_check_mark: |
