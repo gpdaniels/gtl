@@ -457,7 +457,7 @@ TEST(tls_handshake, function, sender) {
         REQUIRE(content_type == ((records == 0) ? gtl::tls_record::content_handshake : gtl::tls_record::content_application_data));
         REQUIRE(body_length <= gtl::tls_record::fragment_size_max);
         if (records != 0) {
-            joined.insert(joined.end(), &sender.buffer[offset + 5], &sender.buffer[offset + 5] + body_length);
+            joined.insert(joined.end(), sender.buffer.data() + offset + 5, sender.buffer.data() + offset + 5 + body_length);
         }
         offset += 5 + body_length;
     }
