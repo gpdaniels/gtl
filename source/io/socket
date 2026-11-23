@@ -623,6 +623,19 @@ namespace gtl {
 // Send data, where the platform allows it only as much as can be sent without blocking.
 #if defined(_WIN32)
             const long long int length_written = send(this->handle, reinterpret_cast<const char*>(buffer), static_cast<int>(length), MSG_NOSIGNAL);
+#elif defined(__APPLE__)
+            // The flag that asks a send not to wait is ignored once the buffer of the socket is full, so the socket is made non-blocking for the call instead.
+            int non_blocking_value = 1;
+            if (ioctlsocket(this->handle, FIONBIO, &non_blocking_value) < 0) {
+                return -1;
+            }
+            const long long int length_written = send(this->handle, buffer, length, MSG_NOSIGNAL);
+            const int send_error = errno;
+            non_blocking_value = 0;
+            if (ioctlsocket(this->handle, FIONBIO, &non_blocking_value) < 0) {
+                return -1;
+            }
+            errno = send_error;
 #else
             const long long int length_written = send(this->handle, buffer, length, MSG_NOSIGNAL | MSG_DONTWAIT);
 #endif
