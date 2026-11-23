@@ -457,7 +457,9 @@ namespace gtl {
                 unsigned char record_type = 0;
                 unsigned int body_length = 0;
                 if (!gtl::tls_record::parse_header(&this->input[offset], record_type, body_length)) {
-                    this->fail(handshake::alert_record_overflow);
+                    // A record of a known type is one that is too long, anything else is not a record, which is what a peer that does not use the protocol sends.
+                    const bool is_record = (this->input[offset] >= gtl::tls_record::content_change_cipher_spec) && (this->input[offset] <= gtl::tls_record::content_application_data) && (this->input[offset + 1] == 0x03);
+                    this->fail(is_record ? handshake::alert_record_overflow : handshake::alert_unexpected_message);
                     break;
                 }
                 if ((this->input.size() - offset) < (gtl::tls_record::header_size + static_cast<unsigned long long int>(body_length))) {

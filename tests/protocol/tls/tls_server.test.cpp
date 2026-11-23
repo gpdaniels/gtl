@@ -551,50 +551,65 @@ TEST(tls_server, sample, server) {
         PRINT("The sample server is waiting for a client on port %u, and has written its certificate to 'gtl_sample_certificate.pem'.\n", static_cast<unsigned int>(sample_port));
     }
 
-    // Wait for a client to connect, accepting a connection blocks so only do so once there is one.
-    std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::now() + std::chrono::seconds(sample_wait ? sample_wait_seconds : 0);
-    while (!listener.is_data_available() && (std::chrono::steady_clock::now() < deadline)) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-    if (!listener.is_data_available()) {
-        return;
-    }
-    gtl::socket connection;
-    REQUIRE(listener.accept(connection) == true);
-
-    // Each connection has its own tls_server, which is given what arrives on the socket and gives back what to send.
-    gtl::tls_server tls;
-    REQUIRE(tls.start(configuration) == true);
-
-    // Read until there is a whole request, which also performs the handshake.
-    deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
-    std::string received;
-    gtl::http::request_type request;
-    unsigned long long int request_length = 0;
-    gtl::http::result_type result = gtl::http::result_type::incomplete;
-    while ((result == gtl::http::result_type::incomplete) && (std::chrono::steady_clock::now() < deadline)) {
-        if (!sample_pump(connection, tls) || (tls.get_state() == gtl::tls_server::state_type::failed) || (tls.get_state() == gtl::tls_server::state_type::closed)) {
-            break;
+    // A browser makes several connections, and only makes a request once it has been told to trust the certificate, so keep going until a request is answered.
+    const std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::now() + std::chrono::seconds(sample_wait ? sample_wait_seconds : 0);
+    while (true) {
+        // Wait for a client to connect, accepting a connection blocks so only do so once there is one.
+        while (!listener.is_data_available() && (std::chrono::steady_clock::now() < deadline)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
-        sample_read(tls, received);
-        result = gtl::http::read_request(received.data(), received.size(), request, request_length);
-    }
-    if (result != gtl::http::result_type::complete) {
-        // A client that goes away, or does not trust the certificate, is not a failure of the server.
-        PRINT("The sample server did not receive a request, its connection ended in state %d with alert %u.\n", static_cast<int>(tls.get_state()), static_cast<unsigned int>(tls.get_alert()));
+        if (!listener.is_data_available()) {
+            return;
+        }
+        gtl::socket connection;
+        REQUIRE(listener.accept(connection) == true);
+
+        // Each connection has its own tls_server, which is given what arrives on the socket and gives back what to send.
+        gtl::tls_server tls;
+        REQUIRE(tls.start(configuration) == true);
+
+        // Read until there is a whole request, which also performs the handshake.
+        const std::chrono::steady_clock::time_point request_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+        std::string received;
+        gtl::http::request_type request;
+        unsigned long long int request_length = 0;
+        gtl::http::result_type result = gtl::http::result_type::incomplete;
+        while ((result == gtl::http::result_type::incomplete) && (std::chrono::steady_clock::now() < request_deadline)) {
+            if (!sample_pump(connection, tls) || (tls.get_state() == gtl::tls_server::state_type::failed) || (tls.get_state() == gtl::tls_server::state_type::closed)) {
+                break;
+            }
+            sample_read(tls, received);
+            result = gtl::http::read_request(received.data(), received.size(), request, request_length);
+        }
+        if (result != gtl::http::result_type::complete) {
+            // A client that goes away, does not trust the certificate, or does not use the protocol, is not a failure of the server.
+            if (tls.get_state() != gtl::tls_server::state_type::failed) {
+                PRINT("The sample server had a connection that ended before it made a request.\n");
+            }
+            else if (tls.is_alert_received()) {
+                PRINT("The sample server had a connection that the client ended with alert %u, which is usually because it has not been told to trust the certificate.\n", static_cast<unsigned int>(tls.get_alert()));
+            }
+            else if (tls.get_version() == 0) {
+                PRINT("The sample server had a connection that it ended with alert %u before a version was agreed, was the client given an address that starts with http rather than https?\n", static_cast<unsigned int>(tls.get_alert()));
+            }
+            else {
+                PRINT("The sample server had a connection that it ended with alert %u.\n", static_cast<unsigned int>(tls.get_alert()));
+            }
+            continue;
+        }
+
+        // Send the response, then close the connection, and keep going until everything has been sent.
+        gtl::http::response_type response;
+        response.headers.push_back(gtl::http::header_type{ "Content-Type", "text/plain" });
+        response.headers.push_back(gtl::http::header_type{ "Connection", "close" });
+        response.body = "Hello from the gtl https server, you asked for " + request.target + "\n";
+        std::string encoded;
+        REQUIRE(gtl::http::write_response(response, encoded) == true);
+        REQUIRE(tls.write(reinterpret_cast<const unsigned char*>(encoded.data()), encoded.size()) == true);
+        tls.close();
+        while ((tls.get_output_length() != 0) && sample_pump(connection, tls)) {
+        }
+        PRINT("The sample server answered a request for '%s' using version %04X and cipher suite %04X.\n", request.target.c_str(), tls.get_version(), tls.get_suite());
         return;
     }
-
-    // Send the response, then close the connection, and keep going until everything has been sent.
-    gtl::http::response_type response;
-    response.headers.push_back(gtl::http::header_type{ "Content-Type", "text/plain" });
-    response.headers.push_back(gtl::http::header_type{ "Connection", "close" });
-    response.body = "Hello from the gtl https server, you asked for " + request.target + "\n";
-    std::string encoded;
-    REQUIRE(gtl::http::write_response(response, encoded) == true);
-    REQUIRE(tls.write(reinterpret_cast<const unsigned char*>(encoded.data()), encoded.size()) == true);
-    tls.close();
-    while ((tls.get_output_length() != 0) && sample_pump(connection, tls)) {
-    }
-    PRINT("The sample server answered a request for '%s' using version %04X and cipher suite %04X.\n", request.target.c_str(), tls.get_version(), tls.get_suite());
 }

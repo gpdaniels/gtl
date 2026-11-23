@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma warning(push, 0)
 #endif
 
+#include <cstring>
 #include <functional>
 #include <string>
 #include <type_traits>
@@ -395,6 +396,45 @@ TEST(tls_connection, evaluate, unprotected_alert) {
         REQUIRE(server.process_input(fatal, sizeof(fatal)) == false);
         REQUIRE(server.get_alert() == gtl::tls_handshake::alert_bad_record_mac);
         REQUIRE(server.is_alert_received() == false);
+    }
+}
+
+TEST(tls_connection, evaluate, not_a_record) {
+    const server_identity identity(false);
+    const gtl::tls_handshake::settings_type server_settings = make_server_settings(identity, 500);
+    {
+        // A peer that does not use the protocol, such as one that makes a request without it, is told that what it sent was not expected.
+        const char* request = "GET / HTTP/1.1\r\nHost: example.test\r\n\r\n";
+        gtl::tls_connection server;
+        REQUIRE(server.start(server_settings) == true);
+        REQUIRE(server.process_input(reinterpret_cast<const unsigned char*>(request), std::strlen(request)) == false);
+        REQUIRE(server.get_state() == state_type::failed);
+        REQUIRE(server.get_alert() == gtl::tls_handshake::alert_unexpected_message);
+        REQUIRE(server.is_alert_received() == false);
+        REQUIRE(server.get_version() == 0);
+        // The alert is sent so that the peer can report it.
+        unsigned char alert[16] = {};
+        REQUIRE(server.get_output(alert, sizeof(alert)) == 7);
+        REQUIRE(alert[0] == gtl::tls_record::content_alert);
+        REQUIRE(alert[5] == gtl::tls_handshake::alert_level_fatal);
+        REQUIRE(alert[6] == gtl::tls_handshake::alert_unexpected_message);
+    }
+    {
+        // A version that no version of the protocol has is not a record either.
+        const unsigned char header[5] = { gtl::tls_record::content_handshake, 0x02, 0x00, 0x00, 0x10 };
+        gtl::tls_connection server;
+        REQUIRE(server.start(server_settings) == true);
+        REQUIRE(server.process_input(header, sizeof(header)) == false);
+        REQUIRE(server.get_alert() == gtl::tls_handshake::alert_unexpected_message);
+    }
+    {
+        // A record that is longer than any record may be is an overflow.
+        const unsigned char header[5] = { gtl::tls_record::content_handshake, 0x03, 0x01, 0xFF, 0xFF };
+        gtl::tls_connection server;
+        REQUIRE(server.start(server_settings) == true);
+        REQUIRE(server.process_input(header, sizeof(header)) == false);
+        REQUIRE(server.get_state() == state_type::failed);
+        REQUIRE(server.get_alert() == gtl::tls_handshake::alert_record_overflow);
     }
 }
 
