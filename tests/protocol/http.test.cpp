@@ -434,7 +434,7 @@ TEST(http, evaluate, client_and_server) {
     gtl::socket::ip address = {};
     unsigned short port = 0;
     REQUIRE(listener.get_config(address, port) == true);
-    constexpr const unsigned int connections = 7;
+    static constexpr const unsigned int connections = 7;
     std::atomic<unsigned int> served(0);
     std::thread server([&listener, &served]() {
         for (unsigned int i = 0; i < connections; ++i) {
